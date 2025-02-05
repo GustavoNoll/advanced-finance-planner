@@ -1,8 +1,7 @@
 import { DashboardCard } from "@/components/DashboardCard";
 import { ExpenseChart } from "@/components/ExpenseChart";
-import { BudgetCategories } from "@/components/BudgetCategories";
 import { SavingsGoal } from "@/components/SavingsGoal";
-import { WalletCards } from "lucide-react";
+import { Briefcase, TrendingUp, PiggyBank } from "lucide-react";
 
 const Index = () => {
   return (
@@ -10,43 +9,67 @@ const Index = () => {
       <header className="bg-white shadow-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
           <div className="flex items-center space-x-3">
-            <WalletCards className="h-8 w-8 text-blue-600" />
-            <h1 className="text-2xl font-bold text-gray-900">Financial Planner</h1>
+            <Briefcase className="h-8 w-8 text-blue-600" />
+            <h1 className="text-2xl font-bold text-gray-900">Investment Portfolio</h1>
           </div>
         </div>
       </header>
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-          <DashboardCard title="Total Balance">
-            <p className="stat-value positive-amount">$12,750.00</p>
-            <p className="stat-label">+2.5% from last month</p>
+          <DashboardCard title="Total Portfolio Value">
+            <div className="space-y-2">
+              <p className="text-2xl font-bold text-green-600">$50,000.00</p>
+              <p className="text-sm text-green-600 flex items-center gap-1">
+                <TrendingUp className="h-4 w-4" />
+                +15.2% YTD
+              </p>
+            </div>
           </DashboardCard>
           
-          <DashboardCard title="Monthly Income">
-            <p className="stat-value positive-amount">$5,200.00</p>
-            <p className="stat-label">Regular salary + Freelance</p>
+          <DashboardCard title="Monthly Contributions">
+            <div className="space-y-2">
+              <p className="text-2xl font-bold">$1,000.00</p>
+              <p className="text-sm text-muted-foreground">Regular deposits</p>
+            </div>
           </DashboardCard>
           
-          <DashboardCard title="Monthly Expenses">
-            <p className="stat-value negative-amount">$3,850.00</p>
-            <p className="stat-label">15 transactions</p>
+          <DashboardCard title="Total Returns">
+            <div className="space-y-2">
+              <p className="text-2xl font-bold text-green-600">$7,500.00</p>
+              <p className="text-sm text-green-600 flex items-center gap-1">
+                <PiggyBank className="h-4 w-4" />
+                12.5% Annual Return
+              </p>
+            </div>
           </DashboardCard>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           <div className="lg:col-span-2">
-            <DashboardCard title="Expense Trends">
+            <DashboardCard title="Portfolio Performance vs. Inflation">
               <ExpenseChart />
             </DashboardCard>
           </div>
           
           <div className="space-y-6">
-            <DashboardCard title="Budget Categories">
-              <BudgetCategories />
-            </DashboardCard>
-            
             <SavingsGoal />
+            <DashboardCard title="Next Steps">
+              <ul className="space-y-3 text-sm">
+                <li className="flex items-center gap-2 text-left">
+                  <div className="h-2 w-2 bg-blue-600 rounded-full" />
+                  Review your investment strategy
+                </li>
+                <li className="flex items-center gap-2 text-left">
+                  <div className="h-2 w-2 bg-blue-600 rounded-full" />
+                  Consider increasing monthly contributions
+                </li>
+                <li className="flex items-center gap-2 text-left">
+                  <div className="h-2 w-2 bg-blue-600 rounded-full" />
+                  Schedule a portfolio review meeting
+                </li>
+              </ul>
+            </DashboardCard>
           </div>
         </div>
       </main>
