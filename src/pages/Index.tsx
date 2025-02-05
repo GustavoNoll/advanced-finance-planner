@@ -1,6 +1,7 @@
 import { DashboardCard } from "@/components/DashboardCard";
 import { ExpenseChart } from "@/components/ExpenseChart";
 import { SavingsGoal } from "@/components/SavingsGoal";
+import { MonthlyView } from "@/components/MonthlyView";
 import { Briefcase, TrendingUp, PiggyBank } from "lucide-react";
 
 const Index = () => {
@@ -45,7 +46,7 @@ const Index = () => {
           </DashboardCard>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
           <div className="lg:col-span-2">
             <DashboardCard title="Portfolio Performance vs. Inflation">
               <ExpenseChart />
@@ -72,6 +73,8 @@ const Index = () => {
             </DashboardCard>
           </div>
         </div>
+
+        <MonthlyView />
       </main>
     </div>
   );
