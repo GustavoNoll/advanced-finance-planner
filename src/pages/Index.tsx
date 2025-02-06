@@ -19,11 +19,11 @@ const Index = () => {
       const { data, error } = await supabase
         .from('investment_plans')
         .select('*')
-        .eq('user_id', user?.id)
-        .single();
+        .eq('user_id', user?.id);
 
       if (error) throw error;
-      return data;
+      // Return the first plan or null if none exists
+      return data?.[0] || null;
     },
   });
 
