@@ -10,6 +10,7 @@ import { useAuth } from "@/components/auth/AuthProvider";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
 import { toast } from "@/components/ui/use-toast";
+import { useEffect } from "react";
 
 const Index = () => {
   const { user } = useAuth();
@@ -53,6 +54,20 @@ const Index = () => {
     enabled: !!user?.id,
   });
 
+  useEffect(() => {
+    if (!isLoading && !investmentPlan) {
+      toast({
+        title: "No Investment Plan",
+        description: "Please create an investment plan to continue.",
+      });
+      navigate('/create-plan');
+    }
+  }, [investmentPlan, isLoading, navigate]);
+
+  if (isLoading || !investmentPlan) {
+    return null;
+  }
+
   return (
     <div className="min-h-screen bg-gray-50">
       <header className="bg-white shadow-sm">
@@ -63,23 +78,12 @@ const Index = () => {
               <h1 className="text-2xl font-bold text-gray-900">Investment Portfolio</h1>
             </div>
             <div className="flex items-center gap-4">
-              {!isLoading && (
-                <Link to={investmentPlan ? `/edit-plan/${investmentPlan.id}` : "/create-plan"}>
-                  <Button className="flex items-center gap-2">
-                    {investmentPlan ? (
-                      <>
-                        <Pencil className="h-4 w-4" />
-                        Edit Investment Plan
-                      </>
-                    ) : (
-                      <>
-                        <Plus className="h-4 w-4" />
-                        Create Investment Plan
-                      </>
-                    )}
-                  </Button>
-                </Link>
-              )}
+              <Link to={`/edit-plan/${investmentPlan.id}`}>
+                <Button className="flex items-center gap-2">
+                  <Pencil className="h-4 w-4" />
+                  Edit Investment Plan
+                </Button>
+              </Link>
               <Button 
                 variant="outline" 
                 onClick={handleLogout}
