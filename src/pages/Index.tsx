@@ -16,15 +16,21 @@ const Index = () => {
   const { data: investmentPlan, isLoading } = useQuery({
     queryKey: ['investmentPlan', user?.id],
     queryFn: async () => {
+      if (!user?.id) return null;
+      
       const { data, error } = await supabase
         .from('investment_plans')
         .select('*')
-        .eq('user_id', user?.id);
+        .eq('user_id', user.id);
 
-      if (error) throw error;
-      // Return the first plan or null if none exists
+      if (error) {
+        console.error('Error fetching investment plan:', error);
+        return null;
+      }
+
       return data?.[0] || null;
     },
+    enabled: !!user?.id,
   });
 
   return (

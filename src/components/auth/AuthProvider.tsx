@@ -1,3 +1,4 @@
+
 import { createContext, useContext, useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import type { User } from '@supabase/supabase-js';
@@ -25,13 +26,24 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       setUser(user);
       
       if (user) {
-        const { data: profile } = await supabase
+        // First check if profile exists
+        const { data: profiles } = await supabase
           .from('profiles')
           .select('is_broker')
-          .eq('id', user.id)
-          .single();
+          .eq('id', user.id);
         
-        setIsBroker(profile?.is_broker || false);
+        // If no profile exists, create one
+        if (!profiles || profiles.length === 0) {
+          const { data: newProfile } = await supabase
+            .from('profiles')
+            .insert([{ id: user.id, is_broker: false }])
+            .select('is_broker')
+            .single();
+          
+          setIsBroker(newProfile?.is_broker || false);
+        } else {
+          setIsBroker(profiles[0]?.is_broker || false);
+        }
       }
       
       setLoading(false);
