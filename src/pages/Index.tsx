@@ -3,15 +3,35 @@ import { DashboardCard } from "@/components/DashboardCard";
 import { ExpenseChart } from "@/components/ExpenseChart";
 import { SavingsGoal } from "@/components/SavingsGoal";
 import { MonthlyView } from "@/components/MonthlyView";
-import { Briefcase, TrendingUp, PiggyBank, Plus, Pencil } from "lucide-react";
+import { Briefcase, TrendingUp, PiggyBank, Plus, Pencil, LogOut } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "@/components/auth/AuthProvider";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
+import { toast } from "@/components/ui/use-toast";
 
 const Index = () => {
   const { user } = useAuth();
+  const navigate = useNavigate();
+
+  const handleLogout = async () => {
+    try {
+      await supabase.auth.signOut();
+      toast({
+        title: "Success",
+        description: "Logged out successfully",
+      });
+      navigate('/login');
+    } catch (error) {
+      console.error('Error logging out:', error);
+      toast({
+        title: "Error",
+        description: "Failed to log out",
+        variant: "destructive",
+      });
+    }
+  };
 
   const { data: investmentPlan, isLoading } = useQuery({
     queryKey: ['investmentPlan', user?.id],
@@ -42,23 +62,33 @@ const Index = () => {
               <Briefcase className="h-8 w-8 text-blue-600" />
               <h1 className="text-2xl font-bold text-gray-900">Investment Portfolio</h1>
             </div>
-            {!isLoading && (
-              <Link to={investmentPlan ? `/edit-plan/${investmentPlan.id}` : "/create-plan"}>
-                <Button className="flex items-center gap-2">
-                  {investmentPlan ? (
-                    <>
-                      <Pencil className="h-4 w-4" />
-                      Edit Investment Plan
-                    </>
-                  ) : (
-                    <>
-                      <Plus className="h-4 w-4" />
-                      Create Investment Plan
-                    </>
-                  )}
-                </Button>
-              </Link>
-            )}
+            <div className="flex items-center gap-4">
+              {!isLoading && (
+                <Link to={investmentPlan ? `/edit-plan/${investmentPlan.id}` : "/create-plan"}>
+                  <Button className="flex items-center gap-2">
+                    {investmentPlan ? (
+                      <>
+                        <Pencil className="h-4 w-4" />
+                        Edit Investment Plan
+                      </>
+                    ) : (
+                      <>
+                        <Plus className="h-4 w-4" />
+                        Create Investment Plan
+                      </>
+                    )}
+                  </Button>
+                </Link>
+              )}
+              <Button 
+                variant="outline" 
+                onClick={handleLogout}
+                className="flex items-center gap-2"
+              >
+                <LogOut className="h-4 w-4" />
+                Logout
+              </Button>
+            </div>
           </div>
         </div>
       </header>
