@@ -3,13 +3,14 @@ import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import { useToast } from "@/components/ui/use-toast";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/components/auth/AuthProvider";
 
-export const CreatePlan = () => {
+export const EditPlan = () => {
   const { user } = useAuth();
+  const { id } = useParams();
   const navigate = useNavigate();
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
@@ -21,26 +22,45 @@ export const CreatePlan = () => {
   });
 
   useEffect(() => {
-    const checkExistingPlan = async () => {
-      if (!user) return;
+    const fetchPlan = async () => {
+      if (!id) return;
 
       const { data, error } = await supabase
         .from('investment_plans')
-        .select('id')
-        .eq('user_id', user.id)
+        .select('*')
+        .eq('id', id)
         .single();
 
-      if (data) {
+      if (error) {
         toast({
-          title: "Plan already exists",
-          description: "You already have an investment plan. Redirecting to edit page...",
+          title: "Error",
+          description: "Failed to fetch investment plan",
+          variant: "destructive",
         });
-        navigate(`/edit-plan/${data.id}`);
+        navigate('/');
+        return;
       }
+
+      if (data.user_id !== user?.id) {
+        toast({
+          title: "Error",
+          description: "You don't have permission to edit this plan",
+          variant: "destructive",
+        });
+        navigate('/');
+        return;
+      }
+
+      setFormData({
+        monthlyDeposit: data.monthly_deposit.toString(),
+        targetAmount: data.target_amount.toString(),
+        targetDate: data.target_date,
+        expectedReturn: data.expected_return.toString(),
+      });
     };
 
-    checkExistingPlan();
-  }, [user, navigate, toast]);
+    fetchPlan();
+  }, [id, user, navigate, toast]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -55,23 +75,21 @@ export const CreatePlan = () => {
     setLoading(true);
 
     try {
-      const { error } = await supabase.from("investment_plans").insert([
-        {
-          user_id: user?.id,
+      const { error } = await supabase
+        .from("investment_plans")
+        .update({
           monthly_deposit: parseFloat(formData.monthlyDeposit),
           target_amount: parseFloat(formData.targetAmount),
           target_date: formData.targetDate,
           expected_return: parseFloat(formData.expectedReturn),
-          current_amount: 0,
-          status: "active",
-        },
-      ]);
+        })
+        .eq('id', id);
 
       if (error) throw error;
 
       toast({
         title: "Success",
-        description: "Investment plan created successfully",
+        description: "Investment plan updated successfully",
       });
 
       navigate("/");
@@ -91,7 +109,7 @@ export const CreatePlan = () => {
       <div className="max-w-2xl mx-auto px-4">
         <Card>
           <CardHeader>
-            <CardTitle>Create Investment Plan</CardTitle>
+            <CardTitle>Edit Investment Plan</CardTitle>
           </CardHeader>
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-6">
@@ -144,7 +162,7 @@ export const CreatePlan = () => {
               </div>
 
               <Button type="submit" className="w-full" disabled={loading}>
-                {loading ? "Creating..." : "Create Plan"}
+                {loading ? "Saving..." : "Save Changes"}
               </Button>
             </form>
           </CardContent>

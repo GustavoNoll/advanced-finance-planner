@@ -9,6 +9,7 @@ import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
 import { LoginForm } from "./components/auth/LoginForm";
 import { CreatePlan } from "./pages/CreatePlan";
+import { EditPlan } from "./pages/EditPlan";
 
 const queryClient = new QueryClient();
 
@@ -48,6 +49,14 @@ const App = () => (
               element={
                 <ProtectedRoute>
                   <CreatePlan />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/edit-plan/:id"
+              element={
+                <ProtectedRoute>
+                  <EditPlan />
                 </ProtectedRoute>
               }
             />

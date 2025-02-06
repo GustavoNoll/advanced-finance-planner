@@ -3,11 +3,30 @@ import { DashboardCard } from "@/components/DashboardCard";
 import { ExpenseChart } from "@/components/ExpenseChart";
 import { SavingsGoal } from "@/components/SavingsGoal";
 import { MonthlyView } from "@/components/MonthlyView";
-import { Briefcase, TrendingUp, PiggyBank, Plus } from "lucide-react";
+import { Briefcase, TrendingUp, PiggyBank, Plus, Pencil } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
+import { useAuth } from "@/components/auth/AuthProvider";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/lib/supabase";
 
 const Index = () => {
+  const { user } = useAuth();
+
+  const { data: investmentPlan, isLoading } = useQuery({
+    queryKey: ['investmentPlan', user?.id],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('investment_plans')
+        .select('*')
+        .eq('user_id', user?.id)
+        .single();
+
+      if (error) throw error;
+      return data;
+    },
+  });
+
   return (
     <div className="min-h-screen bg-gray-50">
       <header className="bg-white shadow-sm">
@@ -17,12 +36,23 @@ const Index = () => {
               <Briefcase className="h-8 w-8 text-blue-600" />
               <h1 className="text-2xl font-bold text-gray-900">Investment Portfolio</h1>
             </div>
-            <Link to="/create-plan">
-              <Button className="flex items-center gap-2">
-                <Plus className="h-4 w-4" />
-                Create Investment Plan
-              </Button>
-            </Link>
+            {!isLoading && (
+              <Link to={investmentPlan ? `/edit-plan/${investmentPlan.id}` : "/create-plan"}>
+                <Button className="flex items-center gap-2">
+                  {investmentPlan ? (
+                    <>
+                      <Pencil className="h-4 w-4" />
+                      Edit Investment Plan
+                    </>
+                  ) : (
+                    <>
+                      <Plus className="h-4 w-4" />
+                      Create Investment Plan
+                    </>
+                  )}
+                </Button>
+              </Link>
+            )}
           </div>
         </div>
       </header>
