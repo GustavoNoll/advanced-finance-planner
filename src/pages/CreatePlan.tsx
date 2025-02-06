@@ -24,18 +24,28 @@ export const CreatePlan = () => {
     const checkExistingPlan = async () => {
       if (!user) return;
 
-      const { data, error } = await supabase
-        .from('investment_plans')
-        .select('id')
-        .eq('user_id', user.id)
-        .single();
+      try {
+        const { data, error } = await supabase
+          .from('investment_plans')
+          .select('*')
+          .eq('user_id', user.id);
 
-      if (data) {
+        if (error) throw error;
+
+        if (data && data.length > 0) {
+          toast({
+            title: "Plan already exists",
+            description: "You already have an investment plan. Redirecting to edit page...",
+          });
+          navigate(`/edit-plan/${data[0].id}`);
+        }
+      } catch (error: any) {
+        console.error('Error checking existing plan:', error);
         toast({
-          title: "Plan already exists",
-          description: "You already have an investment plan. Redirecting to edit page...",
+          title: "Error",
+          description: error.message,
+          variant: "destructive",
         });
-        navigate(`/edit-plan/${data.id}`);
       }
     };
 
