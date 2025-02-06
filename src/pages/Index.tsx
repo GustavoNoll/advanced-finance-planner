@@ -1,17 +1,28 @@
+
 import { DashboardCard } from "@/components/DashboardCard";
 import { ExpenseChart } from "@/components/ExpenseChart";
 import { SavingsGoal } from "@/components/SavingsGoal";
 import { MonthlyView } from "@/components/MonthlyView";
-import { Briefcase, TrendingUp, PiggyBank } from "lucide-react";
+import { Briefcase, TrendingUp, PiggyBank, Plus } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Link } from "react-router-dom";
 
 const Index = () => {
   return (
     <div className="min-h-screen bg-gray-50">
       <header className="bg-white shadow-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-          <div className="flex items-center space-x-3">
-            <Briefcase className="h-8 w-8 text-blue-600" />
-            <h1 className="text-2xl font-bold text-gray-900">Investment Portfolio</h1>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-3">
+              <Briefcase className="h-8 w-8 text-blue-600" />
+              <h1 className="text-2xl font-bold text-gray-900">Investment Portfolio</h1>
+            </div>
+            <Link to="/create-plan">
+              <Button className="flex items-center gap-2">
+                <Plus className="h-4 w-4" />
+                Create Investment Plan
+              </Button>
+            </Link>
           </div>
         </div>
       </header>
