@@ -6,15 +6,8 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 import { useToast } from "@/components/ui/use-toast";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/components/auth/AuthProvider";
-
-// Add this type above the component
-type RiskProfile = {
-  value: string;
-  label: string;
-  return: string;
-  bgColor: string;
-  textColor: string;
-};
+import { ptBR } from "@/locales/pt-BR";
+import { RISK_PROFILES, type RiskProfile } from '@/constants/riskProfiles';
 
 export const CreatePlan = () => {
   const { user } = useAuth();
@@ -29,7 +22,7 @@ export const CreatePlan = () => {
     finalAge: "50",
     monthlyDeposit: "5000",
     desiredIncome: "10000",
-    expectedReturn: "5.0", // This will now be set by risk profile selection
+    expectedReturn: RISK_PROFILES[1].return, // Default to Moderate profile
     inflation: "6.0",
     planType: "3",
   });
@@ -43,31 +36,6 @@ export const CreatePlan = () => {
     totalMonthlyReturn: number;
     requiredMonthlyDeposit: number;
   } | null>(null);
-
-  // Add this constant inside the component
-  const riskProfiles: RiskProfile[] = [
-    {
-      value: 'CONS',
-      label: 'Conservador',
-      return: '4.0',
-      bgColor: 'bg-red-100',
-      textColor: 'text-red-900'
-    },
-    {
-      value: 'MOD',
-      label: 'Moderado',
-      return: '5.0',
-      bgColor: 'bg-orange-100',
-      textColor: 'text-orange-900'
-    },
-    {
-      value: 'ARROJ',
-      label: 'Arrojado',
-      return: '6.0',
-      bgColor: 'bg-blue-100',
-      textColor: 'text-blue-900'
-    }
-  ];
 
   // Add useEffect to calculate values on mount
   useEffect(() => {
@@ -116,7 +84,7 @@ export const CreatePlan = () => {
       const newFormData = { ...prev };
       
       if (name === 'expectedReturn') {
-        const profile = riskProfiles.find(p => p.return === value);
+        const profile = RISK_PROFILES.find(p => p.return === value);
         if (profile) {
           newFormData.expectedReturn = profile.return;
         }
@@ -166,16 +134,21 @@ export const CreatePlan = () => {
         const yearsTo100 = 100 - finalAge;
         const monthlyWithdrawal = inflationAdjustedIncome / 12;
         const rate = expectedReturn / 12; // Monthly rate
-        futureValue = monthlyWithdrawal * (1 - Math.pow(1 + rate, -yearsTo100 * 12)) / rate;
+        
+        // Fórmula de anuidade (valor presente de uma série de pagamentos mensais)
+        futureValue = monthlyWithdrawal * ((1 - Math.pow(1 + rate, -yearsTo100 * 12)) / rate);
         break;
         
       case "2": // Leave 1M
         // Calculate how much is needed to maintain income and leave 1M
         const targetLegacy = 1000000;
-        futureValue = Math.max(
-          (inflationAdjustedIncome / expectedReturn) + targetLegacy,
-          targetLegacy
-        );
+        
+        // Fórmula para calcular o valor presente necessário para gerar a renda mensal
+        const monthlyIncomeRequired = inflationAdjustedIncome / 12;
+        const incomePresentValue = monthlyIncomeRequired / expectedReturn;
+        
+        // Valor futuro é o valor necessário para gerar a renda mensal mais o valor de herança
+        futureValue = Math.max(incomePresentValue + targetLegacy, targetLegacy);
         break;
         
       case "3": // Don't touch principal
@@ -198,7 +171,7 @@ export const CreatePlan = () => {
     const annualRate = totalRate; // This is already in decimal form (e.g., 0.11 for 11%)
 
     const monthlyRate = Math.pow(1 + annualRate, 1 / 12) - 1;
-    const months = years * 12; // Número total de meses
+    const months = years * 12; // Total number of months
 
     // Calculate required monthly deposit using the PMT function
     const pmt = (rate: number, nper: number, pv: number, fv: number = 0) => {
@@ -281,12 +254,14 @@ export const CreatePlan = () => {
       <div className="max-w-2xl mx-auto px-4">
         <Card>
           <CardHeader>
-            <CardTitle>Criar Plano de Investimento</CardTitle>
+            <CardTitle>{ptBR.investmentPlan.create.title}</CardTitle>
           </CardHeader>
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-6">
               <div className="space-y-2">
-                <label className="text-sm font-medium">Valor Inicial</label>
+                <label className="text-sm font-medium">
+                  {ptBR.investmentPlan.create.form.initialAmount}
+                </label>
                 <Input
                   type="number"
                   name="initialAmount"
@@ -298,7 +273,9 @@ export const CreatePlan = () => {
               </div>
 
               <div className="space-y-2">
-                <label className="text-sm font-medium">Idade Inicial</label>
+                <label className="text-sm font-medium">
+                  {ptBR.investmentPlan.create.form.initialAge}
+                </label>
                 <Input
                   type="number"
                   name="initialAge"
@@ -310,7 +287,9 @@ export const CreatePlan = () => {
               </div>
 
               <div className="space-y-2">
-                <label className="text-sm font-medium">Idade Final</label>
+                <label className="text-sm font-medium">
+                  {ptBR.investmentPlan.create.form.finalAge}
+                </label>
                 <Input
                   type="number"
                   name="finalAge"
@@ -322,7 +301,9 @@ export const CreatePlan = () => {
               </div>
 
               <div className="space-y-2">
-                <label className="text-sm font-medium">Depósito Mensal</label>
+                <label className="text-sm font-medium">
+                  {ptBR.investmentPlan.create.form.monthlyDeposit}
+                </label>
                 <Input
                   type="number"
                   name="monthlyDeposit"
@@ -334,7 +315,9 @@ export const CreatePlan = () => {
               </div>
 
               <div className="space-y-2">
-                <label className="text-sm font-medium">Renda Mensal Desejada</label>
+                <label className="text-sm font-medium">
+                  {ptBR.investmentPlan.create.form.desiredIncome}
+                </label>
                 <Input
                   type="number"
                   name="desiredIncome"
@@ -346,7 +329,9 @@ export const CreatePlan = () => {
               </div>
 
               <div className="space-y-2">
-                <label className="text-sm font-medium">Perfil de Risco / Retorno IPCA+</label>
+                <label className="text-sm font-medium">
+                  {ptBR.investmentPlan.create.form.riskProfile}
+                </label>
                 <select
                   name="expectedReturn"
                   value={formData.expectedReturn}
@@ -354,7 +339,7 @@ export const CreatePlan = () => {
                   className="w-full p-2 border rounded bg-white"
                   required
                 >
-                  {riskProfiles.map((profile) => (
+                  {RISK_PROFILES.map((profile) => (
                     <option
                       key={profile.value}
                       value={profile.return}
@@ -367,7 +352,9 @@ export const CreatePlan = () => {
               </div>
 
               <div className="space-y-2">
-                <label className="text-sm font-medium">Taxa de Inflação Anual (%)</label>
+                <label className="text-sm font-medium">
+                  {ptBR.investmentPlan.create.form.inflationRate}
+                </label>
                 <Input
                   type="number"
                   name="inflation"
@@ -380,7 +367,9 @@ export const CreatePlan = () => {
               </div>
 
               <div className="space-y-2">
-                <label className="text-sm font-medium">Tipo do Plano</label>
+                <label className="text-sm font-medium">
+                  {ptBR.investmentPlan.create.form.planType}
+                </label>
                 <select
                   name="planType"
                   value={formData.planType}
@@ -401,37 +390,39 @@ export const CreatePlan = () => {
           </CardContent>
           
           <div className="mt-8 p-4 bg-gray-50 rounded-lg">
-            <h3 className="text-lg font-semibold mb-4">Valores Calculados</h3>
+            <h3 className="text-lg font-semibold mb-4">
+              {ptBR.investmentPlan.create.calculations.title}
+            </h3>
             {isCalculationReady(formData) ? (
               <div className="space-y-2">
                 <div className="flex justify-between">
-                  <span>Renda Ajustada pela Inflação:</span>
+                  <span>{ptBR.investmentPlan.create.calculations.inflationAdjustedIncome}:</span>
                   <span>R$ {calculations?.inflationAdjustedIncome.toLocaleString('pt-BR', { maximumFractionDigits: 2 }) || '---'}/ano</span>
                 </div>
                 <div className="flex justify-between">
-                  <span>Valor Futuro Necessário:</span>
+                  <span>{ptBR.investmentPlan.create.calculations.requiredFutureValue}:</span>
                   <span>R$ {calculations?.futureValue.toLocaleString('pt-BR', { maximumFractionDigits: 2 }) || '---'}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span>Retorno Mensal Real:</span>
+                  <span>{ptBR.investmentPlan.create.calculations.monthlyRealReturn}:</span>
                   <span>R$ {calculations?.realReturn.toLocaleString('pt-BR', { maximumFractionDigits: 2 }) || '---'}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span>Retorno Mensal da Inflação:</span>
+                  <span>{ptBR.investmentPlan.create.calculations.monthlyInflationReturn}:</span>
                   <span>R$ {calculations?.inflationReturn.toLocaleString('pt-BR', { maximumFractionDigits: 2 }) || '---'}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span>Retorno Mensal Total:</span>
+                  <span>{ptBR.investmentPlan.create.calculations.totalMonthlyReturn}:</span>
                   <span>R$ {calculations?.totalMonthlyReturn.toLocaleString('pt-BR', { maximumFractionDigits: 2 }) || '---'}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span>Depósito Mensal Necessário:</span>
+                  <span>{ptBR.investmentPlan.create.calculations.requiredMonthlyDeposit}:</span>
                   <span>R$ {calculations?.requiredMonthlyDeposit.toLocaleString('pt-BR', { maximumFractionDigits: 2 }) || '---'}</span>
                 </div>
               </div>
             ) : (
               <div className="text-center text-gray-500">
-                Preencha todos os campos obrigatórios para ver os cálculos
+                {ptBR.investmentPlan.create.calculations.fillRequired}
               </div>
             )}
           </div>

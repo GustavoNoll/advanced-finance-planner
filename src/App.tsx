@@ -11,6 +11,7 @@ import { CreatePlan } from "./pages/CreatePlan";
 import { EditPlan } from "./pages/EditPlan";
 import { BrokerDashboard } from "./pages/BrokerDashboard";
 import { CreateClient } from "./pages/CreateClient";
+import { InvestmentPlanShow } from "./pages/InvestmentPlan";
 
 const queryClient = new QueryClient();
 
@@ -77,14 +78,22 @@ const App = () => (
                 </ProtectedRoute>
               }
             />
-            {/* <Route
+            <Route
               path="/edit-plan/:id"
               element={
                 <ProtectedRoute>
                   <EditPlan />
                 </ProtectedRoute>
               }
-            /> */}
+            />
+            <Route
+              path="/investment-plan/:id"
+              element={
+                <ProtectedRoute>
+                  <InvestmentPlanShow />
+                </ProtectedRoute>
+              }
+            />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </TooltipProvider>
