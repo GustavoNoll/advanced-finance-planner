@@ -39,22 +39,46 @@ const Index = () => {
   };
 
   const { data: clients, isLoading: isLoadingClients } = useQuery({
-    queryKey: ['clients'],
+    queryKey: ['clients', searchQuery],
     queryFn: async () => {
       if (!isBroker) return [];
       
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('id, email')
-        .ilike('email', `%${searchQuery}%`)
-        .eq('is_broker', false);
+      const { data: usersData, error: usersError } = await supabase.auth.admin.listUsers({
+        page: 1,
+        perPage: 20,
+      });
 
-      if (error) {
-        console.error('Error fetching clients:', error);
+      if (usersError) {
+        console.error('Error fetching users:', usersError);
         return [];
       }
 
-      return data || [];
+      // Filter users by email locally since we can't query the auth.users table directly
+      const filteredUsers = usersData.users.filter(user => 
+        user.email?.toLowerCase().includes(searchQuery.toLowerCase())
+      );
+
+      // Get is_broker status for each user from profiles table
+      const { data: profiles, error: profilesError } = await supabase
+        .from('profiles')
+        .select('id, is_broker')
+        .in('id', filteredUsers.map(u => u.id));
+
+      if (profilesError) {
+        console.error('Error fetching profiles:', profilesError);
+        return [];
+      }
+
+      // Only return non-broker users
+      return filteredUsers
+        .filter(user => {
+          const profile = profiles?.find(p => p.id === user.id);
+          return !profile?.is_broker;
+        })
+        .map(user => ({
+          id: user.id,
+          email: user.email
+        }));
     },
     enabled: isBroker,
   });
@@ -249,4 +273,3 @@ const Index = () => {
 };
 
 export default Index;
-
