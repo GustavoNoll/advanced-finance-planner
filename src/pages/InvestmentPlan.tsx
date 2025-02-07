@@ -83,11 +83,11 @@ export const InvestmentPlanShow = () => {
               </div>
               <div>
                 <p className="text-sm text-gray-500">{ptBR.investmentPlan.details.clientInfo.initialAge}</p>
-                <p className="font-medium">{plan.initial_age} years</p>
+                <p className="font-medium">{plan.initial_age} {ptBR.investmentPlan.details.clientInfo.years}</p>
               </div>
               <div>
                 <p className="text-sm text-gray-500">{ptBR.investmentPlan.details.clientInfo.finalAge}</p>
-                <p className="font-medium">{plan.final_age} years</p>
+                <p className="font-medium">{plan.final_age} {ptBR.investmentPlan.details.clientInfo.years}</p>
               </div>
             </div>
           </DashboardCard>

@@ -16,6 +16,7 @@ export const CreateClient = () => {
     email: '',
     password: '',
     name: '',
+    birth_date: '',
   });
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -27,7 +28,10 @@ export const CreateClient = () => {
       const { data: authData, error: authError } = await supabase.auth.admin.createUser({
         email: formData.email,
         password: formData.password,
-        user_metadata: { name: formData.name }
+        user_metadata: { 
+          name: formData.name,
+          birth_date: formData.birth_date
+        }
       });
 
       if (authError) throw authError;
@@ -41,6 +45,7 @@ export const CreateClient = () => {
             id: authData.user.id,
             is_broker: false,
             name: formData.name,
+            birth_date: formData.birth_date
           }
         ]);
 
@@ -53,11 +58,11 @@ export const CreateClient = () => {
       
       // Redirect to create plan page with the new user's ID
       navigate(`/create-plan?client_id=${authData.user.id}`);
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Error creating client:', error);
       toast({
         title: t('createClient.messages.error.title'),
-        description: error.message,
+        description: error instanceof Error ? error.message : String(error),
         variant: "destructive",
       });
     } finally {
@@ -122,6 +127,20 @@ export const CreateClient = () => {
                   placeholder={t('createClient.form.password.placeholder')}
                   required
                   minLength={6}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-sm font-medium">
+                  {t('createClient.form.birthDate.label')}
+                </label>
+                <Input
+                  type="date"
+                  name="birth_date"
+                  value={formData.birth_date}
+                  onChange={handleChange}
+                  placeholder={t('createClient.form.birthDate.placeholder')}
+                  required
                 />
               </div>
 

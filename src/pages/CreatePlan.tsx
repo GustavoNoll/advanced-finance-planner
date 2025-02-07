@@ -64,11 +64,11 @@ export const CreatePlan = () => {
           });
           navigate(`/edit-plan/${data[0].id}`);
         }
-      } catch (error: any) {
+      } catch (error: unknown) {
         console.error('Error checking existing plan:', error);
         toast({
           title: "Error",
-          description: error.message,
+          description: error instanceof Error ? error.message : String(error),
           variant: "destructive",
         });
       }
@@ -128,25 +128,25 @@ export const CreatePlan = () => {
     const inflationAdjustedIncome = desiredIncome * Math.pow(1 + inflation, years);
     
     let futureValue;
+    let yearsTo100, monthlyWithdrawal, rate;
+    let targetLegacy;
+    let monthlyIncomeRequired, incomePresentValue;
     
     switch (planType) {
       case "1": // End at 100
-        // Calculate how much is needed to deplete the principal by age 100
-        const yearsTo100 = 100 - finalAge;
-        const monthlyWithdrawal = inflationAdjustedIncome / 12;
-        const rate = expectedReturn / 12; // Monthly rate
+        yearsTo100 = 100 - finalAge;
+        monthlyWithdrawal = inflationAdjustedIncome / 12;
+        rate = expectedReturn / 12; // Monthly rate
         
         // Fórmula de anuidade (valor presente de uma série de pagamentos mensais)
         futureValue = monthlyWithdrawal * ((1 - Math.pow(1 + rate, -yearsTo100 * 12)) / rate);
         break;
         
       case "2": // Leave 1M
-        // Calculate how much is needed to maintain income and leave 1M
-        const targetLegacy = 1000000;
+        targetLegacy = 1000000;
         
-        // Fórmula para calcular o valor presente necessário para gerar a renda mensal
-        const monthlyIncomeRequired = inflationAdjustedIncome / 12;
-        const incomePresentValue = monthlyIncomeRequired / expectedReturn;
+        monthlyIncomeRequired = inflationAdjustedIncome / 12;
+        incomePresentValue = monthlyIncomeRequired / expectedReturn;
         
         // Valor futuro é o valor necessário para gerar a renda mensal mais o valor de herança
         futureValue = Math.max(incomePresentValue + targetLegacy, targetLegacy);
@@ -239,10 +239,10 @@ export const CreatePlan = () => {
       } else {
         navigate("/");
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       toast({
         title: "Error",
-        description: error.message,
+        description: error instanceof Error ? error.message : String(error),
         variant: "destructive",
       });
     } finally {

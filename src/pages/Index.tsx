@@ -2,7 +2,7 @@ import { DashboardCard } from "@/components/DashboardCard";
 import { ExpenseChart } from "@/components/ExpenseChart";
 import { SavingsGoal } from "@/components/SavingsGoal";
 import { MonthlyView } from "@/components/MonthlyView";
-import { Briefcase, TrendingUp, PiggyBank, Plus, Pencil, Settings, LogOut, ArrowLeft } from "lucide-react";
+import { Briefcase, TrendingUp, PiggyBank, Plus, Pencil, Settings, LogOut, ArrowLeft, History, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { useAuth } from "@/components/auth/AuthProvider";
@@ -47,6 +47,7 @@ const Index = () => {
         .select('*')
         .eq('user_id', clientId);
 
+      console.log(data);
       if (error) {
         console.error(t('dashboard.messages.errors.fetchPlan'), error);
         return null;
@@ -79,8 +80,65 @@ const Index = () => {
     enabled: !!user?.id,
   });
 
+  const { data: financialRecords, isLoading: isFinancialRecordsLoading } = useQuery({
+    queryKey: ['financialRecords', clientId],
+    queryFn: async () => {
+      if (!clientId) return [];
+      
+      // Get current date for 12-month calculation
+      const today = new Date();
+      const twelveMonthsAgo = new Date(today.getFullYear(), today.getMonth() - 11, 1);
+      
+      const { data, error } = await supabase
+        .from('user_financial_records')
+        .select('*')
+        .eq('user_id', clientId)
+        .gte('record_year', twelveMonthsAgo.getFullYear())
+        .order('record_year', { ascending: false })
+        .order('record_month', { ascending: false });
+
+      if (error) {
+        console.error('Error fetching financial records:', error);
+        return [];
+      }
+
+      // Filter records from last 12 months
+      return data.filter(record => {
+        const recordDate = new Date(record.record_year, record.record_month - 1);
+        return recordDate >= twelveMonthsAgo;
+      });
+    },
+    enabled: !!clientId,
+  });
+
+  const calculateTotalReturns = () => {
+    if (!financialRecords?.length) return { totalAmount: 0, percentageReturn: 0 };
+
+    // Calculate returns only for the filtered records (last 12 months)
+    const totalReturn = financialRecords.reduce((acc, record) => {
+      const monthlyReturn = (record.ending_balance - record.starting_balance - record.monthly_contribution);
+      return acc + monthlyReturn;
+    }, 0);
+
+    const totalInvested = financialRecords.reduce((acc, record) => 
+      acc + record.monthly_contribution, financialRecords[0].starting_balance // Adiciona o saldo inicial do primeiro mês
+    );
+
+    const percentageReturn = totalInvested > 0 
+      ? (totalReturn / totalInvested) * 100 
+      : 0;
+
+    return {
+      totalAmount: totalReturn,
+      percentageReturn: Number(percentageReturn.toFixed(2))
+    };
+  };
+
+  const { totalAmount, percentageReturn } = calculateTotalReturns();
+
   useEffect(() => {
     if (!isInvestmentPlanLoading && !isBrokerLoading) {
+      console.log(investmentPlan);
       if (brokerProfile && !params.id) {
         navigate('/broker-dashboard');
         return;
@@ -106,9 +164,20 @@ const Index = () => {
     }
   }, [investmentPlan, brokerProfile, isInvestmentPlanLoading, isBrokerLoading, navigate, params.id]);
 
-  if (isInvestmentPlanLoading || isBrokerLoading || (!investmentPlan && !brokerProfile)) {
+  if (isInvestmentPlanLoading || isBrokerLoading || isFinancialRecordsLoading || (!investmentPlan && !brokerProfile)) {
     return <div>{t('dashboard.loading')}</div>;
   }
+
+  const currentMonth = new Date().getMonth() + 1;
+  const currentYear = new Date().getFullYear();
+  
+  const latestRecord = financialRecords?.[0];
+  const currentMonthRecord = financialRecords?.find(
+    record => record.record_month === currentMonth && record.record_year === currentYear
+  );
+
+  const portfolioValue = latestRecord?.ending_balance || 0;
+  const monthlyContribution = currentMonthRecord?.monthly_contribution || 0;
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -118,7 +187,7 @@ const Index = () => {
             {brokerProfile && (
               <Link to="/broker-dashboard">
                 <Button variant="ghost" size="icon">
-                  <ArrowLeft className="h-5 w-5" />
+                  <Search className="h-5 w-5" />
                 </Button>
               </Link>
             )}
@@ -127,6 +196,15 @@ const Index = () => {
               <h1 className="text-2xl font-bold text-gray-900">{t('dashboard.title')}</h1>
             </div>
             <div className="flex items-center gap-4">
+              <Link to={`/financial-records${params.id ? `/${params.id}` : ''}`}>
+                <Button 
+                  variant="outline"
+                  className="flex items-center gap-2"
+                >
+                  <History className="h-4 w-4" />
+                  {t('dashboard.buttons.financialRecords')}
+                </Button>
+              </Link>
               {brokerProfile && (
                 <Link to={`/investment-plan/${investmentPlan?.id}`}>
                   <Button 
@@ -156,30 +234,59 @@ const Index = () => {
           <DashboardCard title={t('dashboard.cards.portfolioValue.title')}>
             <div className="space-y-2">
               <p className="text-2xl font-bold text-green-600">
-                {t('dashboard.cards.portfolioValue.amount', { value: '50,000.00' })}
+                {new Intl.NumberFormat('pt-BR', {
+                  style: 'currency',
+                  currency: 'BRL'
+                }).format(portfolioValue)}
               </p>
-              <p className="text-sm text-green-600 flex items-center gap-1">
-                <TrendingUp className="h-4 w-4" />
-                {t('dashboard.cards.totalReturns.percentage', { value: '15.2' })} {t('dashboard.cards.portfolioValue.ytd')}
-              </p>
+              {latestRecord && (
+                <p className="text-sm text-green-600 flex items-center gap-1">
+                  <TrendingUp className="h-4 w-4" />
+                  {latestRecord.monthly_return_rate}% {t('dashboard.cards.portfolioValue.monthlyReturn')}
+                </p>
+              )}
             </div>
           </DashboardCard>
           
           <DashboardCard title={t('dashboard.cards.monthlyContributions.title')}>
             <div className="space-y-2">
-              <p className="text-2xl font-bold">R$ 1,000.00</p>
-              <p className="text-sm text-muted-foreground">
-                {t('dashboard.cards.monthlyContributions.subtitle')}
+              <p className={`text-2xl font-bold ${
+                investmentPlan?.monthly_deposit && 
+                monthlyContribution >= investmentPlan.monthly_deposit 
+                  ? 'text-green-600' 
+                  : 'text-red-600'
+              }`}>
+                {new Intl.NumberFormat('pt-BR', {
+                  style: 'currency',
+                  currency: 'BRL'
+                }).format(monthlyContribution)}
               </p>
+              {investmentPlan?.monthly_deposit && (
+                <p className="text-sm text-muted-foreground">
+                  {t('dashboard.cards.monthlyContributions.target')}: {new Intl.NumberFormat('pt-BR', {
+                    style: 'currency',
+                    currency: 'BRL'
+                  }).format(investmentPlan.monthly_deposit)}
+                </p>
+              )}
             </div>
           </DashboardCard>
           
           <DashboardCard title={t('dashboard.cards.totalReturns.title')}>
             <div className="space-y-2">
-              <p className="text-2xl font-bold text-green-600">R$ 7,500.00</p>
-              <p className="text-sm text-green-600 flex items-center gap-1">
+              <p className={`text-2xl font-bold ${
+                totalAmount >= 0 ? 'text-green-600' : 'text-red-600'
+              }`}>
+                {new Intl.NumberFormat('pt-BR', {
+                  style: 'currency',
+                  currency: 'BRL'
+                }).format(totalAmount)}
+              </p>
+              <p className={`text-sm flex items-center gap-1 ${
+                percentageReturn >= 0 ? 'text-green-600' : 'text-red-600'
+              }`}>
                 <PiggyBank className="h-4 w-4" />
-                12.5% {t('dashboard.cards.totalReturns.subtitle')}
+                {percentageReturn}% {t('dashboard.cards.totalReturns.subtitle')}
               </p>
             </div>
           </DashboardCard>

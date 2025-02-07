@@ -38,10 +38,10 @@ export const BrokerDashboard = () => {
       if (error) throw error;
       
       setSearchResults(users || []);
-    } catch (error: any) {
+    } catch (error: unknown) {
       toast({
         title: "Error",
-        description: error.message,
+        description: error instanceof Error ? error.message : String(error),
         variant: "destructive",
       });
     } finally {

@@ -12,6 +12,8 @@ import { EditPlan } from "./pages/EditPlan";
 import { BrokerDashboard } from "./pages/BrokerDashboard";
 import { CreateClient } from "./pages/CreateClient";
 import { InvestmentPlanShow } from "./pages/InvestmentPlan";
+import FinancialRecords from "@/pages/FinancialRecords";
+import NewFinancialRecord from "@/pages/NewFinancialRecord";
 
 const queryClient = new QueryClient();
 
@@ -91,6 +93,30 @@ const App = () => (
               element={
                 <ProtectedRoute>
                   <InvestmentPlanShow />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/financial-records"
+              element={
+                <ProtectedRoute>
+                  <FinancialRecords />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/financial-records/:id"
+              element={
+                <ProtectedRoute>
+                  <FinancialRecords />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/financial-records/new"
+              element={
+                <ProtectedRoute>
+                  <NewFinancialRecord />
                 </ProtectedRoute>
               }
             />

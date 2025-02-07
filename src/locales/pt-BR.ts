@@ -6,7 +6,8 @@ export const ptBR = {
         title: "Informações do Cliente",
         name: "Nome",
         initialAge: "Idade Inicial",
-        finalAge: "Idade Final"
+        finalAge: "Idade Final",
+        years: "anos"
       },
       planOverview: {
         title: "Visão Geral do Plano",
@@ -75,11 +76,13 @@ export const ptBR = {
       portfolioValue: {
         title: "Valor Total do Portfólio",
         ytd: "No ano",
-        amount: "R$ {{value}}"
+        amount: "R$ {{value}}",
+        monthlyReturn: "No mês"
       },
       monthlyContributions: {
         title: "Contribuições Mensais",
         subtitle: "Depósitos regulares",
+        target: "Meta",
         amount: "R$ {{value}}"
       },
       totalReturns: {
@@ -103,7 +106,8 @@ export const ptBR = {
     buttons: {
       settings: "Configurações",
       logout: "Sair",
-      back: "Voltar"
+      back: "Voltar",
+      financialRecords: "Registros Financeiros"
     },
     messages: {
       contactBroker: {
@@ -154,7 +158,8 @@ export const ptBR = {
   },
   common: {
     error: "Erro",
-    notAvailable: "N/A"
+    notAvailable: "N/A",
+    loading: "Carregando..."
   },
   createClient: {
     title: "Criar Novo Cliente",
@@ -241,7 +246,48 @@ export const ptBR = {
     returnRate: "{{value}}% a.a.",
     goal: {
       label: "Meta: R$ {{value}}",
-      targetDate: "Data Alvo: {{date}}"
+      targetAge: "Idade Alvo: {{age}}"
+    },
+    projectedAge:{
+      label: "Idade Projetada:",
+      years: " anos",
+      months: " meses",
+      aheadOfSchedule: "Avançado em {{years}} anos",
+      behindSchedule: "Atrasado em {{years}} anos"
+    },
+  },
+  financialRecords: {
+    monthlyContribution: "Contribuição Mensal",
+    title: "Registros Financeiros",
+    addNew: "Adicionar Novo",
+    startingBalance: "Saldo Inicial",
+    endingBalance: "Saldo Final",
+    growth: "Crescimento",
+    noRecords: "Nenhum registro financeiro encontrado",
+    new: {
+      title: "Novo Registro Financeiro"
+    },
+    form: {
+      year: "Ano",
+      month: "Mês",
+      startingBalance: "Saldo Inicial",
+      monthlyContribution: "Contribuição Mensal",
+      monthlyReturnRate: "Taxa de Retorno Mensal (%)",
+      endingBalance: "Saldo Final",
+      targetRentability: "Rentabilidade Alvo (%)",
+      submit: "Salvar Registro"
+    },
+    errors: {
+      fetchFailed: "Erro ao buscar registros financeiros",
+      createFailed: "Erro ao criar registro financeiro",
+      duplicateRecord: "Registro Duplicado",
+      recordExists: "Já existe um registro para {{month}} de {{year}}",
+      dataFetchFailed: "Erro ao buscar dados iniciais",
+      futureDate: "Data Inválida",
+      futureDateDescription: "Não é possível adicionar registros para datas futuras"
+    },
+    success: {
+      created: "Registro financeiro criado com sucesso"
     }
   }
 }; 
