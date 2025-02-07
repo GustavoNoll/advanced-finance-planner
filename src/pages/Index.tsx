@@ -111,18 +111,8 @@ const Index = () => {
           
           <DashboardCard title="Monthly Contributions">
             <div className="space-y-2">
-              <p className="text-2xl font-bold">${investmentPlan.monthly_contribution.toLocaleString()}</p>
-              <p className="text-sm text-muted-foreground">
-                Target: ${investmentPlan.target_monthly_contribution.toLocaleString()}
-              </p>
-              <div className="w-full bg-gray-200 rounded-full h-2.5">
-                <div 
-                  className="bg-blue-600 h-2.5 rounded-full" 
-                  style={{ 
-                    width: `${Math.min((investmentPlan.monthly_contribution / investmentPlan.target_monthly_contribution) * 100, 100)}%` 
-                  }}
-                ></div>
-              </div>
+              <p className="text-2xl font-bold">$1,000.00</p>
+              <p className="text-sm text-muted-foreground">Regular deposits</p>
             </div>
           </DashboardCard>
           
