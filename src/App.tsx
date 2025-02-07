@@ -1,4 +1,3 @@
-
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -78,14 +77,14 @@ const App = () => (
                 </ProtectedRoute>
               }
             />
-            <Route
+            {/* <Route
               path="/edit-plan/:id"
               element={
                 <ProtectedRoute>
                   <EditPlan />
                 </ProtectedRoute>
               }
-            />
+            /> */}
             <Route path="*" element={<NotFound />} />
           </Routes>
         </TooltipProvider>

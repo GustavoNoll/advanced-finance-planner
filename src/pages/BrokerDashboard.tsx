@@ -136,9 +136,6 @@ export const BrokerDashboard = () => {
                         <p className="text-sm text-gray-500">Client ID: {user.id}</p>
                       </div>
                     </div>
-                    <Button variant="ghost" size="sm" className="opacity-0 group-hover:opacity-100">
-                      View Details →
-                    </Button>
                   </div>
                 ))}
               </div>

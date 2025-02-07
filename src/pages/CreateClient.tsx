@@ -13,10 +13,6 @@ export const CreateClient = () => {
   const [formData, setFormData] = useState({
     email: '',
     password: '',
-    monthlyDeposit: '',
-    targetAmount: '',
-    targetDate: '',
-    expectedReturn: '',
   });
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -45,29 +41,13 @@ export const CreateClient = () => {
 
       if (profileError) throw profileError;
 
-      // Create investment plan
-      const { error: planError } = await supabase
-        .from('investment_plans')
-        .insert([
-          {
-            user_id: authData.user.id,
-            monthly_deposit: parseFloat(formData.monthlyDeposit),
-            target_amount: parseFloat(formData.targetAmount),
-            target_date: formData.targetDate,
-            expected_return: parseFloat(formData.expectedReturn),
-            current_amount: 0,
-            status: 'active',
-          }
-        ]);
-
-      if (planError) throw planError;
-
       toast({
         title: "Success",
         description: "Client created successfully",
       });
       
-      navigate('/broker-dashboard');
+      // Redirect to create plan page with the new user's ID
+      navigate(`/create-plan`);
     } catch (error: any) {
       console.error('Error creating client:', error);
       toast({
@@ -118,55 +98,6 @@ export const CreateClient = () => {
                   required
                   minLength={6}
                 />
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <label className="text-sm font-medium">Monthly Deposit</label>
-                  <Input
-                    type="number"
-                    name="monthlyDeposit"
-                    value={formData.monthlyDeposit}
-                    onChange={handleChange}
-                    required
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <label className="text-sm font-medium">Target Amount</label>
-                  <Input
-                    type="number"
-                    name="targetAmount"
-                    value={formData.targetAmount}
-                    onChange={handleChange}
-                    required
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <label className="text-sm font-medium">Target Date</label>
-                  <Input
-                    type="date"
-                    name="targetDate"
-                    value={formData.targetDate}
-                    onChange={handleChange}
-                    required
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <label className="text-sm font-medium">Expected Return (%)</label>
-                  <Input
-                    type="number"
-                    name="expectedReturn"
-                    value={formData.expectedReturn}
-                    onChange={handleChange}
-                    step="0.1"
-                    required
-                  />
-                </div>
               </div>
 
               <div className="flex gap-4">
