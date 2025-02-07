@@ -194,6 +194,7 @@ export const ptBR = {
     }
   },
   monthlyView: {
+    noData: "Nenhum dado disponível",
     title: "Desempenho Mensal",
     tabs: {
       chart: "Visualização em Gráfico",
@@ -232,7 +233,8 @@ export const ptBR = {
     portfolioValue: "Valor do Portfólio",
     inflationAdjusted: "Ajustado pela Inflação",
     actualValue: "Valor Real",
-    projectedValue: "Valor Projetado"
+    projectedValue: "Valor Projetado",
+    years: "anos"
   },
   budgetCategories: {
     categories: {
@@ -243,6 +245,7 @@ export const ptBR = {
     }
   },
   savingsGoal: {
+    ageNotAvailable: "Idade não disponível",
     title: "Meta de Investimento",
     currentValue: "R$ {{value}}",
     returnRate: "{{value}}% a.a.",

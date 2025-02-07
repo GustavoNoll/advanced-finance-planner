@@ -10,6 +10,10 @@ interface FinancialRecord {
   monthly_return_rate: number;
 }
 
+interface Profile {
+  birth_date: string;
+}
+
 interface InvestmentPlan {
   created_at: string;
   monthly_deposit: number;
@@ -22,33 +26,47 @@ interface ExpenseChartProps {
   investmentPlan: InvestmentPlan;
   clientId: string;
   financialRecordsByYear: FinancialRecord[];
+  profile: Profile;
 }
 
-export const ExpenseChart = ({ investmentPlan, clientId, financialRecordsByYear }: ExpenseChartProps) => {
+export const ExpenseChart = ({ profile, investmentPlan, clientId, financialRecordsByYear }: ExpenseChartProps) => {
   const { t } = useTranslation();
+  
+  // Add check for undefined props
+  if (!profile || !investmentPlan || !clientId || !financialRecordsByYear) {
+    return (
+      <div className="flex items-center justify-center h-[300px] bg-gray-50 rounded-lg">
+        <p className="text-gray-500">{t('common.loading')}</p>
+      </div>
+    );
+  }
+  
+  // Calculate age-based year range
   const startYear = new Date(investmentPlan.created_at).getFullYear();
-  const endYear = startYear + 70;
-  const allYears = Array.from({ length: endYear - startYear + 1 }, (_, i) => startYear + i);
+  const birthYear = new Date(profile.birth_date).getFullYear();
+  const clientAge = startYear - birthYear;
+  const yearsUntil100 = 100 - clientAge;
+  
+  // Modified to use ages instead of years
+  const allAges = Array.from({ length: yearsUntil100 + 1 }, (_, i) => clientAge + i);
 
   const generateProjectedValues = (startDate: Date, startBalance: number) => {
     const projectedData = [];
     const yearlyReturnRate = (investmentPlan.expected_return + investmentPlan.inflation) / 100;
     let currentBalance = startBalance;
     
-    for (let i = 0; i < allYears.length; i++) {
-      const year = allYears[i];
+    for (let i = 0; i < allAges.length; i++) {
+      const age = allAges[i];
       
       if (i === 0) {
-        // For the first year, just use the initial balance without calculations
         projectedData.push({
-          year,
+          age,
           projectedValue: Math.round(currentBalance)
         });
       } else {
-        // For subsequent years, calculate with full 12 months
         currentBalance = (currentBalance + (investmentPlan.monthly_deposit * 12)) * (1 + yearlyReturnRate);
         projectedData.push({
-          year,
+          age,
           projectedValue: Math.round(currentBalance)
         });
       }
@@ -58,24 +76,21 @@ export const ExpenseChart = ({ investmentPlan, clientId, financialRecordsByYear 
   };
   
   const generateRealValues = () => {
-    const startYear = new Date(investmentPlan.created_at).getFullYear();
-    const endYear = startYear + 70;
-    const allYears = Array.from({ length: endYear - startYear + 1 }, (_, i) => startYear + i);
     if (financialRecordsByYear.length === 0) {
-      return allYears.map(year => ({
-        year,
+      return allAges.map(age => ({
+        age,
         actualValue: 0
       }));
     }
-    console.log(financialRecordsByYear);
-    const realValues = allYears.map(year => {
+
+    const realValues = allAges.map(age => {
+      const year = birthYear + age;
       const record = financialRecordsByYear.find(record => record.record_year === year);
       return {
-        year,
+        age,
         actualValue: record ? record.ending_balance : null
       };
     });
-
 
     // fill with 0 for years before the first record
     let beforeFirstRecord = true;
@@ -101,20 +116,18 @@ export const ExpenseChart = ({ investmentPlan, clientId, financialRecordsByYear 
   // Combine real and projected values
   const generateChartData = () => {
     const realValues = generateRealValues();
-    
-    // Get the last real value to start projections from
     const projectedValues = generateProjectedValues(
       new Date(investmentPlan.created_at),
       investmentPlan.initial_amount
     );
 
-    // Merge real and projected values
-    const chartData = allYears.map(year => {
-      const realData = realValues.find(v => v.year === year);
-      const projectedData = projectedValues.find(v => v.year === year);
+    // Merge real and projected values using age instead of year
+    const chartData = allAges.map(age => {
+      const realData = realValues.find(v => v.age === age);
+      const projectedData = projectedValues.find(v => v.age === age);
       
       return {
-        year: year.toString(),
+        age: age.toString(),
         actualValue: realData?.actualValue,
         projectedValue: projectedData?.projectedValue
       };
@@ -130,8 +143,8 @@ export const ExpenseChart = ({ investmentPlan, clientId, financialRecordsByYear 
       <LineChart data={chartData}>
         <CartesianGrid strokeDasharray="3 3" />
         <XAxis 
-          dataKey="year"
-          tickFormatter={(value) => value}
+          dataKey="age"
+          tickFormatter={(value) => `${value} ${t('expenseChart.years')}`}
         />
         <YAxis 
           tickFormatter={(value) => 

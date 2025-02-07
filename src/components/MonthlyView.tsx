@@ -3,41 +3,64 @@ import { DashboardCard } from "./DashboardCard";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { useTranslation } from "react-i18next";
 
-const monthlyData = [
-  {
-    month: 'January',
-    balance: 50000,
-    contribution: 1000,
-    returns: 625,
-    percentage: 1.25,
-    endBalance: 51625
-  },
-  {
-    month: 'February',
-    balance: 51625,
-    contribution: 1000,
-    returns: 657,
-    percentage: 1.27,
-    endBalance: 53282
-  },
-  {
-    month: 'March',
-    balance: 53282,
-    contribution: 1000,
-    returns: 681,
-    percentage: 1.28,
-    endBalance: 54963
-  },
-  // Add more months as needed
-];
+interface FinancialRecord {
+  record_year: number;
+  record_month: number;
+  ending_balance: number;
+  starting_balance: number;
+  monthly_contribution: number;
+  monthly_return_rate: number;
+}
 
-export const MonthlyView = () => {
+interface MonthlyViewProps {
+  financialRecords: FinancialRecord[];
+}
+
+export const MonthlyView = ({ financialRecords }: MonthlyViewProps) => {
   const { t } = useTranslation();
+
+  // Add check for empty records
+  if (financialRecords.length === 0) {
+    return (
+      <DashboardCard title={t('monthlyView.title')} className="col-span-full">
+        <div className="flex items-center justify-center p-8 text-muted-foreground">
+          {t('monthlyView.noData')}
+        </div>
+      </DashboardCard>
+    );
+  }
+
+  const sortedRecords = financialRecords.sort((a, b) => {
+    // Sort by year and month in descending order
+    if (a.record_year !== b.record_year) {
+      return b.record_year - a.record_year;
+    }
+    return b.record_month - a.record_month;
+  });
+
+  const monthlyData = sortedRecords.map(record => {
+    const monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 
+      'July', 'August', 'September', 'October', 'November', 'December'];
+      
+    const returns = record.ending_balance - record.starting_balance - record.monthly_contribution;
+      
+    return {
+      month: `${monthNames[record.record_month - 1]}/${record.record_year}`,
+      balance: record.starting_balance,
+      contribution: record.monthly_contribution,
+      returns,
+      percentage: record.monthly_return_rate,
+      endBalance: record.ending_balance
+    };
+  });
 
   const localizedData = monthlyData.map(data => ({
     ...data,
-    month: t(`monthlyView.table.months.${data.month}`)
+    month: `${t(`monthlyView.table.months.${data.month.split('/')[0]}`)}/${data.month.split('/')[1]}`
   }));
+
+  // Create reversed data for chart
+  const chartData = [...localizedData].reverse();
 
   return (
     <DashboardCard title={t('monthlyView.title')} className="col-span-full">
@@ -50,7 +73,7 @@ export const MonthlyView = () => {
         <TabsContent value="chart" className="space-y-4">
           <div className="h-[400px] w-full">
             <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={localizedData}>
+              <LineChart data={chartData}>
                 <CartesianGrid strokeDasharray="3 3" />
                 <XAxis dataKey="month" />
                 <YAxis />

@@ -67,6 +67,27 @@ const Index = () => {
     enabled: !!clientId,
   });
 
+
+  const { data: clientProfile, isLoading: isClientProfileLoading } = useQuery({
+    queryKey: ['clientProfile', user?.id],
+    queryFn: async () => {
+      if (!user?.id) return null;
+
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', clientId)
+        .single();
+        
+      if (error) {
+        console.error(t('dashboard.messages.errors.fetchProfile'), error);
+        return null;
+      }
+
+      return data;
+    },
+    enabled: !!user?.id,
+  });
   const { data: brokerProfile, isLoading: isBrokerLoading } = useQuery({
     queryKey: ['brokerProfile', user?.id],
     queryFn: async () => {
@@ -179,7 +200,6 @@ const Index = () => {
 
   useEffect(() => {
     if (!isInvestmentPlanLoading && !isBrokerLoading) {
-      console.log(investmentPlan);
       if (brokerProfile && !params.id) {
         navigate('/broker-dashboard');
         return;
@@ -337,6 +357,7 @@ const Index = () => {
           <div className="lg:col-span-2">
             <DashboardCard title={t('dashboard.charts.portfolioPerformance')}>
               <ExpenseChart 
+                profile={clientProfile}
                 investmentPlan={investmentPlan}
                 clientId={clientId}
                 financialRecordsByYear={financialRecordsByYear as FinancialRecord[]}
@@ -365,7 +386,7 @@ const Index = () => {
           </div>
         </div>
 
-        <MonthlyView />
+        <MonthlyView financialRecords={financialRecords || []} />
       </main>
     </div>
   );
