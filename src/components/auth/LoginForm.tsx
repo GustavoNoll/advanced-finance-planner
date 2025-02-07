@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import { Button } from '@/components/ui/button';
@@ -18,22 +19,29 @@ export const LoginForm = () => {
     setLoading(true);
 
     try {
-      const { error } = await supabase.auth.signInWithPassword({
+      const { error: signInError } = await supabase.auth.signInWithPassword({
         email,
         password,
       });
 
-      if (error) {
-        console.error('Login error:', error);
-        throw error;
-      }
+      if (signInError) throw signInError;
+
+      // Check if user is a broker
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('is_broker')
+        .single();
 
       toast({
         title: "Success",
         description: "Logged in successfully",
       });
       
-      navigate('/');
+      if (profile?.is_broker) {
+        navigate('/broker-dashboard');
+      } else {
+        navigate('/');
+      }
     } catch (error: any) {
       console.error('Login error:', error);
       toast({

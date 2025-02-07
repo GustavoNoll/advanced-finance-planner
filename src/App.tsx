@@ -10,6 +10,8 @@ import NotFound from "./pages/NotFound";
 import { LoginForm } from "./components/auth/LoginForm";
 import { CreatePlan } from "./pages/CreatePlan";
 import { EditPlan } from "./pages/EditPlan";
+import { BrokerDashboard } from "./pages/BrokerDashboard";
+import { CreateClient } from "./pages/CreateClient";
 
 const queryClient = new QueryClient();
 
@@ -29,15 +31,39 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
-    <AuthProvider>
-      <TooltipProvider>
-        <Toaster />
-        <Sonner />
-        <BrowserRouter>
+    <BrowserRouter>
+      <AuthProvider>
+        <TooltipProvider>
+          <Toaster />
+          <Sonner />
           <Routes>
             <Route path="/login" element={<LoginForm />} />
             <Route
               path="/"
+              element={
+                <ProtectedRoute>
+                  <Index />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/broker-dashboard"
+              element={
+                <ProtectedRoute>
+                  <BrokerDashboard />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/create-client"
+              element={
+                <ProtectedRoute>
+                  <CreateClient />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/client/:id"
               element={
                 <ProtectedRoute>
                   <Index />
@@ -62,9 +88,9 @@ const App = () => (
             />
             <Route path="*" element={<NotFound />} />
           </Routes>
-        </BrowserRouter>
-      </TooltipProvider>
-    </AuthProvider>
+        </TooltipProvider>
+      </AuthProvider>
+    </BrowserRouter>
   </QueryClientProvider>
 );
 
