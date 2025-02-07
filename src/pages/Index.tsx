@@ -38,8 +38,8 @@ const Index = () => {
     }
   };
 
-  const { data: clients, isLoading: isLoadingClients } = useQuery({
-    queryKey: ['clients', searchQuery],
+  const { data: clients = [], isLoading: isLoadingClients } = useQuery({
+    queryKey: ['clients', searchQuery, isBroker],
     queryFn: async () => {
       if (!isBroker) return [];
       
@@ -57,6 +57,8 @@ const Index = () => {
       const filteredUsers = usersData.users.filter(user => 
         user.email?.toLowerCase().includes(searchQuery.toLowerCase())
       );
+
+      if (filteredUsers.length === 0) return [];
 
       // Get is_broker status for each user from profiles table
       const { data: profiles, error: profilesError } = await supabase
@@ -80,10 +82,10 @@ const Index = () => {
           email: user.email
         }));
     },
-    enabled: isBroker,
+    enabled: !!isBroker,
   });
 
-  const { data: investmentPlan, isLoading } = useQuery({
+  const { data: investmentPlan, isLoading: isLoadingPlan } = useQuery({
     queryKey: ['investmentPlan', selectedUserId || user?.id],
     queryFn: async () => {
       const targetUserId = selectedUserId || user?.id;
@@ -92,27 +94,30 @@ const Index = () => {
       const { data, error } = await supabase
         .from('investment_plans')
         .select('*')
-        .eq('user_id', targetUserId);
+        .eq('user_id', targetUserId)
+        .single();
 
       if (error) {
         console.error('Error fetching investment plan:', error);
         return null;
       }
 
-      return data?.[0] || null;
+      return data;
     },
     enabled: !!(selectedUserId || user?.id),
   });
 
   useEffect(() => {
-    if (!isLoading && !investmentPlan && !isBroker) {
+    if (!isLoadingPlan && !investmentPlan && !isBroker) {
       toast({
         title: "No Investment Plan",
         description: "Please create an investment plan to continue.",
       });
       navigate('/create-plan');
     }
-  }, [investmentPlan, isLoading, navigate, isBroker]);
+  }, [investmentPlan, isLoadingPlan, navigate, isBroker]);
+
+  const isLoading = isLoadingPlan || isLoadingClients;
 
   if (isLoading) {
     return <div className="flex items-center justify-center min-h-screen">Loading...</div>;
