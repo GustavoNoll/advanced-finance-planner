@@ -3,18 +3,22 @@ import { DashboardCard } from "@/components/DashboardCard";
 import { ExpenseChart } from "@/components/ExpenseChart";
 import { SavingsGoal } from "@/components/SavingsGoal";
 import { MonthlyView } from "@/components/MonthlyView";
-import { Briefcase, TrendingUp, PiggyBank, Plus, Pencil, LogOut } from "lucide-react";
+import { Briefcase, TrendingUp, PiggyBank, Plus, Pencil, LogOut, Search, UserPlus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "@/components/auth/AuthProvider";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
 import { toast } from "@/components/ui/use-toast";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
+import { Input } from "@/components/ui/input";
+import { Card } from "@/components/ui/card";
 
 const Index = () => {
-  const { user } = useAuth();
+  const { user, isBroker } = useAuth();
   const navigate = useNavigate();
+  const [searchQuery, setSearchQuery] = useState("");
+  const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
 
   const handleLogout = async () => {
     try {
@@ -34,15 +38,37 @@ const Index = () => {
     }
   };
 
-  const { data: investmentPlan, isLoading } = useQuery({
-    queryKey: ['investmentPlan', user?.id],
+  const { data: clients, isLoading: isLoadingClients } = useQuery({
+    queryKey: ['clients'],
     queryFn: async () => {
-      if (!user?.id) return null;
+      if (!isBroker) return [];
+      
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('id, email')
+        .ilike('email', `%${searchQuery}%`)
+        .eq('is_broker', false);
+
+      if (error) {
+        console.error('Error fetching clients:', error);
+        return [];
+      }
+
+      return data || [];
+    },
+    enabled: isBroker,
+  });
+
+  const { data: investmentPlan, isLoading } = useQuery({
+    queryKey: ['investmentPlan', selectedUserId || user?.id],
+    queryFn: async () => {
+      const targetUserId = selectedUserId || user?.id;
+      if (!targetUserId) return null;
       
       const { data, error } = await supabase
         .from('investment_plans')
         .select('*')
-        .eq('user_id', user.id);
+        .eq('user_id', targetUserId);
 
       if (error) {
         console.error('Error fetching investment plan:', error);
@@ -51,21 +77,77 @@ const Index = () => {
 
       return data?.[0] || null;
     },
-    enabled: !!user?.id,
+    enabled: !!(selectedUserId || user?.id),
   });
 
   useEffect(() => {
-    if (!isLoading && !investmentPlan) {
+    if (!isLoading && !investmentPlan && !isBroker) {
       toast({
         title: "No Investment Plan",
         description: "Please create an investment plan to continue.",
       });
       navigate('/create-plan');
     }
-  }, [investmentPlan, isLoading, navigate]);
+  }, [investmentPlan, isLoading, navigate, isBroker]);
 
-  if (isLoading || !investmentPlan) {
-    return null;
+  if (isLoading) {
+    return <div className="flex items-center justify-center min-h-screen">Loading...</div>;
+  }
+
+  if (isBroker && !selectedUserId) {
+    return (
+      <div className="min-h-screen bg-gray-50 p-8">
+        <div className="max-w-4xl mx-auto">
+          <div className="flex items-center justify-between mb-8">
+            <h1 className="text-2xl font-bold">Broker Dashboard</h1>
+            <div className="flex items-center gap-4">
+              <Link to="/create-client">
+                <Button className="flex items-center gap-2">
+                  <UserPlus className="h-4 w-4" />
+                  New Client
+                </Button>
+              </Link>
+              <Button variant="outline" onClick={handleLogout} className="flex items-center gap-2">
+                <LogOut className="h-4 w-4" />
+                Logout
+              </Button>
+            </div>
+          </div>
+
+          <Card className="p-6">
+            <div className="flex items-center gap-2 mb-6">
+              <Search className="h-5 w-5 text-gray-400" />
+              <Input
+                type="text"
+                placeholder="Search clients by email..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="flex-1"
+              />
+            </div>
+
+            <div className="space-y-2">
+              {isLoadingClients ? (
+                <p>Loading clients...</p>
+              ) : clients?.length === 0 ? (
+                <p>No clients found</p>
+              ) : (
+                clients?.map((client) => (
+                  <Button
+                    key={client.id}
+                    variant="outline"
+                    className="w-full justify-start"
+                    onClick={() => setSelectedUserId(client.id)}
+                  >
+                    {client.email}
+                  </Button>
+                ))
+              )}
+            </div>
+          </Card>
+        </div>
+      </div>
+    );
   }
 
   return (
@@ -78,7 +160,12 @@ const Index = () => {
               <h1 className="text-2xl font-bold text-gray-900">Investment Portfolio</h1>
             </div>
             <div className="flex items-center gap-4">
-              <Link to={`/edit-plan/${investmentPlan.id}`}>
+              {isBroker && (
+                <Button variant="outline" onClick={() => setSelectedUserId(null)}>
+                  Back to Clients
+                </Button>
+              )}
+              <Link to={`/edit-plan/${investmentPlan?.id}`}>
                 <Button className="flex items-center gap-2">
                   <Pencil className="h-4 w-4" />
                   Edit Investment Plan
@@ -162,3 +249,4 @@ const Index = () => {
 };
 
 export default Index;
+
