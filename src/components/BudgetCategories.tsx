@@ -1,4 +1,5 @@
 import { Progress } from "@/components/ui/progress";
+import { useTranslation } from "react-i18next";
 
 const categories = [
   { name: "Housing", spent: 1200, budget: 1500 },
@@ -8,6 +9,8 @@ const categories = [
 ];
 
 export const BudgetCategories = () => {
+  const { t } = useTranslation();
+
   return (
     <div className="space-y-4">
       {categories.map((category) => {
@@ -15,9 +18,11 @@ export const BudgetCategories = () => {
         return (
           <div key={category.name} className="space-y-2">
             <div className="flex justify-between">
-              <span className="font-medium">{category.name}</span>
+              <span className="font-medium">
+                {t(`budgetCategories.categories.${category.name}`)}
+              </span>
               <span className={percentage > 90 ? "text-red-500" : "text-gray-600"}>
-                ${category.spent} / ${category.budget}
+                R$ {category.spent} / R$ {category.budget}
               </span>
             </div>
             <Progress value={percentage} className="h-2" />

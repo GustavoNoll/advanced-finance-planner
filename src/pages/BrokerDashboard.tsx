@@ -6,6 +6,7 @@ import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/lib/supabase';
 import { useToast } from '@/components/ui/use-toast';
 import { Plus, Search } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 export const BrokerDashboard = () => {
   const [searchQuery, setSearchQuery] = useState('');
@@ -13,6 +14,7 @@ export const BrokerDashboard = () => {
   const [isSearching, setIsSearching] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { t } = useTranslation();
 
   const fetchInitialUsers = async () => {
     setIsSearching(true);
@@ -77,7 +79,7 @@ export const BrokerDashboard = () => {
       setSearchResults(users || []);
     } catch (error: any) {
       toast({
-        title: "Error",
+        title: t('common.error'),
         description: error.message,
         variant: "destructive",
       });
@@ -94,28 +96,28 @@ export const BrokerDashboard = () => {
     <div className="min-h-screen bg-gray-50 p-8">
       <div className="max-w-4xl mx-auto">
         <div className="flex justify-between items-center mb-8">
-          <h1 className="text-2xl font-bold">Broker Dashboard</h1>
+          <h1 className="text-2xl font-bold">{t('brokerDashboard.title')}</h1>
           <Button onClick={() => navigate('/create-client')} className="flex items-center gap-2">
             <Plus className="h-4 w-4" />
-            New Client
+            {t('brokerDashboard.buttons.newClient')}
           </Button>
         </div>
 
         <Card className="mb-8">
           <CardHeader>
-            <CardTitle>Search Clients</CardTitle>
+            <CardTitle>{t('brokerDashboard.search.title')}</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="flex gap-4">
               <Input
-                placeholder="Search by name or email..."
+                placeholder={t('brokerDashboard.search.placeholder')}
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="flex-1"
               />
               <Button onClick={handleSearch} disabled={isSearching} className="flex items-center gap-2">
                 <Search className="h-4 w-4" />
-                {isSearching ? 'Searching...' : 'Search'}
+                {isSearching ? t('brokerDashboard.search.searching') : t('brokerDashboard.search.button')}
               </Button>
             </div>
           </CardContent>
@@ -124,7 +126,7 @@ export const BrokerDashboard = () => {
         {searchResults.length > 0 && (
           <Card>
             <CardHeader>
-              <CardTitle>Search Results</CardTitle>
+              <CardTitle>{t('brokerDashboard.search.results')}</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="divide-y divide-gray-200">
@@ -143,16 +145,16 @@ export const BrokerDashboard = () => {
                       <div>
                         <div className="flex items-center gap-2">
                           <p className="text-sm font-medium text-gray-900">
-                            {user.profiles.name || 'N/A'}
+                            {user.profiles.name || t('common.notAvailable')}
                           </p>
                           {user.investment_plans.length === 0 && (
                             <span className="px-2 py-1 text-xs font-medium bg-yellow-100 text-yellow-800 rounded-full">
-                              Pending Plan
+                              {t('brokerDashboard.client.pendingPlan')}
                             </span>
                           )}
                         </div>
                         <p className="text-sm text-gray-500">{user.email}</p>
-                        <p className="text-xs text-gray-400">ID: {user.id}</p>
+                        <p className="text-xs text-gray-400">{t('brokerDashboard.client.id')}: {user.id}</p>
                       </div>
                     </div>
                   </div>

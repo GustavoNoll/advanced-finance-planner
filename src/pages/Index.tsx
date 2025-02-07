@@ -10,26 +10,27 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
 import { toast } from "@/components/ui/use-toast";
 import { useEffect } from "react";
-import { ptBR } from "@/locales/pt-BR";
+import { useTranslation } from "react-i18next";
 
 const Index = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
   const params = useParams();
   const clientId = params.id || user?.id;
+  const { t } = useTranslation();
 
   const handleLogout = async () => {
     try {
       await supabase.auth.signOut();
       toast({
-        title: ptBR.dashboard.messages.logoutSuccess,
+        title: t('dashboard.messages.logoutSuccess'),
         description: "",
       });
       navigate('/login');
     } catch (error) {
       console.error('Error logging out:', error);
       toast({
-        title: ptBR.dashboard.messages.logoutError,
+        title: t('dashboard.messages.logoutError'),
         description: "",
         variant: "destructive",
       });
@@ -47,7 +48,7 @@ const Index = () => {
         .eq('user_id', clientId);
 
       if (error) {
-        console.error('Error fetching investment plan:', error);
+        console.error(t('dashboard.messages.errors.fetchPlan'), error);
         return null;
       }
 
@@ -61,7 +62,6 @@ const Index = () => {
     queryFn: async () => {
       if (!user?.id) return null;
       
-      console.log(user.id);
       const { data, error } = await supabase
         .from('profiles')
         .select('*')
@@ -69,9 +69,8 @@ const Index = () => {
         .eq('is_broker', true)
         .single();
 
-      console.log(data);
       if (error) {
-        console.error('Error fetching broker profile:', error);
+        console.error(t('dashboard.messages.errors.fetchProfile'), error);
         return null;
       }
 
@@ -90,16 +89,16 @@ const Index = () => {
       if (!investmentPlan) {
         if (brokerProfile) {
           toast({
-            title: ptBR.dashboard.messages.noPlan.title,
-            description: ptBR.dashboard.messages.noPlan.description,
+            title: t('dashboard.messages.noPlan.title'),
+            description: t('dashboard.messages.noPlan.description'),
           });
           navigate(`/create-plan${params.id ? `?client_id=${params.id}` : ''}`);
           return;
         }
         
         toast({
-          title: ptBR.dashboard.messages.contactBroker.title,
-          description: ptBR.dashboard.messages.contactBroker.description,
+          title: t('dashboard.messages.contactBroker.title'),
+          description: t('dashboard.messages.contactBroker.description'),
         });
         handleLogout();
         return;
@@ -108,7 +107,7 @@ const Index = () => {
   }, [investmentPlan, brokerProfile, isInvestmentPlanLoading, isBrokerLoading, navigate, params.id]);
 
   if (isInvestmentPlanLoading || isBrokerLoading || (!investmentPlan && !brokerProfile)) {
-    return null;
+    return <div>{t('dashboard.loading')}</div>;
   }
 
   return (
@@ -125,7 +124,7 @@ const Index = () => {
             )}
             <div className="flex items-center space-x-3">
               <Briefcase className="h-8 w-8 text-blue-600" />
-              <h1 className="text-2xl font-bold text-gray-900">{ptBR.dashboard.title}</h1>
+              <h1 className="text-2xl font-bold text-gray-900">{t('dashboard.title')}</h1>
             </div>
             <div className="flex items-center gap-4">
               {brokerProfile && (
@@ -145,7 +144,7 @@ const Index = () => {
                 className="flex items-center gap-2"
               >
                 <LogOut className="h-4 w-4" />
-                {ptBR.dashboard.buttons.logout}
+                {t('dashboard.buttons.logout')}
               </Button>
             </div>
           </div>
@@ -154,31 +153,33 @@ const Index = () => {
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-          <DashboardCard title={ptBR.dashboard.cards.portfolioValue.title}>
+          <DashboardCard title={t('dashboard.cards.portfolioValue.title')}>
             <div className="space-y-2">
-              <p className="text-2xl font-bold text-green-600">$50,000.00</p>
+              <p className="text-2xl font-bold text-green-600">
+                {t('dashboard.cards.portfolioValue.amount', { value: '50,000.00' })}
+              </p>
               <p className="text-sm text-green-600 flex items-center gap-1">
                 <TrendingUp className="h-4 w-4" />
-                +15.2% {ptBR.dashboard.cards.portfolioValue.ytd}
+                {t('dashboard.cards.totalReturns.percentage', { value: '15.2' })} {t('dashboard.cards.portfolioValue.ytd')}
               </p>
             </div>
           </DashboardCard>
           
-          <DashboardCard title={ptBR.dashboard.cards.monthlyContributions.title}>
+          <DashboardCard title={t('dashboard.cards.monthlyContributions.title')}>
             <div className="space-y-2">
-              <p className="text-2xl font-bold">$1,000.00</p>
+              <p className="text-2xl font-bold">R$ 1,000.00</p>
               <p className="text-sm text-muted-foreground">
-                {ptBR.dashboard.cards.monthlyContributions.subtitle}
+                {t('dashboard.cards.monthlyContributions.subtitle')}
               </p>
             </div>
           </DashboardCard>
           
-          <DashboardCard title={ptBR.dashboard.cards.totalReturns.title}>
+          <DashboardCard title={t('dashboard.cards.totalReturns.title')}>
             <div className="space-y-2">
-              <p className="text-2xl font-bold text-green-600">$7,500.00</p>
+              <p className="text-2xl font-bold text-green-600">R$ 7,500.00</p>
               <p className="text-sm text-green-600 flex items-center gap-1">
                 <PiggyBank className="h-4 w-4" />
-                12.5% {ptBR.dashboard.cards.totalReturns.subtitle}
+                12.5% {t('dashboard.cards.totalReturns.subtitle')}
               </p>
             </div>
           </DashboardCard>
@@ -186,26 +187,26 @@ const Index = () => {
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
           <div className="lg:col-span-2">
-            <DashboardCard title={ptBR.dashboard.charts.portfolioPerformance}>
+            <DashboardCard title={t('dashboard.charts.portfolioPerformance')}>
               <ExpenseChart />
             </DashboardCard>
           </div>
           
           <div className="space-y-6">
             <SavingsGoal />
-            <DashboardCard title={ptBR.dashboard.nextSteps.title}>
+            <DashboardCard title={t('dashboard.nextSteps.title')}>
               <ul className="space-y-3 text-sm">
                 <li className="flex items-center gap-2 text-left">
                   <div className="h-2 w-2 bg-blue-600 rounded-full" />
-                  {ptBR.dashboard.nextSteps.items.reviewStrategy}
+                  {t('dashboard.nextSteps.items.reviewStrategy')}
                 </li>
                 <li className="flex items-center gap-2 text-left">
                   <div className="h-2 w-2 bg-blue-600 rounded-full" />
-                  {ptBR.dashboard.nextSteps.items.increaseContributions}
+                  {t('dashboard.nextSteps.items.increaseContributions')}
                 </li>
                 <li className="flex items-center gap-2 text-left">
                   <div className="h-2 w-2 bg-blue-600 rounded-full" />
-                  {ptBR.dashboard.nextSteps.items.scheduleReview}
+                  {t('dashboard.nextSteps.items.scheduleReview')}
                 </li>
               </ul>
             </DashboardCard>

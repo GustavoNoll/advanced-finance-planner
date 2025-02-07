@@ -74,15 +74,19 @@ export const ptBR = {
     cards: {
       portfolioValue: {
         title: "Valor Total do Portfólio",
-        ytd: "No ano"
+        ytd: "No ano",
+        amount: "R$ {{value}}"
       },
       monthlyContributions: {
         title: "Contribuições Mensais",
-        subtitle: "Depósitos regulares"
+        subtitle: "Depósitos regulares",
+        amount: "R$ {{value}}"
       },
       totalReturns: {
         title: "Retorno Total",
-        subtitle: "Retorno Anual"
+        subtitle: "Retorno Anual",
+        amount: "R$ {{value}}",
+        percentage: "+{{value}}%"
       }
     },
     charts: {
@@ -111,7 +115,133 @@ export const ptBR = {
       noPlan: {
         title: "Sem Plano de Investimento",
         description: "Por favor, crie um plano de investimento para continuar."
+      },
+      errors: {
+        fetchPlan: "Erro ao buscar plano de investimento",
+        fetchProfile: "Erro ao buscar perfil do corretor"
       }
+    },
+    loading: "Carregando..."
+  },
+  brokerDashboard: {
+    title: "Painel do Corretor",
+    search: {
+      title: "Buscar Clientes",
+      placeholder: "Buscar por nome ou email...",
+      button: "Buscar",
+      searching: "Buscando...",
+      results: "Resultados da Busca",
+      noResults: "Nenhum resultado encontrado"
+    },
+    buttons: {
+      newClient: "Novo Cliente",
+      logout: "Sair",
+      search: "Buscar"
+    },
+    client: {
+      pendingPlan: "Plano Pendente",
+      id: "ID",
+      name: "Nome",
+      email: "Email"
+    },
+    messages: {
+      error: {
+        title: "Erro",
+        fetchClients: "Erro ao buscar clientes",
+        search: "Erro ao realizar busca"
+      }
+    }
+  },
+  common: {
+    error: "Erro",
+    notAvailable: "N/A"
+  },
+  createClient: {
+    title: "Criar Novo Cliente",
+    form: {
+      name: {
+        label: "Nome",
+        placeholder: "Digite o nome do cliente"
+      },
+      email: {
+        label: "Email",
+        placeholder: "Digite o email do cliente"
+      },
+      password: {
+        label: "Senha",
+        placeholder: "Digite a senha"
+      }
+    },
+    buttons: {
+      cancel: "Cancelar",
+      create: "Criar Cliente",
+      creating: "Criando..."
+    },
+    messages: {
+      success: {
+        title: "Sucesso",
+        description: "Cliente criado com sucesso"
+      },
+      error: {
+        title: "Erro",
+        description: "Erro ao criar cliente"
+      }
+    }
+  },
+  monthlyView: {
+    title: "Desempenho Mensal",
+    tabs: {
+      chart: "Visualização em Gráfico",
+      table: "Visualização em Tabela"
+    },
+    chart: {
+      endBalance: "Saldo Final",
+      contribution: "Contribuição"
+    },
+    table: {
+      headers: {
+        month: "Mês",
+        initialBalance: "Saldo Inicial",
+        contribution: "Contribuição",
+        returns: "Retornos",
+        returnPercentage: "Retorno %",
+        endBalance: "Saldo Final"
+      },
+      months: {
+        January: "Janeiro",
+        February: "Fevereiro",
+        March: "Março",
+        April: "Abril",
+        May: "Maio",
+        June: "Junho",
+        July: "Julho",
+        August: "Agosto",
+        September: "Setembro",
+        October: "Outubro",
+        November: "Novembro",
+        December: "Dezembro"
+      }
+    }
+  },
+  expenseChart: {
+    portfolioValue: "Valor do Portfólio",
+    inflationAdjusted: "Ajustado pela Inflação"
+  },
+  budgetCategories: {
+    categories: {
+      Housing: "Moradia",
+      Food: "Alimentação",
+      Transportation: "Transporte",
+      Entertainment: "Entretenimento"
+    }
+  },
+  savingsGoal: {
+    title: "Meta de Investimento",
+    currentValue: "R$ {{value}}",
+    returnRate: "{{value}}% a.a.",
+    goal: {
+      label: "Meta: R$ {{value}}",
+      targetDate: "Data Alvo: {{date}}"
     }
   }
 }; 

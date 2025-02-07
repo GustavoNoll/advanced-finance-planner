@@ -1,4 +1,5 @@
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
+import { useTranslation } from "react-i18next";
 
 const data = [
   { month: 'Jan', investment: 10000, inflation: 9800 },
@@ -10,6 +11,8 @@ const data = [
 ];
 
 export const ExpenseChart = () => {
+  const { t } = useTranslation();
+
   return (
     <ResponsiveContainer width="100%" height={300}>
       <LineChart data={data}>
@@ -22,14 +25,14 @@ export const ExpenseChart = () => {
           type="monotone" 
           dataKey="investment" 
           stroke="#22c55e" 
-          name="Portfolio Value"
+          name={t('expenseChart.portfolioValue')}
           strokeWidth={2}
         />
         <Line 
           type="monotone" 
           dataKey="inflation" 
           stroke="#ef4444" 
-          name="Inflation Adjusted"
+          name={t('expenseChart.inflationAdjusted')}
           strokeWidth={2}
         />
       </LineChart>

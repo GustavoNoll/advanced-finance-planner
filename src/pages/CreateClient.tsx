@@ -5,11 +5,13 @@ import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/lib/supabase';
 import { useToast } from '@/components/ui/use-toast';
+import { useTranslation } from 'react-i18next';
 
 export const CreateClient = () => {
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { t } = useTranslation();
   const [formData, setFormData] = useState({
     email: '',
     password: '',
@@ -29,7 +31,7 @@ export const CreateClient = () => {
       });
 
       if (authError) throw authError;
-      if (!authData.user) throw new Error('Failed to create user');
+      if (!authData.user) throw new Error(t('createClient.messages.error.description'));
 
       // Create profile
       const { error: profileError } = await supabase
@@ -45,8 +47,8 @@ export const CreateClient = () => {
       if (profileError) throw profileError;
 
       toast({
-        title: "Success",
-        description: "Client created successfully",
+        title: t('createClient.messages.success.title'),
+        description: t('createClient.messages.success.description'),
       });
       
       // Redirect to create plan page with the new user's ID
@@ -54,7 +56,7 @@ export const CreateClient = () => {
     } catch (error: any) {
       console.error('Error creating client:', error);
       toast({
-        title: "Error",
+        title: t('createClient.messages.error.title'),
         description: error.message,
         variant: "destructive",
       });
@@ -76,39 +78,48 @@ export const CreateClient = () => {
       <div className="max-w-2xl mx-auto">
         <Card>
           <CardHeader>
-            <CardTitle>Create New Client</CardTitle>
+            <CardTitle>{t('createClient.title')}</CardTitle>
           </CardHeader>
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-6">
               <div className="space-y-2">
-                <label className="text-sm font-medium">Name</label>
+                <label className="text-sm font-medium">
+                  {t('createClient.form.name.label')}
+                </label>
                 <Input
                   type="text"
                   name="name"
                   value={formData.name}
                   onChange={handleChange}
+                  placeholder={t('createClient.form.name.placeholder')}
                   required
                 />
               </div>
 
               <div className="space-y-2">
-                <label className="text-sm font-medium">Email</label>
+                <label className="text-sm font-medium">
+                  {t('createClient.form.email.label')}
+                </label>
                 <Input
                   type="email"
                   name="email"
                   value={formData.email}
                   onChange={handleChange}
+                  placeholder={t('createClient.form.email.placeholder')}
                   required
                 />
               </div>
 
               <div className="space-y-2">
-                <label className="text-sm font-medium">Password</label>
+                <label className="text-sm font-medium">
+                  {t('createClient.form.password.label')}
+                </label>
                 <Input
                   type="password"
                   name="password"
                   value={formData.password}
                   onChange={handleChange}
+                  placeholder={t('createClient.form.password.placeholder')}
                   required
                   minLength={6}
                 />
@@ -121,10 +132,10 @@ export const CreateClient = () => {
                   onClick={() => navigate('/broker-dashboard')}
                   className="flex-1"
                 >
-                  Cancel
+                  {t('createClient.buttons.cancel')}
                 </Button>
                 <Button type="submit" className="flex-1" disabled={loading}>
-                  {loading ? 'Creating...' : 'Create Client'}
+                  {loading ? t('createClient.buttons.creating') : t('createClient.buttons.create')}
                 </Button>
               </div>
             </form>
