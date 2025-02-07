@@ -22,12 +22,17 @@ export const BrokerDashboard = () => {
         .select(`
           id,
           email,
-          profiles!inner(is_broker)
+          profiles!inner(
+            is_broker,
+            name
+          ),
+          investment_plans(id)
         `)
         .eq('profiles.is_broker', false)
         .order('email')
         .limit(10);
 
+      console.log(users);
       if (error) throw error;
       
       setSearchResults(users || []);
@@ -58,10 +63,14 @@ export const BrokerDashboard = () => {
         .select(`
           id,
           email,
-          profiles!inner(is_broker)
+          profiles!inner(
+            is_broker,
+            name
+          ),
+          investment_plans(id)
         `)
         .eq('profiles.is_broker', false)
-        .ilike('email', `%${searchQuery}%`);
+        .or(`email.ilike.%${searchQuery}%,profiles.name.ilike.%${searchQuery}%`);
 
       if (error) throw error;
       
@@ -128,12 +137,22 @@ export const BrokerDashboard = () => {
                     <div className="flex items-center space-x-4">
                       <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center">
                         <span className="text-primary text-lg font-semibold">
-                          {user.email[0].toUpperCase()}
+                          {user.profiles.name ? user.profiles.name[0].toUpperCase() : user.email[0].toUpperCase()}
                         </span>
                       </div>
                       <div>
-                        <p className="text-sm font-medium text-gray-900">{user.email}</p>
-                        <p className="text-sm text-gray-500">Client ID: {user.id}</p>
+                        <div className="flex items-center gap-2">
+                          <p className="text-sm font-medium text-gray-900">
+                            {user.profiles.name || 'N/A'}
+                          </p>
+                          {user.investment_plans.length === 0 && (
+                            <span className="px-2 py-1 text-xs font-medium bg-yellow-100 text-yellow-800 rounded-full">
+                              Pending Plan
+                            </span>
+                          )}
+                        </div>
+                        <p className="text-sm text-gray-500">{user.email}</p>
+                        <p className="text-xs text-gray-400">ID: {user.id}</p>
                       </div>
                     </div>
                   </div>

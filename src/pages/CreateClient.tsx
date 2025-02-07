@@ -13,6 +13,7 @@ export const CreateClient = () => {
   const [formData, setFormData] = useState({
     email: '',
     password: '',
+    name: '',
   });
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -21,9 +22,10 @@ export const CreateClient = () => {
 
     try {
       // Create user in auth
-      const { data: authData, error: authError } = await supabase.auth.signUp({
+      const { data: authData, error: authError } = await supabase.auth.admin.createUser({
         email: formData.email,
         password: formData.password,
+        user_metadata: { name: formData.name }
       });
 
       if (authError) throw authError;
@@ -36,6 +38,7 @@ export const CreateClient = () => {
           {
             id: authData.user.id,
             is_broker: false,
+            name: formData.name,
           }
         ]);
 
@@ -47,7 +50,7 @@ export const CreateClient = () => {
       });
       
       // Redirect to create plan page with the new user's ID
-      navigate(`/create-plan`);
+      navigate(`/create-plan?client_id=${authData.user.id}`);
     } catch (error: any) {
       console.error('Error creating client:', error);
       toast({
@@ -77,6 +80,17 @@ export const CreateClient = () => {
           </CardHeader>
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-6">
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Name</label>
+                <Input
+                  type="text"
+                  name="name"
+                  value={formData.name}
+                  onChange={handleChange}
+                  required
+                />
+              </div>
+
               <div className="space-y-2">
                 <label className="text-sm font-medium">Email</label>
                 <Input

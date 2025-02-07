@@ -2,12 +2,13 @@ import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { useNavigate, useSearchParams } from "react-router-dom";
+import { useNavigate, useSearchParams, Link } from "react-router-dom";
 import { useToast } from "@/components/ui/use-toast";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/components/auth/AuthProvider";
 import { ptBR } from "@/locales/pt-BR";
 import { RISK_PROFILES, type RiskProfile } from '@/constants/riskProfiles';
+import { ArrowLeft } from "lucide-react";
 
 export const CreatePlan = () => {
   const { user } = useAuth();
@@ -254,7 +255,14 @@ export const CreatePlan = () => {
       <div className="max-w-2xl mx-auto px-4">
         <Card>
           <CardHeader>
-            <CardTitle>{ptBR.investmentPlan.create.title}</CardTitle>
+            <div className="flex items-center space-x-4">
+              <Link to="/broker-dashboard">
+                <Button variant="ghost" size="icon">
+                  <ArrowLeft className="h-5 w-5" />
+                </Button>
+              </Link>
+              <CardTitle>{ptBR.investmentPlan.create.title}</CardTitle>
+            </div>
           </CardHeader>
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-6">

@@ -102,6 +102,10 @@ export const ptBR = {
       back: "Voltar"
     },
     messages: {
+      contactBroker: {
+        title: "Plano não encontrado",
+        description: "Por favor, entre em contato com seu corretor para criar um plano de investimento."
+      },
       logoutSuccess: "Desconectado com sucesso",
       logoutError: "Erro ao desconectar",
       noPlan: {

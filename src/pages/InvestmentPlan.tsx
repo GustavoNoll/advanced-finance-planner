@@ -13,19 +13,35 @@ export const InvestmentPlanShow = () => {
   const { data: plan, isLoading } = useQuery({
     queryKey: ['investmentPlan', id],
     queryFn: async () => {
-      const { data, error } = await supabase
+      // Primeira consulta: buscar o investment plan
+      const { data: investmentPlan, error: planError } = await supabase
         .from('investment_plans')
         .select('*')
         .eq('id', id)
         .single();
 
-      console.log(data);
-      if (error) {
-        console.error('Error fetching investment plan:', error);
+      if (planError) {
+        console.error('Error fetching investment plan:', planError);
         return null;
       }
 
-      return data;
+      // Segunda consulta: buscar o profile relacionado
+      const { data: profile, error: profileError } = await supabase
+        .from('profiles')
+        .select('name')
+        .eq('id', investmentPlan.user_id)
+        .single();
+
+      if (profileError) {
+        console.error('Error fetching profile:', profileError);
+        return null;
+      }
+
+      // Combinar os resultados
+      return {
+        ...investmentPlan,
+        profiles: profile
+      };
     },
     enabled: !!id,
   });
@@ -63,7 +79,7 @@ export const InvestmentPlanShow = () => {
             <div className="space-y-4">
               <div>
                 <p className="text-sm text-gray-500">{ptBR.investmentPlan.details.clientInfo.name}</p>
-                <p className="font-medium">{plan.user_id}</p>
+                <p className="font-medium">{plan.profiles?.name || 'N/A'}</p>
               </div>
               <div>
                 <p className="text-sm text-gray-500">{ptBR.investmentPlan.details.clientInfo.initialAge}</p>
@@ -138,8 +154,7 @@ export const InvestmentPlanShow = () => {
                   {(() => {
                     const profile = RISK_PROFILES.find(p => parseInt(p.return) === parseInt(plan.expected_return));
                     return profile 
-                      ? `${profile.label} (IPCA+${plan.expected_return}%)`
-                      : `IPCA+${plan.expected_return}%`;
+                      ? `${profile.label} (IPCA+${plan.expected_return}%)`                      : `IPCA+${plan.expected_return}%`;
                   })()}
                 </p>
               </div>

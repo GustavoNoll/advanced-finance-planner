@@ -61,6 +61,7 @@ const Index = () => {
     queryFn: async () => {
       if (!user?.id) return null;
       
+      console.log(user.id);
       const { data, error } = await supabase
         .from('profiles')
         .select('*')
@@ -68,13 +69,12 @@ const Index = () => {
         .eq('is_broker', true)
         .single();
 
+      console.log(data);
       if (error) {
         console.error('Error fetching broker profile:', error);
         return null;
       }
 
-      console.log("data");
-      console.log(data);
       return data;
     },
     enabled: !!user?.id,
@@ -87,16 +87,22 @@ const Index = () => {
         return;
       }
       
-      if (!brokerProfile && !investmentPlan) {
-        toast({
-          title: ptBR.dashboard.messages.noPlan.title,
-          description: ptBR.dashboard.messages.noPlan.description,
-        });
-        if (params.id) {
-          navigate(`/create-plan?client_id=${params.id}`);
-        } else {
-          navigate('/create-plan');
+      if (!investmentPlan) {
+        if (brokerProfile) {
+          toast({
+            title: ptBR.dashboard.messages.noPlan.title,
+            description: ptBR.dashboard.messages.noPlan.description,
+          });
+          navigate(`/create-plan${params.id ? `?client_id=${params.id}` : ''}`);
+          return;
         }
+        
+        toast({
+          title: ptBR.dashboard.messages.contactBroker.title,
+          description: ptBR.dashboard.messages.contactBroker.description,
+        });
+        handleLogout();
+        return;
       }
     }
   }, [investmentPlan, brokerProfile, isInvestmentPlanLoading, isBrokerLoading, navigate, params.id]);
@@ -122,15 +128,17 @@ const Index = () => {
               <h1 className="text-2xl font-bold text-gray-900">{ptBR.dashboard.title}</h1>
             </div>
             <div className="flex items-center gap-4">
-              <Link to={`/investment-plan/${investmentPlan?.id}`}>
-                <Button 
-                  variant="ghost" 
-                  size="icon"
-                  className="hover:bg-gray-100"
-                >
-                  <Settings className="h-4 w-4" />
-                </Button>
-              </Link>
+              {brokerProfile && (
+                <Link to={`/investment-plan/${investmentPlan?.id}`}>
+                  <Button 
+                    variant="ghost" 
+                    size="icon"
+                    className="hover:bg-gray-100"
+                  >
+                    <Settings className="h-4 w-4" />
+                  </Button>
+                </Link>
+              )}
               <Button 
                 variant="outline" 
                 onClick={handleLogout}
