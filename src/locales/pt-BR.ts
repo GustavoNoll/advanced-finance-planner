@@ -93,7 +93,7 @@ export const ptBR = {
       }
     },
     charts: {
-      portfolioPerformance: "Desempenho do Portfólio vs. Inflação"
+      portfolioPerformance: "Projeção Patrimonial"
     },
     nextSteps: {
       title: "Próximos Passos",
@@ -230,7 +230,9 @@ export const ptBR = {
   },
   expenseChart: {
     portfolioValue: "Valor do Portfólio",
-    inflationAdjusted: "Ajustado pela Inflação"
+    inflationAdjusted: "Ajustado pela Inflação",
+    actualValue: "Valor Real",
+    projectedValue: "Valor Projetado"
   },
   budgetCategories: {
     categories: {

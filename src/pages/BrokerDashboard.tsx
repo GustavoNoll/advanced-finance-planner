@@ -77,10 +77,10 @@ export const BrokerDashboard = () => {
       if (error) throw error;
       
       setSearchResults(users || []);
-    } catch (error: any) {
+    } catch (error: unknown) {
       toast({
         title: t('common.error'),
-        description: error.message,
+        description: error instanceof Error ? error.message : String(error),
         variant: "destructive",
       });
     } finally {

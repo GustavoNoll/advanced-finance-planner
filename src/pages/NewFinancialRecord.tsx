@@ -87,12 +87,9 @@ const NewFinancialRecord = () => {
         );
         const data = await response.json();
         
-        const annualIPCA = data[0].valor;
-        const targetPercentage = investmentPlan?.inflation || 5;
-        const annualTarget = annualIPCA + targetPercentage;
-        const monthlyTarget = Math.pow(1 + annualTarget / 100, 1/12) - 1;
+        const monthlyIPCA = Number(data[0].valor);
         
-        form.setValue('target_rentability', Number((monthlyTarget * 100).toFixed(2)));
+        form.setValue('target_rentability', monthlyIPCA);
       } catch (error) {
         console.error('Error fetching data:', error);
         toast({
@@ -145,6 +142,8 @@ const NewFinancialRecord = () => {
 
     const growth_percentage = (((values.ending_balance - values.starting_balance) / values.starting_balance) * 100) || 0;
 
+    console.log(values);
+    console.log(growth_percentage);
     const { error } = await supabase
       .from('user_financial_records')
       .insert([

@@ -12,6 +12,15 @@ import { toast } from "@/components/ui/use-toast";
 import { useEffect } from "react";
 import { useTranslation } from "react-i18next";
 
+interface FinancialRecord {
+  record_year: number;
+  record_month: number;
+  ending_balance: number;
+  starting_balance: number;
+  monthly_contribution: number;
+  monthly_return_rate: number;
+}
+
 const Index = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
@@ -78,6 +87,38 @@ const Index = () => {
       return data;
     },
     enabled: !!user?.id,
+  });
+
+  const { data: financialRecordsByYear, isLoading: isFinancialRecordsByYearLoading } = useQuery({
+    queryKey: ['financialRecordsByYear', clientId],
+    queryFn: async () => {
+      if (!clientId) return [];
+      
+      const { data, error } = await supabase
+        .from('user_financial_records')
+        .select('*')
+        .eq('user_id', clientId)
+        .order('record_year', { ascending: false })
+        .order('record_month', { ascending: true });
+
+      if (error) {
+        console.error('Error fetching financial records:', error);
+        return [];
+      }
+
+      // Group by year and take last record of each year
+      const uniqueYearRecords = Object.values(
+        data.reduce((acc: Record<string, FinancialRecord>, record: FinancialRecord) => {
+          // Always update the record for the year, since we're getting them in descending order
+          // the first record we see for each year will be the last month
+          acc[record.record_year] = record;
+          return acc;
+        }, {})
+      );
+
+      return uniqueYearRecords;
+    },
+    enabled: !!clientId,
   });
 
   const { data: financialRecords, isLoading: isFinancialRecordsLoading } = useQuery({
@@ -295,7 +336,11 @@ const Index = () => {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
           <div className="lg:col-span-2">
             <DashboardCard title={t('dashboard.charts.portfolioPerformance')}>
-              <ExpenseChart />
+              <ExpenseChart 
+                investmentPlan={investmentPlan}
+                clientId={clientId}
+                financialRecordsByYear={financialRecordsByYear as FinancialRecord[]}
+              />
             </DashboardCard>
           </div>
           
