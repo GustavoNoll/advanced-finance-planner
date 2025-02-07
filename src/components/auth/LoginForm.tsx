@@ -19,7 +19,7 @@ export const LoginForm = () => {
     setLoading(true);
 
     try {
-      const { error: signInError } = await supabase.auth.signInWithPassword({
+      const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
         email,
         password,
       });
@@ -27,16 +27,22 @@ export const LoginForm = () => {
       if (signInError) throw signInError;
 
       // Check if user is a broker
-      const { data: profile } = await supabase
+      const { data: profile, error: profileError } = await supabase
         .from('profiles')
         .select('is_broker')
+        .eq('id', signInData.user.id)
         .single();
+
+      if (profileError) throw profileError;
 
       toast({
         title: "Success",
         description: "Logged in successfully",
       });
       
+      console.log("Profile data:", profile); // Debug log
+      console.log("Is broker:", profile?.is_broker); // Debug log
+
       if (profile?.is_broker) {
         navigate('/broker-dashboard');
       } else {
