@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -14,7 +13,6 @@ export const CreateClient = () => {
   const [formData, setFormData] = useState({
     email: '',
     password: '',
-    fullName: '',
     monthlyDeposit: '',
     targetAmount: '',
     targetDate: '',
@@ -41,8 +39,6 @@ export const CreateClient = () => {
         .insert([
           {
             id: authData.user.id,
-            email: formData.email,
-            full_name: formData.fullName,
             is_broker: false,
           }
         ]);
@@ -101,16 +97,6 @@ export const CreateClient = () => {
           </CardHeader>
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-6">
-              <div className="space-y-2">
-                <label className="text-sm font-medium">Full Name</label>
-                <Input
-                  name="fullName"
-                  value={formData.fullName}
-                  onChange={handleChange}
-                  required
-                />
-              </div>
-
               <div className="space-y-2">
                 <label className="text-sm font-medium">Email</label>
                 <Input

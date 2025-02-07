@@ -1,4 +1,3 @@
-
 import { DashboardCard } from "@/components/DashboardCard";
 import { ExpenseChart } from "@/components/ExpenseChart";
 import { SavingsGoal } from "@/components/SavingsGoal";
@@ -54,6 +53,28 @@ const Index = () => {
     enabled: !!user?.id,
   });
 
+  const { data: brokerProfile } = useQuery({
+    queryKey: ['brokerProfile', user?.id],
+    queryFn: async () => {
+      if (!user?.id) return null;
+      
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', user.id)
+        .eq('is_broker', true)
+        .single();
+
+      if (error) {
+        console.error('Error fetching broker profile:', error);
+        return null;
+      }
+
+      return data;
+    },
+    enabled: !!user?.id,
+  });
+
   useEffect(() => {
     if (!isLoading && !investmentPlan) {
       toast({
@@ -78,6 +99,14 @@ const Index = () => {
               <h1 className="text-2xl font-bold text-gray-900">Investment Portfolio</h1>
             </div>
             <div className="flex items-center gap-4">
+              {brokerProfile && (
+                <Link to="/broker-dashboard">
+                  <Button variant="secondary" className="flex items-center gap-2">
+                    <Briefcase className="h-4 w-4" />
+                    Back to Broker Dashboard
+                  </Button>
+                </Link>
+              )}
               <Link to={`/edit-plan/${investmentPlan.id}`}>
                 <Button className="flex items-center gap-2">
                   <Pencil className="h-4 w-4" />
