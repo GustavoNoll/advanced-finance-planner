@@ -7,6 +7,9 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { ArrowLeft, Plus, Trash2 } from "lucide-react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { useState } from "react";
 
 interface FinancialRecord {
   id: number;
@@ -24,6 +27,15 @@ interface FinancialRecord {
   };
 }
 
+interface CSVRecord {
+  Data: string;
+  PatrimonioInicial: string;
+  Aporte: string;
+  PatrimonioFinal: string;
+  RetornoPercentual: string;
+  RentabilidadeMeta: string;
+}
+
 const FinancialRecords = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
@@ -31,6 +43,7 @@ const FinancialRecords = () => {
   const { t } = useTranslation();
   const clientId = params.id || user?.id;
   const queryClient = useQueryClient();
+  const [isImportDialogOpen, setIsImportDialogOpen] = useState(false);
 
   const { data: records, isLoading: recordsLoading } = useQuery({
     queryKey: ['financialRecords', clientId],
@@ -105,6 +118,49 @@ const FinancialRecords = () => {
     },
   });
 
+  const importMutation = useMutation({
+    mutationFn: async (records: CSVRecord[]) => {
+      const formattedRecords = records.map(record => {
+        const [month, year] = record.Data.split('/');
+        const startingBalance = parseFloat(record['PatrimonioInicial'].replace('R$ ', '').replace('.', '').replace(',', '.'));
+        const monthlyContribution = parseFloat(record.Aporte.replace('R$ ', '').replace('.', '').replace(',', '.'));
+        const endingBalance = parseFloat(record['PatrimonioFinal'].replace('R$ ', '').replace('.', '').replace(',', '.'));
+        const monthlyReturnRate = parseFloat(record['RetornoPercentual'].replace('%', ''));
+        const targetRentability = parseFloat(record['RentabilidadeMeta'].replace('%', ''));
+
+        return {
+          user_id: clientId,
+          record_year: parseInt(year),
+          record_month: parseInt(month),
+          starting_balance: startingBalance,
+          monthly_contribution: monthlyContribution,
+          monthly_return_rate: monthlyReturnRate,
+          ending_balance: endingBalance,
+          target_rentability: targetRentability,
+        };
+      });
+
+      const { error } = await supabase
+        .from('user_financial_records')
+        .insert(formattedRecords);
+
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['financialRecords', clientId] });
+      toast({
+        title: t('financialRecords.importSuccess'),
+      });
+    },
+    onError: (error) => {
+      console.error('Error importing records:', error);
+      toast({
+        title: t('financialRecords.errors.importFailed'),
+        variant: "destructive",
+      });
+    },
+  });
+
   const handleDelete = async (recordId: number) => {
     if (window.confirm(t('financialRecords.confirmDelete'))) {
       await deleteMutation.mutate(recordId);
@@ -126,6 +182,35 @@ const FinancialRecords = () => {
     }).format(value);
   };
 
+  const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = async (e) => {
+      const text = e.target?.result as string;
+      const rows = text.split('\n').map(row => row.split('\t'));
+      const headers = rows[0];
+      const records = rows.slice(1)
+        .filter(row => row.length === headers.length)
+        .map(row => {
+          const record: CSVRecord = {
+            Data: row[0],
+            PatrimonioInicial: row[1],
+            Aporte: row[2],
+            PatrimonioFinal: row[3],
+            RetornoPercentual: row[4],
+            RentabilidadeMeta: row[5],
+          };
+          return record;
+        });
+
+      await importMutation.mutate(records);
+      setIsImportDialogOpen(false);
+    };
+    reader.readAsText(file);
+  };
+
   if (recordsLoading) {
     return <div>{t('common.loading')}</div>;
   }
@@ -142,12 +227,59 @@ const FinancialRecords = () => {
             </Link>
             <h1 className="text-2xl font-bold">{t('financialRecords.title')}</h1>
           </div>
-          <Link to={`/financial-records/new${params.id ? `?client_id=${params.id}` : ''}`}>
-            <Button className="flex items-center gap-2">
-              <Plus className="h-4 w-4" />
-              {t('financialRecords.addNew')}
-            </Button>
-          </Link>
+          <div className="flex items-center gap-2">
+            <Dialog open={isImportDialogOpen} onOpenChange={setIsImportDialogOpen}>
+              <DialogTrigger asChild>
+                <Button variant="outline" className="flex items-center gap-2">
+                  Import CSV
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="sm:max-w-[800px]">
+                <DialogHeader>
+                  <DialogTitle>{t('financialRecords.importTitle')}</DialogTitle>
+                </DialogHeader>
+                <div className="space-y-4">
+                  <p className="text-sm text-gray-500">{t('financialRecords.importInstructions')}</p>
+                  <div className="overflow-x-auto border rounded-lg">
+                    <table className="w-full text-xs">
+                      <thead>
+                        <tr className="bg-gray-50">
+                          <th className="whitespace-nowrap px-3 py-2 text-left font-medium text-gray-900 border-b">Data</th>
+                          <th className="whitespace-nowrap px-3 py-2 text-left font-medium text-gray-900 border-b">PatrimonioInicial</th>
+                          <th className="whitespace-nowrap px-3 py-2 text-left font-medium text-gray-900 border-b">Aporte</th>
+                          <th className="whitespace-nowrap px-3 py-2 text-left font-medium text-gray-900 border-b">PatrimonioFinal</th>
+                          <th className="whitespace-nowrap px-3 py-2 text-left font-medium text-gray-900 border-b">RetornoPercentual</th>
+                          <th className="whitespace-nowrap px-3 py-2 text-left font-medium text-gray-900 border-b">RentabilidadeMeta</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        <tr>
+                          <td className="whitespace-nowrap px-3 py-2 text-gray-700">01/08/2023</td>
+                          <td className="whitespace-nowrap px-3 py-2 text-gray-700">R$ 51.447,92</td>
+                          <td className="whitespace-nowrap px-3 py-2 text-gray-700">R$ 4.000,00</td>
+                          <td className="whitespace-nowrap px-3 py-2 text-gray-700">R$ 55.992,62</td>
+                          <td className="whitespace-nowrap px-3 py-2 text-gray-700">1,19%</td>
+                          <td className="whitespace-nowrap px-3 py-2 text-gray-700">0,64%</td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </div>
+                  <Input
+                    type="file"
+                    accept=".csv,.txt"
+                    onChange={handleFileUpload}
+                    className="w-full"
+                  />
+                </div>
+              </DialogContent>
+            </Dialog>
+            <Link to={`/financial-records/new${params.id ? `?client_id=${params.id}` : ''}`}>
+              <Button className="flex items-center gap-2">
+                <Plus className="h-4 w-4" />
+                {t('financialRecords.addNew')}
+              </Button>
+            </Link>
+          </div>
         </div>
 
         <div className="grid gap-4">

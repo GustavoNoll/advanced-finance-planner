@@ -175,6 +175,10 @@ export const ptBR = {
       password: {
         label: "Senha",
         placeholder: "Digite a senha"
+      },
+      birthDate: {
+        label: "Data de Nascimento",
+        placeholder: "Digite a data de nascimento do cliente"
       }
     },
     buttons: {
@@ -282,6 +286,11 @@ export const ptBR = {
       targetRentability: "Rentabilidade Alvo (%)",
       submit: "Salvar Registro"
     },
+    importTitle: "Importar Registros",
+    importInstructions: "Selecione um arquivo CSV ou TXT com os registros financeiros. O arquivo deve seguir o formato abaixo:",
+    importSuccess: "Registros importados com sucesso",
+    confirmDelete: "Tem certeza que deseja excluir este registro?",
+    deleteSuccess: "Registro excluído com sucesso",
     errors: {
       fetchFailed: "Erro ao buscar registros financeiros",
       createFailed: "Erro ao criar registro financeiro",
@@ -289,7 +298,9 @@ export const ptBR = {
       recordExists: "Já existe um registro para {{month}} de {{year}}",
       dataFetchFailed: "Erro ao buscar dados iniciais",
       futureDate: "Data Inválida",
-      futureDateDescription: "Não é possível adicionar registros para datas futuras"
+      futureDateDescription: "Não é possível adicionar registros para datas futuras",
+      deleteFailed: "Erro ao excluir registro",
+      importFailed: "Erro ao importar registros"
     },
     success: {
       created: "Registro financeiro criado com sucesso"
