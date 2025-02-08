@@ -2,15 +2,16 @@ import { DashboardCard } from "@/components/DashboardCard";
 import { ExpenseChart } from "@/components/ExpenseChart";
 import { SavingsGoal } from "@/components/SavingsGoal";
 import { MonthlyView } from "@/components/MonthlyView";
-import { Briefcase, TrendingUp, PiggyBank, Plus, Pencil, Settings, LogOut, ArrowLeft, History, Search } from "lucide-react";
+import { Briefcase, TrendingUp, PiggyBank, Plus, Pencil, Settings, LogOut, ArrowLeft, History, Search, User } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { useAuth } from "@/components/auth/AuthProvider";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
 import { toast } from "@/components/ui/use-toast";
-import { useEffect } from "react";
+import { useEffect, useMemo, useCallback } from "react";
 import { useTranslation } from "react-i18next";
+import { Spinner } from "@/components/ui/spinner";
 
 interface FinancialRecord {
   record_year: number;
@@ -28,7 +29,7 @@ const Index = () => {
   const clientId = params.id || user?.id;
   const { t } = useTranslation();
 
-  const handleLogout = async () => {
+  const handleLogout = useCallback(async () => {
     try {
       await supabase.auth.signOut();
       toast({
@@ -44,7 +45,7 @@ const Index = () => {
         variant: "destructive",
       });
     }
-  };
+  }, [navigate, t]);
 
   const { data: investmentPlan, isLoading: isInvestmentPlanLoading } = useQuery({
     queryKey: ['investmentPlan', clientId],
@@ -67,51 +68,39 @@ const Index = () => {
     enabled: !!clientId,
   });
 
-
-  const { data: clientProfile, isLoading: isClientProfileLoading } = useQuery({
-    queryKey: ['clientProfile', user?.id],
+  // Combine as queries de profile em uma única consulta
+  const { data: profiles, isLoading: isProfilesLoading } = useQuery({
+    queryKey: ['profiles', user?.id, clientId],
     queryFn: async () => {
-      if (!user?.id) return null;
-
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', clientId)
-        .single();
-        
-      if (error) {
-        console.error(t('dashboard.messages.errors.fetchProfile'), error);
-        return null;
-      }
-
-      return data;
-    },
-    enabled: !!user?.id,
-  });
-  const { data: brokerProfile, isLoading: isBrokerLoading } = useQuery({
-    queryKey: ['brokerProfile', user?.id],
-    queryFn: async () => {
-      if (!user?.id) return null;
+      if (!user?.id) return { clientProfile: null, brokerProfile: null };
       
+      const ids = [user.id];
+      if (clientId && clientId !== user.id) {
+        ids.push(clientId);
+      }
+
       const { data, error } = await supabase
         .from('profiles')
         .select('*')
-        .eq('id', user.id)
-        .eq('is_broker', true)
-        .single();
+        .in('id', ids);
 
       if (error) {
         console.error(t('dashboard.messages.errors.fetchProfile'), error);
-        return null;
+        return { clientProfile: null, brokerProfile: null };
       }
 
-      return data;
+      return {
+        clientProfile: data.find(p => p.id === clientId),
+        brokerProfile: data.find(p => p.id === user.id && p.is_broker)
+      };
     },
     enabled: !!user?.id,
   });
 
-  const { data: financialRecordsByYear, isLoading: isFinancialRecordsByYearLoading } = useQuery({
-    queryKey: ['financialRecordsByYear', clientId],
+  const { clientProfile, brokerProfile } = profiles || {};
+
+  const { data: allFinancialRecords, isLoading: isFinancialRecordsLoading } = useQuery({
+    queryKey: ['allFinancialRecords', clientId],
     queryFn: async () => {
       if (!clientId) return [];
       
@@ -119,43 +108,6 @@ const Index = () => {
         .from('user_financial_records')
         .select('*')
         .eq('user_id', clientId)
-        .order('record_year', { ascending: false })
-        .order('record_month', { ascending: true });
-
-      if (error) {
-        console.error('Error fetching financial records:', error);
-        return [];
-      }
-
-      // Group by year and take last record of each year
-      const uniqueYearRecords = Object.values(
-        data.reduce((acc: Record<string, FinancialRecord>, record: FinancialRecord) => {
-          // Always update the record for the year, since we're getting them in descending order
-          // the first record we see for each year will be the last month
-          acc[record.record_year] = record;
-          return acc;
-        }, {})
-      );
-
-      return uniqueYearRecords;
-    },
-    enabled: !!clientId,
-  });
-
-  const { data: financialRecords, isLoading: isFinancialRecordsLoading } = useQuery({
-    queryKey: ['financialRecords', clientId],
-    queryFn: async () => {
-      if (!clientId) return [];
-      
-      // Get current date for 12-month calculation
-      const today = new Date();
-      const twelveMonthsAgo = new Date(today.getFullYear(), today.getMonth() - 11, 1);
-      
-      const { data, error } = await supabase
-        .from('user_financial_records')
-        .select('*')
-        .eq('user_id', clientId)
-        .gte('record_year', twelveMonthsAgo.getFullYear())
         .order('record_year', { ascending: false })
         .order('record_month', { ascending: false });
 
@@ -164,26 +116,45 @@ const Index = () => {
         return [];
       }
 
-      // Filter records from last 12 months
-      return data.filter(record => {
-        const recordDate = new Date(record.record_year, record.record_month - 1);
-        return recordDate >= twelveMonthsAgo;
-      });
+      return data;
     },
     enabled: !!clientId,
   });
 
-  const calculateTotalReturns = () => {
+  // Processa os registros no cliente
+  const financialRecords = useMemo(() => {
+    if (!allFinancialRecords?.length) return [];
+    
+    const today = new Date();
+    const twelveMonthsAgo = new Date(today.getFullYear(), today.getMonth() - 11, 1);
+    
+    return allFinancialRecords.filter(record => {
+      const recordDate = new Date(record.record_year, record.record_month - 1);
+      return recordDate >= twelveMonthsAgo;
+    });
+  }, [allFinancialRecords]);
+
+  const financialRecordsByYear = useMemo(() => {
+    if (!allFinancialRecords?.length) return [];
+    
+    return Object.values(
+      allFinancialRecords.reduce((acc: Record<string, FinancialRecord>, record: FinancialRecord) => {
+        acc[record.record_year] = record;
+        return acc;
+      }, {})
+    );
+  }, [allFinancialRecords]);
+
+  const calculateTotalReturns = useCallback(() => {
     if (!financialRecords?.length) return { totalAmount: 0, percentageReturn: 0 };
 
-    // Calculate returns only for the filtered records (last 12 months)
     const totalReturn = financialRecords.reduce((acc, record) => {
       const monthlyReturn = (record.ending_balance - record.starting_balance - record.monthly_contribution);
       return acc + monthlyReturn;
     }, 0);
 
     const totalInvested = financialRecords.reduce((acc, record) => 
-      acc + record.monthly_contribution, financialRecords[0].starting_balance // Adiciona o saldo inicial do primeiro mês
+      acc + record.monthly_contribution, financialRecords[0].starting_balance
     );
 
     const percentageReturn = totalInvested > 0 
@@ -194,12 +165,12 @@ const Index = () => {
       totalAmount: totalReturn,
       percentageReturn: Number(percentageReturn.toFixed(2))
     };
-  };
+  }, [financialRecords]);
 
   const { totalAmount, percentageReturn } = calculateTotalReturns();
 
   useEffect(() => {
-    if (!isInvestmentPlanLoading && !isBrokerLoading) {
+    if (!isInvestmentPlanLoading && !isProfilesLoading) {
       if (brokerProfile && !params.id) {
         navigate('/broker-dashboard');
         return;
@@ -223,10 +194,14 @@ const Index = () => {
         return;
       }
     }
-  }, [investmentPlan, brokerProfile, isInvestmentPlanLoading, isBrokerLoading, navigate, params.id]);
+  }, [investmentPlan, brokerProfile, isInvestmentPlanLoading, isProfilesLoading, navigate, params.id]);
 
-  if (isInvestmentPlanLoading || isBrokerLoading || isFinancialRecordsLoading || (!investmentPlan && !brokerProfile)) {
-    return <div>{t('dashboard.loading')}</div>;
+  if (isInvestmentPlanLoading || isProfilesLoading || isFinancialRecordsLoading || (!investmentPlan && !brokerProfile)) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <Spinner size="lg" />
+      </div>
+    );
   }
 
   const currentMonth = new Date().getMonth() + 1;
@@ -241,79 +216,121 @@ const Index = () => {
   const monthlyContribution = currentMonthRecord?.monthly_contribution || 0;
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <header className="bg-white shadow-sm">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+    <div className="min-h-screen bg-gradient-to-b from-gray-50 to-gray-100">
+      <header className="bg-white border-b">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
           <div className="flex items-center justify-between">
-            {brokerProfile && (
-              <Link to="/broker-dashboard">
-                <Button variant="ghost" size="icon">
-                  <Search className="h-5 w-5" />
-                </Button>
-              </Link>
-            )}
-            <div className="flex items-center space-x-3">
-              <Briefcase className="h-8 w-8 text-blue-600" />
-              <h1 className="text-2xl font-bold text-gray-900">{t('dashboard.title')}</h1>
-            </div>
-            <div className="flex items-center gap-4">
-              <Link to={`/financial-records${params.id ? `/${params.id}` : ''}`}>
-                <Button 
-                  variant="outline"
-                  className="flex items-center gap-2"
-                >
-                  <History className="h-4 w-4" />
-                  {t('dashboard.buttons.financialRecords')}
-                </Button>
-              </Link>
+            <div className="w-1/3">
               {brokerProfile && (
-                <Link to={`/investment-plan/${investmentPlan?.id}`}>
-                  <Button 
-                    variant="ghost" 
-                    size="icon"
-                    className="hover:bg-gray-100"
-                  >
-                    <Settings className="h-4 w-4" />
+                <Link to="/broker-dashboard">
+                  <Button variant="ghost" className="text-gray-600 hover:text-gray-900">
+                    <Search className="h-4 w-4" />
                   </Button>
                 </Link>
               )}
+            </div>
+
+            <div className="flex flex-col items-center w-1/3">
+              <div className="flex items-center gap-2">
+                <Briefcase className="h-5 w-5 text-blue-600" />
+                <h1 className="text-xl font-semibold text-gray-900">{t('dashboard.title')}</h1>
+              </div>
+              {clientProfile && (
+                <p className="text-sm text-gray-500">{clientProfile.name}</p>
+              )}
+            </div>
+
+            <div className="flex justify-end w-1/3">
               <Button 
-                variant="outline" 
+                variant="ghost" 
                 onClick={handleLogout}
-                className="flex items-center gap-2"
+                className="text-gray-600 hover:text-gray-900"
               >
                 <LogOut className="h-4 w-4" />
-                {t('dashboard.buttons.logout')}
               </Button>
             </div>
           </div>
         </div>
       </header>
 
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+          <Link to={`/financial-records${params.id ? `/${params.id}` : ''}`}>
+            <Button 
+              variant="ghost"
+              className="w-full h-14 flex flex-col items-center justify-center gap-1 bg-gradient-to-br from-white to-gray-50 hover:from-blue-50 hover:to-blue-100 shadow-sm hover:shadow transition-all duration-200 border border-gray-100"
+            >
+              <div className="flex items-center gap-2">
+                <History className="h-4 w-4 text-blue-600" />
+                <span className="text-sm font-medium text-gray-700">{t('dashboard.buttons.financialRecords')}</span>
+              </div>
+            </Button>
+          </Link>
+
+          <Link to={`/investment-plan/${investmentPlan?.id}`}>
+            <Button 
+              variant="ghost"
+              className="w-full h-14 flex flex-col items-center justify-center gap-1 bg-gradient-to-br from-white to-gray-50 hover:from-blue-50 hover:to-blue-100 shadow-sm hover:shadow transition-all duration-200 border border-gray-100"
+            >
+              <div className="flex items-center gap-2">
+                <TrendingUp className="h-4 w-4 text-blue-600" />
+                <span className="text-sm font-medium text-gray-700">{t('dashboard.buttons.investmentPlan')}</span>
+              </div>
+            </Button>
+          </Link>
+
+          {brokerProfile && (
+            <Link to={`/client-profile/${clientId}`}>
+              <Button 
+                variant="ghost"
+                className="w-full h-14 flex flex-col items-center justify-center gap-1 bg-gradient-to-br from-white to-gray-50 hover:from-blue-50 hover:to-blue-100 shadow-sm hover:shadow transition-all duration-200 border border-gray-100"
+              >
+                <div className="flex items-center gap-2">
+                  <User className="h-4 w-4 text-blue-600" />
+                  <span className="text-sm font-medium text-gray-700">{t('dashboard.buttons.clientInfo')}</span>
+                </div>
+              </Button>
+            </Link>
+          )}
+        </div>
+      </div>
+
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-          <DashboardCard title={t('dashboard.cards.portfolioValue.title')}>
-            <div className="space-y-2">
-              <p className="text-2xl font-bold text-green-600">
+          <DashboardCard 
+            className="transform transition-all hover:scale-102 hover:shadow-lg"
+            title={t('dashboard.cards.portfolioValue.title')}
+          >
+            <div className="space-y-3">
+              <p className="text-3xl font-bold text-gray-900">
                 {new Intl.NumberFormat('pt-BR', {
                   style: 'currency',
                   currency: 'BRL'
                 }).format(portfolioValue)}
               </p>
               {latestRecord && (
-                <p className="text-sm text-green-600 flex items-center gap-1">
-                  <TrendingUp className="h-4 w-4" />
-                  {latestRecord.monthly_return_rate}% {t('dashboard.cards.portfolioValue.monthlyReturn')}
-                </p>
+                <div className="flex items-center gap-2 bg-green-50 rounded-full px-3 py-1 w-fit">
+                  <TrendingUp className="h-4 w-4 text-green-600" />
+                  <p className="text-sm font-medium text-green-600">
+                    +{latestRecord.monthly_return_rate}%
+                  </p>
+                </div>
               )}
             </div>
           </DashboardCard>
           
-          <DashboardCard title={t('dashboard.cards.monthlyContributions.title')}>
+          <DashboardCard title={
+            <div className="flex items-center justify-between w-full">
+              <span>{t('dashboard.cards.monthlyContributions.title')}</span>
+              <span className="text-sm text-muted-foreground">
+                {new Date().toLocaleString('pt-BR', { month: 'long' }).replace(/^\w/, c => c.toUpperCase())}
+              </span>
+            </div>
+          }>
             <div className="space-y-2">
               <p className={`text-2xl font-bold ${
-                investmentPlan?.monthly_deposit && 
-                monthlyContribution >= investmentPlan.monthly_deposit 
+                investmentPlan?.required_monthly_deposit && 
+                monthlyContribution >= investmentPlan.required_monthly_deposit 
                   ? 'text-green-600' 
                   : 'text-red-600'
               }`}>
@@ -328,6 +345,14 @@ const Index = () => {
                     style: 'currency',
                     currency: 'BRL'
                   }).format(investmentPlan.monthly_deposit)}
+                </p>
+              )}
+              {investmentPlan?.required_monthly_deposit && (
+                <p className="text-sm text-muted-foreground">
+                  {t('dashboard.cards.monthlyContributions.required')}: {new Intl.NumberFormat('pt-BR', {
+                    style: 'currency',
+                    currency: 'BRL'
+                  }).format(investmentPlan.required_monthly_deposit)}
                 </p>
               )}
             </div>
@@ -354,39 +379,54 @@ const Index = () => {
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
-          <div className="lg:col-span-2">
-            <DashboardCard title={t('dashboard.charts.portfolioPerformance')}>
-              <ExpenseChart 
-                profile={clientProfile}
-                investmentPlan={investmentPlan}
-                clientId={clientId}
-                financialRecordsByYear={financialRecordsByYear as FinancialRecord[]}
-              />
-            </DashboardCard>
+          <div className="lg:col-span-2 bg-white rounded-xl shadow-sm p-6">
+            <h2 className="text-lg font-semibold mb-4">{t('dashboard.charts.portfolioPerformance')}</h2>
+            <ExpenseChart 
+              profile={clientProfile}
+              investmentPlan={investmentPlan}
+              clientId={clientId}
+              financialRecordsByYear={financialRecordsByYear as FinancialRecord[]}
+            />
           </div>
           
           <div className="space-y-6">
-            <SavingsGoal />
-            <DashboardCard title={t('dashboard.nextSteps.title')}>
-              <ul className="space-y-3 text-sm">
-                <li className="flex items-center gap-2 text-left">
-                  <div className="h-2 w-2 bg-blue-600 rounded-full" />
-                  {t('dashboard.nextSteps.items.reviewStrategy')}
-                </li>
-                <li className="flex items-center gap-2 text-left">
-                  <div className="h-2 w-2 bg-blue-600 rounded-full" />
-                  {t('dashboard.nextSteps.items.increaseContributions')}
-                </li>
-                <li className="flex items-center gap-2 text-left">
-                  <div className="h-2 w-2 bg-blue-600 rounded-full" />
-                  {t('dashboard.nextSteps.items.scheduleReview')}
-                </li>
+            <SavingsGoal 
+              currentInvestment={latestRecord?.ending_balance ?? 0}
+              investmentPlan={{
+                future_value: investmentPlan?.future_value ?? 0,
+                monthly_deposit: investmentPlan?.monthly_deposit ?? 0,
+                inflation: investmentPlan?.inflation ?? 0,
+                expected_return: investmentPlan?.expected_return ?? 0,
+                final_age: investmentPlan?.final_age ?? 0
+              }}
+              profile={{
+                birth_date: clientProfile?.birth_date
+              }}
+            />
+            <DashboardCard 
+              title={t('dashboard.nextSteps.title')}
+              className="bg-gradient-to-br from-blue-50 to-indigo-50"
+            >
+              <ul className="space-y-4">
+                {['reviewStrategy', 'increaseContributions', 'scheduleReview'].map((step) => (
+                  <li key={step} className="flex items-start gap-3">
+                    <div className="mt-1.5 h-2 w-2 bg-blue-600 rounded-full" />
+                    <p className="text-sm text-gray-700 leading-relaxed">
+                      {t(`dashboard.nextSteps.items.${step}`)}
+                    </p>
+                  </li>
+                ))}
               </ul>
             </DashboardCard>
           </div>
         </div>
 
-        <MonthlyView financialRecords={financialRecords || []} />
+        <section>
+          <MonthlyView 
+            userId={clientId} 
+            initialRecords={financialRecords || []} 
+          />
+        </section>
       </main>
     </div>
   );

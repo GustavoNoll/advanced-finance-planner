@@ -23,6 +23,20 @@ interface Profile {
   birth_date: string;
 }
 
+interface SavingsGoalProps {
+  currentInvestment: number;
+  investmentPlan?: {
+    future_value: number;
+    monthly_deposit: number;
+    inflation: number;
+    expected_return: number;
+    final_age: number;
+  };
+  profile?: {
+    birth_date: string;
+  };
+}
+
 const useInvestmentData = (userId: string) => {
   const { data: profile } = useQuery<Profile>({
     queryKey: ['profileSavingsGoal', userId],
@@ -79,13 +93,14 @@ const useInvestmentData = (userId: string) => {
   };
 };
 
-export const SavingsGoal = () => {
+export const SavingsGoal = ({ currentInvestment, investmentPlan, profile }: SavingsGoalProps) => {
   const { t } = useTranslation();
-  const { user } = useAuth();
-  const params = useParams();
-  const clientId = params.id || user?.id;
   
-  const { currentInvestment, investmentGoal, monthlyDeposit, returnRate, finalAge, birthDate } = useInvestmentData(clientId);
+  const investmentGoal = investmentPlan?.future_value ?? 0;
+  const monthlyDeposit = investmentPlan?.monthly_deposit ?? 0;
+  const returnRate = (investmentPlan?.inflation ?? 0) + (investmentPlan?.expected_return ?? 0);
+  const finalAge = investmentPlan?.final_age ?? 0;
+  const birthDate = profile?.birth_date;
 
   const calculateProjectedAge = () => {
     if (!birthDate) return null;
@@ -119,6 +134,14 @@ export const SavingsGoal = () => {
   const projectedAge = calculateProjectedAge();
   const percentage = (currentInvestment / investmentGoal) * 100;
 
+  const getProgressColor = (percentage: number) => {
+    if (percentage >= 100) return "bg-green-500";
+    if (percentage >= 75) return "bg-emerald-500";
+    if (percentage >= 50) return "bg-yellow-500";
+    if (percentage >= 25) return "bg-orange-500";
+    return "bg-red-500";
+  };
+
   return (
     <Card>
       <CardHeader>
@@ -126,7 +149,10 @@ export const SavingsGoal = () => {
       </CardHeader>
       <CardContent>
         <div className="space-y-4">
-          <Progress value={percentage} className="h-2" />
+          <Progress 
+            value={percentage} 
+            className={`w`}
+          />
           <div className="flex justify-between text-sm">
             <div>
               <span className="block text-lg font-semibold">

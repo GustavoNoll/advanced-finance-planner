@@ -9,8 +9,11 @@ import { useAuth } from "@/components/auth/AuthProvider";
 import { ptBR } from "@/locales/pt-BR";
 import { RISK_PROFILES, type RiskProfile } from '@/constants/riskProfiles';
 import { ArrowLeft } from "lucide-react";
+import { useTranslation } from "react-i18next";
+import { calculateFutureValues, isCalculationReady, type FormData, type Calculations } from '@/utils/investmentPlanCalculations';
 
 export const CreatePlan = () => {
+  const { t } = useTranslation();
   const { user } = useAuth();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
@@ -75,7 +78,7 @@ export const CreatePlan = () => {
     };
 
     checkExistingPlan();
-  }, [clientId, navigate, toast]);
+  }, [clientId, toast]);
 
   // Modify handleChange to update calculations when form values change
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
@@ -101,104 +104,6 @@ export const CreatePlan = () => {
       
       return newFormData;
     });
-  };
-
-  // Helper function to check if we can perform calculations
-  const isCalculationReady = (data: typeof formData) => {
-    return Boolean(
-      data.initialAmount &&
-      data.initialAge &&
-      data.finalAge &&
-      data.desiredIncome &&
-      data.expectedReturn &&
-      data.inflation
-    );
-  };
-
-  const calculateFutureValues = (data: typeof formData) => {
-    const initialAmount = parseFloat(data.initialAmount) || 0;
-    const initialAge = parseFloat(data.initialAge) || 0;
-    const finalAge = parseFloat(data.finalAge) || 0;
-    const desiredIncome = parseFloat(data.desiredIncome) || 0;
-    const expectedReturn = parseFloat(data.expectedReturn) / 100;
-    const inflation = parseFloat(data.inflation) / 100;
-    const planType = data.planType;
-    
-    const years = finalAge - initialAge;
-    const inflationAdjustedIncome = desiredIncome * Math.pow(1 + inflation, years);
-    
-    let futureValue;
-    let yearsTo100, monthlyWithdrawal, rate;
-    let targetLegacy;
-    let monthlyIncomeRequired, incomePresentValue;
-    
-    switch (planType) {
-      case "1": // End at 100
-        yearsTo100 = 100 - finalAge;
-        monthlyWithdrawal = inflationAdjustedIncome / 12;
-        rate = expectedReturn / 12; // Monthly rate
-        
-        // Fórmula de anuidade (valor presente de uma série de pagamentos mensais)
-        futureValue = monthlyWithdrawal * ((1 - Math.pow(1 + rate, -yearsTo100 * 12)) / rate);
-        break;
-        
-      case "2": // Leave 1M
-        targetLegacy = 1000000;
-        
-        monthlyIncomeRequired = inflationAdjustedIncome / 12;
-        incomePresentValue = monthlyIncomeRequired / expectedReturn;
-        
-        // Valor futuro é o valor necessário para gerar a renda mensal mais o valor de herança
-        futureValue = Math.max(incomePresentValue + targetLegacy, targetLegacy);
-        break;
-        
-      case "3": // Don't touch principal
-        // Calculate how much principal is needed to generate income from returns only
-        futureValue = inflationAdjustedIncome / (expectedReturn / 12);
-        break;
-        
-      default:
-        futureValue = 0;
-    }
-    
-    // Calculate monthly returns
-    const realReturn = (futureValue * expectedReturn) / 12;
-    const inflationReturn = (futureValue * inflation) / 12;
-    const totalMonthlyReturn = realReturn + inflationReturn;
-    
-    // Updated calculation for required monthly deposit
-    // Using the total rate (expected return + inflation)
-    const totalRate = expectedReturn + inflation;
-    const annualRate = totalRate; // This is already in decimal form (e.g., 0.11 for 11%)
-
-    const monthlyRate = Math.pow(1 + annualRate, 1 / 12) - 1;
-    const months = years * 12; // Total number of months
-
-    // Calculate required monthly deposit using the PMT function
-    const pmt = (rate: number, nper: number, pv: number, fv: number = 0) => {
-      if (rate === 0) {
-        return -(fv + pv) / nper;
-      } else {
-        return (rate * (fv + pv * Math.pow(1 + rate, nper))) / (Math.pow(1 + rate, nper) - 1);
-      }
-    };
-
-    // Calculate required monthly deposit
-    const requiredMonthlyDeposit = -pmt(
-      monthlyRate,
-      months,
-      initialAmount,
-      -futureValue // Note: negative because we want to accumulate this amount
-    );
-
-    return {
-      futureValue,
-      inflationAdjustedIncome,
-      realReturn,
-      inflationReturn,
-      totalMonthlyReturn,
-      requiredMonthlyDeposit,
-    };
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -268,7 +173,7 @@ export const CreatePlan = () => {
             <form onSubmit={handleSubmit} className="space-y-6">
               <div className="space-y-2">
                 <label className="text-sm font-medium">
-                  {ptBR.investmentPlan.create.form.initialAmount}
+                  {t('investmentPlan.form.initialAmount')}
                 </label>
                 <Input
                   type="number"
@@ -282,7 +187,7 @@ export const CreatePlan = () => {
 
               <div className="space-y-2">
                 <label className="text-sm font-medium">
-                  {ptBR.investmentPlan.create.form.initialAge}
+                  {t('investmentPlan.form.initialAge')}
                 </label>
                 <Input
                   type="number"
@@ -296,7 +201,7 @@ export const CreatePlan = () => {
 
               <div className="space-y-2">
                 <label className="text-sm font-medium">
-                  {ptBR.investmentPlan.create.form.finalAge}
+                  {t('investmentPlan.form.finalAge')}
                 </label>
                 <Input
                   type="number"
@@ -310,7 +215,7 @@ export const CreatePlan = () => {
 
               <div className="space-y-2">
                 <label className="text-sm font-medium">
-                  {ptBR.investmentPlan.create.form.monthlyDeposit}
+                  {t('investmentPlan.form.monthlyDeposit')}
                 </label>
                 <Input
                   type="number"
@@ -324,7 +229,7 @@ export const CreatePlan = () => {
 
               <div className="space-y-2">
                 <label className="text-sm font-medium">
-                  {ptBR.investmentPlan.create.form.desiredIncome}
+                  {t('investmentPlan.form.desiredIncome')}
                 </label>
                 <Input
                   type="number"
@@ -338,7 +243,7 @@ export const CreatePlan = () => {
 
               <div className="space-y-2">
                 <label className="text-sm font-medium">
-                  {ptBR.investmentPlan.create.form.riskProfile}
+                  {t('investmentPlan.form.riskProfile')}
                 </label>
                 <select
                   name="expectedReturn"
@@ -361,7 +266,7 @@ export const CreatePlan = () => {
 
               <div className="space-y-2">
                 <label className="text-sm font-medium">
-                  {ptBR.investmentPlan.create.form.inflationRate}
+                  {t('investmentPlan.form.inflationRate')}
                 </label>
                 <Input
                   type="number"
@@ -376,7 +281,7 @@ export const CreatePlan = () => {
 
               <div className="space-y-2">
                 <label className="text-sm font-medium">
-                  {ptBR.investmentPlan.create.form.planType}
+                  {t('investmentPlan.form.planType')}
                 </label>
                 <select
                   name="planType"
@@ -399,38 +304,38 @@ export const CreatePlan = () => {
           
           <div className="mt-8 p-4 bg-gray-50 rounded-lg">
             <h3 className="text-lg font-semibold mb-4">
-              {ptBR.investmentPlan.create.calculations.title}
+              {t('investmentPlan.create.calculations.title')}
             </h3>
             {isCalculationReady(formData) ? (
               <div className="space-y-2">
                 <div className="flex justify-between">
-                  <span>{ptBR.investmentPlan.create.calculations.inflationAdjustedIncome}:</span>
+                  <span>{t('investmentPlan.create.calculations.inflationAdjustedIncome')}:</span>
                   <span>R$ {calculations?.inflationAdjustedIncome.toLocaleString('pt-BR', { maximumFractionDigits: 2 }) || '---'}/ano</span>
                 </div>
                 <div className="flex justify-between">
-                  <span>{ptBR.investmentPlan.create.calculations.requiredFutureValue}:</span>
+                  <span>{t('investmentPlan.create.calculations.requiredFutureValue')}:</span>
                   <span>R$ {calculations?.futureValue.toLocaleString('pt-BR', { maximumFractionDigits: 2 }) || '---'}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span>{ptBR.investmentPlan.create.calculations.monthlyRealReturn}:</span>
+                  <span>{t('investmentPlan.create.calculations.monthlyRealReturn')}:</span>
                   <span>R$ {calculations?.realReturn.toLocaleString('pt-BR', { maximumFractionDigits: 2 }) || '---'}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span>{ptBR.investmentPlan.create.calculations.monthlyInflationReturn}:</span>
+                  <span>{t('investmentPlan.create.calculations.monthlyInflationReturn')}:</span>
                   <span>R$ {calculations?.inflationReturn.toLocaleString('pt-BR', { maximumFractionDigits: 2 }) || '---'}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span>{ptBR.investmentPlan.create.calculations.totalMonthlyReturn}:</span>
+                  <span>{t('investmentPlan.create.calculations.totalMonthlyReturn')}:</span>
                   <span>R$ {calculations?.totalMonthlyReturn.toLocaleString('pt-BR', { maximumFractionDigits: 2 }) || '---'}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span>{ptBR.investmentPlan.create.calculations.requiredMonthlyDeposit}:</span>
+                  <span>{t('investmentPlan.create.calculations.requiredMonthlyDeposit')}:</span>
                   <span>R$ {calculations?.requiredMonthlyDeposit.toLocaleString('pt-BR', { maximumFractionDigits: 2 }) || '---'}</span>
                 </div>
               </div>
             ) : (
               <div className="text-center text-gray-500">
-                {ptBR.investmentPlan.create.calculations.fillRequired}
+                {t('investmentPlan.create.calculations.fillRequired')}
               </div>
             )}
           </div>

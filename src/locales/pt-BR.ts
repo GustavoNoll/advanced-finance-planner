@@ -1,5 +1,11 @@
-export const ptBR = {
+export const ptBR = { 
   investmentPlan: {
+    messages: {
+      notFound: {
+        title: "Plano de investimento não encontrado",
+        description: "O plano que você está procurando não existe ou foi removido."
+      }
+    },
     details: {
       title: "Detalhes do Plano de Investimento",
       clientInfo: {
@@ -34,20 +40,30 @@ export const ptBR = {
         }
       }
     },
+    form: {
+      initialAmount: "Valor Inicial",
+      initialAge: "Idade Inicial",
+      finalAge: "Idade Final",
+      monthlyDeposit: "Depósito Mensal",
+      desiredIncome: "Renda Mensal Desejada",
+      riskProfile: "Perfil de Risco / Retorno IPCA+",
+      inflationRate: "Taxa de Inflação Anual (%)",
+      planType: "Tipo do Plano",
+      createButton: "Criar Plano",
+      creating: "Criando..."
+    },
+    planTypes: {
+      endAt100: "Encerrar aos 100 anos",
+      leave1M: "Deixar 1M de herança",
+      keepPrincipal: "Não tocar no principal"
+    },
+    riskProfiles: {
+      conservative: "Conservador",
+      moderate: "Moderado",
+      aggressive: "Arrojado"
+    },
     create: {
       title: "Criar Plano de Investimento",
-      form: {
-        initialAmount: "Valor Inicial",
-        initialAge: "Idade Inicial",
-        finalAge: "Idade Final",
-        monthlyDeposit: "Depósito Mensal",
-        desiredIncome: "Renda Mensal Desejada",
-        riskProfile: "Perfil de Risco / Retorno IPCA+",
-        inflationRate: "Taxa de Inflação Anual (%)",
-        planType: "Tipo do Plano",
-        createButton: "Criar Plano",
-        creating: "Criando..."
-      },
       calculations: {
         title: "Valores Calculados",
         inflationAdjustedIncome: "Renda Ajustada pela Inflação",
@@ -58,16 +74,9 @@ export const ptBR = {
         requiredMonthlyDeposit: "Depósito Mensal Necessário",
         fillRequired: "Preencha todos os campos obrigatórios para ver os cálculos"
       },
-      planTypes: {
-        endAt100: "Encerrar aos 100 anos",
-        leave1M: "Deixar 1M de herança",
-        keepPrincipal: "Não tocar no principal"
-      },
-      riskProfiles: {
-        conservative: "Conservador",
-        moderate: "Moderado",
-        aggressive: "Arrojado"
-      }
+    },
+    edit: {
+      title: "Editar Plano de Investimento",
     }
   },
   dashboard: {
@@ -77,13 +86,14 @@ export const ptBR = {
         title: "Valor Total do Portfólio",
         ytd: "No ano",
         amount: "R$ {{value}}",
-        monthlyReturn: "No mês"
+        monthlyReturn: "no último mês"
       },
       monthlyContributions: {
         title: "Contribuições Mensais",
         subtitle: "Depósitos regulares",
-        target: "Meta",
-        amount: "R$ {{value}}"
+        target: "Acordado",
+        amount: "R$ {{value}}",
+        required: "Necessário"
       },
       totalReturns: {
         title: "Retorno Total",
@@ -104,10 +114,14 @@ export const ptBR = {
       }
     },
     buttons: {
+      clientInfo: "Informações do Cliente",
       settings: "Configurações",
       logout: "Sair",
       back: "Voltar",
-      financialRecords: "Registros Financeiros"
+      financialRecords: "Registros Financeiros",
+      investmentPlan: "Plano de Investimento",
+      clientProfile: "Informações do Cliente",
+      editPlan: "Editar Plano",
     },
     messages: {
       contactBroker: {
@@ -134,8 +148,8 @@ export const ptBR = {
       placeholder: "Buscar por nome ou email...",
       button: "Buscar",
       searching: "Buscando...",
-      results: "Resultados da Busca",
-      noResults: "Nenhum resultado encontrado"
+      results: "Clientes",
+      noResults: "Nenhum cliente encontrado"
     },
     buttons: {
       newClient: "Novo Cliente",
@@ -146,7 +160,9 @@ export const ptBR = {
       pendingPlan: "Plano Pendente",
       id: "ID",
       name: "Nome",
-      email: "Email"
+      email: "Email",
+      outdatedRecord: "Registro Desatualizado",
+      monthlyReturn: "Retorno Mensal"
     },
     messages: {
       error: {
@@ -158,8 +174,19 @@ export const ptBR = {
   },
   common: {
     error: "Erro",
+    errors: {
+      tryAgain: "Por favor, tente novamente."
+    },
     notAvailable: "N/A",
-    loading: "Carregando..."
+    loading: "Carregando...",
+    back: "Voltar",
+    cancel: "Cancelar",
+    save: "Salvar",
+    delete: "Excluir",
+    edit: "Editar",
+    create: "Criar",
+    reset: "Resetar",
+    logout: "Sair"
   },
   createClient: {
     title: "Criar Novo Cliente",
@@ -198,24 +225,31 @@ export const ptBR = {
     }
   },
   monthlyView: {
+    loadMore: "Carregar Mais",
+    downloadCSV: "Baixar CSV",
     noData: "Nenhum dado disponível",
     title: "Desempenho Mensal",
     tabs: {
       chart: "Visualização em Gráfico",
-      table: "Visualização em Tabela"
+      table: "Visualização em Tabela",
+      returnChart: "Comparação de Retorno",
+      balanceChart: "Comparação de Saldo"
     },
     chart: {
       endBalance: "Saldo Final",
-      contribution: "Contribuição"
+      contribution: "Contribuição",
+      monthlyReturn: "Retorno Mensal",
+      targetRentability: "Rentabilidade Alvo"
     },
     table: {
       headers: {
         month: "Mês",
         initialBalance: "Saldo Inicial",
         contribution: "Contribuição",
-        returns: "Retornos",
-        returnPercentage: "Retorno %",
-        endBalance: "Saldo Final"
+        returns: "Saldo",
+        returnPercentage: "Rendimento %",
+        endBalance: "Saldo Final",
+        targetRentability: "Rentabilidade Alvo"
       },
       months: {
         January: "Janeiro",
@@ -266,6 +300,10 @@ export const ptBR = {
     },
   },
   financialRecords: {
+    editTitle: "Editar Registro Financeiro",  
+    updateSuccess: "Registro atualizado com sucesso",
+    partialImport: "Importação Parcial",
+    importErrors: "Erros de Importação",
     monthlyContribution: "Contribuição Mensal",
     title: "Registros Financeiros",
     addNew: "Adicionar Novo",
@@ -291,6 +329,8 @@ export const ptBR = {
     importSuccess: "Registros importados com sucesso",
     confirmDelete: "Tem certeza que deseja excluir este registro?",
     deleteSuccess: "Registro excluído com sucesso",
+    confirmReset: "Tem certeza que deseja resetar todos os registros? Esta ação não pode ser desfeita.",
+    resetSuccess: "Registros resetados com sucesso",
     errors: {
       fetchFailed: "Erro ao buscar registros financeiros",
       createFailed: "Erro ao criar registro financeiro",
@@ -300,10 +340,67 @@ export const ptBR = {
       futureDate: "Data Inválida",
       futureDateDescription: "Não é possível adicionar registros para datas futuras",
       deleteFailed: "Erro ao excluir registro",
-      importFailed: "Erro ao importar registros"
+      importFailed: "Erro ao importar registros",
+      resetFailed: "Erro ao resetar registros",
+      invalidFormat: "Formato de arquivo inválido",
+      emptyFields: "Por favor, preencha todos os campos obrigatórios" 
     },
     success: {
       created: "Registro financeiro criado com sucesso"
+    },
+    importButton: "Importar CSV",
+    chooseFile: 'Escolher arquivo CSV',
+    resetRecords: 'Resetar Registros'
+  },
+  clientProfile: {
+    title: 'Informações do Cliente',
+    loading: 'Carregando...',
+    backToDashboard: 'Voltar ao Dashboard',
+    profileSection: 'Dados Pessoais',
+    passwordSection: 'Alterar Senha',
+    email: 'E-mail',
+    fullName: 'Nome Completo',
+    birthDate: 'Data de Nascimento',
+    newPassword: 'Nova Senha',
+    confirmPassword: 'Confirmar Nova Senha',
+    buttons: {
+      edit: 'Editar',
+      save: 'Salvar',
+      cancel: 'Cancelar',
+      changePassword: 'Alterar Senha'
+    },
+    messages: {
+      profileUpdateSuccess: 'Dados atualizados com sucesso',
+      profileUpdateError: 'Erro ao atualizar dados',
+      passwordUpdateSuccess: 'Senha alterada com sucesso',
+      passwordUpdateError: 'Erro ao alterar senha',
+      passwordMismatch: 'As senhas não coincidem'
+    }
+  },
+  settings: {
+    title: 'Configurações',
+    loading: 'Carregando...',
+    backToDashboard: 'Voltar ao Dashboard',
+    profileSection: 'Informações do Perfil',
+    passwordSection: 'Alterar Senha',
+    email: 'E-mail',
+    fullName: 'Nome Completo',
+    birthDate: 'Data de Nascimento',
+    currentPassword: 'Senha Atual',
+    newPassword: 'Nova Senha',
+    confirmPassword: 'Confirmar Nova Senha',
+    buttons: {
+      edit: 'Editar',
+      save: 'Salvar',
+      cancel: 'Cancelar',
+      changePassword: 'Alterar Senha'
+    },
+    messages: {
+      profileUpdateSuccess: 'Perfil atualizado com sucesso',
+      profileUpdateError: 'Erro ao atualizar perfil',
+      passwordUpdateSuccess: 'Senha alterada com sucesso',
+      passwordUpdateError: 'Erro ao alterar senha',
+      passwordMismatch: 'As senhas não coincidem'
     }
   }
 }; 

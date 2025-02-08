@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -18,9 +18,30 @@ export const CreateClient = () => {
     name: '',
     birth_date: '',
   });
+  const [currentBroker, setCurrentBroker] = useState<string | null>(null);
+
+  useEffect(() => {
+    const getCurrentBroker = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        setCurrentBroker(user.id);
+      }
+    };
+    getCurrentBroker();
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    if (!currentBroker) {
+      toast({
+        title: t('createClient.messages.error.title'),
+        description: t('common.errors.tryAgain'),
+        variant: "destructive",
+      });
+      return;
+    }
+
     setLoading(true);
 
     try {
@@ -37,7 +58,7 @@ export const CreateClient = () => {
       if (authError) throw authError;
       if (!authData.user) throw new Error(t('createClient.messages.error.description'));
 
-      // Create profile
+      // Create profile with broker_id
       const { error: profileError } = await supabase
         .from('profiles')
         .insert([
@@ -45,7 +66,8 @@ export const CreateClient = () => {
             id: authData.user.id,
             is_broker: false,
             name: formData.name,
-            birth_date: formData.birth_date
+            birth_date: formData.birth_date,
+            broker_id: currentBroker
           }
         ]);
 

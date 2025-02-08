@@ -2,18 +2,24 @@ import { useParams, Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, Pencil } from "lucide-react";
 import { DashboardCard } from "@/components/DashboardCard";
 import { ptBR } from "@/locales/pt-BR";
 import { RISK_PROFILES } from '@/constants/riskProfiles';
+import { Spinner } from "@/components/ui/spinner";
+import { useTranslation } from "react-i18next";
+import { useAuth } from "@/components/auth/AuthProvider";
 
 export const InvestmentPlanShow = () => {
   const { id } = useParams();
+  const { t } = useTranslation();
+  const { user } = useAuth();
 
   const { data: plan, isLoading } = useQuery({
     queryKey: ['investmentPlan', id],
     queryFn: async () => {
-      // Primeira consulta: buscar o investment plan
+      if (!id) return null;
+
       const { data: investmentPlan, error: planError } = await supabase
         .from('investment_plans')
         .select('*')
@@ -28,12 +34,20 @@ export const InvestmentPlanShow = () => {
       // Segunda consulta: buscar o profile relacionado
       const { data: profile, error: profileError } = await supabase
         .from('profiles')
-        .select('name')
+        .select('name, broker_id')
         .eq('id', investmentPlan.user_id)
         .single();
 
       if (profileError) {
         console.error('Error fetching profile:', profileError);
+        return null;
+      }
+
+      // terceira consulta: buscar o broker relacionado
+      const { data: actualUser, error: actualUserError } = await supabase.auth.getUser();
+
+      if (actualUserError) {
+        console.error('Error fetching broker:', actualUserError);
         return null;
       }
 
@@ -47,11 +61,32 @@ export const InvestmentPlanShow = () => {
   });
 
   if (isLoading) {
-    return <div>Loading...</div>;
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <Spinner size="lg" />
+      </div>
+    );
   }
 
   if (!plan) {
-    return <div>Investment plan not found</div>;
+    return (
+      <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center p-4">
+        <div className="text-center space-y-4">
+          <h2 className="text-2xl font-bold text-gray-900">
+            {t('investmentPlan.messages.notFound.title')}
+          </h2>
+          <p className="text-gray-500">
+            {t('investmentPlan.messages.notFound.description')}
+          </p>
+          <Link to="/">
+            <Button>
+              <ArrowLeft className="h-4 w-4 mr-2" />
+              {t('common.back')} 
+            </Button>
+          </Link>
+        </div>
+      </div>
+    );
   }
 
   return (
@@ -60,7 +95,7 @@ export const InvestmentPlanShow = () => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-3">
-              <Link to={`/client/${plan.user_id}`}>
+              <Link to={`/client/${plan?.user_id}`}>
                 <Button variant="ghost" size="icon">
                   <ArrowLeft className="h-5 w-5" />
                 </Button>
@@ -72,6 +107,24 @@ export const InvestmentPlanShow = () => {
           </div>
         </div>
       </header>
+
+      {user?.id && plan?.profiles?.broker_id === user.id && (
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+            <Link to={`/edit-plan/${plan.id}`}>
+              <Button 
+                variant="ghost"
+                className="w-full h-14 flex flex-col items-center justify-center gap-1 bg-gradient-to-br from-white to-gray-50 hover:from-blue-50 hover:to-blue-100 shadow-sm hover:shadow transition-all duration-200 border border-gray-100"
+              >
+                <div className="flex items-center gap-2">
+                  <Pencil className="h-4 w-4 text-blue-600" />
+                  <span className="text-sm font-medium text-gray-700">{t('dashboard.buttons.editPlan')}</span>
+                </div>
+              </Button>
+            </Link>
+          </div>
+        </div>
+      )}
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">

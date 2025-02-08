@@ -142,8 +142,6 @@ const NewFinancialRecord = () => {
 
     const growth_percentage = (((values.ending_balance - values.starting_balance) / values.starting_balance) * 100) || 0;
 
-    console.log(values);
-    console.log(growth_percentage);
     const { error } = await supabase
       .from('user_financial_records')
       .insert([
