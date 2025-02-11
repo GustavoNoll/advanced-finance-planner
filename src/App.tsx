@@ -13,7 +13,6 @@ import { BrokerDashboard } from "./pages/BrokerDashboard";
 import { CreateClient } from "./pages/CreateClient";
 import { InvestmentPlanShow } from "./pages/InvestmentPlan";
 import FinancialRecords from "@/pages/FinancialRecords";
-import NewFinancialRecord from "@/pages/NewFinancialRecord";
 import ClientProfile from "@/pages/ClientProfile";
 import EditFinancialRecord from "@/pages/EditFinancialRecord";
 
@@ -111,14 +110,6 @@ const App = () => (
               element={
                 <ProtectedRoute>
                   <FinancialRecords />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/financial-records/new"
-              element={
-                <ProtectedRoute>
-                  <NewFinancialRecord />
                 </ProtectedRoute>
               }
             />

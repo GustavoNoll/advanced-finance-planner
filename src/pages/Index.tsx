@@ -148,22 +148,20 @@ const Index = () => {
   const calculateTotalReturns = useCallback(() => {
     if (!financialRecords?.length) return { totalAmount: 0, percentageReturn: 0 };
 
-    const totalReturn = financialRecords.reduce((acc, record) => {
-      const monthlyReturn = (record.ending_balance - record.starting_balance - record.monthly_contribution);
-      return acc + monthlyReturn;
-    }, 0);
+    let totalReturn = 0;
+    let accumulatedReturn = 1;
 
-    const totalInvested = financialRecords.reduce((acc, record) => 
-      acc + record.monthly_contribution, financialRecords[0].starting_balance
-    );
+    for (const record of financialRecords) {
+      totalReturn += record.monthly_return;
+      accumulatedReturn *= (1 + record.monthly_return_rate / 100);
+    }
 
-    const percentageReturn = totalInvested > 0 
-      ? (totalReturn / totalInvested) * 100 
-      : 0;
+    // Subtract 1 to get the actual percentage change
+    accumulatedReturn = accumulatedReturn - 1;
 
     return {
       totalAmount: totalReturn,
-      percentageReturn: Number(percentageReturn.toFixed(2))
+      percentageReturn: (accumulatedReturn * 100).toFixed(2)
     };
   }, [financialRecords]);
 
@@ -309,10 +307,16 @@ const Index = () => {
                 }).format(portfolioValue)}
               </p>
               {latestRecord && (
-                <div className="flex items-center gap-2 bg-green-50 rounded-full px-3 py-1 w-fit">
-                  <TrendingUp className="h-4 w-4 text-green-600" />
-                  <p className="text-sm font-medium text-green-600">
-                    +{latestRecord.monthly_return_rate}%
+                <div className={`flex items-center gap-2 ${
+                  latestRecord.monthly_return_rate >= 0 ? 'bg-green-50' : 'bg-red-50'
+                } rounded-full px-3 py-1 w-fit`}>
+                  <TrendingUp className={`h-4 w-4 ${
+                    latestRecord.monthly_return_rate >= 0 ? 'text-green-600' : 'text-red-600'
+                  }`} />
+                  <p className={`text-sm font-medium ${
+                    latestRecord.monthly_return_rate >= 0 ? 'text-green-600' : 'text-red-600'
+                  }`}>
+                    {latestRecord.monthly_return_rate}%
                   </p>
                 </div>
               )}
@@ -368,12 +372,19 @@ const Index = () => {
                   currency: 'BRL'
                 }).format(totalAmount)}
               </p>
-              <p className={`text-sm flex items-center gap-1 ${
-                percentageReturn >= 0 ? 'text-green-600' : 'text-red-600'
-              }`}>
-                <PiggyBank className="h-4 w-4" />
-                {percentageReturn}% {t('dashboard.cards.totalReturns.subtitle')}
-              </p>
+              
+              <div className={`flex items-center gap-2 ${
+                Number(percentageReturn) >= 0 ? 'bg-green-50' : 'bg-red-50'
+              } rounded-full px-3 py-1 w-fit`}>
+                <TrendingUp className={`h-4 w-4 ${
+                  Number(percentageReturn) >= 0 ? 'text-green-600' : 'text-red-600'
+                }`} />
+                <p className={`text-sm flex items-center gap-1 ${
+                  Number(percentageReturn) >= 0 ? 'text-green-600' : 'text-red-600'
+                }`}>
+                  {percentageReturn}%
+                </p>
+              </div>
             </div>
           </DashboardCard>
         </div>

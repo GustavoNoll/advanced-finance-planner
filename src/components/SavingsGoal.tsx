@@ -149,10 +149,15 @@ export const SavingsGoal = ({ currentInvestment, investmentPlan, profile }: Savi
       </CardHeader>
       <CardContent>
         <div className="space-y-4">
-          <Progress 
-            value={percentage} 
-            className={`w`}
-          />
+          <div className="relative">
+            <Progress 
+              value={percentage} 
+              className="w-full"
+            />
+            <span className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-sm font-medium">
+              {Math.round(percentage)}%
+            </span>
+          </div>
           <div className="flex justify-between text-sm">
             <div>
               <span className="block text-lg font-semibold">

@@ -8,6 +8,7 @@ interface FinancialRecord {
   starting_balance: number;
   monthly_contribution: number;
   monthly_return_rate: number;
+  monthly_return: number;
 }
 
 interface Profile {

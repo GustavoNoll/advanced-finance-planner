@@ -18,6 +18,7 @@ interface FinancialRecord {
   record_month: number;
   starting_balance: number;
   monthly_contribution: number;
+  monthly_return: number;
   monthly_return_rate: number;
   ending_balance: number;
   growth_percentage: number;
@@ -40,6 +41,7 @@ const EditFinancialRecord = () => {
     monthly_return_rate: null,
     ending_balance: null,
     target_rentability: null,
+    monthly_return: null,
   });
 
   const { data: record, isLoading } = useQuery({
@@ -105,6 +107,7 @@ const EditFinancialRecord = () => {
           ending_balance: data.ending_balance,
           target_rentability: data.target_rentability,
           monthly_return_rate: data.monthly_return_rate,
+          monthly_return: data.monthly_return,
           growth_percentage,
         })
         .eq('id', recordId);
@@ -235,6 +238,20 @@ const EditFinancialRecord = () => {
                   onChange={handleInputChange}
                   required
                   min="0"
+                />
+              </div>
+
+              <div>
+                <Label htmlFor="monthly_return">
+                  {t('financialRecords.form.monthlyReturn')}
+                </Label>
+                <Input
+                  id="monthly_return"
+                  name="monthly_return"
+                  type="number"
+                  step="0.01"
+                  value={formData.monthly_return ?? ''}
+                  onChange={handleInputChange}
                 />
               </div>
 

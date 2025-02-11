@@ -7,6 +7,8 @@ import { useState, useCallback } from "react";
 import { supabase } from "@/lib/supabase";
 import { toast } from "@/components/ui/use-toast";
 import { Spinner } from "@/components/ui/spinner";
+import { fetchCDIRates } from '@/lib/bcb-api';
+import { fetchIPCARates } from '@/lib/bcb-api';
 
 interface FinancialRecord {
   record_year: number;
@@ -15,6 +17,7 @@ interface FinancialRecord {
   starting_balance: number;
   monthly_contribution: number;
   monthly_return_rate: number;
+  monthly_return: number;
   target_rentability: number;
 }
 
@@ -26,10 +29,28 @@ interface MonthlyViewProps {
 export const MonthlyView = ({ userId, initialRecords }: MonthlyViewProps) => {
   const { t } = useTranslation();
   const [page, setPage] = useState(1);
+  const [timeWindow, setTimeWindow] = useState<6 | 12 | 24 | 0>(12); // 0 means all time
   const RECORDS_PER_PAGE = 12;
 
+  const { data: totalCount } = useQuery({
+    queryKey: ['financialRecordsCount', userId],
+    queryFn: async () => {
+      const { count, error } = await supabase
+        .from('user_financial_records')
+        .select('*', { count: 'exact', head: true })
+        .eq('user_id', userId);
+
+      if (error) {
+        console.error('Error fetching count:', error);
+        return 0;
+      }
+
+      return count || 0;
+    },
+  });
+
   const { data: additionalRecords, isLoading } = useQuery({
-    queryKey: ['financialRecords', userId, page],
+    queryKey: ['financialRecords', userId, page, timeWindow],
     queryFn: async () => {
       if (page === 1) return [];
       
@@ -51,25 +72,50 @@ export const MonthlyView = ({ userId, initialRecords }: MonthlyViewProps) => {
     enabled: page > 1,
   });
 
-  // Add a query to get total count
-  const { data: totalCount } = useQuery({
-    queryKey: ['financialRecordsCount', userId],
+  const { data: chartRecords } = useQuery({
+    queryKey: ['chartRecords', userId, timeWindow],
     queryFn: async () => {
-      const { count, error } = await supabase
-        .from('user_financial_records')
-        .select('*', { count: 'exact', head: true })
-        .eq('user_id', userId);
-
-      if (error) {
-        console.error('Error fetching count:', error);
-        return 0;
+      console.log(timeWindow);
+      if (timeWindow === 0) {
+        const { data, error } = await supabase
+          .from('user_financial_records')
+          .select('*')
+          .eq('user_id', userId)
+          .order('record_year', { ascending: false })
+          .order('record_month', { ascending: false });
+  
+        if (error) {
+          console.error('Error fetching all records:', error);
+          return initialRecords;
+        }
+  
+        return data;
       }
 
-      return count || 0;
+      if (timeWindow <= RECORDS_PER_PAGE) {
+        return initialRecords;
+      }
+
+      const { data, error } = await supabase
+        .from('user_financial_records')
+        .select('*')
+        .eq('user_id', userId)
+        .order('record_year', { ascending: false })
+        .order('record_month', { ascending: false })
+        .limit(timeWindow);
+
+      if (error) {
+        console.error('Error fetching chart records:', error);
+        return initialRecords;
+      }
+
+      return data;
     },
+    enabled: timeWindow > RECORDS_PER_PAGE || timeWindow === 0,
   });
 
   const allDisplayedRecords = [...initialRecords, ...(additionalRecords || [])];
+  const allChartRecords = chartRecords || initialRecords;
 
   const handleLoadMore = useCallback(() => {
     setPage(prev => prev + 1);
@@ -104,13 +150,12 @@ export const MonthlyView = ({ userId, initialRecords }: MonthlyViewProps) => {
           'July', 'August', 'September', 'October', 'November', 'December'];
         
         const month = `${t(`monthlyView.table.months.${monthNames[record.record_month - 1]}`)}/${record.record_year}`;
-        const returns = record.ending_balance - record.starting_balance;
         
         return [
           month,
           record.starting_balance.toString(),
           record.monthly_contribution.toString(),
-          returns.toString(),
+          record.monthly_return.toString(),
           `${record.monthly_return_rate.toFixed(2)}%`,
           record.ending_balance.toString(),
           `${record.target_rentability.toFixed(2)}%`
@@ -162,14 +207,13 @@ export const MonthlyView = ({ userId, initialRecords }: MonthlyViewProps) => {
     const monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 
       'July', 'August', 'September', 'October', 'November', 'December'];
       
-    const returns = record.ending_balance - record.starting_balance;
       
     return {
       month: `${monthNames[record.record_month - 1]}/${record.record_year}`,
       balance: record.starting_balance,
       contribution: record.monthly_contribution,
-      returns,
       percentage: record.monthly_return_rate,
+      return: record.monthly_return,
       endBalance: record.ending_balance,
       targetRentability: record.target_rentability
     };
@@ -180,65 +224,187 @@ export const MonthlyView = ({ userId, initialRecords }: MonthlyViewProps) => {
     month: `${t(`monthlyView.table.months.${data.month.split('/')[0]}`)}/${data.month.split('/')[1]}`
   }));
 
-  // Create reversed data for chart
-  const chartData = [...localizedData].reverse();
+  // Update the query keys to include timeWindow
+  const { data: cdiRates } = useQuery({
+    queryKey: ['cdiRates', initialRecords, timeWindow, chartRecords],
+    queryFn: async () => {
+      const recordsToUse = timeWindow === 0 || timeWindow > RECORDS_PER_PAGE ? 
+        chartRecords : initialRecords;
+
+      if (!recordsToUse?.length) return [];
+      
+      const sortedRecords = [...recordsToUse].sort((a, b) => {
+        if (a.record_year !== b.record_year) return a.record_year - b.record_year;
+        return a.record_month - b.record_month;
+      });
+
+      const startDate = `01/${sortedRecords[0].record_month.toString().padStart(2, '0')}/${sortedRecords[0].record_year}`;
+      const lastRecord = sortedRecords[sortedRecords.length - 1];
+      const endDate = `01/${lastRecord.record_month.toString().padStart(2, '0')}/${lastRecord.record_year}`;
+      
+      return await fetchCDIRates(startDate, endDate);
+    },
+    enabled: (timeWindow === 0 || timeWindow > RECORDS_PER_PAGE ? !!chartRecords : !!initialRecords.length),
+  });
+
+  const { data: ipcaRates } = useQuery({
+    queryKey: ['ipcaRates', initialRecords, timeWindow, chartRecords],
+    queryFn: async () => {
+      const recordsToUse = timeWindow === 0 || timeWindow > RECORDS_PER_PAGE ? 
+        chartRecords : initialRecords;
+
+      if (!recordsToUse?.length) return [];
+      
+      const sortedRecords = [...recordsToUse].sort((a, b) => {
+        if (a.record_year !== b.record_year) return a.record_year - b.record_year;
+        return a.record_month - b.record_month;
+      });
+
+      const startDate = `01/${sortedRecords[0].record_month.toString().padStart(2, '0')}/${sortedRecords[0].record_year}`;
+      const lastRecord = sortedRecords[sortedRecords.length - 1];
+      const endDate = `01/${lastRecord.record_month.toString().padStart(2, '0')}/${lastRecord.record_year}`;
+      
+      return await fetchIPCARates(startDate, endDate);
+    },
+    enabled: (timeWindow === 0 || timeWindow > RECORDS_PER_PAGE ? !!chartRecords : !!initialRecords.length),
+  });
+
+  const processRecordsForChart = (records: FinancialRecord[]) => {
+    const sortedRecords = records.sort((a, b) => {
+      if (a.record_year !== b.record_year) {
+        return b.record_year - a.record_year;
+      }
+      return b.record_month - a.record_month;
+    });
+
+    return sortedRecords.map(record => {
+      const monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 
+        'July', 'August', 'September', 'October', 'November', 'December'];
+        
+      const cdiRate = cdiRates?.find(rate => 
+        rate.date.getMonth() + 1 === record.record_month && 
+        rate.date.getFullYear() === record.record_year
+      )?.monthlyRate ?? 0;
+
+      const ipcaRate = ipcaRates?.find(rate => 
+        rate.date.getMonth() + 1 === record.record_month && 
+        rate.date.getFullYear() === record.record_year
+      )?.monthlyRate ?? 0;
+
+      return {
+        month: `${t(`monthlyView.table.months.${monthNames[record.record_month - 1]}`)}/${record.record_year}`,
+        balance: record.starting_balance,
+        contribution: record.monthly_contribution,
+        percentage: record.monthly_return_rate,
+        return: record.monthly_return,
+        endBalance: record.ending_balance,
+        targetRentability: record.target_rentability,
+        cdiRate,
+        ipcaRate
+      };
+    }).reverse();
+  };
+
+  const calculateAccumulatedReturns = (data: ReturnType<typeof processRecordsForChart>) => {
+    return data.map((record, index, array) => {
+      // Calculate the start index based on the timeWindow
+      const startIndex = timeWindow === 0 ? 0 : Math.max(0, array.length - timeWindow);
+      // Only use data from the startIndex up to the current index
+      const relevantData = array.slice(startIndex, index + 1);
+      
+      const accumulatedReturn = relevantData.reduce((acc, curr) => {
+        return acc * (1 + curr.percentage / 100);
+      }, 1);
+      
+      const accumulatedTargetReturn = relevantData.reduce((acc, curr) => {
+        return acc * (1 + curr.targetRentability / 100);
+      }, 1);
+
+      const accumulatedCDIReturn = relevantData.reduce((acc, curr) => {
+        return acc * (1 + curr.cdiRate / 100);
+      }, 1);
+
+      const accumulatedIPCAReturn = relevantData.reduce((acc, curr) => {
+        return acc * (1 + curr.ipcaRate / 100);
+      }, 1);
+
+      return {
+        ...record,
+        accumulatedPercentage: ((accumulatedReturn - 1) * 100),
+        accumulatedTargetRentability: ((accumulatedTargetReturn - 1) * 100),
+        accumulatedCDIReturn: ((accumulatedCDIReturn - 1) * 100),
+        accumulatedIPCAReturn: ((accumulatedIPCAReturn - 1) * 100)
+      };
+    });
+  };
+
+  // Modify the chartDataToUse assignment
+  const chartDataToUse = processRecordsForChart(
+    timeWindow === 0 || timeWindow > RECORDS_PER_PAGE ? 
+    allChartRecords : 
+    initialRecords
+  );
+
+  // Update getFilteredChartData to handle the data consistently
+  const getFilteredChartData = (data: ReturnType<typeof calculateAccumulatedReturns>) => {
+    if (timeWindow === 0) return data;
+    return data.slice(-Math.min(timeWindow, data.length));
+  };
 
   return (
     <DashboardCard title={t('monthlyView.title')} className="col-span-full">
-      <Tabs defaultValue="balanceChart" className="w-full">
-        <TabsList className="grid w-full grid-cols-3 lg:w-[600px]">
-          <TabsTrigger value="balanceChart">{t('monthlyView.tabs.balanceChart')}</TabsTrigger>
+      <Tabs defaultValue="returnChart" className="w-full">
+        <TabsList className="grid w-full grid-cols-2 lg:w-[600px]">
           <TabsTrigger value="returnChart">{t('monthlyView.tabs.returnChart')}</TabsTrigger>
           <TabsTrigger value="table">{t('monthlyView.tabs.table')}</TabsTrigger>
         </TabsList>
         
-        <TabsContent value="balanceChart" className="space-y-4">
-          <div className="h-[400px] w-full">
-            <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={chartData}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="month" />
-                <YAxis domain={[0, 'auto']} />
-                <Tooltip />
-                <Line 
-                  type="monotone" 
-                  dataKey="endBalance" 
-                  stroke="#22c55e" 
-                  name={t('monthlyView.chart.endBalance')}
-                  strokeWidth={2}
-                />
-                <Line 
-                  type="monotone" 
-                  dataKey="contribution" 
-                  stroke="#3b82f6" 
-                  name={t('monthlyView.chart.contribution')}
-                  strokeWidth={2}
-                />
-              </LineChart>
-            </ResponsiveContainer>
-          </div>
-        </TabsContent>
-        
         <TabsContent value="returnChart" className="space-y-4">
+          <div className="flex justify-end gap-2 mb-4">
+            <select
+              value={timeWindow}
+              onChange={(e) => setTimeWindow(Number(e.target.value) as typeof timeWindow)}
+              className="px-3 py-1 border rounded-md text-sm"
+            >
+              <option value={6}>{t('monthlyView.timeWindows.last6Months')}</option>
+              <option value={12}>{t('monthlyView.timeWindows.last12Months')}</option>
+              <option value={24}>{t('monthlyView.timeWindows.last24Months')}</option>
+              <option value={0}>{t('monthlyView.timeWindows.allTime')}</option>
+            </select>
+          </div>
           <div className="h-[400px] w-full">
             <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={chartData}>
+              <LineChart data={getFilteredChartData(calculateAccumulatedReturns(chartDataToUse))}>
                 <CartesianGrid strokeDasharray="3 3" />
                 <XAxis dataKey="month" />
                 <YAxis unit="%" />
                 <Tooltip formatter={(value: number) => `${value.toFixed(2)}%`} />
                 <Line 
                   type="monotone" 
-                  dataKey="percentage" 
+                  dataKey="accumulatedPercentage" 
                   stroke="#22c55e" 
-                  name={t('monthlyView.chart.monthlyReturn')}
+                  name={t('monthlyView.chart.accumulatedReturn')}
                   strokeWidth={2}
                 />
                 <Line 
                   type="monotone" 
-                  dataKey="targetRentability" 
+                  dataKey="accumulatedTargetRentability" 
                   stroke="#f43f5e" 
-                  name={t('monthlyView.chart.targetRentability')}
+                  name={t('monthlyView.chart.accumulatedTargetReturn')}
+                  strokeWidth={2}
+                />
+                <Line 
+                  type="monotone" 
+                  dataKey="accumulatedCDIReturn" 
+                  stroke="#3b82f6" 
+                  name={t('monthlyView.chart.accumulatedCDIReturn')}
+                  strokeWidth={2}
+                />
+                <Line 
+                  type="monotone" 
+                  dataKey="accumulatedIPCAReturn" 
+                  stroke="#eab308" 
+                  name={t('monthlyView.chart.accumulatedIPCAReturn')}
                   strokeWidth={2}
                 />
               </LineChart>
@@ -274,8 +440,8 @@ export const MonthlyView = ({ userId, initialRecords }: MonthlyViewProps) => {
                     <td className="p-2">{data.month}</td>
                     <td className="p-2 text-right">R$ {data.balance.toLocaleString()}</td>
                     <td className="p-2 text-right">R$ {data.contribution.toLocaleString()}</td>
-                    <td className={`p-2 text-right ${data.returns >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                      {data.returns >= 0 ? '+' : ''}{`R$ ${data.returns.toLocaleString()}`}
+                    <td className={`p-2 text-right ${data.return >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                      {data.return >= 0 ? '+' : ''}{`R$ ${data.return.toLocaleString()}`}
                     </td>
                     <td className={`p-2 text-right ${data.percentage >= 0 ? 'text-green-600' : 'text-red-600'}`}>
                       {data.percentage >= 0 ? '+' : ''}{data.percentage.toFixed(2)}%

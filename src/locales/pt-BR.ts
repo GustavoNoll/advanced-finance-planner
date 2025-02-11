@@ -96,8 +96,8 @@ export const ptBR = {
         required: "Necessário"
       },
       totalReturns: {
-        title: "Retorno Total",
-        subtitle: "Retorno Anual",
+        title: "Rendimento Anual",
+        subtitle: "",
         amount: "R$ {{value}}",
         percentage: "+{{value}}%"
       }
@@ -186,7 +186,9 @@ export const ptBR = {
     edit: "Editar",
     create: "Criar",
     reset: "Resetar",
-    logout: "Sair"
+    logout: "Sair",
+    update: "Atualizar",
+    add: "Adicionar"
   },
   createClient: {
     title: "Criar Novo Cliente",
@@ -228,6 +230,12 @@ export const ptBR = {
     loadMore: "Carregar Mais",
     downloadCSV: "Baixar CSV",
     noData: "Nenhum dado disponível",
+    timeWindows: {
+      allTime: "Todos os Tempos",
+      last6Months: "Últimos 6 Meses",
+      last12Months: "Últimos 12 Meses",
+      last24Months: "Últimos 24 Meses"
+    },
     title: "Desempenho Mensal",
     tabs: {
       chart: "Visualização em Gráfico",
@@ -236,6 +244,10 @@ export const ptBR = {
       balanceChart: "Comparação de Saldo"
     },
     chart: {
+      accumulatedReturn: "Retorno Acumulado",
+      accumulatedCDIReturn: "Retorno CDI Acumulado",
+      accumulatedIPCAReturn: "Retorno IPC-A Acumulado",
+      accumulatedTargetReturn: "Rentabilidade Alvo Acumulada",
       endBalance: "Saldo Final",
       contribution: "Contribuição",
       monthlyReturn: "Retorno Mensal",
@@ -246,7 +258,7 @@ export const ptBR = {
         month: "Mês",
         initialBalance: "Saldo Inicial",
         contribution: "Contribuição",
-        returns: "Saldo",
+        returns: "Rendimento",
         returnPercentage: "Rendimento %",
         endBalance: "Saldo Final",
         targetRentability: "Rentabilidade Alvo"
@@ -309,7 +321,7 @@ export const ptBR = {
     addNew: "Adicionar Novo",
     startingBalance: "Saldo Inicial",
     endingBalance: "Saldo Final",
-    growth: "Crescimento",
+    growth: "Rendimento",
     noRecords: "Nenhum registro financeiro encontrado",
     new: {
       title: "Novo Registro Financeiro"
@@ -319,7 +331,8 @@ export const ptBR = {
       month: "Mês",
       startingBalance: "Saldo Inicial",
       monthlyContribution: "Contribuição Mensal",
-      monthlyReturnRate: "Taxa de Retorno Mensal (%)",
+      monthlyReturn: "Rendimento Mensal",
+      monthlyReturnRate: "Taxa de Rendimento Mensal (%)",
       endingBalance: "Saldo Final",
       targetRentability: "Rentabilidade Alvo (%)",
       submit: "Salvar Registro"
@@ -346,6 +359,7 @@ export const ptBR = {
       emptyFields: "Por favor, preencha todos os campos obrigatórios" 
     },
     success: {
+      updated: "Registro financeiro atualizado com sucesso",
       created: "Registro financeiro criado com sucesso"
     },
     importButton: "Importar CSV",

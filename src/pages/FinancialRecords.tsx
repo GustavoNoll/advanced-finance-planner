@@ -11,14 +11,15 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Input } from "@/components/ui/input";
 import { useState } from "react";
 import Papa from 'papaparse';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Spinner } from "@/components/ui/spinner";
+import { AddRecordForm } from "@/components/financial-records/AddRecordForm";
 
 interface CSVRecord {
   Data: string;
   PatrimonioInicial: string;
   Aporte: string;
   PatrimonioFinal: string;
+  Retorno: string;
   RetornoPercentual: string;
   RentabilidadeMeta: string;
 }
@@ -43,6 +44,8 @@ const FinancialRecords = () => {
   const queryClient = useQueryClient();
   const [isImportDialogOpen, setIsImportDialogOpen] = useState(false);
   const [showAdvancedOptions, setShowAdvancedOptions] = useState(false);
+  const [showAddForm, setShowAddForm] = useState(false);
+  const [editingRecordId, setEditingRecordId] = useState<number | null>(null);
 
   const { data: records, isLoading: recordsLoading } = useQuery({
     queryKey: ['financialRecords', clientId],
@@ -152,6 +155,10 @@ const FinancialRecords = () => {
           return { valid: false, error: 'Aporte mensal inválido' };
         }
 
+        if (isNaN(record.monthly_return)) {
+          return { valid: false, error: 'Rendimento mensal inválido' };
+        }
+
         return { valid: true };
       };
 
@@ -169,6 +176,7 @@ const FinancialRecords = () => {
             monthly_return_rate: parseFloat(record.RetornoPercentual.replace('%', '').replace(',', '.')),
             target_rentability: parseFloat(record.RentabilidadeMeta.replace('%', '').replace(',', '.')),
             growth_percentage: null,
+            monthly_return: parseFloat(record.Retorno.replace('R$ ', '').replace('.', '').replace(',', '.')),
           };
           formattedRecord.growth_percentage = ((formattedRecord.ending_balance - formattedRecord.starting_balance) / formattedRecord.starting_balance) * 100;
 
@@ -340,7 +348,8 @@ const FinancialRecords = () => {
                 Aporte: row.Aporte,
                 PatrimonioFinal: row.PatrimonioFinal,
                 RetornoPercentual: row.RetornoPercentual,
-                RentabilidadeMeta: row.RentabilidadeMeta
+                RentabilidadeMeta: row.RentabilidadeMeta,
+                Retorno: row.Retorno
               };
               return record;
             }
@@ -366,6 +375,10 @@ const FinancialRecords = () => {
         });
       }
     });
+  };
+
+  const handleEdit = (recordId: number) => {
+    setEditingRecordId(editingRecordId === recordId ? null : recordId);
   };
 
   if (recordsLoading) {
@@ -401,17 +414,16 @@ const FinancialRecords = () => {
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
-          <Link to={`/financial-records/new${params.id ? `?client_id=${params.id}` : ''}`}>
-            <Button 
-              variant="ghost"
-              className="w-full h-14 flex flex-col items-center justify-center gap-1 bg-gradient-to-br from-white to-gray-50 hover:from-blue-50 hover:to-blue-100 shadow-sm hover:shadow transition-all duration-200 border border-gray-100"
-            >
-              <div className="flex items-center gap-2">
-                <Plus className="h-4 w-4 text-blue-600" />
-                <span className="text-sm font-medium text-gray-700">{t('financialRecords.addNew')}</span>
-              </div>
-            </Button>
-          </Link>
+          <Button 
+            variant="ghost"
+            onClick={() => setShowAddForm(!showAddForm)}
+            className="w-full h-14 flex flex-col items-center justify-center gap-1 bg-gradient-to-br from-white to-gray-50 hover:from-blue-50 hover:to-blue-100 shadow-sm hover:shadow transition-all duration-200 border border-gray-100"
+          >
+            <div className="flex items-center gap-2">
+              <Plus className="h-4 w-4 text-blue-600" />
+              <span className="text-sm font-medium text-gray-700">{t('financialRecords.addNew')}</span>
+            </div>
+          </Button>
 
           <Dialog open={isImportDialogOpen} onOpenChange={setIsImportDialogOpen}>
             <DialogTrigger asChild>
@@ -425,7 +437,7 @@ const FinancialRecords = () => {
                 </div>
               </Button>
             </DialogTrigger>
-            <DialogContent className="sm:max-w-[800px]">
+            <DialogContent className="sm:max-w-[1000px]">
               <DialogHeader>
                 <DialogTitle>{t('financialRecords.importTitle')}</DialogTitle>
               </DialogHeader>
@@ -439,6 +451,7 @@ const FinancialRecords = () => {
                         <th className="whitespace-nowrap px-3 py-2 text-left font-medium text-gray-900 border-b">PatrimonioInicial</th>
                         <th className="whitespace-nowrap px-3 py-2 text-left font-medium text-gray-900 border-b">Aporte</th>
                         <th className="whitespace-nowrap px-3 py-2 text-left font-medium text-gray-900 border-b">PatrimonioFinal</th>
+                        <th className="whitespace-nowrap px-3 py-2 text-left font-medium text-gray-900 border-b">Retorno</th>
                         <th className="whitespace-nowrap px-3 py-2 text-left font-medium text-gray-900 border-b">RetornoPercentual</th>
                         <th className="whitespace-nowrap px-3 py-2 text-left font-medium text-gray-900 border-b">RentabilidadeMeta</th>
                       </tr>
@@ -449,6 +462,7 @@ const FinancialRecords = () => {
                         <td className="whitespace-nowrap px-3 py-2 text-gray-700">R$ 51.447,92</td>
                         <td className="whitespace-nowrap px-3 py-2 text-gray-700">R$ 4.000,00</td>
                         <td className="whitespace-nowrap px-3 py-2 text-gray-700">R$ 55.992,62</td>
+                        <td className="whitespace-nowrap px-3 py-2 text-gray-700">R$ 1.000,00</td>
                         <td className="whitespace-nowrap px-3 py-2 text-gray-700">1,19%</td>
                         <td className="whitespace-nowrap px-3 py-2 text-gray-700">0,64%</td>
                       </tr>
@@ -476,6 +490,13 @@ const FinancialRecords = () => {
             </div>
           </Button>
         </div>
+
+        {showAddForm && (
+          <AddRecordForm 
+            clientId={clientId!} 
+            onSuccess={() => setShowAddForm(false)} 
+          />
+        )}
       </div>
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -524,15 +545,25 @@ const FinancialRecords = () => {
                   </div>
                   <div>
                     <p className="text-sm text-gray-500">{t('financialRecords.growth')}</p>
-                    <p className={`font-semibold ${record.monthly_return_rate >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                      {record.monthly_return_rate}%
-                    </p>
+                    <div className="space-y-1">
+                      <div className="flex items-center gap-2">
+                        <p className={`font-semibold ${record.monthly_return_rate >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                          {record.monthly_return_rate}%
+                        </p>
+                        <span className="text-xs text-gray-500">
+                          (meta: {record.target_rentability}%)
+                        </span>
+                      </div>
+                      <p className={`text-xs ${record.monthly_return >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                        {formatCurrency(record.monthly_return)}
+                      </p>
+                    </div>
                   </div>
                   <div className="flex items-center gap-2">
                     <Button
                       variant="ghost"
                       size="icon"
-                      onClick={() => navigate(`/financial-records/edit/${record.id}${params.id ? `?client_id=${params.id}` : ''}`)}
+                      onClick={() => handleEdit(record.id)}
                       className="text-blue-600 hover:text-blue-700 hover:bg-blue-50"
                     >
                       <Pencil className="h-4 w-4" />
@@ -547,6 +578,14 @@ const FinancialRecords = () => {
                     </Button>
                   </div>
                 </div>
+                
+                {editingRecordId === record.id && (
+                  <AddRecordForm 
+                    clientId={clientId!}
+                    onSuccess={() => setEditingRecordId(null)}
+                    editingRecord={record}
+                  />
+                )}
               </Card>
             ))
           )}
