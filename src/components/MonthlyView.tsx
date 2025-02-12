@@ -631,7 +631,7 @@ export const MonthlyView = ({ userId, initialRecords, investmentPlan, profile }:
                           : '-'}
                       </td>
                       <td className="p-2 text-right font-medium">
-                        R$ {projection.balance.toLocaleString('pt-BR', { maximumFraction Digits: 2 })}
+                        R$ {projection.balance.toLocaleString('pt-BR', { maximumFractionDigits: 2 })}
                       </td>
                       <td className="p-2 text-center">
                         <button
