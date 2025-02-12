@@ -385,57 +385,79 @@ export const MonthlyView = ({ userId, initialRecords, investmentPlan, profile }:
   };
 
   const generateProjectionData = (): ProjectionData[] => {
-    const birthYear = new Date(profile.birth_date).getFullYear();
-    const currentYear = new Date().getFullYear();
-    const yearsUntil120 = 120 - investmentPlan.initial_age;
-    
-    const projectionData: ProjectionData[] = [];
-    let currentBalance = initialRecords[0]?.ending_balance || 0;
-    let currentContribution = investmentPlan.monthly_deposit;
-    let currentWithdrawal = investmentPlan.desired_income;
-    
-    for (let i = 0; i <= yearsUntil120; i++) {
-      const age = investmentPlan.initial_age + i;
-      const year = currentYear + i;
-      const isRetirementAge = age >= investmentPlan.final_age;
-      
-      // Calculate monthly values for the year
-      const monthlyData = Array.from({ length: 12 }, (_, month) => {
-        // Adjust for inflation at the start of each year
-        if (month === 0 && i > 0) {
-          if (investmentPlan.adjust_contribution_for_inflation && !isRetirementAge) {
-            currentContribution *= (1 + investmentPlan.inflation / 100);
-          }
-          currentWithdrawal *= (1 + investmentPlan.inflation / 100);
-        }
-
-        const monthlyChange = isRetirementAge 
-          ? -currentWithdrawal 
-          : currentContribution;
-
-        const monthlyReturn = currentBalance * (investmentPlan.expected_return / 100 / 12);
-        currentBalance = currentBalance + monthlyChange + monthlyReturn;
-
-        return {
-          month: month + 1,
-          contribution: isRetirementAge ? 0 : currentContribution,
-          withdrawal: isRetirementAge ? currentWithdrawal : 0,
-          balance: currentBalance
-        };
-      });
-
-      projectionData.push({
-        age,
-        year,
-        contribution: isRetirementAge ? 0 : currentContribution * 12,
-        withdrawal: isRetirementAge ? currentWithdrawal * 12 : 0,
-        balance: currentBalance,
-        months: monthlyData
-      });
+    // Verificar se temos todos os dados necessários
+    if (!profile?.birth_date || !investmentPlan || !initialRecords.length) {
+      return [];
     }
 
-    return projectionData;
+    try {
+      const birthYear = new Date(profile.birth_date).getFullYear();
+      const currentYear = new Date().getFullYear();
+      const yearsUntil120 = 120 - investmentPlan.initial_age;
+      
+      const projectionData: ProjectionData[] = [];
+      let currentBalance = initialRecords[0]?.ending_balance || 0;
+      let currentContribution = investmentPlan.monthly_deposit;
+      let currentWithdrawal = investmentPlan.desired_income;
+      
+      for (let i = 0; i <= yearsUntil120; i++) {
+        const age = investmentPlan.initial_age + i;
+        const year = currentYear + i;
+        const isRetirementAge = age >= investmentPlan.final_age;
+        
+        // Calculate monthly values for the year
+        const monthlyData = Array.from({ length: 12 }, (_, month) => {
+          // Adjust for inflation at the start of each year
+          if (month === 0 && i > 0) {
+            if (investmentPlan.adjust_contribution_for_inflation && !isRetirementAge) {
+              currentContribution *= (1 + investmentPlan.inflation / 100);
+            }
+            currentWithdrawal *= (1 + investmentPlan.inflation / 100);
+          }
+
+          const monthlyChange = isRetirementAge 
+            ? -currentWithdrawal 
+            : currentContribution;
+
+          const monthlyReturn = currentBalance * (investmentPlan.expected_return / 100 / 12);
+          currentBalance = currentBalance + monthlyChange + monthlyReturn;
+
+          return {
+            month: month + 1,
+            contribution: isRetirementAge ? 0 : currentContribution,
+            withdrawal: isRetirementAge ? currentWithdrawal : 0,
+            balance: currentBalance
+          };
+        });
+
+        projectionData.push({
+          age,
+          year,
+          contribution: isRetirementAge ? 0 : currentContribution * 12,
+          withdrawal: isRetirementAge ? currentWithdrawal * 12 : 0,
+          balance: currentBalance,
+          months: monthlyData
+        });
+      }
+
+      return projectionData;
+    } catch (error) {
+      console.error('Error generating projection data:', error);
+      return [];
+    }
   };
+
+  // Se não tivermos os dados necessários, mostramos uma mensagem
+  if (!profile?.birth_date || !investmentPlan) {
+    return (
+      <DashboardCard title={t('monthlyView.title')} className="col-span-full">
+        <div className="flex items-center justify-center p-8">
+          <Spinner className="mr-2" />
+          <span>Carregando dados...</span>
+        </div>
+      </DashboardCard>
+    );
+  }
 
   return (
     <DashboardCard title={t('monthlyView.title')} className="col-span-full">
@@ -609,7 +631,7 @@ export const MonthlyView = ({ userId, initialRecords, investmentPlan, profile }:
                           : '-'}
                       </td>
                       <td className="p-2 text-right font-medium">
-                        R$ {projection.balance.toLocaleString('pt-BR', { maximumFractionDigits: 2 })}
+                        R$ {projection.balance.toLocaleString('pt-BR', { maximumFraction Digits: 2 })}
                       </td>
                       <td className="p-2 text-center">
                         <button
