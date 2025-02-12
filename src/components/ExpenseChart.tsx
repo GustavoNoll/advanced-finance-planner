@@ -1,4 +1,3 @@
-
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
 import { useTranslation } from "react-i18next";
 
@@ -25,6 +24,7 @@ interface InvestmentPlan {
   initial_age: number;
   final_age: number;
   desired_income: number;
+  adjust_contribution_for_inflation: boolean
 }
 
 interface ExpenseChartProps {
@@ -72,7 +72,10 @@ export const ExpenseChart = ({ profile, investmentPlan, clientId, financialRecor
       } else {
         // Adjust monthly deposit/withdrawal for inflation annually
         if (i % 12 === 0) {
-          currentMonthlyDeposit *= (1 + yearlyInflationRate);
+          // Only adjust deposit if adjust_contribution_for_inflation is true
+          if (investmentPlan.adjust_contribution_for_inflation) {
+            currentMonthlyDeposit *= (1 + yearlyInflationRate);
+          }
           currentMonthlyWithdrawal *= (1 + yearlyInflationRate);
         }
 
@@ -141,7 +144,10 @@ export const ExpenseChart = ({ profile, investmentPlan, clientId, financialRecor
 
       // Adjust for inflation annually
       if (i % 12 === 0) {
-        currentMonthlyDeposit *= (1 + yearlyInflationRate);
+        // Only adjust deposit if adjust_contribution_for_inflation is true
+        if (investmentPlan.adjust_contribution_for_inflation) {
+          currentMonthlyDeposit *= (1 + yearlyInflationRate);
+        }
         currentMonthlyWithdrawal *= (1 + yearlyInflationRate);
       }
 

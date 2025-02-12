@@ -29,7 +29,7 @@ export const CreatePlan = () => {
     expectedReturn: RISK_PROFILES[1].return,
     inflation: "6.0",
     planType: "3",
-    adjust_contribution_for_inflation: false,
+    adjustContributionForInflation: false,
   });
 
   // Add new state for calculations
@@ -129,7 +129,7 @@ export const CreatePlan = () => {
           inflation_adjusted_income: calculations.inflationAdjustedIncome,
           required_monthly_deposit: calculations.requiredMonthlyDeposit,
           status: "active",
-          adjust_contribution_for_inflation: formData.adjust_contribution_for_inflation,
+          adjust_contribution_for_inflation: formData.adjustContributionForInflation,
         },
       ]);
 
@@ -306,7 +306,7 @@ export const CreatePlan = () => {
                       type="checkbox"
                       id="adjust_contribution_for_inflation"
                       name="adjust_contribution_for_inflation"
-                      checked={formData.adjust_contribution_for_inflation}
+                      checked={formData.adjustContributionForInflation}
                       onChange={(e) => setFormData(prev => ({
                         ...prev,
                         adjust_contribution_for_inflation: e.target.checked

@@ -101,7 +101,7 @@ export const InvestmentPlanShow = () => {
                 </Button>
               </Link>
               <h1 className="text-2xl font-bold text-gray-900">
-                {ptBR.investmentPlan.details.title}
+                {t('investmentPlan.details.title')}
               </h1>
             </div>
           </div>
@@ -128,44 +128,50 @@ export const InvestmentPlanShow = () => {
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-          <DashboardCard title={ptBR.investmentPlan.details.clientInfo.title}>
+          <DashboardCard title={t('investmentPlan.details.clientInfo.title')}>
             <div className="space-y-4">
               <div>
-                <p className="text-sm text-gray-500">{ptBR.investmentPlan.details.clientInfo.name}</p>
+                <p className="text-sm text-gray-500">{t('investmentPlan.details.clientInfo.name')}</p>
                 <p className="font-medium">{plan.profiles?.name || 'N/A'}</p>
               </div>
               <div>
-                <p className="text-sm text-gray-500">{ptBR.investmentPlan.details.clientInfo.initialAge}</p>
-                <p className="font-medium">{plan.initial_age} {ptBR.investmentPlan.details.clientInfo.years}</p>
+                <p className="text-sm text-gray-500">{t('investmentPlan.details.clientInfo.initialAge')}</p>
+                <p className="font-medium">{plan.initial_age} {t('investmentPlan.details.clientInfo.years')}</p>
               </div>
               <div>
-                <p className="text-sm text-gray-500">{ptBR.investmentPlan.details.clientInfo.finalAge}</p>
-                <p className="font-medium">{plan.final_age} {ptBR.investmentPlan.details.clientInfo.years}</p>
+                <p className="text-sm text-gray-500">{t('investmentPlan.details.clientInfo.finalAge')}</p>
+                <p className="font-medium">{plan.final_age} {t('investmentPlan.details.clientInfo.years')}</p>
               </div>
             </div>
           </DashboardCard>
 
-          <DashboardCard title={ptBR.investmentPlan.details.planOverview.title}>
+          <DashboardCard title={t('investmentPlan.details.planOverview.title')}>
             <div className="space-y-4">
               <div>
-                <p className="text-sm text-gray-500">{ptBR.investmentPlan.details.planOverview.initialAmount}</p>
+                <p className="text-sm text-gray-500">{t('investmentPlan.details.planOverview.initialAmount')}</p>
                 <p className="font-medium">
                   {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' })
                     .format(plan.initial_amount)}
                 </p>
               </div>
               <div>
-                <p className="text-sm text-gray-500">{ptBR.investmentPlan.details.planOverview.monthlyDeposit}</p>
+                <p className="text-sm text-gray-500">{t('investmentPlan.details.planOverview.monthlyDeposit')}</p>
                 <p className="font-medium">
                   {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' })
                     .format(plan.monthly_deposit)}
                 </p>
               </div>
               <div>
-                <p className="text-sm text-gray-500">{ptBR.investmentPlan.details.planOverview.requiredMonthlyDeposit}</p>
+                <p className="text-sm text-gray-500">{t('investmentPlan.details.planOverview.requiredMonthlyDeposit')}</p>
                 <p className="font-medium">
                   {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' })
                     .format(plan.required_monthly_deposit)}
+                </p>
+              </div>
+              <div>
+                <p className="text-sm text-gray-500">{t('investmentPlan.details.planOverview.adjustContributionForInflation')}</p>
+                <p className="font-medium">
+                  {plan.adjust_contribution_for_inflation ? t('common.yes') : t('common.no')}
                 </p>
               </div>
             </div>
@@ -173,24 +179,24 @@ export const InvestmentPlanShow = () => {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <DashboardCard title={ptBR.investmentPlan.details.financialGoals.title}>
+          <DashboardCard title={t('investmentPlan.details.financialGoals.title')}>
             <div className="space-y-4">
               <div>
-                <p className="text-sm text-gray-500">{ptBR.investmentPlan.details.financialGoals.desiredMonthlyIncome}</p>
+                <p className="text-sm text-gray-500">{t('investmentPlan.details.financialGoals.desiredMonthlyIncome')}</p>
                 <p className="font-medium">
                   {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' })
                     .format(plan.desired_income)}
                 </p>
               </div>
               <div>
-                <p className="text-sm text-gray-500">{ptBR.investmentPlan.details.financialGoals.inflationAdjustedIncome}</p>
+                <p className="text-sm text-gray-500">{t('investmentPlan.details.financialGoals.inflationAdjustedIncome')}</p>
                 <p className="font-medium">
                   {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' })
                     .format(plan.inflation_adjusted_income)}
                 </p>
               </div>
               <div>
-                <p className="text-sm text-gray-500">{ptBR.investmentPlan.details.financialGoals.futureValue}</p>
+                <p className="text-sm text-gray-500">{t('investmentPlan.details.financialGoals.futureValue')}</p>
                 <p className="font-medium">
                   {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' })
                     .format(plan.future_value)}
@@ -199,10 +205,10 @@ export const InvestmentPlanShow = () => {
             </div>
           </DashboardCard>
 
-          <DashboardCard title={ptBR.investmentPlan.details.investmentParams.title}>
+          <DashboardCard title={t('investmentPlan.details.investmentParams.title')}>
             <div className="space-y-4">
               <div>
-                <p className="text-sm text-gray-500">{ptBR.investmentPlan.details.investmentParams.expectedReturn}</p>
+                <p className="text-sm text-gray-500">{t('investmentPlan.details.investmentParams.expectedReturn')}</p>
                 <p className="font-medium">
                   {(() => {
                     const profile = RISK_PROFILES.find(p => parseInt(p.return) === parseInt(plan.expected_return));
@@ -212,12 +218,12 @@ export const InvestmentPlanShow = () => {
                 </p>
               </div>
               <div>
-                <p className="text-sm text-gray-500">{ptBR.investmentPlan.details.investmentParams.inflationRate}</p>
+                <p className="text-sm text-gray-500">{t('investmentPlan.details.investmentParams.inflationRate')}</p>
                 <p className="font-medium">{plan.inflation}%</p>
               </div>
               <div>
-                <p className="text-sm text-gray-500">{ptBR.investmentPlan.details.investmentParams.planType}</p>
-                <p className="font-medium">{ptBR.investmentPlan.details.investmentParams.types[plan.plan_type]}</p>
+                <p className="text-sm text-gray-500">{t('investmentPlan.details.investmentParams.planType')}</p>
+                <p className="font-medium">{t(`investmentPlan.details.investmentParams.types.${plan.plan_type}`)}</p>
               </div>
             </div>
           </DashboardCard>

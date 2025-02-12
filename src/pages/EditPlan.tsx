@@ -7,24 +7,14 @@ import { useToast } from "@/components/ui/use-toast";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/components/auth/AuthProvider";
 import { RISK_PROFILES } from '@/constants/riskProfiles';
-import { ptBR } from '@/locales/pt-BR';
 import { ArrowLeft } from "lucide-react";
 import { 
   calculateFutureValues, 
   isCalculationReady, 
-  type FormData, 
-  type Calculations 
+  type FormData as InvestmentFormData,
+  type Calculations as InvestmentCalculations
 } from '@/utils/investmentPlanCalculations';
 import { useTranslation } from "react-i18next";
-
-type Calculations = {
-  futureValue: number;
-  inflationAdjustedIncome: number;
-  realReturn: number;
-  inflationReturn: number;
-  totalMonthlyReturn: number;
-  requiredMonthlyDeposit: number;
-};
 
 export const EditPlan = () => {
   const { user } = useAuth();
@@ -33,7 +23,7 @@ export const EditPlan = () => {
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
   const [isLoadingData, setIsLoadingData] = useState(true);
-  const [formData, setFormData] = useState<FormData>({
+  const [formData, setFormData] = useState<InvestmentFormData>({
     initialAmount: "",
     initialAge: "",
     finalAge: "",
@@ -42,10 +32,10 @@ export const EditPlan = () => {
     expectedReturn: RISK_PROFILES[1].return,
     inflation: "6.0",
     planType: "3",
-    adjust_contribution_for_inflation: false,
+    adjustContributionForInflation: false,
   });
 
-  const [calculations, setCalculations] = useState<Calculations | null>(null);
+  const [calculations, setCalculations] = useState<InvestmentCalculations | null>(null);
   const { t } = useTranslation();
 
   useEffect(() => {
@@ -109,7 +99,7 @@ export const EditPlan = () => {
         expectedReturn: data.expected_return.toString(),
         inflation: data.inflation.toString(),
         planType: data.plan_type,
-        adjust_contribution_for_inflation: data.adjust_contribution_for_inflation,
+        adjustContributionForInflation: data.adjust_contribution_for_inflation,
       });
     };
 
@@ -126,7 +116,8 @@ export const EditPlan = () => {
   }, [formData]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-    const { name, value, type, checked } = e.target;
+    const { name, value } = e.target;
+    const checked = (e.target as HTMLInputElement).checked;
     
     setFormData((prev) => {
       const newFormData = { ...prev };
@@ -136,8 +127,8 @@ export const EditPlan = () => {
         if (profile) {
           newFormData.expectedReturn = profile.return;
         }
-      } else if (type === 'checkbox') {
-        newFormData.adjust_contribution_for_inflation = checked;
+      } else if (e.target.type === 'checkbox') {
+        newFormData.adjustContributionForInflation = checked;
       } else {
         newFormData[name as keyof FormData] = value;
       }
@@ -167,7 +158,7 @@ export const EditPlan = () => {
           future_value: calculations.futureValue,
           inflation_adjusted_income: calculations.inflationAdjustedIncome,
           required_monthly_deposit: calculations.requiredMonthlyDeposit,
-          adjust_contribution_for_inflation: formData.adjust_contribution_for_inflation,
+          adjust_contribution_for_inflation: formData.adjustContributionForInflation,
         })
         .eq('id', id);
 
@@ -179,10 +170,11 @@ export const EditPlan = () => {
       });
 
       navigate(`/investment-plan/${id}`);
-    } catch (error: any) {
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred';
       toast({
         title: "Error",
-        description: error.message,
+        description: errorMessage,
         variant: "destructive",
       });
     } finally {
@@ -331,7 +323,7 @@ export const EditPlan = () => {
                         type="checkbox"
                         id="adjust_contribution_for_inflation"
                         name="adjust_contribution_for_inflation"
-                        checked={formData.adjust_contribution_for_inflation}
+                        checked={formData.adjustContributionForInflation}
                         onChange={handleChange}
                         className="h-4 w-4 rounded border-gray-300"
                       />

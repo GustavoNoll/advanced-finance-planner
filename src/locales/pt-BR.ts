@@ -19,7 +19,8 @@ export const ptBR = {
         title: "Visão Geral do Plano",
         initialAmount: "Valor Inicial",
         monthlyDeposit: "Depósito Mensal",
-        requiredMonthlyDeposit: "Depósito Mensal Necessário"
+        requiredMonthlyDeposit: "Depósito Mensal Necessário",
+        adjustContributionForInflation: "Aporte ajustado pela inflação anualmente",
       },
       financialGoals: {
         title: "Objetivos Financeiros",
@@ -182,6 +183,8 @@ export const ptBR = {
     errors: {
       tryAgain: "Por favor, tente novamente."
     },
+    no: "Não",
+    yes: "Sim",
     notAvailable: "N/A",
     loading: "Carregando...",
     back: "Voltar",

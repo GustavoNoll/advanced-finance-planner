@@ -7,6 +7,7 @@ export type FormData = {
   expectedReturn: string;
   inflation: string;
   planType: string;
+  adjustContributionForInflation: boolean;
 };
 
 export type Calculations = {
