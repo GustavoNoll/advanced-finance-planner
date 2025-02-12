@@ -1,3 +1,4 @@
+
 create table public.profiles (
   id uuid not null,
   is_broker boolean null default false,
@@ -25,6 +26,7 @@ create table public.investment_plans (
   future_value numeric not null,
   inflation_adjusted_income numeric not null,
   required_monthly_deposit numeric not null,
+  adjust_contribution_for_inflation boolean not null default false,
   status character varying(20) null default 'active'::character varying,
   constraint investment_plans_pkey primary key (id),
   constraint investment_plans_user_id_fkey foreign KEY (user_id) references auth.users (id),

@@ -1,3 +1,4 @@
+
 export interface FinancialRecord {
   id: string;
   user_id: string;
@@ -25,6 +26,7 @@ export interface InvestmentPlan {
   target_amount: number;
   monthly_contribution: number;
   inflation: number;
+  adjust_contribution_for_inflation: boolean;
   created_at?: string;
   updated_at?: string;
 }
@@ -36,4 +38,4 @@ export interface MonthlyMetrics {
   growth_percentage: number;
 }
 
-export type MonthNumber = 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12; 
+export type MonthNumber = 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12;

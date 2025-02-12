@@ -37,7 +37,10 @@ export const ptBR = {
           "1": "Encerrar aos 100 anos",
           "2": "Deixar 1M de herança",
           "3": "Não tocar no principal"
-        }
+        },
+        adjustContributionForInflation: "Ajuste do Aporte pela Inflação",
+        enabled: "Ativado",
+        disabled: "Desativado"
       }
     },
     form: {
@@ -50,7 +53,9 @@ export const ptBR = {
       inflationRate: "Taxa de Inflação Anual (%)",
       planType: "Tipo do Plano",
       createButton: "Criar Plano",
-      creating: "Criando..."
+      creating: "Criando...",
+      adjustContributionForInflation: "Ajustar aporte pela inflação anualmente",
+      advancedSettings: "Configurações Avançadas"
     },
     planTypes: {
       endAt100: "Encerrar aos 100 anos",
@@ -417,4 +422,4 @@ export const ptBR = {
       passwordMismatch: 'As senhas não coincidem'
     }
   }
-}; 
+};

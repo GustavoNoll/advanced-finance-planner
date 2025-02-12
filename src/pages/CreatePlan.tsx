@@ -26,9 +26,10 @@ export const CreatePlan = () => {
     finalAge: "50",
     monthlyDeposit: "5000",
     desiredIncome: "10000",
-    expectedReturn: RISK_PROFILES[1].return, // Default to Moderate profile
+    expectedReturn: RISK_PROFILES[1].return,
     inflation: "6.0",
     planType: "3",
+    adjust_contribution_for_inflation: false,
   });
 
   // Add new state for calculations
@@ -128,6 +129,7 @@ export const CreatePlan = () => {
           inflation_adjusted_income: calculations.inflationAdjustedIncome,
           required_monthly_deposit: calculations.requiredMonthlyDeposit,
           status: "active",
+          adjust_contribution_for_inflation: formData.adjust_contribution_for_inflation,
         },
       ]);
 
@@ -294,6 +296,28 @@ export const CreatePlan = () => {
                   <option value="2">Deixar 1M de herança</option>
                   <option value="3">Não tocar no principal</option>
                 </select>
+              </div>
+
+              <div className="mt-8">
+                <h3 className="text-lg font-medium mb-4">{t('investmentPlan.form.advancedSettings')}</h3>
+                <div className="space-y-4">
+                  <div className="flex items-center space-x-2">
+                    <input
+                      type="checkbox"
+                      id="adjust_contribution_for_inflation"
+                      name="adjust_contribution_for_inflation"
+                      checked={formData.adjust_contribution_for_inflation}
+                      onChange={(e) => setFormData(prev => ({
+                        ...prev,
+                        adjust_contribution_for_inflation: e.target.checked
+                      }))}
+                      className="h-4 w-4 rounded border-gray-300"
+                    />
+                    <label htmlFor="adjust_contribution_for_inflation" className="text-sm font-medium text-gray-700">
+                      {t('investmentPlan.form.adjustContributionForInflation')}
+                    </label>
+                  </div>
+                </div>
               </div>
 
               <Button type="submit" className="w-full" disabled={loading}>
