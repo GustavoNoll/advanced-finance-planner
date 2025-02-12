@@ -1,3 +1,4 @@
+
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
 import { useTranslation } from "react-i18next";
 
@@ -21,6 +22,8 @@ interface InvestmentPlan {
   expected_return: number;
   inflation: number;
   initial_amount: number;
+  final_age: number;
+  desired_income: number;
 }
 
 interface ExpenseChartProps {
@@ -33,7 +36,6 @@ interface ExpenseChartProps {
 export const ExpenseChart = ({ profile, investmentPlan, clientId, financialRecordsByYear }: ExpenseChartProps) => {
   const { t } = useTranslation();
   
-  // Add check for undefined props
   if (!profile || !investmentPlan || !clientId || !financialRecordsByYear) {
     return (
       <div className="flex items-center justify-center h-[300px] bg-gray-50 rounded-lg">
@@ -46,18 +48,22 @@ export const ExpenseChart = ({ profile, investmentPlan, clientId, financialRecor
   const startYear = new Date(investmentPlan.created_at).getFullYear();
   const birthYear = new Date(profile.birth_date).getFullYear();
   const clientAge = startYear - birthYear;
-  const yearsUntil100 = 100 - clientAge;
+  const yearsUntil120 = 120 - clientAge; // Extended to age 120
   
   // Modified to use ages instead of years
-  const allAges = Array.from({ length: yearsUntil100 + 1 }, (_, i) => clientAge + i);
+  const allAges = Array.from({ length: yearsUntil120 + 1 }, (_, i) => clientAge + i);
 
   const generateProjectedValues = (startDate: Date, startBalance: number) => {
     const projectedData = [];
-    const yearlyReturnRate = (investmentPlan.expected_return + investmentPlan.inflation) / 100;
+    const yearlyReturnRate = investmentPlan.expected_return / 100;
+    const yearlyInflationRate = investmentPlan.inflation / 100;
     let currentBalance = startBalance;
+    let currentMonthlyDeposit = investmentPlan.monthly_deposit;
+    let currentMonthlyWithdrawal = investmentPlan.desired_income;
     
     for (let i = 0; i < allAges.length; i++) {
       const age = allAges[i];
+      const isRetirementAge = age >= investmentPlan.final_age;
       
       if (i === 0) {
         projectedData.push({
@@ -65,7 +71,21 @@ export const ExpenseChart = ({ profile, investmentPlan, clientId, financialRecor
           projectedValue: Math.round(currentBalance)
         });
       } else {
-        currentBalance = (currentBalance + (investmentPlan.monthly_deposit * 12)) * (1 + yearlyReturnRate);
+        // Adjust monthly deposit/withdrawal for inflation annually
+        if (i % 12 === 0) {
+          currentMonthlyDeposit *= (1 + yearlyInflationRate);
+          currentMonthlyWithdrawal *= (1 + yearlyInflationRate);
+        }
+
+        // Calculate yearly change based on whether in retirement or not
+        if (isRetirementAge) {
+          // In retirement: withdraw adjusted monthly amount and apply returns
+          currentBalance = (currentBalance - (currentMonthlyWithdrawal * 12)) * (1 + yearlyReturnRate);
+        } else {
+          // Before retirement: contribute adjusted monthly amount and apply returns
+          currentBalance = (currentBalance + (currentMonthlyDeposit * 12)) * (1 + yearlyReturnRate);
+        }
+
         projectedData.push({
           age,
           projectedValue: Math.round(currentBalance)
@@ -93,24 +113,48 @@ export const ExpenseChart = ({ profile, investmentPlan, clientId, financialRecor
       };
     });
 
-    // fill with 0 for years before the first record
+    // Fill with projections for future years
     let beforeFirstRecord = true;
     let lastBalance = 0;
-    const yearlyReturnRate = (investmentPlan.expected_return + investmentPlan.inflation) / 100;
-    for (const realValue of realValues) {
+    let currentMonthlyDeposit = investmentPlan.monthly_deposit;
+    let currentMonthlyWithdrawal = investmentPlan.desired_income;
+    const yearlyReturnRate = investmentPlan.expected_return / 100;
+    const yearlyInflationRate = investmentPlan.inflation / 100;
+
+    for (let i = 0; i < realValues.length; i++) {
+      const realValue = realValues[i];
+      const age = allAges[i];
+      const isRetirementAge = age >= investmentPlan.final_age;
+
       if (realValue.actualValue !== null) {
         beforeFirstRecord = false;
         lastBalance = realValue.actualValue;
         continue;
       }
+
       if (beforeFirstRecord) {
         realValue.actualValue = lastBalance;
         lastBalance = 0;
+        continue;
       }
-      lastBalance = (lastBalance  + (investmentPlan.monthly_deposit * 12)) * (1 + yearlyReturnRate);
-      realValue.actualValue = lastBalance;
 
+      // Adjust for inflation annually
+      if (i % 12 === 0) {
+        currentMonthlyDeposit *= (1 + yearlyInflationRate);
+        currentMonthlyWithdrawal *= (1 + yearlyInflationRate);
+      }
+
+      if (isRetirementAge) {
+        // In retirement: withdraw adjusted monthly amount and apply returns
+        lastBalance = (lastBalance - (currentMonthlyWithdrawal * 12)) * (1 + yearlyReturnRate);
+      } else {
+        // Before retirement: contribute adjusted monthly amount and apply returns
+        lastBalance = (lastBalance + (currentMonthlyDeposit * 12)) * (1 + yearlyReturnRate);
+      }
+
+      realValue.actualValue = lastBalance;
     }
+
     return realValues;
   };
   
@@ -191,7 +235,3 @@ export const ExpenseChart = ({ profile, investmentPlan, clientId, financialRecor
     </ResponsiveContainer>
   );
 };
-
-function toast(arg0: { title: string; variant: string; }) {
-  throw new Error('Function not implemented.');
-}
