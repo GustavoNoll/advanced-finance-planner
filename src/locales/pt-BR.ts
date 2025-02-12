@@ -249,7 +249,8 @@ export const ptBR = {
       chart: "Visualização em Gráfico",
       table: "Visualização em Tabela",
       returnChart: "Comparação de Retorno",
-      balanceChart: "Comparação de Saldo"
+      balanceChart: "Comparação de Saldo",
+      futureProjection: "Projeção Futura"
     },
     chart: {
       accumulatedReturn: "Retorno Acumulado",
@@ -276,8 +277,7 @@ export const ptBR = {
         February: "Fevereiro",
         March: "Março",
         April: "Abril",
-        May: "Maio",
-        June: "Junho",
+        May: "Junho",
         July: "Julho",
         August: "Agosto",
         September: "Setembro",
@@ -285,6 +285,16 @@ export const ptBR = {
         November: "Novembro",
         December: "Dezembro"
       }
+    },
+    futureProjection: {
+      age: "Idade",
+      year: "Ano",
+      contribution: "Aporte",
+      withdrawal: "Retirada",
+      balance: "Saldo",
+      expandYear: "Expandir detalhes mensais",
+      collapseYear: "Recolher detalhes mensais",
+      monthlyDetails: "Mês"
     }
   },
   expenseChart: {
