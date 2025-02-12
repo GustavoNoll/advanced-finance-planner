@@ -9,6 +9,7 @@ import { toast } from "@/components/ui/use-toast";
 import { Spinner } from "@/components/ui/spinner";
 import { fetchCDIRates, fetchIPCARates } from '@/lib/bcb-api';
 import { ChevronDown, ChevronRight } from "lucide-react";
+import { yearlyReturnRateToMonthlyReturnRate } from '@/lib/financial-math';
 
 interface FinancialRecord {
   record_year: number;
@@ -33,6 +34,8 @@ interface ProjectionData {
     withdrawal: number;
     balance: number;
   }[];
+  isRetirementTransitionYear?: boolean;
+  hasHistoricalData: boolean;
 }
 
 export const MonthlyView = ({ userId, initialRecords, investmentPlan, profile }: {
@@ -137,6 +140,25 @@ export const MonthlyView = ({ userId, initialRecords, investmentPlan, profile }:
       return data;
     },
     enabled: timeWindow > RECORDS_PER_PAGE || timeWindow === 0,
+  });
+
+  const { data: allHistoricalRecords } = useQuery({
+    queryKey: ['allFinancialRecords', userId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('user_financial_records')
+        .select('*')
+        .eq('user_id', userId)
+        .order('record_year', { ascending: true })
+        .order('record_month', { ascending: true });
+
+      if (error) {
+        console.error('Error fetching all historical records:', error);
+        return [];
+      }
+
+      return data;
+    },
   });
 
   const allDisplayedRecords = [...initialRecords, ...(additionalRecords || [])];
@@ -385,58 +407,110 @@ export const MonthlyView = ({ userId, initialRecords, investmentPlan, profile }:
   };
 
   const generateProjectionData = (): ProjectionData[] => {
-    // Verificar se temos todos os dados necessários
     if (!profile?.birth_date || !investmentPlan || !initialRecords.length) {
       return [];
     }
 
     try {
-      const birthYear = new Date(profile.birth_date).getFullYear();
-      const currentYear = new Date().getFullYear();
+      const birthDate = new Date(profile.birth_date);
+      const birthYear = birthDate.getFullYear();
+      const birthMonth = birthDate.getMonth() + 1;
       const yearsUntil120 = 120 - investmentPlan.initial_age;
+      const currentDate = new Date();
+      const currentYear = currentDate.getFullYear();
+      
+      const startYear = birthYear + investmentPlan.initial_age;
       
       const projectionData: ProjectionData[] = [];
       let currentBalance = initialRecords[0]?.ending_balance || 0;
-      let currentContribution = investmentPlan.monthly_deposit;
-      let currentWithdrawal = investmentPlan.desired_income;
+      let currentMonthlyDeposit = investmentPlan.monthly_deposit;
+      let currentMonthlyWithdrawal = investmentPlan.desired_income;
+      const yearlyReturnRate = investmentPlan.expected_return / 100;
+      const yearlyInflationRate = investmentPlan.inflation / 100;
+
+      const historicalRecordsMap = new Map(
+        (allHistoricalRecords || []).map(record => [
+          `${record.record_year}-${record.record_month}`,
+          record
+        ])
+      );
       
       for (let i = 0; i <= yearsUntil120; i++) {
         const age = investmentPlan.initial_age + i;
-        const year = currentYear + i;
-        const isRetirementAge = age >= investmentPlan.final_age;
+        const year = startYear + i;
         
+
         // Calculate monthly values for the year
         const monthlyData = Array.from({ length: 12 }, (_, month) => {
-          // Adjust for inflation at the start of each year
-          if (month === 0 && i > 0) {
-            if (investmentPlan.adjust_contribution_for_inflation && !isRetirementAge) {
-              currentContribution *= (1 + investmentPlan.inflation / 100);
-            }
-            currentWithdrawal *= (1 + investmentPlan.inflation / 100);
+          const currentMonthNumber = month + 1;
+          const historicalKey = `${year}-${currentMonthNumber}`;
+          const historicalRecord = historicalRecordsMap.get(historicalKey);
+          const isInPast = new Date(year, month) < currentDate;
+            
+          // If we have historical data, always show it
+          if (historicalRecord) {
+            return {
+              month: currentMonthNumber,
+              contribution: historicalRecord.monthly_contribution,
+              withdrawal: 0,
+              balance: historicalRecord.ending_balance,
+              isHistorical: true
+            };
           }
 
-          const monthlyChange = isRetirementAge 
-            ? -currentWithdrawal 
-            : currentContribution;
+          // If in the past and no historical data, return zeros
+          if (isInPast) {
+            return {
+              month: currentMonthNumber,
+              contribution: 0,
+              withdrawal: 0,
+              balance: 0,
+              isHistorical: false
+            };
+          }
 
-          const monthlyReturn = currentBalance * (investmentPlan.expected_return / 100 / 12);
-          currentBalance = currentBalance + monthlyChange + monthlyReturn;
+          // Rest of the monthly calculation logic remains the same
+          const isRetirementAge = age > investmentPlan.final_age || 
+            (age === investmentPlan.final_age && currentMonthNumber >= birthMonth);
+
+          if (currentMonthNumber === 1 && i > 0) {
+            if (investmentPlan.adjust_contribution_for_inflation && !isRetirementAge) {
+              currentMonthlyDeposit *= (1 + yearlyInflationRate);
+            }
+            currentMonthlyWithdrawal *= (1 + yearlyInflationRate);
+          }
+
+          const monthlyReturnRate = yearlyReturnRateToMonthlyReturnRate(yearlyReturnRate);
+          const monthlyReturn = currentBalance * monthlyReturnRate;
+
+          if (isRetirementAge) {
+            currentBalance = currentBalance - currentMonthlyWithdrawal + monthlyReturn;
+          } else {
+            currentBalance = currentBalance + currentMonthlyDeposit + monthlyReturn;
+          }
 
           return {
-            month: month + 1,
-            contribution: isRetirementAge ? 0 : currentContribution,
-            withdrawal: isRetirementAge ? currentWithdrawal : 0,
-            balance: currentBalance
+            month: currentMonthNumber,
+            contribution: isRetirementAge ? 0 : currentMonthlyDeposit,
+            withdrawal: isRetirementAge ? currentMonthlyWithdrawal : 0,
+            balance: currentBalance,
+            isHistorical: false
           };
         });
+
+        const hasRetirementTransition = age === investmentPlan.final_age;
+        const yearlyContribution = monthlyData.reduce((sum, month) => sum + month.contribution, 0);
+        const yearlyWithdrawal = monthlyData.reduce((sum, month) => sum + month.withdrawal, 0);
 
         projectionData.push({
           age,
           year,
-          contribution: isRetirementAge ? 0 : currentContribution * 12,
-          withdrawal: isRetirementAge ? currentWithdrawal * 12 : 0,
-          balance: currentBalance,
-          months: monthlyData
+          contribution: yearlyContribution,
+          withdrawal: yearlyWithdrawal,
+          balance: monthlyData[11].balance,
+          months: monthlyData,
+          isRetirementTransitionYear: hasRetirementTransition,
+          hasHistoricalData: monthlyData.some(m => m.isHistorical)
         });
       }
 
@@ -448,7 +522,7 @@ export const MonthlyView = ({ userId, initialRecords, investmentPlan, profile }:
   };
 
   // Se não tivermos os dados necessários, mostramos uma mensagem
-  if (!profile?.birth_date || !investmentPlan) {
+  if (!investmentPlan) {
     return (
       <DashboardCard title={t('monthlyView.title')} className="col-span-full">
         <div className="flex items-center justify-center p-8">
@@ -462,9 +536,8 @@ export const MonthlyView = ({ userId, initialRecords, investmentPlan, profile }:
   return (
     <DashboardCard title={t('monthlyView.title')} className="col-span-full">
       <Tabs defaultValue="returnChart" className="w-full">
-        <TabsList className="grid w-full grid-cols-4 lg:w-[800px]">
+        <TabsList className="grid w-full grid-cols-3 lg:w-[800px]">
           <TabsTrigger value="returnChart">{t('monthlyView.tabs.returnChart')}</TabsTrigger>
-          <TabsTrigger value="balanceChart">{t('monthlyView.tabs.balanceChart')}</TabsTrigger>
           <TabsTrigger value="table">{t('monthlyView.tabs.table')}</TabsTrigger>
           <TabsTrigger value="futureProjection">{t('monthlyView.tabs.futureProjection')}</TabsTrigger>
         </TabsList>
@@ -522,26 +595,6 @@ export const MonthlyView = ({ userId, initialRecords, investmentPlan, profile }:
           </div>
         </TabsContent>
 
-        <TabsContent value="balanceChart">
-          <div className="flex justify-end gap-2 mb-4">
-            <select
-              value={timeWindow}
-              onChange={(e) => setTimeWindow(Number(e.target.value) as typeof timeWindow)}
-              className="px-3 py-1 border rounded-md text-sm"
-            >
-              <option value={6}>{t('monthlyView.timeWindows.last6Months')}</option>
-              <option value={12}>{t('monthlyView.timeWindows.last12Months')}</option>
-              <option value={24}>{t('monthlyView.timeWindows.last24Months')}</option>
-              <option value={0}>{t('monthlyView.timeWindows.allTime')}</option>
-            </select>
-          </div>
-          <div className="h-[400px] w-full">
-            <ResponsiveContainer width="100%" height="100%">
-              {/* Add your balance chart implementation here */}
-              <div>Balance Chart Content</div>
-            </ResponsiveContainer>
-          </div>
-        </TabsContent>
         
         <TabsContent value="table">
           <div className="flex justify-end gap-2 mb-4">
@@ -608,8 +661,7 @@ export const MonthlyView = ({ userId, initialRecords, investmentPlan, profile }:
                 <tr className="border-b bg-muted/50">
                   <th className="p-2 text-left whitespace-nowrap">{t('monthlyView.futureProjection.age')}</th>
                   <th className="p-2 text-left whitespace-nowrap">{t('monthlyView.futureProjection.year')}</th>
-                  <th className="p-2 text-right whitespace-nowrap">{t('monthlyView.futureProjection.contribution')}</th>
-                  <th className="p-2 text-right whitespace-nowrap">{t('monthlyView.futureProjection.withdrawal')}</th>
+                  <th className="p-2 text-right whitespace-nowrap">{t('monthlyView.futureProjection.cashFlow')}</th>
                   <th className="p-2 text-right whitespace-nowrap">{t('monthlyView.futureProjection.balance')}</th>
                   <th className="p-2 text-center w-10"></th>
                 </tr>
@@ -617,18 +669,28 @@ export const MonthlyView = ({ userId, initialRecords, investmentPlan, profile }:
               <tbody>
                 {generateProjectionData().map((projection) => (
                   <>
-                    <tr key={projection.year} className="border-b hover:bg-muted/50 transition-colors">
-                      <td className="p-2">{projection.age}</td>
+                    <tr key={projection.year} className={`border-b hover:bg-muted/50 transition-colors ${
+                      projection.hasHistoricalData ? 'bg-blue-50/50' : ''
+                    }`}>
+                      <td className="p-2">
+                        {projection.hasHistoricalData && (
+                          <span className="mr-2 text-xs text-blue-600 font-medium">
+                            {t('monthlyView.futureProjection.historical')}
+                          </span>
+                        )}
+                        {projection.age}
+                      </td>
                       <td className="p-2">{projection.year}</td>
                       <td className="p-2 text-right">
-                        {projection.contribution > 0 
-                          ? `R$ ${projection.contribution.toLocaleString('pt-BR', { maximumFractionDigits: 2 })}` 
-                          : '-'}
-                      </td>
-                      <td className="p-2 text-right">
-                        {projection.withdrawal > 0 
-                          ? `R$ ${projection.withdrawal.toLocaleString('pt-BR', { maximumFractionDigits: 2 })}` 
-                          : '-'}
+                        {projection.contribution > 0 ? (
+                          <span className="text-green-600">
+                            +R$ {projection.contribution.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                          </span>
+                        ) : projection.withdrawal > 0 ? (
+                          <span className="text-red-600">
+                            -R$ {projection.withdrawal.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                          </span>
+                        ) : '-'}
                       </td>
                       <td className="p-2 text-right font-medium">
                         R$ {projection.balance.toLocaleString('pt-BR', { maximumFractionDigits: 2 })}
@@ -647,26 +709,36 @@ export const MonthlyView = ({ userId, initialRecords, investmentPlan, profile }:
                         </button>
                       </td>
                     </tr>
-                    {expandedYears.includes(projection.year) && projection.months?.map((month) => (
-                      <tr key={`${projection.year}-${month.month}`} className="border-b bg-muted/20 text-xs">
-                        <td className="p-2"></td>
-                        <td className="p-2">{t('monthlyView.futureProjection.monthlyDetails')} {month.month}</td>
-                        <td className="p-2 text-right">
-                          {month.contribution > 0 
-                            ? `R$ ${month.contribution.toLocaleString('pt-BR', { maximumFractionDigits: 2 })}` 
-                            : '-'}
-                        </td>
-                        <td className="p-2 text-right">
-                          {month.withdrawal > 0 
-                            ? `R$ ${month.withdrawal.toLocaleString('pt-BR', { maximumFractionDigits: 2 })}` 
-                            : '-'}
-                        </td>
-                        <td className="p-2 text-right">
-                          R$ {month.balance.toLocaleString('pt-BR', { maximumFractionDigits: 2 })}
-                        </td>
-                        <td className="p-2"></td>
-                      </tr>
-                    ))}
+                    {expandedYears.includes(projection.year) && projection.months?.map((month) => {
+                      const monthNames = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 
+                        'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
+                      return (
+                        <tr key={`${projection.year}-${month.month}`} 
+                            className={`border-b text-xs ${
+                              month.isHistorical 
+                                ? 'bg-blue-50/50' 
+                                : 'bg-muted/20'
+                            }`}>
+                          <td className="p-2"></td>
+                          <td className="p-2">{monthNames[month.month - 1]}</td>
+                          <td className="p-2 text-right">
+                            {month.contribution > 0 ? (
+                              <span className="text-green-600">
+                                +R$ {month.contribution.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                              </span>
+                            ) : month.withdrawal > 0 ? (
+                              <span className="text-red-600">
+                                -R$ {month.withdrawal.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                              </span>
+                            ) : '-'}
+                          </td>
+                          <td className="p-2 text-right">
+                            R$ {month.balance.toLocaleString('pt-BR', { maximumFractionDigits: 2 })}
+                          </td>
+                          <td className="p-2"></td>
+                        </tr>
+                      );
+                    })}
                   </>
                 ))}
               </tbody>

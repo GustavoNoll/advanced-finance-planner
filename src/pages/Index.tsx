@@ -128,10 +128,19 @@ const Index = () => {
     const today = new Date();
     const twelveMonthsAgo = new Date(today.getFullYear(), today.getMonth() - 11, 1);
     
-    return allFinancialRecords.filter(record => {
-      const recordDate = new Date(record.record_year, record.record_month - 1);
-      return recordDate >= twelveMonthsAgo;
-    });
+    return allFinancialRecords
+      .filter(record => {
+        const recordDate = new Date(record.record_year, record.record_month - 1);
+        return recordDate >= twelveMonthsAgo;
+      })
+      .sort((a, b) => {
+        // Sort by year descending first
+        if (b.record_year !== a.record_year) {
+          return b.record_year - a.record_year;
+        }
+        // Then sort by month descending
+        return b.record_month - a.record_month;
+      });
   }, [allFinancialRecords]);
 
   const financialRecordsByYear = useMemo(() => {
@@ -205,6 +214,7 @@ const Index = () => {
   const currentMonth = new Date().getMonth() + 1;
   const currentYear = new Date().getFullYear();
   
+  console.log(financialRecords);
   const latestRecord = financialRecords?.[0];
   const currentMonthRecord = financialRecords?.find(
     record => record.record_month === currentMonth && record.record_year === currentYear
@@ -436,6 +446,8 @@ const Index = () => {
           <MonthlyView 
             userId={clientId} 
             initialRecords={financialRecords || []} 
+            investmentPlan={investmentPlan}
+            profile={clientProfile}
           />
         </section>
       </main>

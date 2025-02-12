@@ -247,10 +247,10 @@ export const ptBR = {
     title: "Desempenho Mensal",
     tabs: {
       chart: "Visualização em Gráfico",
-      table: "Visualização em Tabela",
+      table: "Histórico",
       returnChart: "Comparação de Retorno",
       balanceChart: "Comparação de Saldo",
-      futureProjection: "Projeção Futura"
+      futureProjection: "Projeção Futura",
     },
     chart: {
       accumulatedReturn: "Retorno Acumulado",
@@ -277,7 +277,8 @@ export const ptBR = {
         February: "Fevereiro",
         March: "Março",
         April: "Abril",
-        May: "Junho",
+        May: "Maio",
+        June: "Junho",
         July: "Julho",
         August: "Agosto",
         September: "Setembro",
@@ -294,7 +295,9 @@ export const ptBR = {
       balance: "Saldo",
       expandYear: "Expandir detalhes mensais",
       collapseYear: "Recolher detalhes mensais",
-      monthlyDetails: "Mês"
+      monthlyDetails: "Mês",
+      cashFlow: "Fluxo de Caixa",
+      historical: 'Histórico'
     }
   },
   expenseChart: {

@@ -54,8 +54,10 @@ export const ExpenseChart = ({ profile, investmentPlan, clientId, financialRecor
 
   const generateProjectedValues = (startDate: Date, startBalance: number) => {
     const projectedData = [];
-    const yearlyReturnRate = investmentPlan.expected_return / 100;
-    const yearlyInflationRate = investmentPlan.inflation / 100;
+    // Convert yearly rates to monthly
+    const monthlyReturnRate = Math.pow(1 + investmentPlan.expected_return / 100, 1/12) - 1;
+    const monthlyInflationRate = Math.pow(1 + investmentPlan.inflation / 100, 1/12) - 1;
+    
     let currentBalance = startBalance;
     let currentMonthlyDeposit = investmentPlan.monthly_deposit;
     let currentMonthlyWithdrawal = investmentPlan.desired_income;
@@ -64,35 +66,29 @@ export const ExpenseChart = ({ profile, investmentPlan, clientId, financialRecor
       const age = allAges[i];
       const isRetirementAge = age >= investmentPlan.final_age;
       
-      if (i === 0) {
-        projectedData.push({
-          age,
-          projectedValue: Math.round(currentBalance)
-        });
-      } else {
-        // Adjust monthly deposit/withdrawal for inflation annually
-        if (i % 12 === 0) {
-          // Only adjust deposit if adjust_contribution_for_inflation is true
-          if (investmentPlan.adjust_contribution_for_inflation) {
-            currentMonthlyDeposit *= (1 + yearlyInflationRate);
-          }
-          currentMonthlyWithdrawal *= (1 + yearlyInflationRate);
+      // Calculate all months for the year
+      for (let month = 0; month < 12; month++) {
+        // Adjust for inflation monthly
+        if (investmentPlan.adjust_contribution_for_inflation) {
+          currentMonthlyDeposit *= (1 + monthlyInflationRate);
         }
+        currentMonthlyWithdrawal *= (1 + monthlyInflationRate);
 
-        // Calculate yearly change based on whether in retirement or not
+        // Calculate monthly changes
         if (isRetirementAge) {
           // In retirement: withdraw adjusted monthly amount and apply returns
-          currentBalance = (currentBalance - (currentMonthlyWithdrawal * 12)) * (1 + yearlyReturnRate);
+          currentBalance = currentBalance * (1 + monthlyReturnRate) - currentMonthlyWithdrawal;
         } else {
           // Before retirement: contribute adjusted monthly amount and apply returns
-          currentBalance = (currentBalance + (currentMonthlyDeposit * 12)) * (1 + yearlyReturnRate);
+          currentBalance = currentBalance * (1 + monthlyReturnRate) + currentMonthlyDeposit;
         }
-
-        projectedData.push({
-          age,
-          projectedValue: Math.round(currentBalance)
-        });
       }
+
+      // Store the year-end balance
+      projectedData.push({
+        age,
+        projectedValue: Math.round(Math.max(0, currentBalance)) // Prevent negative balances
+      });
     }
     
     return projectedData;
@@ -122,8 +118,6 @@ export const ExpenseChart = ({ profile, investmentPlan, clientId, financialRecor
     let lastBalance = 0;
     let currentMonthlyDeposit = investmentPlan.monthly_deposit;
     let currentMonthlyWithdrawal = investmentPlan.desired_income;
-    const yearlyReturnRate = investmentPlan.expected_return / 100;
-    const yearlyInflationRate = investmentPlan.inflation / 100;
 
     for (let i = 0; i < realValues.length; i++) {
       const realValue = realValues[i];
@@ -142,24 +136,28 @@ export const ExpenseChart = ({ profile, investmentPlan, clientId, financialRecor
         continue;
       }
 
-      // Adjust for inflation annually
-      if (i % 12 === 0) {
-        // Only adjust deposit if adjust_contribution_for_inflation is true
+      // Convert yearly rates to monthly for more accurate calculations
+      const monthlyReturnRate = Math.pow(1 + investmentPlan.expected_return / 100, 1/12) - 1;
+      const monthlyInflationRate = Math.pow(1 + investmentPlan.inflation / 100, 1/12) - 1;
+
+      // Calculate all months for the year
+      for (let month = 0; month < 12; month++) {
+        // Adjust for inflation monthly
         if (investmentPlan.adjust_contribution_for_inflation) {
-          currentMonthlyDeposit *= (1 + yearlyInflationRate);
+          currentMonthlyDeposit *= (1 + monthlyInflationRate);
         }
-        currentMonthlyWithdrawal *= (1 + yearlyInflationRate);
+        currentMonthlyWithdrawal *= (1 + monthlyInflationRate);
+
+        if (isRetirementAge) {
+          // In retirement: withdraw adjusted monthly amount and apply returns
+          lastBalance = lastBalance * (1 + monthlyReturnRate) - currentMonthlyWithdrawal;
+        } else {
+          // Before retirement: contribute adjusted monthly amount and apply returns
+          lastBalance = lastBalance * (1 + monthlyReturnRate) + currentMonthlyDeposit;
+        }
       }
 
-      if (isRetirementAge) {
-        // In retirement: withdraw adjusted monthly amount and apply returns
-        lastBalance = (lastBalance - (currentMonthlyWithdrawal * 12)) * (1 + yearlyReturnRate);
-      } else {
-        // Before retirement: contribute adjusted monthly amount and apply returns
-        lastBalance = (lastBalance + (currentMonthlyDeposit * 12)) * (1 + yearlyReturnRate);
-      }
-
-      realValue.actualValue = lastBalance;
+      realValue.actualValue = Math.max(0, lastBalance); // Prevent negative balances
     }
 
     return realValues;
