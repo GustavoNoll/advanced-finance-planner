@@ -22,6 +22,7 @@ interface InvestmentPlan {
   expected_return: number;
   inflation: number;
   initial_amount: number;
+  initial_age: number;
   final_age: number;
   desired_income: number;
 }
@@ -44,13 +45,11 @@ export const ExpenseChart = ({ profile, investmentPlan, clientId, financialRecor
     );
   }
   
-  // Calculate age-based year range
-  const startYear = new Date(investmentPlan.created_at).getFullYear();
-  const birthYear = new Date(profile.birth_date).getFullYear();
-  const clientAge = startYear - birthYear;
-  const yearsUntil120 = 120 - clientAge; // Extended to age 120
+  // Use initial_age from investment plan
+  const clientAge = investmentPlan.initial_age;
+  const yearsUntil120 = 120 - clientAge;
   
-  // Modified to use ages instead of years
+  // Create array of ages from initial_age to 120
   const allAges = Array.from({ length: yearsUntil120 + 1 }, (_, i) => clientAge + i);
 
   const generateProjectedValues = (startDate: Date, startBalance: number) => {
@@ -97,6 +96,8 @@ export const ExpenseChart = ({ profile, investmentPlan, clientId, financialRecor
   };
   
   const generateRealValues = () => {
+    const birthYear = new Date(profile.birth_date).getFullYear();
+
     if (financialRecordsByYear.length === 0) {
       return allAges.map(age => ({
         age,
