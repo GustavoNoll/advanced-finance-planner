@@ -266,7 +266,7 @@ export const ptBR = {
       headers: {
         month: "Mês",
         initialBalance: "Saldo Inicial",
-        contribution: "Contribuição",
+        contribution: "Contribuição", 
         returns: "Rendimento",
         returnPercentage: "Rendimento %",
         endBalance: "Saldo Final",
@@ -297,7 +297,13 @@ export const ptBR = {
       collapseYear: "Recolher detalhes mensais",
       monthlyDetails: "Mês",
       cashFlow: "Fluxo de Caixa",
-      historical: 'Histórico'
+      historical: 'Histórico',
+      strategies: {
+        fixed: "Renda Desejada",
+        preservation: "Preservação",
+        legacy: "Herança",
+        spendAll: "Gastar Tudo"
+      }
     }
   },
   expenseChart: {

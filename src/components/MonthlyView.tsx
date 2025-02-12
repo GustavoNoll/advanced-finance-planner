@@ -32,10 +32,18 @@ interface ProjectionData {
     month: number;
     contribution: number;
     withdrawal: number;
+    isHistorical: boolean;
     balance: number;
   }[];
   isRetirementTransitionYear?: boolean;
   hasHistoricalData: boolean;
+  returns: number;
+}
+
+interface WithdrawalStrategy {
+  type: 'fixed' | 'preservation' | 'spend-all' | 'legacy';
+  monthlyAmount?: number;
+  targetLegacy?: number;
 }
 
 export const MonthlyView = ({ userId, initialRecords, investmentPlan, profile }: {
@@ -59,6 +67,11 @@ export const MonthlyView = ({ userId, initialRecords, investmentPlan, profile }:
   const [timeWindow, setTimeWindow] = useState<6 | 12 | 24 | 0>(12);
   const [expandedYears, setExpandedYears] = useState<number[]>([]);
   const RECORDS_PER_PAGE = 12;
+  const [withdrawalStrategy, setWithdrawalStrategy] = useState<WithdrawalStrategy>({
+    type: 'fixed',
+    monthlyAmount: investmentPlan.desired_income,
+    targetLegacy: 1000000 // 1M default for legacy strategy
+  });
 
   const { data: totalCount } = useQuery({
     queryKey: ['financialRecordsCount', userId],
@@ -406,7 +419,7 @@ export const MonthlyView = ({ userId, initialRecords, investmentPlan, profile }:
     );
   };
 
-  const generateProjectionData = (): ProjectionData[] => {
+  const generateProjectionData = (strategy: WithdrawalStrategy): ProjectionData[] => {
     if (!profile?.birth_date || !investmentPlan || !initialRecords.length) {
       return [];
     }
@@ -439,15 +452,12 @@ export const MonthlyView = ({ userId, initialRecords, investmentPlan, profile }:
         const age = investmentPlan.initial_age + i;
         const year = startYear + i;
         
-
-        // Calculate monthly values for the year
         const monthlyData = Array.from({ length: 12 }, (_, month) => {
           const currentMonthNumber = month + 1;
           const historicalKey = `${year}-${currentMonthNumber}`;
           const historicalRecord = historicalRecordsMap.get(historicalKey);
           const isInPast = new Date(year, month) < currentDate;
             
-          // If we have historical data, always show it
           if (historicalRecord) {
             return {
               month: currentMonthNumber,
@@ -458,7 +468,6 @@ export const MonthlyView = ({ userId, initialRecords, investmentPlan, profile }:
             };
           }
 
-          // If in the past and no historical data, return zeros
           if (isInPast) {
             return {
               month: currentMonthNumber,
@@ -469,7 +478,6 @@ export const MonthlyView = ({ userId, initialRecords, investmentPlan, profile }:
             };
           }
 
-          // Rest of the monthly calculation logic remains the same
           const isRetirementAge = age > investmentPlan.final_age || 
             (age === investmentPlan.final_age && currentMonthNumber >= birthMonth);
 
@@ -480,22 +488,73 @@ export const MonthlyView = ({ userId, initialRecords, investmentPlan, profile }:
             currentMonthlyWithdrawal *= (1 + yearlyInflationRate);
           }
 
+
           const monthlyReturnRate = yearlyReturnRateToMonthlyReturnRate(yearlyReturnRate);
-          const monthlyReturn = currentBalance * monthlyReturnRate;
 
+          console.log(monthlyReturnRate);
           if (isRetirementAge) {
-            currentBalance = currentBalance - currentMonthlyWithdrawal + monthlyReturn;
-          } else {
-            currentBalance = currentBalance + currentMonthlyDeposit + monthlyReturn;
-          }
+            let withdrawal = 0;
+            
+            const monthlyReturn = currentBalance * monthlyReturnRate;
+            switch (strategy.type) {
+              case 'fixed':
+                withdrawal = currentMonthlyWithdrawal;
+                break;
+              case 'preservation':
+                withdrawal = monthlyReturn;
+                break;
+              case 'spend-all':
+                // Calculate months remaining until age 100
+                const monthsUntil100 = (100 - age) * 12 - month;
+                if (monthsUntil100 > 0) {
+                  // Divide remaining balance plus expected returns by remaining months
+                  withdrawal = (currentBalance + monthlyReturn) / monthsUntil100;
+                } else {
+                  withdrawal = currentBalance + monthlyReturn; // Withdraw everything in the final month
+                }
+                break;
+              case 'legacy':
+                if (age < 100) {
+                  // Calculate required monthly savings to reach target legacy
+                  const monthsUntil100 = (100 - age) * 12 - month;
+                  const targetLegacy = strategy.targetLegacy || 1000000;
+                  
+                  if (monthsUntil100 > 0) {
+                    // If current balance minus target legacy is positive, we can withdraw more
+                    const excessBalance = currentBalance - targetLegacy;
+                    if (excessBalance > 0) {
+                      withdrawal = excessBalance / monthsUntil100 + monthlyReturn;
+                    } else {
+                      withdrawal = monthlyReturn * 0.5; // Withdraw half of returns to build up legacy
+                    }
+                  }
+                }
+                break;
+            }
+            
+            currentBalance = currentBalance + monthlyReturn - withdrawal;
 
-          return {
-            month: currentMonthNumber,
-            contribution: isRetirementAge ? 0 : currentMonthlyDeposit,
-            withdrawal: isRetirementAge ? currentMonthlyWithdrawal : 0,
-            balance: currentBalance,
-            isHistorical: false
-          };
+            return {
+              month: currentMonthNumber,
+              contribution: 0,
+              withdrawal,
+              balance: currentBalance,
+              returns: monthlyReturn,
+              isHistorical: false
+            };
+          } else {
+            const monthlyReturn = currentBalance * monthlyReturnRate;
+            currentBalance = currentBalance + currentMonthlyDeposit + monthlyReturn;
+            
+            return {
+              month: currentMonthNumber,
+              contribution: currentMonthlyDeposit,
+              withdrawal: 0,
+              balance: currentBalance,
+              returns: monthlyReturn,
+              isHistorical: false
+            };
+          }
         });
 
         const hasRetirementTransition = age === investmentPlan.final_age;
@@ -510,7 +569,8 @@ export const MonthlyView = ({ userId, initialRecords, investmentPlan, profile }:
           balance: monthlyData[11].balance,
           months: monthlyData,
           isRetirementTransitionYear: hasRetirementTransition,
-          hasHistoricalData: monthlyData.some(m => m.isHistorical)
+          hasHistoricalData: monthlyData.some(m => m.isHistorical),
+          returns: monthlyData[11].returns
         });
       }
 
@@ -655,6 +715,23 @@ export const MonthlyView = ({ userId, initialRecords, investmentPlan, profile }:
         </TabsContent>
 
         <TabsContent value="futureProjection">
+          <div className="flex justify-end gap-2 mb-4">
+            <select
+              value={withdrawalStrategy.type}
+              onChange={(e) => setWithdrawalStrategy({
+                type: e.target.value as WithdrawalStrategy['type'],
+                monthlyAmount: e.target.value === 'fixed' ? investmentPlan.desired_income : undefined,
+                targetLegacy: e.target.value === 'legacy' ? 1000000 : undefined
+              })}
+              className="px-3 py-1 border rounded-md text-sm"
+            >
+              <option value="fixed">{t('monthlyView.futureProjection.strategies.fixed')}</option>
+              <option value="preservation">{t('monthlyView.futureProjection.strategies.preservation')}</option>
+              <option value="spend-all">{t('monthlyView.futureProjection.strategies.spendAll')}</option>
+              <option value="legacy">{t('monthlyView.futureProjection.strategies.legacy')}</option>
+            </select>
+          </div>
+
           <div className="rounded-md border overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
@@ -667,7 +744,7 @@ export const MonthlyView = ({ userId, initialRecords, investmentPlan, profile }:
                 </tr>
               </thead>
               <tbody>
-                {generateProjectionData().map((projection) => (
+                {generateProjectionData(withdrawalStrategy).map((projection) => (
                   <>
                     <tr key={projection.year} className={`border-b hover:bg-muted/50 transition-colors ${
                       projection.hasHistoricalData ? 'bg-blue-50/50' : ''
