@@ -35,8 +35,8 @@ export const ptBR = {
         planType: "Tipo do Plano",
         status: "Status",
         types: {
-          "1": "Encerrar aos 100 anos",
-          "2": "Deixar 1M de herança",
+          "1": "Encerrar",
+          "2": "Deixar Herança",
           "3": "Não tocar no principal"
         },
         adjustContributionForInflation: "Ajuste do Aporte pela Inflação",
@@ -56,11 +56,14 @@ export const ptBR = {
       createButton: "Criar Plano",
       creating: "Criando...",
       adjustContributionForInflation: "Ajustar aporte pela inflação anualmente",
-      advancedSettings: "Configurações Avançadas"
+      advancedSettings: "Configurações Avançadas",
+      endAge: "Idade de Encerramento",
+      legacyAge: "Idade para Deixar Herança",
+      legacyAmount: "Valor da Herança"
     },
     planTypes: {
-      endAt100: "Encerrar aos 100 anos",
-      leave1M: "Deixar 1M de herança",
+      endAt120: "Encerrar",
+      leave1M: "Deixar Herança",
       keepPrincipal: "Não tocar no principal"
     },
     riskProfiles: {
@@ -73,12 +76,14 @@ export const ptBR = {
       calculations: {
         title: "Valores Calculados",
         inflationAdjustedIncome: "Renda Ajustada pela Inflação",
-        requiredFutureValue: "Valor Futuro Necessário",
+        requiredFutureValue: "Valor Futuro",
         monthlyRealReturn: "Retorno Mensal Real",
         monthlyInflationReturn: "Retorno Mensal da Inflação",
         totalMonthlyReturn: "Retorno Mensal Total",
-        requiredMonthlyDeposit: "Depósito Mensal Necessário",
-        fillRequired: "Preencha todos os campos obrigatórios para ver os cálculos"
+        requiredMonthlyDeposit: "Depósito Mensal Necessário para o Valor Futuro",
+        necessaryFutureValue: "Necessário para renda desejada",
+        fillRequired: "Preencha todos os campos obrigatórios para ver os cálculos",
+        necessaryMonthlyDeposit: "Necessário para renda desejada"
       },
     },
     edit: {

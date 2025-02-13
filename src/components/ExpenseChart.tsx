@@ -18,7 +18,9 @@ interface InvestmentPlan {
   initial_age: number;
   final_age: number;
   desired_income: number;
-  adjust_contribution_for_inflation: boolean
+  adjust_contribution_for_inflation: boolean;
+  plan_type: string;
+  limit_age?: number;
 }
 
 interface ExpenseChartProps {
@@ -51,10 +53,18 @@ export const ExpenseChart = ({
   
   // Use initial_age from investment plan
   const clientAge = investmentPlan.initial_age;
-  const yearsUntil120 = 120 - clientAge;
+  const getEndAge = () => {
+    if ((investmentPlan.plan_type === "1" || investmentPlan.plan_type === "2") && investmentPlan.limit_age) {
+      return investmentPlan.limit_age;
+    }
+    return 120;
+  };
   
-  // Create array of ages from initial_age to 120
-  const allAges = Array.from({ length: yearsUntil120 + 1 }, (_, i) => clientAge + i);
+  const endAge = getEndAge();
+  const yearsUntilEnd = endAge - clientAge;
+  
+  // Create array of ages from initial_age to endAge
+  const allAges = Array.from({ length: yearsUntilEnd + 1 }, (_, i) => clientAge + i);
 
   const generateProjectedValues = () => {
     const projectedData = [];
@@ -76,8 +86,7 @@ export const ExpenseChart = ({
         currentMonthlyWithdrawal *= (1 + monthlyInflationRate);
 
         if (isRetirementAge) {
-          // Calculate withdrawal amount based on strategy
-          const monthsUntil100 = (100 - age) * 12 - month;
+          const monthsUntilEnd = (endAge - age) * 12 - month;
           const withdrawal = calculateMonthlyWithdrawal(
             withdrawalStrategy,
             {
@@ -85,7 +94,7 @@ export const ExpenseChart = ({
               monthlyReturnRate,
               monthlyInflationRate,
               currentAge: age,
-              monthsUntil100,
+              monthsUntilEnd: monthsUntilEnd,
               currentMonth: month,
               desiredIncome: currentMonthlyWithdrawal
             }
@@ -158,7 +167,7 @@ export const ExpenseChart = ({
         currentMonthlyWithdrawal *= (1 + monthlyInflationRate);
 
         if (isRetirementAge) {
-          const monthsUntil100 = (100 - age) * 12 - month;
+          const monthsUntilEnd = (endAge - age) * 12 - month;
           const withdrawal = calculateMonthlyWithdrawal(
             withdrawalStrategy,
             {
@@ -166,7 +175,7 @@ export const ExpenseChart = ({
               monthlyReturnRate,
               monthlyInflationRate,
               currentAge: age,
-              monthsUntil100,
+              monthsUntilEnd: monthsUntilEnd,
               currentMonth: month,
               desiredIncome: currentMonthlyWithdrawal
             }

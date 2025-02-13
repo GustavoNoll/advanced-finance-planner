@@ -31,6 +31,8 @@ export const CreatePlan = () => {
     inflation: "6.0",
     planType: "3",
     adjustContributionForInflation: false,
+    limitAge: "120",
+    legacyAmount: "1000000",
   });
 
   // Add new state for calculations
@@ -41,6 +43,8 @@ export const CreatePlan = () => {
     inflationReturn: number;
     totalMonthlyReturn: number;
     requiredMonthlyDeposit: number;
+    necessaryFutureValue: number;
+    necessaryDepositToNecessaryFutureValue: number;
   } | null>(null);
 
   // Add new state for tracking which row is expanded
@@ -65,7 +69,8 @@ export const CreatePlan = () => {
 
         if (error) throw error;
 
-        if (data && data.length > 0) {
+        // Only redirect if not in the process of submitting a new plan
+        if (data && data.length > 0 && !loading) {
           toast({
             title: "Plan already exists",
             description: "This client already has an investment plan. Redirecting to edit page...",
@@ -83,11 +88,12 @@ export const CreatePlan = () => {
     };
 
     checkExistingPlan();
-  }, [clientId, toast]);
+  }, [clientId, toast, loading]); // Add loading to dependencies
 
   // Modify handleChange to update calculations when form values change
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
+    const checked = (e.target as HTMLInputElement).checked;
     
     setFormData((prev) => {
       const newFormData = { ...prev };
@@ -97,8 +103,10 @@ export const CreatePlan = () => {
         if (profile) {
           newFormData.expectedReturn = profile.return;
         }
+      } else if (e.target.type === 'checkbox') {
+        newFormData.adjustContributionForInflation = checked;
       } else {
-        newFormData[name] = value;
+        newFormData[name as keyof FormData] = value;
       }
       
       if (isCalculationReady(newFormData)) {
@@ -134,6 +142,8 @@ export const CreatePlan = () => {
           required_monthly_deposit: calculations.requiredMonthlyDeposit,
           status: "active",
           adjust_contribution_for_inflation: formData.adjustContributionForInflation,
+          limit_age: formData.limitAge,
+          legacy_amount: formData.planType === "2" ? parseFloat(formData.legacyAmount.replace(',', '.')) : null,
         },
       ]);
 
@@ -337,11 +347,62 @@ export const CreatePlan = () => {
                   className="w-full p-2 border rounded"
                   required
                 >
-                  <option value="1">Encerrar aos 100 anos</option>
-                  <option value="2">Deixar 1M de herança</option>
-                  <option value="3">Não tocar no principal</option>
+                  <option value="1">{t('investmentPlan.planTypes.endAt120')}</option>
+                  <option value="2">{t('investmentPlan.planTypes.leave1M')}</option>
+                  <option value="3">{t('investmentPlan.planTypes.keepPrincipal')}</option>
                 </select>
               </div>
+
+              {(formData.planType === "1" || formData.planType === "2") && (
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">
+                    {formData.planType === "1" 
+                      ? t('investmentPlan.form.endAge')
+                      : t('investmentPlan.form.legacyAge')}
+                  </label>
+                  <Input
+                    type="number"
+                    name="limitAge"
+                    value={formData.limitAge}
+                    onChange={handleChange}
+                    placeholder={formData.planType === "1" ? "120" : "85"}
+                    required
+                    min={formData.finalAge}
+                    max="120"
+                    step="1"
+                    onKeyDown={(e) => {
+                      if (e.key === "." || e.key === ",") {
+                        e.preventDefault();
+                      }
+                    }}
+                  />
+                </div>
+              )}
+
+              {formData.planType === "2" && (
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">
+                    {t('investmentPlan.form.legacyAmount')}
+                  </label>
+                  <CurrencyInput
+                    name="legacyAmount"
+                    value={formData.legacyAmount}
+                    onValueChange={(value) => {
+                      setFormData(prev => ({
+                        ...prev,
+                        legacyAmount: value || ''
+                      }))
+                    }}
+                    placeholder="1000000"
+                    prefix="R$ "
+                    decimalsLimit={2}
+                    decimalSeparator=","
+                    groupSeparator="."
+                    className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                    required
+                  />
+                </div>
+              )}
 
               <div className="mt-8">
                 <h3 className="text-lg font-medium mb-4">{t('investmentPlan.form.advancedSettings')}</h3>
@@ -393,11 +454,28 @@ export const CreatePlan = () => {
                   onClick={() => setExpandedRow(expandedRow === 'future' ? null : 'future')}
                 >
                   <div className="flex items-center gap-2 w-3/4">
-                    <div className="w-4" />
+                    {expandedRow === 'future' ? (
+                      <ChevronDown className="h-4 w-4 text-gray-400" />
+                    ) : (
+                      <ChevronRight className="h-4 w-4 text-gray-400" />
+                    )}
                     <span>{t('investmentPlan.create.calculations.requiredFutureValue')}:</span>
                   </div>
-                  <span>R$ {calculations?.futureValue.toLocaleString('pt-BR', { maximumFractionDigits: 2 }) || '---'}</span>
+                  <span className={calculations?.futureValue < (calculations?.necessaryFutureValue || 0) ? 'text-red-500' : ''}>
+                    R$ {calculations?.futureValue.toLocaleString('pt-BR', { maximumFractionDigits: 2 }) || '---'}
+                  </span>
                 </div>
+                {expandedRow === 'future' && typeof calculations?.necessaryFutureValue === 'number' && (
+                  <div className="pl-4 space-y-2 border-l-2 border-gray-200 mt-2 bg-gray-50 p-2 rounded">
+                    <div className="flex justify-between">
+                      <div className="flex items-center gap-2 w-3/4">
+                        <div className="w-4" />
+                        <span>{t('investmentPlan.create.calculations.necessaryFutureValue')}:</span>
+                      </div>
+                      <span>R$ {calculations.necessaryFutureValue.toLocaleString('pt-BR', { maximumFractionDigits: 2 })}</span>
+                    </div>
+                  </div>
+                )}
 
                 <div>
                   <div 
@@ -434,15 +512,34 @@ export const CreatePlan = () => {
                   )}
                 </div>
 
-                <div 
-                  className="flex justify-between p-2 hover:bg-gray-100 cursor-pointer rounded"
-                  onClick={() => setExpandedRow(expandedRow === 'deposit' ? null : 'deposit')}
-                >
-                  <div className="flex items-center gap-2 w-3/4">
-                    <div className="w-4" />
-                    <span>{t('investmentPlan.create.calculations.requiredMonthlyDeposit')}:</span>
+                <div>
+                  <div 
+                    className="flex justify-between p-2 hover:bg-gray-100 cursor-pointer rounded"
+                    onClick={() => setExpandedRow(expandedRow === 'deposit' ? null : 'deposit')}
+                  >
+                    <div className="flex items-center gap-2 w-3/4">
+                      {expandedRow === 'deposit' ? (
+                        <ChevronDown className="h-4 w-4 text-gray-400" />
+                      ) : (
+                        <ChevronRight className="h-4 w-4 text-gray-400" />
+                      )}
+                      <span>{t('investmentPlan.create.calculations.requiredMonthlyDeposit')}:</span>
+                    </div>
+                    <span className={calculations?.requiredMonthlyDeposit < (calculations?.necessaryDepositToNecessaryFutureValue || 0) ? 'text-red-500' : ''}>
+                      R$ {calculations?.requiredMonthlyDeposit.toLocaleString('pt-BR', { maximumFractionDigits: 2 }) || '---'}
+                    </span>
                   </div>
-                  <span>R$ {calculations?.requiredMonthlyDeposit.toLocaleString('pt-BR', { maximumFractionDigits: 2 }) || '---'}</span>
+                  {expandedRow === 'deposit' && typeof calculations?.necessaryDepositToNecessaryFutureValue === 'number' && (
+                    <div className="pl-4 space-y-2 border-l-2 border-gray-200 mt-2 bg-gray-50 p-2 rounded">
+                      <div className="flex justify-between">
+                        <div className="flex items-center gap-2 w-3/4">
+                          <div className="w-4" />
+                          <span>{t('investmentPlan.create.calculations.necessaryMonthlyDeposit')}:</span>
+                        </div>
+                        <span>R$ {calculations.necessaryDepositToNecessaryFutureValue.toLocaleString('pt-BR', { maximumFractionDigits: 2 })}</span>
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
             ) : (

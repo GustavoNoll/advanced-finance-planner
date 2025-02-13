@@ -225,6 +225,33 @@ export const InvestmentPlanShow = () => {
                 <p className="text-sm text-gray-500">{t('investmentPlan.details.investmentParams.planType')}</p>
                 <p className="font-medium">{t(`investmentPlan.details.investmentParams.types.${plan.plan_type}`)}</p>
               </div>
+
+              {plan.plan_type === "1" && plan.limit_age && (
+                <div>
+                  <p className="text-sm text-gray-500">{t('investmentPlan.form.endAge')}</p>
+                  <p className="font-medium">{plan.limit_age} {t('investmentPlan.details.clientInfo.years')}</p>
+                </div>
+              )}
+
+              {plan.plan_type === "2" && (
+                <>
+                  {plan.limit_age && (
+                    <div>
+                      <p className="text-sm text-gray-500">{t('investmentPlan.form.legacyAge')}</p>
+                      <p className="font-medium">{plan.limit_age} {t('investmentPlan.details.clientInfo.years')}</p>
+                    </div>
+                  )}
+                  {plan.legacy_amount && (
+                    <div>
+                      <p className="text-sm text-gray-500">{t('investmentPlan.form.legacyAmount')}</p>
+                      <p className="font-medium">
+                        {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' })
+                          .format(plan.legacy_amount)}
+                      </p>
+                    </div>
+                  )}
+                </>
+              )}
             </div>
           </DashboardCard>
         </div>

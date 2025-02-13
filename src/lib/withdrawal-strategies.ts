@@ -9,7 +9,7 @@ export interface WithdrawalCalculationParams {
   monthlyReturnRate: number;
   monthlyInflationRate: number;
   currentAge: number;
-  monthsUntil100: number;
+  monthsUntilEnd: number;
   currentMonth: number;
   desiredIncome: number;
 }
@@ -22,7 +22,7 @@ export const calculateMonthlyWithdrawal = (
     currentBalance,
     monthlyReturnRate,
     currentAge,
-    monthsUntil100,
+    monthsUntilEnd,
     desiredIncome
   } = params;
 
@@ -36,18 +36,18 @@ export const calculateMonthlyWithdrawal = (
       return monthlyReturn;
 
     case 'spend-all':
-      if (currentAge < 100) {
+      if (currentAge < 120) {
     
-        if (monthsUntil100 > 0) {
+        if (monthsUntilEnd > 0) {
           const excessAmount = currentBalance;
           
           // Se for o último mês, ajuste exatamente para deixar 1M na conta
-          if (monthsUntil100 === 1) {
+          if (monthsUntilEnd === 1) {
             return Math.max(0, currentBalance);
           }
     
           // Distribuir saque extra de forma proporcional ao tempo restante
-          const additionalWithdrawal = excessAmount / monthsUntil100;
+          const additionalWithdrawal = excessAmount / monthsUntilEnd;
     
           // Total a ser sacado
           const totalWithdrawal = desiredIncome + additionalWithdrawal;
@@ -57,19 +57,19 @@ export const calculateMonthlyWithdrawal = (
       }
       return 0;
     case 'legacy': 
-      if (currentAge < 100) {
-        const targetLegacy = strategy.targetLegacy || 1000000; // Valor alvo aos 100 anos
+      if (currentAge < 120) {
+        const targetLegacy = strategy.targetLegacy || 1000000; // Valor alvo aos 120 anos
     
-        if (monthsUntil100 > 0) {
+        if (monthsUntilEnd > 0) {
           const excessAmount = currentBalance - targetLegacy;
           
           // Se for o último mês, ajuste exatamente para deixar 1M na conta
-          if (monthsUntil100 === 1) {
+          if (monthsUntilEnd === 1) {
             return Math.max(0, currentBalance - targetLegacy);
           }
     
           // Distribuir saque extra de forma proporcional ao tempo restante
-          const additionalWithdrawal = excessAmount / monthsUntil100;
+          const additionalWithdrawal = excessAmount / monthsUntilEnd;
     
           // Total a ser sacado
           const totalWithdrawal = desiredIncome + additionalWithdrawal;

@@ -41,6 +41,18 @@ interface ProjectionData {
   returns: number;
 }
 
+interface InvestmentPlan {
+  initial_age: number;
+  final_age: number;
+  monthly_deposit: number;
+  expected_return: number;
+  inflation: number;
+  adjust_contribution_for_inflation: boolean;
+  desired_income: number;
+  plan_type: string;
+  limit_age?: number;
+}
+
 export const MonthlyView = ({ 
   userId, 
   initialRecords, 
@@ -53,15 +65,7 @@ export const MonthlyView = ({
   userId: string;
   initialRecords: FinancialRecord[];
   allFinancialRecords: FinancialRecord[];
-  investmentPlan: {
-    initial_age: number;
-    final_age: number;
-    monthly_deposit: number;
-    expected_return: number;
-    inflation: number;
-    adjust_contribution_for_inflation: boolean;
-    desired_income: number;
-  };
+  investmentPlan: InvestmentPlan;
   profile: {
     birth_date: string;
   };
@@ -339,6 +343,16 @@ export const MonthlyView = ({
   };
 
   const generateProjectionData = (strategy: WithdrawalStrategy): ProjectionData[] => {
+    const getEndAge = () => {
+      if ((investmentPlan.plan_type === "1" || investmentPlan.plan_type === "2") && investmentPlan.limit_age) {
+        return investmentPlan.limit_age;
+      }
+      return 120;
+    };
+
+    const endAge = getEndAge();
+    const projectionData: ProjectionData[] = [];
+    
     if (!profile?.birth_date || !investmentPlan || !initialRecords.length) {
       return [];
     }
@@ -347,13 +361,11 @@ export const MonthlyView = ({
       const birthDate = new Date(profile.birth_date);
       const birthYear = birthDate.getFullYear();
       const birthMonth = birthDate.getMonth() + 1;
-      const yearsUntil120 = 120 - investmentPlan.initial_age;
+      const yearsUntilEnd = endAge - investmentPlan.initial_age;
       const currentDate = new Date();
-      const currentYear = currentDate.getFullYear();
       
       const startYear = birthYear + investmentPlan.initial_age;
       
-      const projectionData: ProjectionData[] = [];
       let currentBalance = initialRecords[0]?.ending_balance || 0;
       let currentMonthlyDeposit = investmentPlan.monthly_deposit;
       let currentMonthlyWithdrawal = investmentPlan.desired_income;
@@ -367,7 +379,7 @@ export const MonthlyView = ({
         ])
       );
       
-      for (let i = 0; i <= yearsUntil120; i++) {
+      for (let i = 0; i <= yearsUntilEnd; i++) {
         const age = investmentPlan.initial_age + i;
         const year = startYear + i;
         
@@ -410,7 +422,7 @@ export const MonthlyView = ({
           const monthlyReturnRate = yearlyReturnRateToMonthlyReturnRate(yearlyReturnRate);
 
           if (isRetirementAge) {
-            const monthsUntil100 = (100 - age) * 12 - month;
+            const monthsUntilEnd = (endAge - age) * 12 - month;
             const monthlyReturn = currentBalance * monthlyReturnRate;
             const withdrawal = calculateMonthlyWithdrawal(
               strategy,
@@ -419,7 +431,7 @@ export const MonthlyView = ({
                 monthlyReturnRate,
                 monthlyInflationRate: yearlyInflationRate,
                 currentAge: age,
-                monthsUntil100,
+                monthsUntilEnd: monthsUntilEnd,
                 currentMonth: month,
                 desiredIncome: currentMonthlyWithdrawal
               }
@@ -473,10 +485,6 @@ export const MonthlyView = ({
       return [];
     }
   };
-
-  const projectionData = useMemo(() => {
-    return generateProjectionData(withdrawalStrategy);
-  }, [withdrawalStrategy]);
 
   // Se não tivermos os dados necessários, mostramos uma mensagem
   if (!investmentPlan) {
