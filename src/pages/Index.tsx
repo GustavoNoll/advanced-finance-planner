@@ -487,6 +487,8 @@ const Index = () => {
             allFinancialRecords={allFinancialRecords || []}
             investmentPlan={investmentPlan}
             profile={clientProfile}
+            withdrawalStrategy={withdrawalStrategy}
+            onWithdrawalStrategyChange={setWithdrawalStrategy}
           />
         </section>
       </main>

@@ -36,21 +36,45 @@ export const calculateMonthlyWithdrawal = (
       return monthlyReturn;
 
     case 'spend-all':
-      if (monthsUntil100 > 0) {
-        return (currentBalance + monthlyReturn) / monthsUntil100;
-      }
-      return currentBalance + monthlyReturn; // Withdraw everything in the final month
-
-    case 'legacy':
       if (currentAge < 100) {
-        const targetLegacy = strategy.targetLegacy || 1000000;
-        
+    
         if (monthsUntil100 > 0) {
-          const excessBalance = currentBalance - targetLegacy;
-          if (excessBalance > 0) {
-            return excessBalance / monthsUntil100 + monthlyReturn;
+          const excessAmount = currentBalance;
+          
+          // Se for o último mês, ajuste exatamente para deixar 1M na conta
+          if (monthsUntil100 === 1) {
+            return Math.max(0, currentBalance);
           }
-          return monthlyReturn * 0.5; // Withdraw half of returns to build up legacy
+    
+          // Distribuir saque extra de forma proporcional ao tempo restante
+          const additionalWithdrawal = excessAmount / monthsUntil100;
+    
+          // Total a ser sacado
+          const totalWithdrawal = desiredIncome + additionalWithdrawal;
+    
+          return Math.max(0, totalWithdrawal);
+        }
+      }
+      return 0;
+    case 'legacy': 
+      if (currentAge < 100) {
+        const targetLegacy = strategy.targetLegacy || 1000000; // Valor alvo aos 100 anos
+    
+        if (monthsUntil100 > 0) {
+          const excessAmount = currentBalance - targetLegacy;
+          
+          // Se for o último mês, ajuste exatamente para deixar 1M na conta
+          if (monthsUntil100 === 1) {
+            return Math.max(0, currentBalance - targetLegacy);
+          }
+    
+          // Distribuir saque extra de forma proporcional ao tempo restante
+          const additionalWithdrawal = excessAmount / monthsUntil100;
+    
+          // Total a ser sacado
+          const totalWithdrawal = desiredIncome + additionalWithdrawal;
+    
+          return Math.max(0, totalWithdrawal);
         }
       }
       return 0;

@@ -9,6 +9,8 @@ import { Spinner } from "@/components/ui/spinner";
 import { fetchCDIRates, fetchIPCARates } from '@/lib/bcb-api';
 import { ChevronDown, ChevronRight } from "lucide-react";
 import { yearlyReturnRateToMonthlyReturnRate } from '@/lib/financial-math';
+import { WithdrawalStrategy, calculateMonthlyWithdrawal } from '@/lib/withdrawal-strategies';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 interface FinancialRecord {
   record_year: number;
@@ -39,18 +41,14 @@ interface ProjectionData {
   returns: number;
 }
 
-interface WithdrawalStrategy {
-  type: 'fixed' | 'preservation' | 'spend-all' | 'legacy';
-  monthlyAmount?: number;
-  targetLegacy?: number;
-}
-
 export const MonthlyView = ({ 
   userId, 
   initialRecords, 
   allFinancialRecords,
   investmentPlan, 
-  profile
+  profile,
+  withdrawalStrategy = { type: 'fixed' },
+  onWithdrawalStrategyChange
 }: {
   userId: string;
   initialRecords: FinancialRecord[];
@@ -67,6 +65,8 @@ export const MonthlyView = ({
   profile: {
     birth_date: string;
   };
+  withdrawalStrategy?: WithdrawalStrategy;
+  onWithdrawalStrategyChange?: (strategy: WithdrawalStrategy) => void;
 }) => {
   const { t } = useTranslation();
   const RECORDS_PER_PAGE = 12;
@@ -75,11 +75,6 @@ export const MonthlyView = ({
   const [page, setPage] = useState(1);
   const [timeWindow, setTimeWindow] = useState<6 | 12 | 24 | 0>(12);
   const [expandedYears, setExpandedYears] = useState<number[]>([]);
-  const [withdrawalStrategy, setWithdrawalStrategy] = useState<WithdrawalStrategy>({
-    type: 'fixed',
-    monthlyAmount: investmentPlan?.desired_income,
-    targetLegacy: 1000000 // 1M default for legacy strategy
-  });
   
   // 2. All useMemo hooks
   const chartRecords = useMemo(() => {
@@ -412,48 +407,23 @@ export const MonthlyView = ({
             currentMonthlyWithdrawal *= (1 + yearlyInflationRate);
           }
 
-
           const monthlyReturnRate = yearlyReturnRateToMonthlyReturnRate(yearlyReturnRate);
 
           if (isRetirementAge) {
-            let withdrawal = 0;
             const monthsUntil100 = (100 - age) * 12 - month;
-            
             const monthlyReturn = currentBalance * monthlyReturnRate;
-            switch (strategy.type) {
-              case 'fixed':
-                withdrawal = currentMonthlyWithdrawal;
-                break;
-              case 'preservation':
-                withdrawal = monthlyReturn;
-                break;
-              case 'spend-all':
-                // Calculate months remaining until age 100
-                if (monthsUntil100 > 0) {
-                  // Divide remaining balance plus expected returns by remaining months
-                  withdrawal = (currentBalance + monthlyReturn) / monthsUntil100;
-                } else {
-                  withdrawal = currentBalance + monthlyReturn; // Withdraw everything in the final month
-                }
-                break;
-              case 'legacy':
-                if (age < 100) {
-                  // Calculate required monthly savings to reach target legacy
-                  const monthsUntil100 = (100 - age) * 12 - month;
-                  const targetLegacy = strategy.targetLegacy || 1000000;
-                  
-                  if (monthsUntil100 > 0) {
-                    // If current balance minus target legacy is positive, we can withdraw more
-                    const excessBalance = currentBalance - targetLegacy;
-                    if (excessBalance > 0) {
-                      withdrawal = excessBalance / monthsUntil100 + monthlyReturn;
-                    } else {
-                      withdrawal = monthlyReturn * 0.5; // Withdraw half of returns to build up legacy
-                    }
-                  }
-                }
-                break;
-            }
+            const withdrawal = calculateMonthlyWithdrawal(
+              strategy,
+              {
+                currentBalance,
+                monthlyReturnRate,
+                monthlyInflationRate: yearlyInflationRate,
+                currentAge: age,
+                monthsUntil100,
+                currentMonth: month,
+                desiredIncome: currentMonthlyWithdrawal
+              }
+            );
             
             currentBalance = (currentBalance - withdrawal) * (1 + monthlyReturnRate);
 
@@ -503,6 +473,10 @@ export const MonthlyView = ({
       return [];
     }
   };
+
+  const projectionData = useMemo(() => {
+    return generateProjectionData(withdrawalStrategy);
+  }, [withdrawalStrategy]);
 
   // Se não tivermos os dados necessários, mostramos uma mensagem
   if (!investmentPlan) {
@@ -634,20 +608,26 @@ export const MonthlyView = ({
 
         <TabsContent value="futureProjection">
           <div className="flex justify-end gap-2 mb-4">
-            <select
+            <Select
               value={withdrawalStrategy.type}
-              onChange={(e) => setWithdrawalStrategy({
-                type: e.target.value as WithdrawalStrategy['type'],
-                monthlyAmount: e.target.value === 'fixed' ? investmentPlan?.desired_income : undefined,
-                targetLegacy: e.target.value === 'legacy' ? 1000000 : undefined
-              })}
-              className="px-3 py-1 border rounded-md text-sm"
+              onValueChange={(value) => {
+                onWithdrawalStrategyChange?.({
+                  type: value as WithdrawalStrategy['type'],
+                  monthlyAmount: value === 'fixed' ? investmentPlan?.desired_income : undefined,
+                  targetLegacy: value === 'legacy' ? 1000000 : undefined
+                });
+              }}
             >
-              <option value="fixed">{t('monthlyView.futureProjection.strategies.fixed')}</option>
-              <option value="preservation">{t('monthlyView.futureProjection.strategies.preservation')}</option>
-              <option value="spend-all">{t('monthlyView.futureProjection.strategies.spendAll')}</option>
-              <option value="legacy">{t('monthlyView.futureProjection.strategies.legacy')}</option>
-            </select>
+              <SelectTrigger className="w-[200px]">
+                <SelectValue placeholder={t('expenseChart.selectStrategy')} />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="fixed">{t('monthlyView.futureProjection.strategies.fixed')}</SelectItem>
+                <SelectItem value="preservation">{t('monthlyView.futureProjection.strategies.preservation')}</SelectItem>
+                <SelectItem value="spend-all">{t('monthlyView.futureProjection.strategies.spendAll')}</SelectItem>
+                <SelectItem value="legacy">{t('monthlyView.futureProjection.strategies.legacy')}</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
 
           <div className="rounded-md border overflow-x-auto">

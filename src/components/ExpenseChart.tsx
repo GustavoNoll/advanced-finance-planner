@@ -148,28 +148,37 @@ export const ExpenseChart = ({
         continue;
       }
 
-      // Convert yearly rates to monthly for more accurate calculations
       const monthlyReturnRate = yearlyReturnRateToMonthlyReturnRate(investmentPlan.expected_return/100 + investmentPlan.inflation/100);
       const monthlyInflationRate = yearlyReturnRateToMonthlyReturnRate(investmentPlan.inflation/100);
 
-      // Calculate all months for the year
       for (let month = 0; month < 12; month++) {
-        // Adjust for inflation monthly
         if (investmentPlan.adjust_contribution_for_inflation) {
           currentMonthlyDeposit *= (1 + monthlyInflationRate);
         }
         currentMonthlyWithdrawal *= (1 + monthlyInflationRate);
 
         if (isRetirementAge) {
-          // In retirement: withdraw adjusted monthly amount and apply returns
-          lastBalance = (lastBalance - currentMonthlyWithdrawal) * (1 + monthlyReturnRate);
+          const monthsUntil100 = (100 - age) * 12 - month;
+          const withdrawal = calculateMonthlyWithdrawal(
+            withdrawalStrategy,
+            {
+              currentBalance: lastBalance,
+              monthlyReturnRate,
+              monthlyInflationRate,
+              currentAge: age,
+              monthsUntil100,
+              currentMonth: month,
+              desiredIncome: currentMonthlyWithdrawal
+            }
+          );
+          
+          lastBalance = (lastBalance - withdrawal) * (1 + monthlyReturnRate);
         } else {
-          // Before retirement: contribute adjusted monthly amount and apply returns
           lastBalance = (lastBalance + currentMonthlyDeposit) * (1 + monthlyReturnRate);
         }
       }
 
-      realValue.actualValue = Math.max(0, lastBalance); // Prevent negative balances
+      realValue.actualValue = Math.max(0, lastBalance);
     }
 
     return realValues;
