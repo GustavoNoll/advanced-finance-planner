@@ -14,6 +14,7 @@ import { useTranslation } from "react-i18next";
 import { Spinner } from "@/components/ui/spinner";
 import { FinancialRecord } from "@/types/financial";
 import { useQueryClient } from "@tanstack/react-query";
+import { WithdrawalStrategy } from '@/lib/withdrawal-strategies';
 
 // Add this type above the Index component
 type TimePeriod = 'all' | '6m' | '12m' | '24m';
@@ -26,6 +27,9 @@ const Index = () => {
   const { t } = useTranslation();
   const [selectedPeriod, setSelectedPeriod] = useState<TimePeriod>('all');
   const queryClient = useQueryClient();
+  const [withdrawalStrategy, setWithdrawalStrategy] = useState<WithdrawalStrategy>({
+    type: 'fixed'
+  });
 
   const handleLogout = useCallback(async () => {
     try {
@@ -434,12 +438,13 @@ const Index = () => {
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
           <div className="lg:col-span-2 bg-white rounded-xl shadow-sm p-6">
-            <h2 className="text-lg font-semibold mb-4">{t('dashboard.charts.portfolioPerformance')}</h2>
             <ExpenseChart 
               profile={clientProfile}
               investmentPlan={investmentPlan}
               clientId={clientId}
               financialRecordsByYear={processedRecords.financialRecordsByYear as FinancialRecord[]}
+              withdrawalStrategy={withdrawalStrategy}
+              onWithdrawalStrategyChange={setWithdrawalStrategy}
             />
           </div>
           
