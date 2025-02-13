@@ -76,7 +76,7 @@ export const calculateFutureValues = (data: FormData): Calculations => {
       break;
       
     case "3":
-      futureValue = inflationAdjustedIncome / (expectedReturn / 12);
+      futureValue = inflationAdjustedIncome / yearlyReturnRateToMonthlyReturnRate(expectedReturn);
       break;
       
     default:
