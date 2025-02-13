@@ -3,8 +3,7 @@ import { DashboardCard } from "./DashboardCard";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { useTranslation } from "react-i18next";
 import { useQuery } from "@tanstack/react-query";
-import { useState, useCallback } from "react";
-import { supabase } from "@/lib/supabase";
+import { useState, useCallback, useMemo } from "react";
 import { toast } from "@/components/ui/use-toast";
 import { Spinner } from "@/components/ui/spinner";
 import { fetchCDIRates, fetchIPCARates } from '@/lib/bcb-api';
@@ -46,9 +45,16 @@ interface WithdrawalStrategy {
   targetLegacy?: number;
 }
 
-export const MonthlyView = ({ userId, initialRecords, investmentPlan, profile }: {
+export const MonthlyView = ({ 
+  userId, 
+  initialRecords, 
+  allFinancialRecords,
+  investmentPlan, 
+  profile
+}: {
   userId: string;
   initialRecords: FinancialRecord[];
+  allFinancialRecords: FinancialRecord[];
   investmentPlan: {
     initial_age: number;
     final_age: number;
@@ -63,136 +69,92 @@ export const MonthlyView = ({ userId, initialRecords, investmentPlan, profile }:
   };
 }) => {
   const { t } = useTranslation();
+  const RECORDS_PER_PAGE = 12;
+  
+  // 1. All useState hooks
   const [page, setPage] = useState(1);
   const [timeWindow, setTimeWindow] = useState<6 | 12 | 24 | 0>(12);
   const [expandedYears, setExpandedYears] = useState<number[]>([]);
-  const RECORDS_PER_PAGE = 12;
   const [withdrawalStrategy, setWithdrawalStrategy] = useState<WithdrawalStrategy>({
     type: 'fixed',
-    monthlyAmount: investmentPlan.desired_income,
+    monthlyAmount: investmentPlan?.desired_income,
     targetLegacy: 1000000 // 1M default for legacy strategy
   });
-
-  const { data: totalCount } = useQuery({
-    queryKey: ['financialRecordsCount', userId],
-    queryFn: async () => {
-      const { count, error } = await supabase
-        .from('user_financial_records')
-        .select('*', { count: 'exact', head: true })
-        .eq('user_id', userId);
-
-      if (error) {
-        console.error('Error fetching count:', error);
-        return 0;
-      }
-
-      return count || 0;
-    },
-  });
-
-  const { data: additionalRecords, isLoading } = useQuery({
-    queryKey: ['financialRecords', userId, page, timeWindow],
-    queryFn: async () => {
-      if (page === 1) return [];
-      
-      const { data, error } = await supabase
-        .from('user_financial_records')
-        .select('*')
-        .eq('user_id', userId)
-        .order('record_year', { ascending: false })
-        .order('record_month', { ascending: false })
-        .range(RECORDS_PER_PAGE, (page * RECORDS_PER_PAGE) - 1);
-
-      if (error) {
-        console.error('Error fetching additional records:', error);
-        return [];
-      }
-
-      return data;
-    },
-    enabled: page > 1,
-  });
-
-  const { data: chartRecords } = useQuery({
-    queryKey: ['chartRecords', userId, timeWindow],
-    queryFn: async () => {
-      console.log(timeWindow);
-      if (timeWindow === 0) {
-        const { data, error } = await supabase
-          .from('user_financial_records')
-          .select('*')
-          .eq('user_id', userId)
-          .order('record_year', { ascending: false })
-          .order('record_month', { ascending: false });
   
-        if (error) {
-          console.error('Error fetching all records:', error);
-          return initialRecords;
+  // 2. All useMemo hooks
+  const chartRecords = useMemo(() => {
+    if (timeWindow === 0) return allFinancialRecords;
+    
+    return allFinancialRecords
+      .sort((a, b) => {
+        if (b.record_year !== a.record_year) {
+          return b.record_year - a.record_year;
         }
-  
-        return data;
-      }
+        return b.record_month - a.record_month;
+      })
+      .slice(0, timeWindow);
+  }, [allFinancialRecords, timeWindow]);
 
-      if (timeWindow <= RECORDS_PER_PAGE) {
-        return initialRecords;
-      }
+  const recordsToUse = useMemo(() => 
+    timeWindow === 0 || timeWindow > RECORDS_PER_PAGE ? chartRecords : initialRecords,
+  [timeWindow, RECORDS_PER_PAGE, chartRecords, initialRecords]);
 
-      const { data, error } = await supabase
-        .from('user_financial_records')
-        .select('*')
-        .eq('user_id', userId)
-        .order('record_year', { ascending: false })
-        .order('record_month', { ascending: false })
-        .limit(timeWindow);
+  const paginatedRecords = useMemo(() => {
+    const startIndex = 0;
+    const endIndex = page * RECORDS_PER_PAGE;
+    return allFinancialRecords
+      .sort((a, b) => {
+        if (b.record_year !== a.record_year) {
+          return b.record_year - a.record_year;
+        }
+        return b.record_month - a.record_month;
+      })
+      .slice(startIndex, endIndex);
+  }, [allFinancialRecords, page]);
 
-      if (error) {
-        console.error('Error fetching chart records:', error);
-        return initialRecords;
-      }
-
-      return data;
-    },
-    enabled: timeWindow > RECORDS_PER_PAGE || timeWindow === 0,
-  });
-
-  const { data: allHistoricalRecords } = useQuery({
-    queryKey: ['allFinancialRecords', userId],
+  // 3. All useQuery hooks
+  const { data: allCdiRates } = useQuery({
+    queryKey: ['allCdiRates'],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('user_financial_records')
-        .select('*')
-        .eq('user_id', userId)
-        .order('record_year', { ascending: true })
-        .order('record_month', { ascending: true });
+      // Get the earliest and latest dates from all financial records
+      const sortedRecords = [...allFinancialRecords].sort((a, b) => {
+        if (a.record_year !== b.record_year) return a.record_year - b.record_year;
+        return a.record_month - b.record_month;
+      });
 
-      if (error) {
-        console.error('Error fetching all historical records:', error);
-        return [];
-      }
-
-      return data;
+      const startDate = `01/${sortedRecords[0].record_month.toString().padStart(2, '0')}/${sortedRecords[0].record_year}`;
+      const lastRecord = sortedRecords[sortedRecords.length - 1];
+      const endDate = `01/${lastRecord.record_month.toString().padStart(2, '0')}/${lastRecord.record_year}`;
+      
+      return await fetchCDIRates(startDate, endDate);
     },
+    enabled: Boolean(allFinancialRecords?.length),
   });
 
-  const allDisplayedRecords = [...initialRecords, ...(additionalRecords || [])];
-  const allChartRecords = chartRecords || initialRecords;
+  const { data: allIpcaRates } = useQuery({
+    queryKey: ['allIpcaRates'],
+    queryFn: async () => {
+      const sortedRecords = [...allFinancialRecords].sort((a, b) => {
+        if (a.record_year !== b.record_year) return a.record_year - b.record_year;
+        return a.record_month - b.record_month;
+      });
 
+      const startDate = `01/${sortedRecords[0].record_month.toString().padStart(2, '0')}/${sortedRecords[0].record_year}`;
+      const lastRecord = sortedRecords[sortedRecords.length - 1];
+      const endDate = `01/${lastRecord.record_month.toString().padStart(2, '0')}/${lastRecord.record_year}`;
+      
+      return await fetchIPCARates(startDate, endDate);
+    },
+    enabled: Boolean(allFinancialRecords?.length),
+  });
+
+  // 4. All other hooks and functions
   const handleLoadMore = useCallback(() => {
     setPage(prev => prev + 1);
   }, []);
 
   const downloadCSV = async () => {
     try {
-      // Fetch all records for CSV
-      const { data: allRecords, error } = await supabase
-        .from('user_financial_records')
-        .select('*')
-        .eq('user_id', userId)
-        .order('record_year', { ascending: false })
-        .order('record_month', { ascending: false });
-
-      if (error) throw error;
-
       // Create CSV headers
       const headers = [
         t('monthlyView.table.headers.month'),
@@ -204,23 +166,30 @@ export const MonthlyView = ({ userId, initialRecords, investmentPlan, profile }:
         t('monthlyView.table.headers.targetRentability')
       ].join(',');
 
-      // Process all records for CSV
-      const processedData = allRecords.map(record => {
-        const monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 
-          'July', 'August', 'September', 'October', 'November', 'December'];
-        
-        const month = `${t(`monthlyView.table.months.${monthNames[record.record_month - 1]}`)}/${record.record_year}`;
-        
-        return [
-          month,
-          record.starting_balance.toString(),
-          record.monthly_contribution.toString(),
-          record.monthly_return.toString(),
-          `${record.monthly_return_rate.toFixed(2)}%`,
-          record.ending_balance.toString(),
-          `${record.target_rentability.toFixed(2)}%`
-        ].join(',');
-      });
+      // Process records for CSV using allFinancialRecords
+      const processedData = allFinancialRecords
+        .sort((a, b) => {
+          if (b.record_year !== a.record_year) {
+            return b.record_year - a.record_year;
+          }
+          return b.record_month - a.record_month;
+        })
+        .map(record => {
+          const monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 
+            'July', 'August', 'September', 'October', 'November', 'December'];
+          
+          const month = `${t(`monthlyView.table.months.${monthNames[record.record_month - 1]}`)}/${record.record_year}`;
+          
+          return [
+            month,
+            record.starting_balance.toString(),
+            record.monthly_contribution.toString(),
+            record.monthly_return.toString(),
+            `${record.monthly_return_rate.toFixed(2)}%`,
+            record.ending_balance.toString(),
+            `${record.target_rentability.toFixed(2)}%`
+          ].join(',');
+        });
 
       // Combine headers and rows
       const csvContent = [headers, ...processedData].join('\n');
@@ -244,8 +213,8 @@ export const MonthlyView = ({ userId, initialRecords, investmentPlan, profile }:
     }
   };
 
-  // Add check for empty records
-  if (allDisplayedRecords.length === 0) {
+  // 5. Early returns after all hooks
+  if (paginatedRecords.length === 0) {
     return (
       <DashboardCard title={t('monthlyView.title')} className="col-span-full">
         <div className="flex items-center justify-center p-8 text-muted-foreground">
@@ -255,7 +224,7 @@ export const MonthlyView = ({ userId, initialRecords, investmentPlan, profile }:
     );
   }
 
-  const sortedRecords = allDisplayedRecords.sort((a, b) => {
+  const sortedRecords = paginatedRecords.sort((a, b) => {
     // Sort by year and month in descending order
     if (a.record_year !== b.record_year) {
       return b.record_year - a.record_year;
@@ -284,51 +253,6 @@ export const MonthlyView = ({ userId, initialRecords, investmentPlan, profile }:
     month: `${t(`monthlyView.table.months.${data.month.split('/')[0]}`)}/${data.month.split('/')[1]}`
   }));
 
-  // Update the query keys to include timeWindow
-  const { data: cdiRates } = useQuery({
-    queryKey: ['cdiRates', initialRecords, timeWindow, chartRecords],
-    queryFn: async () => {
-      const recordsToUse = timeWindow === 0 || timeWindow > RECORDS_PER_PAGE ? 
-        chartRecords : initialRecords;
-
-      if (!recordsToUse?.length) return [];
-      
-      const sortedRecords = [...recordsToUse].sort((a, b) => {
-        if (a.record_year !== b.record_year) return a.record_year - b.record_year;
-        return a.record_month - b.record_month;
-      });
-
-      const startDate = `01/${sortedRecords[0].record_month.toString().padStart(2, '0')}/${sortedRecords[0].record_year}`;
-      const lastRecord = sortedRecords[sortedRecords.length - 1];
-      const endDate = `01/${lastRecord.record_month.toString().padStart(2, '0')}/${lastRecord.record_year}`;
-      
-      return await fetchCDIRates(startDate, endDate);
-    },
-    enabled: (timeWindow === 0 || timeWindow > RECORDS_PER_PAGE ? !!chartRecords : !!initialRecords.length),
-  });
-
-  const { data: ipcaRates } = useQuery({
-    queryKey: ['ipcaRates', initialRecords, timeWindow, chartRecords],
-    queryFn: async () => {
-      const recordsToUse = timeWindow === 0 || timeWindow > RECORDS_PER_PAGE ? 
-        chartRecords : initialRecords;
-
-      if (!recordsToUse?.length) return [];
-      
-      const sortedRecords = [...recordsToUse].sort((a, b) => {
-        if (a.record_year !== b.record_year) return a.record_year - b.record_year;
-        return a.record_month - b.record_month;
-      });
-
-      const startDate = `01/${sortedRecords[0].record_month.toString().padStart(2, '0')}/${sortedRecords[0].record_year}`;
-      const lastRecord = sortedRecords[sortedRecords.length - 1];
-      const endDate = `01/${lastRecord.record_month.toString().padStart(2, '0')}/${lastRecord.record_year}`;
-      
-      return await fetchIPCARates(startDate, endDate);
-    },
-    enabled: (timeWindow === 0 || timeWindow > RECORDS_PER_PAGE ? !!chartRecords : !!initialRecords.length),
-  });
-
   const processRecordsForChart = (records: FinancialRecord[]) => {
     const sortedRecords = records.sort((a, b) => {
       if (a.record_year !== b.record_year) {
@@ -341,12 +265,12 @@ export const MonthlyView = ({ userId, initialRecords, investmentPlan, profile }:
       const monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 
         'July', 'August', 'September', 'October', 'November', 'December'];
         
-      const cdiRate = cdiRates?.find(rate => 
+      const cdiRate = allCdiRates?.find(rate => 
         rate.date.getMonth() + 1 === record.record_month && 
         rate.date.getFullYear() === record.record_year
       )?.monthlyRate ?? 0;
 
-      const ipcaRate = ipcaRates?.find(rate => 
+      const ipcaRate = allIpcaRates?.find(rate => 
         rate.date.getMonth() + 1 === record.record_month && 
         rate.date.getFullYear() === record.record_year
       )?.monthlyRate ?? 0;
@@ -401,7 +325,7 @@ export const MonthlyView = ({ userId, initialRecords, investmentPlan, profile }:
   // Modify the chartDataToUse assignment
   const chartDataToUse = processRecordsForChart(
     timeWindow === 0 || timeWindow > RECORDS_PER_PAGE ? 
-    allChartRecords : 
+    chartRecords : 
     initialRecords
   );
 
@@ -438,11 +362,11 @@ export const MonthlyView = ({ userId, initialRecords, investmentPlan, profile }:
       let currentBalance = initialRecords[0]?.ending_balance || 0;
       let currentMonthlyDeposit = investmentPlan.monthly_deposit;
       let currentMonthlyWithdrawal = investmentPlan.desired_income;
-      const yearlyReturnRate = investmentPlan.expected_return / 100;
+      const yearlyReturnRate = investmentPlan.expected_return / 100 + investmentPlan.inflation / 100;
       const yearlyInflationRate = investmentPlan.inflation / 100;
 
       const historicalRecordsMap = new Map(
-        (allHistoricalRecords || []).map(record => [
+        allFinancialRecords.map(record => [
           `${record.record_year}-${record.record_month}`,
           record
         ])
@@ -491,9 +415,9 @@ export const MonthlyView = ({ userId, initialRecords, investmentPlan, profile }:
 
           const monthlyReturnRate = yearlyReturnRateToMonthlyReturnRate(yearlyReturnRate);
 
-          console.log(monthlyReturnRate);
           if (isRetirementAge) {
             let withdrawal = 0;
+            const monthsUntil100 = (100 - age) * 12 - month;
             
             const monthlyReturn = currentBalance * monthlyReturnRate;
             switch (strategy.type) {
@@ -505,7 +429,6 @@ export const MonthlyView = ({ userId, initialRecords, investmentPlan, profile }:
                 break;
               case 'spend-all':
                 // Calculate months remaining until age 100
-                const monthsUntil100 = (100 - age) * 12 - month;
                 if (monthsUntil100 > 0) {
                   // Divide remaining balance plus expected returns by remaining months
                   withdrawal = (currentBalance + monthlyReturn) / monthsUntil100;
@@ -532,7 +455,7 @@ export const MonthlyView = ({ userId, initialRecords, investmentPlan, profile }:
                 break;
             }
             
-            currentBalance = currentBalance + monthlyReturn - withdrawal;
+            currentBalance = (currentBalance - withdrawal) * (1 + monthlyReturnRate);
 
             return {
               month: currentMonthNumber,
@@ -544,7 +467,7 @@ export const MonthlyView = ({ userId, initialRecords, investmentPlan, profile }:
             };
           } else {
             const monthlyReturn = currentBalance * monthlyReturnRate;
-            currentBalance = currentBalance + currentMonthlyDeposit + monthlyReturn;
+            currentBalance = (currentBalance + currentMonthlyDeposit) * (1 + monthlyReturnRate);
             
             return {
               month: currentMonthNumber,
@@ -697,7 +620,7 @@ export const MonthlyView = ({ userId, initialRecords, investmentPlan, profile }:
               </tbody>
             </table>
           </div>
-          {totalCount !== null && (page * RECORDS_PER_PAGE) < totalCount && !isLoading && (
+          {allFinancialRecords.length > page * RECORDS_PER_PAGE && (
             <div className="mt-4 flex justify-center">
               <button
                 onClick={handleLoadMore}
@@ -705,11 +628,6 @@ export const MonthlyView = ({ userId, initialRecords, investmentPlan, profile }:
               >
                 {t('monthlyView.loadMore')}
               </button>
-            </div>
-          )}
-          {isLoading && (
-            <div className="mt-4 flex justify-center">
-              <Spinner size="sm" />
             </div>
           )}
         </TabsContent>
@@ -720,7 +638,7 @@ export const MonthlyView = ({ userId, initialRecords, investmentPlan, profile }:
               value={withdrawalStrategy.type}
               onChange={(e) => setWithdrawalStrategy({
                 type: e.target.value as WithdrawalStrategy['type'],
-                monthlyAmount: e.target.value === 'fixed' ? investmentPlan.desired_income : undefined,
+                monthlyAmount: e.target.value === 'fixed' ? investmentPlan?.desired_income : undefined,
                 targetLegacy: e.target.value === 'legacy' ? 1000000 : undefined
               })}
               className="px-3 py-1 border rounded-md text-sm"

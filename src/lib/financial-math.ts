@@ -1,4 +1,20 @@
 /**
+ * Compounds multiple rates together
+ * Formula: total = (1 + rate1/100) × (1 + rate2/100) × ... × (1 + rateN/100) - 1
+ * 
+ * @param rates - Array of rates as percentages (e.g., 5 for 5%)
+ * @returns The combined rate as a decimal (e.g., 0.1025 for 10.25%)
+ * 
+ * @example
+ * // Returns 0.1025 (10.25%) for rates of 5% and 5%
+ * calculateCompoundedRates([5, 5])
+ */
+export function calculateCompoundedRates(rates: number[]): number {
+  const finalRate = rates.reduce((acc, rate) => acc * (1 + rate), 1);
+  return finalRate - 1;
+}
+
+/**
  * Converts a yearly return rate to a monthly return rate
  * Formula: r_monthly = (1 + r_yearly)^(1/12) - 1
  * 
@@ -94,10 +110,3 @@ export function calculateFutureValue(
  * // Calculate present value of R$100000 in 10 years with 12% annual interest
  * calculatePresentValue(100000, 0.12, 10)
  */
-export function calculatePresentValue(
-  futureValue: number,
-  annualInterestRate: number,
-  years: number
-): number {
-  return futureValue / Math.pow(1 + annualInterestRate, years);
-} 

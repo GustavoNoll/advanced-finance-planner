@@ -1,15 +1,7 @@
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
 import { useTranslation } from "react-i18next";
-
-interface FinancialRecord {
-  record_year: number;
-  record_month: number;
-  ending_balance: number;
-  starting_balance: number;
-  monthly_contribution: number;
-  monthly_return_rate: number;
-  monthly_return: number;
-}
+import { FinancialRecord } from '@/types/financial';
+import { calculateCompoundedRates, yearlyReturnRateToMonthlyReturnRate } from '@/lib/financial-math';
 
 interface Profile {
   birth_date: string;
@@ -52,16 +44,17 @@ export const ExpenseChart = ({ profile, investmentPlan, clientId, financialRecor
   // Create array of ages from initial_age to 120
   const allAges = Array.from({ length: yearsUntil120 + 1 }, (_, i) => clientAge + i);
 
-  const generateProjectedValues = (startDate: Date, startBalance: number) => {
+  const generateProjectedValues = () => {
     const projectedData = [];
     // Convert yearly rates to monthly
-    const monthlyReturnRate = Math.pow(1 + investmentPlan.expected_return / 100, 1/12) - 1;
-    const monthlyInflationRate = Math.pow(1 + investmentPlan.inflation / 100, 1/12) - 1;
+    const monthlyReturnRate = yearlyReturnRateToMonthlyReturnRate(investmentPlan.expected_return/100 + investmentPlan.inflation/100);
+    const monthlyInflationRate = yearlyReturnRateToMonthlyReturnRate(investmentPlan.inflation/100);
+
     
-    let currentBalance = startBalance;
+    let currentBalance = investmentPlan.initial_amount;
     let currentMonthlyDeposit = investmentPlan.monthly_deposit;
     let currentMonthlyWithdrawal = investmentPlan.desired_income;
-    
+
     for (let i = 0; i < allAges.length; i++) {
       const age = allAges[i];
       const isRetirementAge = age >= investmentPlan.final_age;
@@ -73,21 +66,20 @@ export const ExpenseChart = ({ profile, investmentPlan, clientId, financialRecor
           currentMonthlyDeposit *= (1 + monthlyInflationRate);
         }
         currentMonthlyWithdrawal *= (1 + monthlyInflationRate);
-
         // Calculate monthly changes
         if (isRetirementAge) {
-          // In retirement: withdraw adjusted monthly amount and apply returns
-          currentBalance = currentBalance * (1 + monthlyReturnRate) - currentMonthlyWithdrawal;
+          // In retirement: first subtract withdrawal, then apply returns
+          currentBalance = (currentBalance - currentMonthlyWithdrawal) * (1 + monthlyReturnRate);
         } else {
-          // Before retirement: contribute adjusted monthly amount and apply returns
-          currentBalance = currentBalance * (1 + monthlyReturnRate) + currentMonthlyDeposit;
+          // Before retirement: first add deposit, then apply returns
+          currentBalance = (currentBalance + currentMonthlyDeposit) * (1 + monthlyReturnRate);
         }
       }
-
+      
       // Store the year-end balance
-      projectedData.push({
+    projectedData.push({
         age,
-        projectedValue: Math.round(Math.max(0, currentBalance)) // Prevent negative balances
+        projectedValue: Math.round(Math.max(0, currentBalance))
       });
     }
     
@@ -98,9 +90,9 @@ export const ExpenseChart = ({ profile, investmentPlan, clientId, financialRecor
     const birthYear = new Date(profile.birth_date).getFullYear();
 
     if (financialRecordsByYear.length === 0) {
-      return allAges.map(age => ({
-        age,
-        actualValue: 0
+      return generateProjectedValues().map(value => ({
+        age: value.age,
+        actualValue: value.projectedValue
       }));
     }
 
@@ -137,8 +129,8 @@ export const ExpenseChart = ({ profile, investmentPlan, clientId, financialRecor
       }
 
       // Convert yearly rates to monthly for more accurate calculations
-      const monthlyReturnRate = Math.pow(1 + investmentPlan.expected_return / 100, 1/12) - 1;
-      const monthlyInflationRate = Math.pow(1 + investmentPlan.inflation / 100, 1/12) - 1;
+      const monthlyReturnRate = yearlyReturnRateToMonthlyReturnRate(investmentPlan.expected_return/100 + investmentPlan.inflation/100);
+      const monthlyInflationRate = yearlyReturnRateToMonthlyReturnRate(investmentPlan.inflation/100);
 
       // Calculate all months for the year
       for (let month = 0; month < 12; month++) {
@@ -150,10 +142,10 @@ export const ExpenseChart = ({ profile, investmentPlan, clientId, financialRecor
 
         if (isRetirementAge) {
           // In retirement: withdraw adjusted monthly amount and apply returns
-          lastBalance = lastBalance * (1 + monthlyReturnRate) - currentMonthlyWithdrawal;
+          lastBalance = (lastBalance - currentMonthlyWithdrawal) * (1 + monthlyReturnRate);
         } else {
           // Before retirement: contribute adjusted monthly amount and apply returns
-          lastBalance = lastBalance * (1 + monthlyReturnRate) + currentMonthlyDeposit;
+          lastBalance = (lastBalance + currentMonthlyDeposit) * (1 + monthlyReturnRate);
         }
       }
 
@@ -166,10 +158,7 @@ export const ExpenseChart = ({ profile, investmentPlan, clientId, financialRecor
   // Combine real and projected values
   const generateChartData = () => {
     const realValues = generateRealValues();
-    const projectedValues = generateProjectedValues(
-      new Date(investmentPlan.created_at),
-      investmentPlan.initial_amount
-    );
+    const projectedValues = generateProjectedValues();
 
     // Merge real and projected values using age instead of year
     const chartData = allAges.map(age => {

@@ -8,9 +8,10 @@ import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/components/auth/AuthProvider";
 import { ptBR } from "@/locales/pt-BR";
 import { RISK_PROFILES, type RiskProfile } from '@/constants/riskProfiles';
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, ChevronDown, ChevronRight } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { calculateFutureValues, isCalculationReady, type FormData, type Calculations } from '@/utils/investmentPlanCalculations';
+import CurrencyInput from 'react-currency-input-field';
 
 export const CreatePlan = () => {
   const { t } = useTranslation();
@@ -41,6 +42,9 @@ export const CreatePlan = () => {
     totalMonthlyReturn: number;
     requiredMonthlyDeposit: number;
   } | null>(null);
+
+  // Add new state for tracking which row is expanded
+  const [expandedRow, setExpandedRow] = useState<string | null>(null);
 
   // Add useEffect to calculate values on mount
   useEffect(() => {
@@ -177,12 +181,21 @@ export const CreatePlan = () => {
                 <label className="text-sm font-medium">
                   {t('investmentPlan.form.initialAmount')}
                 </label>
-                <Input
-                  type="number"
+                <CurrencyInput
                   name="initialAmount"
                   value={formData.initialAmount}
-                  onChange={handleChange}
-                  placeholder="100000"
+                  onValueChange={(value) => {
+                    setFormData(prev => ({
+                      ...prev,
+                      initialAmount: value || ''
+                    }))
+                  }}
+                  prefix="R$ "
+                  decimalsLimit={2}
+                  decimalSeparator=","
+                  groupSeparator="."
+                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background"
+                  placeholder="R$ 100.000,00"
                   required
                 />
               </div>
@@ -198,6 +211,13 @@ export const CreatePlan = () => {
                   onChange={handleChange}
                   placeholder="30"
                   required
+                  min="0"
+                  step="1"
+                  onKeyDown={(e) => {
+                    if (e.key === "." || e.key === ",") {
+                      e.preventDefault();
+                    }
+                  }}
                 />
               </div>
 
@@ -212,6 +232,13 @@ export const CreatePlan = () => {
                   onChange={handleChange}
                   placeholder="65"
                   required
+                  min="0"
+                  step="1"
+                  onKeyDown={(e) => {
+                    if (e.key === "." || e.key === ",") {
+                      e.preventDefault();
+                    }
+                  }}
                 />
               </div>
 
@@ -219,12 +246,21 @@ export const CreatePlan = () => {
                 <label className="text-sm font-medium">
                   {t('investmentPlan.form.monthlyDeposit')}
                 </label>
-                <Input
-                  type="number"
+                <CurrencyInput
                   name="monthlyDeposit"
                   value={formData.monthlyDeposit}
-                  onChange={handleChange}
-                  placeholder="1000"
+                  onValueChange={(value) => {
+                    setFormData(prev => ({
+                      ...prev,
+                      monthlyDeposit: value || ''
+                    }))
+                  }}
+                  prefix="R$ "
+                  decimalsLimit={2}
+                  decimalSeparator=","
+                  groupSeparator="."
+                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background"
+                  placeholder="R$ 5.000,00"
                   required
                 />
               </div>
@@ -233,12 +269,21 @@ export const CreatePlan = () => {
                 <label className="text-sm font-medium">
                   {t('investmentPlan.form.desiredIncome')}
                 </label>
-                <Input
-                  type="number"
+                <CurrencyInput
                   name="desiredIncome"
                   value={formData.desiredIncome}
-                  onChange={handleChange}
-                  placeholder="5000"
+                  onValueChange={(value) => {
+                    setFormData(prev => ({
+                      ...prev,
+                      desiredIncome: value || ''
+                    }))
+                  }}
+                  prefix="R$ "
+                  decimalsLimit={2}
+                  decimalSeparator=","
+                  groupSeparator="."
+                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background"
+                  placeholder="R$ 10.000,00"
                   required
                 />
               </div>
@@ -332,28 +377,71 @@ export const CreatePlan = () => {
             </h3>
             {isCalculationReady(formData) ? (
               <div className="space-y-2">
-                <div className="flex justify-between">
-                  <span>{t('investmentPlan.create.calculations.inflationAdjustedIncome')}:</span>
+                <div 
+                  className="flex justify-between p-2 hover:bg-gray-100 cursor-pointer rounded"
+                  onClick={() => setExpandedRow(expandedRow === 'income' ? null : 'income')}
+                >
+                  <div className="flex items-center gap-2 w-3/4">
+                    <div className="w-4" />
+                    <span>{t('investmentPlan.create.calculations.inflationAdjustedIncome')}:</span>
+                  </div>
                   <span>R$ {calculations?.inflationAdjustedIncome.toLocaleString('pt-BR', { maximumFractionDigits: 2 }) || '---'}/ano</span>
                 </div>
-                <div className="flex justify-between">
-                  <span>{t('investmentPlan.create.calculations.requiredFutureValue')}:</span>
+                
+                <div 
+                  className="flex justify-between p-2 hover:bg-gray-100 cursor-pointer rounded"
+                  onClick={() => setExpandedRow(expandedRow === 'future' ? null : 'future')}
+                >
+                  <div className="flex items-center gap-2 w-3/4">
+                    <div className="w-4" />
+                    <span>{t('investmentPlan.create.calculations.requiredFutureValue')}:</span>
+                  </div>
                   <span>R$ {calculations?.futureValue.toLocaleString('pt-BR', { maximumFractionDigits: 2 }) || '---'}</span>
                 </div>
-                <div className="flex justify-between">
-                  <span>{t('investmentPlan.create.calculations.monthlyRealReturn')}:</span>
-                  <span>R$ {calculations?.realReturn.toLocaleString('pt-BR', { maximumFractionDigits: 2 }) || '---'}</span>
+
+                <div>
+                  <div 
+                    className="flex justify-between p-2 hover:bg-gray-100 cursor-pointer rounded group"
+                    onClick={() => setExpandedRow(expandedRow === 'return' ? null : 'return')}
+                  >
+                    <div className="flex items-center gap-2 w-3/4">
+                      {expandedRow === 'return' ? (
+                        <ChevronDown className="h-4 w-4 text-gray-400" />
+                      ) : (
+                        <ChevronRight className="h-4 w-4 text-gray-400" />
+                      )}
+                      <span>{t('investmentPlan.create.calculations.totalMonthlyReturn')}:</span>
+                    </div>
+                    <span>R$ {calculations?.totalMonthlyReturn.toLocaleString('pt-BR', { maximumFractionDigits: 2 }) || '---'}</span>
+                  </div>
+                  {expandedRow === 'return' && (
+                    <div className="pl-4 space-y-2 border-l-2 border-gray-200 mt-2 bg-gray-50 p-2 rounded">
+                      <div className="flex justify-between">
+                        <div className="flex items-center gap-2 w-3/4">
+                          <div className="w-4" />
+                          <span>{t('investmentPlan.create.calculations.monthlyRealReturn')}:</span>
+                        </div>
+                        <span>R$ {calculations?.realReturn.toLocaleString('pt-BR', { maximumFractionDigits: 2 }) || '---'}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <div className="flex items-center gap-2 w-3/4">
+                          <div className="w-4" />
+                          <span>{t('investmentPlan.create.calculations.monthlyInflationReturn')}:</span>
+                        </div>
+                        <span>R$ {calculations?.inflationReturn.toLocaleString('pt-BR', { maximumFractionDigits: 2 }) || '---'}</span>
+                      </div>
+                    </div>
+                  )}
                 </div>
-                <div className="flex justify-between">
-                  <span>{t('investmentPlan.create.calculations.monthlyInflationReturn')}:</span>
-                  <span>R$ {calculations?.inflationReturn.toLocaleString('pt-BR', { maximumFractionDigits: 2 }) || '---'}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span>{t('investmentPlan.create.calculations.totalMonthlyReturn')}:</span>
-                  <span>R$ {calculations?.totalMonthlyReturn.toLocaleString('pt-BR', { maximumFractionDigits: 2 }) || '---'}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span>{t('investmentPlan.create.calculations.requiredMonthlyDeposit')}:</span>
+
+                <div 
+                  className="flex justify-between p-2 hover:bg-gray-100 cursor-pointer rounded"
+                  onClick={() => setExpandedRow(expandedRow === 'deposit' ? null : 'deposit')}
+                >
+                  <div className="flex items-center gap-2 w-3/4">
+                    <div className="w-4" />
+                    <span>{t('investmentPlan.create.calculations.requiredMonthlyDeposit')}:</span>
+                  </div>
                   <span>R$ {calculations?.requiredMonthlyDeposit.toLocaleString('pt-BR', { maximumFractionDigits: 2 }) || '---'}</span>
                 </div>
               </div>

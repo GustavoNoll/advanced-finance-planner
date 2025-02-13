@@ -2,14 +2,9 @@ import { Progress } from "@/components/ui/progress";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ArrowUpRight, Clock } from "lucide-react";
 import { useTranslation } from "react-i18next";
-import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/lib/supabase";
-import { useAuth } from "@/components/auth/AuthProvider";
-import { useParams } from "react-router-dom";
 
-interface FinancialRecord {
-  ending_balance: number;
-}
+import { FinancialRecord } from "@/types/financial";
+import { useMemo } from "react";
 
 interface InvestmentPlan {
   future_value: number;
@@ -24,7 +19,7 @@ interface Profile {
 }
 
 interface SavingsGoalProps {
-  currentInvestment: number;
+  allFinancialRecords: FinancialRecord[];
   investmentPlan?: {
     future_value: number;
     monthly_deposit: number;
@@ -37,65 +32,21 @@ interface SavingsGoalProps {
   };
 }
 
-const useInvestmentData = (userId: string) => {
-  const { data: profile } = useQuery<Profile>({
-    queryKey: ['profileSavingsGoal', userId],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('birth_date')
-        .eq('id', userId)
-        .single();
-
-      if (error) throw error;
-      return data;
-    }
-  });
-
-  const { data: financialRecord } = useQuery<FinancialRecord>({
-    queryKey: ['financialRecordsSavingsGoal', userId],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('user_financial_records')
-        .select('ending_balance')
-        .eq('user_id', userId)
-        .order('record_year', { ascending: false })
-        .order('record_month', { ascending: false })
-        .limit(1)
-        .single();
-
-      if (error) throw error;
-      return data;
-    }
-  });
-
-  const { data: investmentPlan } = useQuery<InvestmentPlan>({
-    queryKey: ['investmentPlanSavingsGoal', userId],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('investment_plans')
-        .select('future_value, monthly_deposit, inflation, expected_return, final_age')
-        .eq('user_id', userId)
-        .single();
-
-      if (error) throw error;
-      return data;
-    }
-  });
-
-  return {
-    currentInvestment: financialRecord?.ending_balance ?? 0,
-    investmentGoal: investmentPlan?.future_value ?? 0,
-    monthlyDeposit: investmentPlan?.monthly_deposit ?? 0,
-    returnRate: (investmentPlan?.inflation ?? 0) + (investmentPlan?.expected_return ?? 0),
-    finalAge: investmentPlan?.final_age ?? 0,
-    birthDate: profile?.birth_date
-  };
-};
-
-export const SavingsGoal = ({ currentInvestment, investmentPlan, profile }: SavingsGoalProps) => {
+export const SavingsGoal = ({ allFinancialRecords, investmentPlan, profile }: SavingsGoalProps) => {
   const { t } = useTranslation();
   
+  const lastFinancialRecord = useMemo(() => {
+    if (!allFinancialRecords.length) return null;
+    
+    return allFinancialRecords.sort((a, b) => {
+      if (b.record_year !== a.record_year) {
+        return b.record_year - a.record_year;
+      }
+      return b.record_month - a.record_month;
+    })[0];
+  }, [allFinancialRecords]);
+
+  const currentInvestment = lastFinancialRecord?.ending_balance ?? 0;
   const investmentGoal = investmentPlan?.future_value ?? 0;
   const monthlyDeposit = investmentPlan?.monthly_deposit ?? 0;
   const returnRate = (investmentPlan?.inflation ?? 0) + (investmentPlan?.expected_return ?? 0);

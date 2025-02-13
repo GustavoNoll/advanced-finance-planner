@@ -92,7 +92,7 @@ export const ptBR = {
         title: "Valor Total do Portfólio",
         ytd: "No ano",
         amount: "R$ {{value}}",
-        monthlyReturn: "no último mês"
+        monthlyReturn: "de aumento no último mês"
       },
       monthlyContributions: {
         title: "Contribuições Mensais",
@@ -102,7 +102,7 @@ export const ptBR = {
         required: "Necessário"
       },
       totalReturns: {
-        title: "Rendimento Anual",
+        title: "Rendimento",
         subtitle: "",
         amount: "R$ {{value}}",
         percentage: "+{{value}}%"
@@ -179,6 +179,10 @@ export const ptBR = {
     }
   },
   common: {
+    allTime: "Todos os Tempos",
+    last6Months: "Últimos 6 Meses",
+    last12Months: "Últimos 12 Meses",
+    last24Months: "Últimos 24 Meses",
     error: "Erro",
     errors: {
       tryAgain: "Por favor, tente novamente."

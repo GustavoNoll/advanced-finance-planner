@@ -1,3 +1,5 @@
+import { yearlyReturnRateToMonthlyReturnRate } from "@/lib/financial-math";
+
 export type FormData = {
   initialAmount: string;
   initialAge: string;
@@ -38,9 +40,20 @@ export const calculateFutureValues = (data: FormData): Calculations => {
   const expectedReturn = parseFloat(data.expectedReturn) / 100;
   const inflation = parseFloat(data.inflation) / 100;
   const planType = data.planType;
+
+  const pmt = (rate: number, nper: number, pv: number, fv: number = 0) => {
+    if (rate === 0) return -(fv + pv) / nper;
+    return (rate * (fv + pv * Math.pow(1 + rate, nper))) / (Math.pow(1 + rate, nper) - 1);
+  };
+  
+  const fv = (rate: number, nper: number, pmt: number = 0, pv: number = 0): number => {
+    if (rate === 0) return pv + pmt * nper; // Sem juros, apenas soma depósitos
+    return pv * Math.pow(1 + rate, nper) + pmt * ((Math.pow(1 + rate, nper) - 1) / rate);
+};
   
   const years = finalAge - initialAge;
-  const inflationAdjustedIncome = desiredIncome * Math.pow(1 + inflation, years);
+  // Agora sim equivalente ao VF do Excel
+  const inflationAdjustedIncome = fv(yearlyReturnRateToMonthlyReturnRate(inflation), years * 12, 0, desiredIncome);
   
   let futureValue;
   let yearsTo100, monthlyWithdrawal, rate;
@@ -75,15 +88,8 @@ export const calculateFutureValues = (data: FormData): Calculations => {
   const totalMonthlyReturn = realReturn + inflationReturn;
   
   const totalRate = expectedReturn + inflation;
-  const monthlyRate = Math.pow(1 + totalRate, 1/12) - 1;
-  const months = years * 12;
 
-  const pmt = (rate: number, nper: number, pv: number, fv: number = 0) => {
-    if (rate === 0) return -(fv + pv) / nper;
-    return (rate * (fv + pv * Math.pow(1 + rate, nper))) / (Math.pow(1 + rate, nper) - 1);
-  };
-
-  const requiredMonthlyDeposit = -pmt(monthlyRate, months, initialAmount, -futureValue);
+  const requiredMonthlyDeposit = pmt(totalRate, years, -initialAmount, futureValue)/12;
 
   return {
     futureValue,

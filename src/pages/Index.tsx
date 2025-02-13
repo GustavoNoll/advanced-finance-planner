@@ -9,18 +9,14 @@ import { useAuth } from "@/components/auth/AuthProvider";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
 import { toast } from "@/components/ui/use-toast";
-import { useEffect, useMemo, useCallback } from "react";
+import { useEffect, useMemo, useCallback, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Spinner } from "@/components/ui/spinner";
+import { FinancialRecord } from "@/types/financial";
+import { useQueryClient } from "@tanstack/react-query";
 
-interface FinancialRecord {
-  record_year: number;
-  record_month: number;
-  ending_balance: number;
-  starting_balance: number;
-  monthly_contribution: number;
-  monthly_return_rate: number;
-}
+// Add this type above the Index component
+type TimePeriod = 'all' | '6m' | '12m' | '24m';
 
 const Index = () => {
   const { user } = useAuth();
@@ -28,6 +24,8 @@ const Index = () => {
   const params = useParams();
   const clientId = params.id || user?.id;
   const { t } = useTranslation();
+  const [selectedPeriod, setSelectedPeriod] = useState<TimePeriod>('all');
+  const queryClient = useQueryClient();
 
   const handleLogout = useCallback(async () => {
     try {
@@ -99,7 +97,7 @@ const Index = () => {
 
   const { clientProfile, brokerProfile } = profiles || {};
 
-  const { data: allFinancialRecords, isLoading: isFinancialRecordsLoading } = useQuery({
+  const { data: allFinancialRecords, isLoading: isFinancialRecordsLoading, refetch: refetchFinancialRecords } = useQuery({
     queryKey: ['allFinancialRecords', clientId],
     queryFn: async () => {
       if (!clientId) return [];
@@ -121,60 +119,83 @@ const Index = () => {
     enabled: !!clientId,
   });
 
-  // Processa os registros no cliente
-  const financialRecords = useMemo(() => {
-    if (!allFinancialRecords?.length) return [];
-    
-    const today = new Date();
-    const twelveMonthsAgo = new Date(today.getFullYear(), today.getMonth() - 11, 1);
-    
-    return allFinancialRecords
-      .filter(record => {
-        const recordDate = new Date(record.record_year, record.record_month - 1);
-        return recordDate >= twelveMonthsAgo;
-      })
-      .sort((a, b) => {
-        // Sort by year descending first
-        if (b.record_year !== a.record_year) {
-          return b.record_year - a.record_year;
-        }
-        // Then sort by month descending
-        return b.record_month - a.record_month;
-      });
-  }, [allFinancialRecords]);
+  // Process records on the client side
+  const processedRecords = useMemo(() => {
+    if (!allFinancialRecords?.length) return {
+      financialRecords: [],
+      financialRecordsByYear: [],
+      latestRecord: null,
+      currentMonthRecord: null
+    };
 
-  const financialRecordsByYear = useMemo(() => {
-    if (!allFinancialRecords?.length) return [];
+    const currentMonth = new Date().getMonth() + 1;
+    const currentYear = new Date().getFullYear();
     
-    return Object.values(
+    // Get last 12 months records
+    const today = new Date();
+    
+    const financialRecords = allFinancialRecords
+
+    // Get records by year
+    const financialRecordsByYear = Object.values(
       allFinancialRecords.reduce((acc: Record<string, FinancialRecord>, record: FinancialRecord) => {
         acc[record.record_year] = record;
         return acc;
       }, {})
     );
+
+    // Get latest and current month records
+    const latestRecord = financialRecords[0];
+    const currentMonthRecord = financialRecords.find(
+      record => record.record_month === currentMonth && record.record_year === currentYear
+    );
+
+    return {
+      financialRecords: financialRecords,
+      financialRecordsByYear,
+      latestRecord,
+      currentMonthRecord
+    };
   }, [allFinancialRecords]);
 
-  const calculateTotalReturns = useCallback(() => {
-    if (!financialRecords?.length) return { totalAmount: 0, percentageReturn: 0 };
+  const calculateTotalReturns = useCallback((period: TimePeriod = 'all') => {
+    if (!processedRecords.financialRecords?.length) return { totalAmount: 0, percentageReturn: 0 };
+
+    const currentDate = new Date();
+    let filteredRecords = [...processedRecords.financialRecords];
+
+    // Filter records based on selected period
+    if (period !== 'all') {
+      const months = parseInt(period);
+      const cutoffDate = new Date(
+        currentDate.getFullYear(),
+        currentDate.getMonth() - months,
+        1
+      );
+
+      filteredRecords = filteredRecords.filter(record => {
+        const recordDate = new Date(record.record_year, record.record_month - 1, 1);
+        return recordDate >= cutoffDate;
+      });
+    }
 
     let totalReturn = 0;
     let accumulatedReturn = 1;
 
-    for (const record of financialRecords) {
+    for (const record of filteredRecords) {
       totalReturn += record.monthly_return;
       accumulatedReturn *= (1 + record.monthly_return_rate / 100);
     }
 
-    // Subtract 1 to get the actual percentage change
     accumulatedReturn = accumulatedReturn - 1;
 
     return {
       totalAmount: totalReturn,
       percentageReturn: (accumulatedReturn * 100).toFixed(2)
     };
-  }, [financialRecords]);
+  }, [processedRecords.financialRecords]);
 
-  const { totalAmount, percentageReturn } = calculateTotalReturns();
+  const { totalAmount, percentageReturn } = calculateTotalReturns(selectedPeriod);
 
   useEffect(() => {
     if (!isInvestmentPlanLoading && !isProfilesLoading) {
@@ -211,17 +232,10 @@ const Index = () => {
     );
   }
 
-  const currentMonth = new Date().getMonth() + 1;
-  const currentYear = new Date().getFullYear();
-  
-  console.log(financialRecords);
-  const latestRecord = financialRecords?.[0];
-  const currentMonthRecord = financialRecords?.find(
-    record => record.record_month === currentMonth && record.record_year === currentYear
-  );
-
-  const portfolioValue = latestRecord?.ending_balance || 0;
-  const monthlyContribution = currentMonthRecord?.monthly_contribution || 0;
+  const portfolioValue = processedRecords.latestRecord?.ending_balance || 0;
+  const portfolioIncreaseRate = ((portfolioValue - processedRecords.latestRecord?.starting_balance) / processedRecords.latestRecord?.starting_balance) * 100 || null;
+  console.log(portfolioIncreaseRate);
+  const monthlyContribution = processedRecords.currentMonthRecord?.monthly_contribution || 0;
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-gray-50 to-gray-100">
@@ -263,7 +277,12 @@ const Index = () => {
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
-          <Link to={`/financial-records${params.id ? `/${params.id}` : ''}`}>
+          <Link 
+            to={`/financial-records${params.id ? `/${params.id}` : ''}`} 
+            state={{ 
+              records: allFinancialRecords,
+            }}
+          >
             <Button 
               variant="ghost"
               className="w-full h-14 flex flex-col items-center justify-center gap-1 bg-gradient-to-br from-white to-gray-50 hover:from-blue-50 hover:to-blue-100 shadow-sm hover:shadow transition-all duration-200 border border-gray-100"
@@ -316,17 +335,17 @@ const Index = () => {
                   currency: 'BRL'
                 }).format(portfolioValue)}
               </p>
-              {latestRecord && (
+              {portfolioIncreaseRate && (
                 <div className={`flex items-center gap-2 ${
-                  latestRecord.monthly_return_rate >= 0 ? 'bg-green-50' : 'bg-red-50'
+                  portfolioIncreaseRate >= 0 ? 'bg-green-50' : 'bg-red-50'
                 } rounded-full px-3 py-1 w-fit`}>
                   <TrendingUp className={`h-4 w-4 ${
-                    latestRecord.monthly_return_rate >= 0 ? 'text-green-600' : 'text-red-600'
+                    portfolioIncreaseRate >= 0 ? 'text-green-600' : 'text-red-600'
                   }`} />
                   <p className={`text-sm font-medium ${
-                    latestRecord.monthly_return_rate >= 0 ? 'text-green-600' : 'text-red-600'
+                    portfolioIncreaseRate >= 0 ? 'text-green-600' : 'text-red-600'
                   }`}>
-                    {latestRecord.monthly_return_rate}%
+                    {portfolioIncreaseRate.toFixed(2)}% {t('dashboard.cards.portfolioValue.monthlyReturn')}
                   </p>
                 </div>
               )}
@@ -372,7 +391,21 @@ const Index = () => {
             </div>
           </DashboardCard>
           
-          <DashboardCard title={t('dashboard.cards.totalReturns.title')}>
+          <DashboardCard title={
+            <div className="flex items-center justify-between w-full">
+              <span>{t('dashboard.cards.totalReturns.title')}</span>
+              <select
+                value={selectedPeriod}
+                onChange={(e) => setSelectedPeriod(e.target.value as TimePeriod)}
+                className="text-sm border border-gray-200 rounded-md px-2 py-1 bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              >
+                <option value="all">{t('common.allTime')}</option>
+                <option value="6m">{t('common.last6Months')}</option>
+                <option value="12m">{t('common.last12Months')}</option>
+                <option value="24m">{t('common.last24Months')}</option>
+              </select>
+            </div>
+          }>
             <div className="space-y-2">
               <p className={`text-2xl font-bold ${
                 totalAmount >= 0 ? 'text-green-600' : 'text-red-600'
@@ -406,13 +439,13 @@ const Index = () => {
               profile={clientProfile}
               investmentPlan={investmentPlan}
               clientId={clientId}
-              financialRecordsByYear={financialRecordsByYear as FinancialRecord[]}
+              financialRecordsByYear={processedRecords.financialRecordsByYear as FinancialRecord[]}
             />
           </div>
           
           <div className="space-y-6">
             <SavingsGoal 
-              currentInvestment={latestRecord?.ending_balance ?? 0}
+              allFinancialRecords={allFinancialRecords || []}
               investmentPlan={{
                 future_value: investmentPlan?.future_value ?? 0,
                 monthly_deposit: investmentPlan?.monthly_deposit ?? 0,
@@ -445,7 +478,8 @@ const Index = () => {
         <section>
           <MonthlyView 
             userId={clientId} 
-            initialRecords={financialRecords || []} 
+            initialRecords={processedRecords.financialRecords} 
+            allFinancialRecords={allFinancialRecords || []}
             investmentPlan={investmentPlan}
             profile={clientProfile}
           />

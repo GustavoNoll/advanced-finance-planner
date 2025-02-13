@@ -5,7 +5,7 @@ import { toast } from "@/components/ui/use-toast";
 import { supabase } from "@/lib/supabase";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { ArrowLeft, Plus, Trash2, LogOut, RefreshCcw, Upload, Pencil, MoreVertical } from "lucide-react";
-import { Link, useNavigate, useParams } from "react-router-dom";
+import { Link, useNavigate, useParams, useLocation } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
@@ -13,6 +13,7 @@ import { useState } from "react";
 import Papa from 'papaparse';
 import { Spinner } from "@/components/ui/spinner";
 import { AddRecordForm } from "@/components/financial-records/AddRecordForm";
+import { FinancialRecord } from "@/types/financial";
 
 interface CSVRecord {
   Data: string;
@@ -35,6 +36,10 @@ interface ImportResult {
   errors: Array<{ date: string; reason: string }>;
 }
 
+interface LocationState {
+  records?: FinancialRecord[];
+}
+
 const FinancialRecords = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
@@ -43,15 +48,21 @@ const FinancialRecords = () => {
   const clientId = params.id || user?.id;
   const queryClient = useQueryClient();
   const [isImportDialogOpen, setIsImportDialogOpen] = useState(false);
-  const [showAdvancedOptions, setShowAdvancedOptions] = useState(false);
   const [showAddForm, setShowAddForm] = useState(false);
   const [editingRecordId, setEditingRecordId] = useState<number | null>(null);
+  const location = useLocation();
+  const state = location.state as LocationState;
+  const initialRecords = state?.records || [];
 
   const { data: records, isLoading: recordsLoading } = useQuery({
     queryKey: ['financialRecords', clientId],
     queryFn: async () => {
       if (!clientId) return [];
       
+      if (initialRecords.length > 0) {
+        return initialRecords;
+      }
+
       const { data, error } = await supabase
         .from('user_financial_records')
         .select('*')
@@ -59,17 +70,10 @@ const FinancialRecords = () => {
         .order('record_year', { ascending: false })
         .order('record_month', { ascending: false });
 
-      if (error) {
-        console.error('Error fetching financial records:', error);
-        toast({
-          title: t('financialRecords.errors.fetchFailed'),
-          variant: "destructive",
-        });
-        return [];
-      }
-
-      return data;
+      if (error) throw error;
+      return data || [];
     },
+    initialData: initialRecords,
     enabled: !!clientId,
   });
 
@@ -94,6 +98,10 @@ const FinancialRecords = () => {
     enabled: !!clientId,
   });
 
+  const refreshIndex = () => {
+    navigate(params.id ? `/client/${params.id}` : '/', { replace: true });
+  };
+
   const deleteMutation = useMutation({
     mutationFn: async (recordId: number) => {
       const { error } = await supabase
@@ -101,12 +109,14 @@ const FinancialRecords = () => {
         .delete()
         .eq('id', recordId);
 
-      if (error) {
-        throw error;
-      }
+      if (error) throw error;
+      return recordId;
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['financialRecords', clientId] });
+    onSuccess: (deletedId) => {
+      queryClient.setQueryData(['financialRecords', clientId], (oldData: FinancialRecord[] | undefined) => {
+        return oldData?.filter(record => record.id !== deletedId) || [];
+      });
+      
       toast({
         title: t('financialRecords.deleteSuccess'),
       });
@@ -124,7 +134,6 @@ const FinancialRecords = () => {
     mutationFn: async (records: CSVRecord[]): Promise<ImportResult> => {
       const result: ImportResult = { success: 0, failed: 0, errors: [] };
       
-      // Primeiro, busca todos os registros existentes para o usuário
       const { data: existingRecords } = await supabase
         .from('user_financial_records')
         .select('record_year, record_month')
@@ -162,7 +171,6 @@ const FinancialRecords = () => {
         return { valid: true };
       };
 
-      // Formata e valida todos os registros primeiro
       const formattedRecords = records.map(record => {
         try {
           const [_, month, year] = record.Data.split('/');
@@ -198,12 +206,10 @@ const FinancialRecords = () => {
         }
       });
 
-      // Filtra apenas os registros válidos
       const validRecords = formattedRecords
         .filter(r => r.isValid)
         .map(r => r.record);
 
-      // Registra os erros
       formattedRecords
         .filter(r => !r.isValid)
         .forEach(r => {
@@ -214,7 +220,6 @@ const FinancialRecords = () => {
           });
         });
 
-      // Se houver registros válidos, tenta inserir
       if (validRecords.length > 0) {
         const { error } = await supabase
           .from('user_financial_records')
@@ -230,10 +235,10 @@ const FinancialRecords = () => {
       return result;
     },
     onSuccess: (result) => {
-      queryClient.invalidateQueries({ queryKey: ['financialRecords', clientId] });
+      queryClient.invalidateQueries();
+      refreshIndex();
       
       if (result.failed > 0) {
-        // Agrupa os erros por tipo para melhor visualização
         const errorsByType = result.errors.reduce((acc, curr) => {
           if (!acc[curr.reason]) {
             acc[curr.reason] = [];
@@ -242,7 +247,6 @@ const FinancialRecords = () => {
           return acc;
         }, {} as Record<string, string[]>);
 
-        // Formata a mensagem de erro de forma mais organizada
         const errorMessage = Object.entries(errorsByType)
           .map(([reason, dates]) => {
             const datesStr = dates.join(', ');
@@ -285,12 +289,11 @@ const FinancialRecords = () => {
         .delete()
         .eq('user_id', clientId);
 
-      if (error) {
-        throw error;
-      }
+      if (error) throw error;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['financialRecords', clientId] });
+      queryClient.setQueryData(['financialRecords', clientId], []);
+      
       toast({
         title: t('financialRecords.resetSuccess'),
       });

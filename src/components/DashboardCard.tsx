@@ -1,9 +1,10 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
+import { ReactNode } from "react";
 
 interface DashboardCardProps {
-  title: string; // This will be a translated string from the parent component
-  children: React.ReactNode;
+  title: ReactNode;  // Change from string to ReactNode
+  children: ReactNode;
   className?: string;
 }
 
