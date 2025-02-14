@@ -97,20 +97,23 @@ export const ptBR = {
         title: "Valor Total do Portfólio",
         ytd: "No ano",
         amount: "R$ {{value}}",
-        monthlyReturn: "de aumento no último mês"
+        monthlyReturn: "de aumento no último mês",
+        tooltip: "Valor baseado no ultimo registro financeiro."
       },
       monthlyContributions: {
         title: "Contribuições Mensais",
         subtitle: "Depósitos regulares",
         target: "Acordado",
         amount: "R$ {{value}}",
-        required: "Necessário"
+        required: "Necessário",
+        tooltip: "Contribuição mensal no mês."
       },
       totalReturns: {
         title: "Rendimento",
         subtitle: "",
         amount: "R$ {{value}}",
-        percentage: "+{{value}}%"
+        percentage: "+{{value}}%",
+        tooltip: "Rendimentos do portfólio."
       }
     },
     charts: {
