@@ -171,7 +171,7 @@ export const ExpenseChart = ({
                 console.log(achievementPoint);
                 acc.push(
                   <ReferenceLine
-                    key={goal.id}
+                    key={`${goal.id}-actual`}
                     x={achievementPoint.age}
                     stroke="blue"
                     strokeDasharray="3 3"
@@ -212,7 +212,7 @@ export const ExpenseChart = ({
                   (chartData[0]?.actualValue ?? chartData[0]?.projectedValue) < goal.target_amount) {
                 acc.push(
                   <ReferenceLine
-                    key={goal.id}
+                    key={`${goal.id}-projected`}
                     x={achievementPoint.age}
                     stroke="#f97316"
                     strokeDasharray="3 3"

@@ -10,6 +10,7 @@ import { ChevronDown, ChevronRight } from "lucide-react";
 import { WithdrawalStrategy } from '@/lib/withdrawal-strategies';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { generateProjectionData } from '@/lib/generate-projection-data';
+import React from "react";
 
 interface FinancialRecord {
   record_year: number;
@@ -407,7 +408,7 @@ export const MonthlyView = ({
               </thead>
               <tbody>
                 {localizedData.map((data) => (
-                  <tr key={data.month} className="border-b">
+                  <tr key={`${data.month}-${data.balance}-${data.contribution}-${data.return}-${data.endBalance}-${data.targetRentability}`} className="border-b">
                     <td className="p-2">{data.month}</td>
                     <td className="p-2 text-right">R$ {data.balance.toLocaleString()}</td>
                     <td className="p-2 text-right">R$ {data.contribution.toLocaleString()}</td>
@@ -478,9 +479,9 @@ export const MonthlyView = ({
                   profile,
                   allFinancialRecords,
                   allFinancialRecords
-                ).map((projection) => (
-                  <>
-                    <tr key={projection.year} className={`border-b hover:bg-muted/50 transition-colors ${
+                ).map((projection, index) => (
+                  <React.Fragment key={`${projection.year}-${index}-group`}>
+                    <tr key={`${projection.year}-${index}`} className={`border-b hover:bg-muted/50 transition-colors ${
                       projection.hasHistoricalData ? 'bg-blue-50/50' : ''
                     }`}>
                       <td className="p-2">
@@ -520,11 +521,11 @@ export const MonthlyView = ({
                         </button>
                       </td>
                     </tr>
-                    {expandedYears.includes(projection.year) && projection.months?.map((month) => {
+                    {expandedYears.includes(projection.year) && projection.months?.map((month, monthIndex) => {
                       const monthNames = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 
                         'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
                       return (
-                        <tr key={`${projection.year}-${month.month}`} 
+                        <tr key={`${projection.year}-${monthIndex}`} 
                             className={`border-b text-xs ${
                               month.isHistorical 
                                 ? 'bg-blue-50/50' 
@@ -550,7 +551,7 @@ export const MonthlyView = ({
                         </tr>
                       );
                     })}
-                  </>
+                  </React.Fragment>
                 ))}
               </tbody>
             </table>
