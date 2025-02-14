@@ -206,7 +206,14 @@ const Index = () => {
   const { totalAmount, percentageReturn } = calculateTotalReturns(selectedPeriod);
 
   const calculateHighlights = useCallback(() => {
-    if (!processedRecords.financialRecords?.length || !investmentPlan) return [];
+    if (!investmentPlan) return []
+    if (!processedRecords.financialRecords?.length) return [
+      {
+        message: t('dashboard.highlights.startToInvest'),
+        value: 0,
+        icon: <Target className="h-4 w-4" />
+      },
+    ];
 
     const latest = processedRecords.latestRecord;
     const highlights: { message: string; value: number; icon: JSX.Element }[] = [];
@@ -594,19 +601,17 @@ const Index = () => {
           >
             <div className="space-y-4">
               {calculateHighlights().map((highlight, index) => (
-                <div key={index} className="flex items-start gap-3">
-                  <div className={`mt-1 p-2 rounded-lg ${
+                <div key={index} className="flex items-center gap-3">
+                  <div className={`p-2 rounded-lg ${
                     index === 0 ? 'bg-green-100 text-green-600' :
                     index === 1 ? 'bg-blue-100 text-blue-600' :
                     'bg-purple-100 text-purple-600'
                   }`}>
                     {highlight.icon}
                   </div>
-                  <div>
-                    <p className="text-sm text-gray-700 leading-relaxed">
-                      {highlight.message}
-                    </p>
-                  </div>
+                  <p className="text-sm text-gray-700 leading-relaxed">
+                    {highlight.message}
+                  </p>
                 </div>
               ))}
             </div>

@@ -93,6 +93,7 @@ export const ptBR = {
   dashboard: {
     title: "Portfólio de Investimentos",
     highlights: {
+      startToInvest: "Você já deveria estar investindo!",
       title: "Destaques",
       tooltip: "Suas principais conquistas e marcos no plano de investimento",
       contributionStreak: "Sequência atual: {{months}} meses de aportes consistentes!",
