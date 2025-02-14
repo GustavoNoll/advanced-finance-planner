@@ -2,31 +2,13 @@ import { Progress } from "@/components/ui/progress";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ArrowUpRight, Clock } from "lucide-react";
 import { useTranslation } from "react-i18next";
-
-import { FinancialRecord } from "@/types/financial";
+import { FinancialRecord, InvestmentPlan } from "@/types/financial";
 import { useMemo } from "react";
-
-interface InvestmentPlan {
-  future_value: number;
-  monthly_deposit: number;
-  inflation: number;
-  expected_return: number;
-  final_age: number;
-}
-
-interface Profile {
-  birth_date: string;
-}
+import { generateProjectionData } from "@/lib/generate-projection-data";
 
 interface SavingsGoalProps {
   allFinancialRecords: FinancialRecord[];
-  investmentPlan?: {
-    future_value: number;
-    monthly_deposit: number;
-    inflation: number;
-    expected_return: number;
-    final_age: number;
-  };
+  investmentPlan?: InvestmentPlan;
   profile?: {
     birth_date: string;
   };
@@ -54,29 +36,35 @@ export const SavingsGoal = ({ allFinancialRecords, investmentPlan, profile }: Sa
   const birthDate = profile?.birth_date;
 
   const calculateProjectedAge = () => {
-    if (!birthDate) return null;
+    if (!birthDate || !investmentPlan || !allFinancialRecords.length) return null;
 
-    const monthlyRate = returnRate / 12 / 100;
-    let months = 0;
-    let accumulated = currentInvestment;
-
-    while (accumulated < investmentGoal && months < 600) {
-      accumulated = accumulated * (1 + monthlyRate) + monthlyDeposit;
-      months++;
-    }
-
+    const currentDate = new Date();
     const birthDateObj = new Date(birthDate);
-    const projectedDate = new Date(Date.now() + months * 30.44 * 24 * 60 * 60 * 1000);
+    const currentAge = Math.floor((currentDate.getTime() - birthDateObj.getTime()) / (365.25 * 24 * 60 * 60 * 1000));
+
+    const birthYear = birthDateObj.getFullYear();
+    const startYear = birthYear + investmentPlan.initial_age;
+    const birthMonth = birthDateObj.getMonth() + 1;
+    const projectionData = generateProjectionData(
+      { type: 'fixed', monthlyAmount: 0 },
+      investmentPlan,
+      { birth_date: birthDate },
+      [{ record_year: startYear, record_month: birthMonth, ending_balance: currentInvestment, monthly_contribution: monthlyDeposit }],
+      allFinancialRecords
+    );
+
+    const targetYearData = projectionData.find(data => data.balance >= investmentGoal);
     
-    const projectedAge = projectedDate.getFullYear() - birthDateObj.getFullYear();
-    const projectedMonth = projectedDate.getMonth() - birthDateObj.getMonth();
+    if (!targetYearData) return null;
 
-    const isAheadOfSchedule = projectedAge < finalAge;
-    const ageDifference = Math.abs(projectedAge - finalAge);
+    const targetMonth = targetYearData.months?.findIndex(month => month.balance >= investmentGoal) ?? 0;
+    
+    const isAheadOfSchedule = targetYearData.age < finalAge;
+    const ageDifference = Math.abs(targetYearData.age - finalAge);
 
-    return { 
-      years: projectedAge, 
-      months: projectedMonth,
+    return {
+      years: targetYearData.age,
+      months: targetMonth,
       isAheadOfSchedule,
       ageDifference
     };
@@ -84,14 +72,6 @@ export const SavingsGoal = ({ allFinancialRecords, investmentPlan, profile }: Sa
 
   const projectedAge = calculateProjectedAge();
   const percentage = (currentInvestment / investmentGoal) * 100;
-
-  const getProgressColor = (percentage: number) => {
-    if (percentage >= 100) return "bg-green-500";
-    if (percentage >= 75) return "bg-emerald-500";
-    if (percentage >= 50) return "bg-yellow-500";
-    if (percentage >= 25) return "bg-orange-500";
-    return "bg-red-500";
-  };
 
   return (
     <Card>

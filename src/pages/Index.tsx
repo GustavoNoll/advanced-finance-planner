@@ -503,7 +503,15 @@ const Index = () => {
                 monthly_deposit: investmentPlan?.monthly_deposit ?? 0,
                 inflation: investmentPlan?.inflation ?? 0,
                 expected_return: investmentPlan?.expected_return ?? 0,
-                final_age: investmentPlan?.final_age ?? 0
+                final_age: investmentPlan?.final_age ?? 0,
+                plan_type: investmentPlan?.plan_type ?? '',
+                desired_income: investmentPlan?.desired_income ?? 0,
+                initial_amount: investmentPlan?.initial_amount ?? 0,
+                target_amount: investmentPlan?.target_amount ?? 0,
+                initial_age: investmentPlan?.initial_age ?? 0,
+                adjust_contribution_for_inflation: investmentPlan?.adjust_contribution_for_inflation ?? false,
+                id: investmentPlan?.id ?? '',
+                user_id: investmentPlan?.user_id ?? ''
               }}
               profile={{
                 birth_date: clientProfile?.birth_date

@@ -1,9 +1,9 @@
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
 import { useTranslation } from "react-i18next";
 import { FinancialRecord } from '@/types/financial';
-import { calculateCompoundedRates, yearlyReturnRateToMonthlyReturnRate } from '@/lib/financial-math';
-import { WithdrawalStrategy, calculateMonthlyWithdrawal } from '@/lib/withdrawal-strategies';
+import { WithdrawalStrategy } from '@/lib/withdrawal-strategies';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { generateChartProjections } from '@/lib/chart-projections';
 
 interface Profile {
   birth_date: string;
@@ -66,154 +66,12 @@ export const ExpenseChart = ({
   // Create array of ages from initial_age to endAge
   const allAges = Array.from({ length: yearsUntilEnd + 1 }, (_, i) => clientAge + i);
 
-  const generateProjectedValues = () => {
-    const projectedData = [];
-    const monthlyReturnRate = yearlyReturnRateToMonthlyReturnRate(investmentPlan.expected_return/100 + investmentPlan.inflation/100);
-    const monthlyInflationRate = yearlyReturnRateToMonthlyReturnRate(investmentPlan.inflation/100);
-
-    let currentBalance = investmentPlan.initial_amount;
-    let currentMonthlyDeposit = investmentPlan.monthly_deposit;
-    let currentMonthlyWithdrawal = investmentPlan.desired_income;
-
-    for (let i = 0; i < allAges.length; i++) {
-      const age = allAges[i];
-      const isRetirementAge = age >= investmentPlan.final_age;
-      
-      for (let month = 0; month < 12; month++) {
-        if (investmentPlan.adjust_contribution_for_inflation) {
-          currentMonthlyDeposit *= (1 + monthlyInflationRate);
-        }
-        currentMonthlyWithdrawal *= (1 + monthlyInflationRate);
-
-        if (isRetirementAge) {
-          const monthsUntilEnd = (endAge - age) * 12 - month;
-          const withdrawal = calculateMonthlyWithdrawal(
-            withdrawalStrategy,
-            {
-              currentBalance,
-              monthlyReturnRate,
-              monthlyInflationRate,
-              currentAge: age,
-              monthsUntilEnd: monthsUntilEnd,
-              currentMonth: month,
-              desiredIncome: currentMonthlyWithdrawal
-            }
-          );
-          
-          currentBalance = (currentBalance - withdrawal) * (1 + monthlyReturnRate);
-        } else {
-          currentBalance = (currentBalance + currentMonthlyDeposit) * (1 + monthlyReturnRate);
-        }
-      }
-      
-      projectedData.push({
-        age,
-        projectedValue: Math.round(Math.max(0, currentBalance))
-      });
-    }
-    
-    return projectedData;
-  };
-  
-  const generateRealValues = () => {
-    const birthYear = new Date(profile.birth_date).getFullYear();
-
-    if (financialRecordsByYear.length === 0) {
-      return generateProjectedValues().map(value => ({
-        age: value.age,
-        actualValue: value.projectedValue
-      }));
-    }
-
-    const realValues = allAges.map(age => {
-      const year = birthYear + age;
-      const record = financialRecordsByYear.find(record => record.record_year === year);
-      return {
-        age,
-        actualValue: record ? record.ending_balance : null
-      };
-    });
-
-    // Fill with projections for future years
-    let beforeFirstRecord = true;
-    let lastBalance = 0;
-    let currentMonthlyDeposit = investmentPlan.monthly_deposit;
-    let currentMonthlyWithdrawal = investmentPlan.desired_income;
-
-    for (let i = 0; i < realValues.length; i++) {
-      const realValue = realValues[i];
-      const age = allAges[i];
-      const isRetirementAge = age >= investmentPlan.final_age;
-
-      if (realValue.actualValue !== null) {
-        beforeFirstRecord = false;
-        lastBalance = realValue.actualValue;
-        continue;
-      }
-
-      if (beforeFirstRecord) {
-        realValue.actualValue = lastBalance;
-        lastBalance = 0;
-        continue;
-      }
-
-      const monthlyReturnRate = yearlyReturnRateToMonthlyReturnRate(investmentPlan.expected_return/100 + investmentPlan.inflation/100);
-      const monthlyInflationRate = yearlyReturnRateToMonthlyReturnRate(investmentPlan.inflation/100);
-
-      for (let month = 0; month < 12; month++) {
-        if (investmentPlan.adjust_contribution_for_inflation) {
-          currentMonthlyDeposit *= (1 + monthlyInflationRate);
-        }
-        currentMonthlyWithdrawal *= (1 + monthlyInflationRate);
-
-        if (isRetirementAge) {
-          const monthsUntilEnd = (endAge - age) * 12 - month;
-          const withdrawal = calculateMonthlyWithdrawal(
-            withdrawalStrategy,
-            {
-              currentBalance: lastBalance,
-              monthlyReturnRate,
-              monthlyInflationRate,
-              currentAge: age,
-              monthsUntilEnd: monthsUntilEnd,
-              currentMonth: month,
-              desiredIncome: currentMonthlyWithdrawal
-            }
-          );
-          
-          lastBalance = (lastBalance - withdrawal) * (1 + monthlyReturnRate);
-        } else {
-          lastBalance = (lastBalance + currentMonthlyDeposit) * (1 + monthlyReturnRate);
-        }
-      }
-
-      realValue.actualValue = Math.max(0, lastBalance);
-    }
-
-    return realValues;
-  };
-  
-  // Combine real and projected values
-  const generateChartData = () => {
-    const realValues = generateRealValues();
-    const projectedValues = generateProjectedValues();
-
-    // Merge real and projected values using age instead of year
-    const chartData = allAges.map(age => {
-      const realData = realValues.find(v => v.age === age);
-      const projectedData = projectedValues.find(v => v.age === age);
-      
-      return {
-        age: age.toString(),
-        actualValue: realData?.actualValue,
-        projectedValue: projectedData?.projectedValue
-      };
-    });
-
-    return chartData;
-  };
-
-  const chartData = generateChartData();
+  const chartData = generateChartProjections(
+    profile,
+    investmentPlan,
+    financialRecordsByYear,
+    withdrawalStrategy
+  );
 
   return (
     <div className="space-y-4">
