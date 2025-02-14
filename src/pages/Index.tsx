@@ -1,8 +1,9 @@
+
 import { DashboardCard } from "@/components/DashboardCard";
 import { ExpenseChart } from "@/components/ExpenseChart";
 import { SavingsGoal } from "@/components/SavingsGoal";
 import { MonthlyView } from "@/components/MonthlyView";
-import { Briefcase, TrendingUp, PiggyBank, Plus, Pencil, Settings, LogOut, ArrowLeft, History, Search, User } from "lucide-react";
+import { Briefcase, TrendingUp, PiggyBank, Plus, Pencil, Settings, LogOut, ArrowLeft, History, Search, User, Info } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { useAuth } from "@/components/auth/AuthProvider";
@@ -15,8 +16,12 @@ import { Spinner } from "@/components/ui/spinner";
 import { FinancialRecord } from "@/types/financial";
 import { useQueryClient } from "@tanstack/react-query";
 import { WithdrawalStrategy } from '@/lib/withdrawal-strategies';
+import {
+  HoverCard,
+  HoverCardContent,
+  HoverCardTrigger,
+} from "@/components/ui/hover-card";
 
-// Add this type above the Index component
 type TimePeriod = 'all' | '6m' | '12m' | '24m';
 
 const Index = () => {
@@ -243,7 +248,7 @@ const Index = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-gray-50 to-gray-100">
-      <header className="bg-white border-b">
+      <header className="bg-white border-b sticky top-0 z-50 shadow-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
           <div className="flex items-center justify-between">
             <div className="w-1/3">
@@ -266,7 +271,7 @@ const Index = () => {
               )}
             </div>
 
-            <div className="flex justify-end w-1/3">
+            <div className="flex justify-end w-1/3 gap-2">
               <Button 
                 variant="ghost" 
                 onClick={handleLogout}
@@ -283,9 +288,7 @@ const Index = () => {
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
           <Link 
             to={`/financial-records${params.id ? `/${params.id}` : ''}`} 
-            state={{ 
-              records: allFinancialRecords,
-            }}
+            state={{ records: allFinancialRecords }}
           >
             <Button 
               variant="ghost"
@@ -326,14 +329,28 @@ const Index = () => {
         </div>
       </div>
 
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <DashboardCard 
-            className="transform transition-all hover:scale-102 hover:shadow-lg"
-            title={t('dashboard.cards.portfolioValue.title')}
+            className="transform transition-all hover:scale-102 hover:shadow-lg bg-gradient-to-br from-white to-gray-50"
+            title={
+              <div className="flex items-center gap-2">
+                {t('dashboard.cards.portfolioValue.title')}
+                <HoverCard>
+                  <HoverCardTrigger>
+                    <Info className="h-4 w-4 text-gray-400 cursor-help" />
+                  </HoverCardTrigger>
+                  <HoverCardContent className="w-80">
+                    <p className="text-sm text-gray-600">
+                      {t('dashboard.cards.portfolioValue.tooltip')}
+                    </p>
+                  </HoverCardContent>
+                </HoverCard>
+              </div>
+            }
           >
             <div className="space-y-3">
-              <p className="text-3xl font-bold text-gray-900">
+              <p className="text-3xl font-bold text-gray-900 bg-gradient-to-r from-blue-600 to-violet-600 bg-clip-text text-transparent">
                 {new Intl.NumberFormat('pt-BR', {
                   style: 'currency',
                   currency: 'BRL'
@@ -356,14 +373,29 @@ const Index = () => {
             </div>
           </DashboardCard>
           
-          <DashboardCard title={
-            <div className="flex items-center justify-between w-full">
-              <span>{t('dashboard.cards.monthlyContributions.title')}</span>
-              <span className="text-sm text-muted-foreground">
-                {new Date().toLocaleString('pt-BR', { month: 'long' }).replace(/^\w/, c => c.toUpperCase())}
-              </span>
-            </div>
-          }>
+          <DashboardCard 
+            className="bg-gradient-to-br from-white to-gray-50"
+            title={
+              <div className="flex items-center justify-between w-full">
+                <div className="flex items-center gap-2">
+                  <span>{t('dashboard.cards.monthlyContributions.title')}</span>
+                  <HoverCard>
+                    <HoverCardTrigger>
+                      <Info className="h-4 w-4 text-gray-400 cursor-help" />
+                    </HoverCardTrigger>
+                    <HoverCardContent className="w-80">
+                      <p className="text-sm text-gray-600">
+                        {t('dashboard.cards.monthlyContributions.tooltip')}
+                      </p>
+                    </HoverCardContent>
+                  </HoverCard>
+                </div>
+                <span className="text-sm text-muted-foreground">
+                  {new Date().toLocaleString('pt-BR', { month: 'long' }).replace(/^\w/, c => c.toUpperCase())}
+                </span>
+              </div>
+            }
+          >
             <div className="space-y-2">
               <p className={`text-2xl font-bold ${
                 investmentPlan?.required_monthly_deposit && 
@@ -395,21 +427,36 @@ const Index = () => {
             </div>
           </DashboardCard>
           
-          <DashboardCard title={
-            <div className="flex items-center justify-between w-full">
-              <span>{t('dashboard.cards.totalReturns.title')}</span>
-              <select
-                value={selectedPeriod}
-                onChange={(e) => setSelectedPeriod(e.target.value as TimePeriod)}
-                className="text-sm border border-gray-200 rounded-md px-2 py-1 bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              >
-                <option value="all">{t('common.allTime')}</option>
-                <option value="6m">{t('common.last6Months')}</option>
-                <option value="12m">{t('common.last12Months')}</option>
-                <option value="24m">{t('common.last24Months')}</option>
-              </select>
-            </div>
-          }>
+          <DashboardCard 
+            className="bg-gradient-to-br from-white to-gray-50"
+            title={
+              <div className="flex items-center justify-between w-full">
+                <div className="flex items-center gap-2">
+                  <span>{t('dashboard.cards.totalReturns.title')}</span>
+                  <HoverCard>
+                    <HoverCardTrigger>
+                      <Info className="h-4 w-4 text-gray-400 cursor-help" />
+                    </HoverCardTrigger>
+                    <HoverCardContent className="w-80">
+                      <p className="text-sm text-gray-600">
+                        {t('dashboard.cards.totalReturns.tooltip')}
+                      </p>
+                    </HoverCardContent>
+                  </HoverCard>
+                </div>
+                <select
+                  value={selectedPeriod}
+                  onChange={(e) => setSelectedPeriod(e.target.value as TimePeriod)}
+                  className="text-sm border border-gray-200 rounded-md px-2 py-1 bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                >
+                  <option value="all">{t('common.allTime')}</option>
+                  <option value="6m">{t('common.last6Months')}</option>
+                  <option value="12m">{t('common.last12Months')}</option>
+                  <option value="24m">{t('common.last24Months')}</option>
+                </select>
+              </div>
+            }
+          >
             <div className="space-y-2">
               <p className={`text-2xl font-bold ${
                 totalAmount >= 0 ? 'text-green-600' : 'text-red-600'
@@ -436,7 +483,7 @@ const Index = () => {
           </DashboardCard>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           <div className="lg:col-span-2 bg-white rounded-xl shadow-sm p-6">
             <ExpenseChart 
               profile={clientProfile}
@@ -480,7 +527,7 @@ const Index = () => {
           </div>
         </div>
 
-        <section>
+        <section className="bg-white rounded-xl shadow-sm">
           <MonthlyView 
             userId={clientId} 
             initialRecords={processedRecords.financialRecords} 
