@@ -15,6 +15,7 @@ import { InvestmentPlanShow } from "./pages/InvestmentPlan";
 import FinancialRecords from "@/pages/FinancialRecords";
 import ClientProfile from "@/pages/ClientProfile";
 import EditFinancialRecord from "@/pages/EditFinancialRecord";
+import FinancialGoals from "@/pages/FinancialGoals";
 
 const queryClient = new QueryClient();
 
@@ -134,6 +135,14 @@ const App = () => (
               element={
                 <ProtectedRoute>
                   <ClientProfile />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/financial-goals/:id?"
+              element={
+                <ProtectedRoute>
+                  <FinancialGoals />
                 </ProtectedRoute>
               }
             />

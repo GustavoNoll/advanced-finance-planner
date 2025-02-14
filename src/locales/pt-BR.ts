@@ -136,6 +136,7 @@ export const ptBR = {
       investmentPlan: "Plano de Investimento",
       clientProfile: "Informações do Cliente",
       editPlan: "Editar Plano",
+      financialGoals: "Objetivos Financeiros",
     },
     messages: {
       contactBroker: {
@@ -323,7 +324,8 @@ export const ptBR = {
     inflationAdjusted: "Ajustado pela Inflação",
     actualValue: "Valor Real",
     projectedValue: "Valor Projetado",
-    years: "anos"
+    years: "anos",
+    goalAchievement: "Meta atingida"
   },
   budgetCategories: {
     categories: {
@@ -455,5 +457,36 @@ export const ptBR = {
       passwordUpdateError: 'Erro ao alterar senha',
       passwordMismatch: 'As senhas não coincidem'
     }
+  },
+  financialGoals: {
+    title: "Objetivos Financeiros",
+    addNew: "Novo Objetivo",
+    newGoal: "Novo Objetivo Financeiro",
+    messages: {
+      createSuccess: "Objetivo criado com sucesso",
+      createError: "Erro ao criar objetivo",
+      deleteSuccess: "Objetivo removido com sucesso",
+      deleteError: "Erro ao remover objetivo",
+      priorityUpdateError: "Erro ao atualizar prioridades",
+    },
+    form: {
+      icon: "Ícone",
+      assetValue: "Valor do bem",
+      targetAmount: "Valor necessário",
+      priority: "Prioridade (1-5)",
+    },
+    labels: {
+      assetValue: "Valor do bem",
+      targetAmount: "Valor necessário"
+    },
+    icons: {
+      house: "Casa",
+      car: "Carro",
+      education: "Educação",
+      retirement: "Aposentadoria",
+      travel: "Viagem",
+      emergency: "Emergência",
+      other: "Outro",
+    },
   }
 };

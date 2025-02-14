@@ -1,9 +1,8 @@
-
 import { DashboardCard } from "@/components/DashboardCard";
 import { ExpenseChart } from "@/components/ExpenseChart";
 import { SavingsGoal } from "@/components/SavingsGoal";
 import { MonthlyView } from "@/components/MonthlyView";
-import { Briefcase, TrendingUp, PiggyBank, Plus, Pencil, Settings, LogOut, ArrowLeft, History, Search, User, Info } from "lucide-react";
+import { Briefcase, TrendingUp, PiggyBank, Plus, Pencil, Settings, LogOut, ArrowLeft, History, Search, User, Info, Target } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { useAuth } from "@/components/auth/AuthProvider";
@@ -326,6 +325,20 @@ const Index = () => {
               </Button>
             </Link>
           )}
+
+          <Link 
+            to={`/financial-goals${params.id ? `/${params.id}` : ''}`}
+          >
+            <Button 
+              variant="ghost"
+              className="w-full h-14 flex flex-col items-center justify-center gap-1 bg-gradient-to-br from-white to-gray-50 hover:from-blue-50 hover:to-blue-100 shadow-sm hover:shadow transition-all duration-200 border border-gray-100"
+            >
+              <div className="flex items-center gap-2">
+                <Target className="h-4 w-4 text-blue-600" />
+                <span className="text-sm font-medium text-gray-700">{t('dashboard.buttons.financialGoals')}</span>
+              </div>
+            </Button>
+          </Link>
         </div>
       </div>
 
@@ -483,56 +496,55 @@ const Index = () => {
           </DashboardCard>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <div className="lg:col-span-2 bg-white rounded-xl shadow-sm p-6">
-            <ExpenseChart 
-              profile={clientProfile}
-              investmentPlan={investmentPlan}
-              clientId={clientId}
-              financialRecordsByYear={processedRecords.financialRecordsByYear as FinancialRecord[]}
-              withdrawalStrategy={withdrawalStrategy}
-              onWithdrawalStrategyChange={setWithdrawalStrategy}
-            />
-          </div>
+        <div className="bg-white rounded-xl shadow-sm p-6">
+          <ExpenseChart 
+            profile={clientProfile}
+            investmentPlan={investmentPlan}
+            clientId={clientId}
+            financialRecordsByYear={processedRecords.financialRecordsByYear as FinancialRecord[]}
+            withdrawalStrategy={withdrawalStrategy}
+            onWithdrawalStrategyChange={setWithdrawalStrategy}
+          />
+        </div>
+        
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <SavingsGoal 
+            allFinancialRecords={allFinancialRecords || []}
+            investmentPlan={{
+              future_value: investmentPlan?.future_value ?? 0,
+              monthly_deposit: investmentPlan?.monthly_deposit ?? 0,
+              inflation: investmentPlan?.inflation ?? 0,
+              expected_return: investmentPlan?.expected_return ?? 0,
+              final_age: investmentPlan?.final_age ?? 0,
+              plan_type: investmentPlan?.plan_type ?? '',
+              desired_income: investmentPlan?.desired_income ?? 0,
+              initial_amount: investmentPlan?.initial_amount ?? 0,
+              target_amount: investmentPlan?.target_amount ?? 0,
+              initial_age: investmentPlan?.initial_age ?? 0,
+              adjust_contribution_for_inflation: investmentPlan?.adjust_contribution_for_inflation ?? false,
+              id: investmentPlan?.id ?? '',
+              user_id: investmentPlan?.user_id ?? ''
+            }}
+            profile={{
+              birth_date: clientProfile?.birth_date
+            }}
+          />
           
-          <div className="space-y-6">
-            <SavingsGoal 
-              allFinancialRecords={allFinancialRecords || []}
-              investmentPlan={{
-                future_value: investmentPlan?.future_value ?? 0,
-                monthly_deposit: investmentPlan?.monthly_deposit ?? 0,
-                inflation: investmentPlan?.inflation ?? 0,
-                expected_return: investmentPlan?.expected_return ?? 0,
-                final_age: investmentPlan?.final_age ?? 0,
-                plan_type: investmentPlan?.plan_type ?? '',
-                desired_income: investmentPlan?.desired_income ?? 0,
-                initial_amount: investmentPlan?.initial_amount ?? 0,
-                target_amount: investmentPlan?.target_amount ?? 0,
-                initial_age: investmentPlan?.initial_age ?? 0,
-                adjust_contribution_for_inflation: investmentPlan?.adjust_contribution_for_inflation ?? false,
-                id: investmentPlan?.id ?? '',
-                user_id: investmentPlan?.user_id ?? ''
-              }}
-              profile={{
-                birth_date: clientProfile?.birth_date
-              }}
-            />
-            <DashboardCard 
-              title={t('dashboard.nextSteps.title')}
-              className="bg-gradient-to-br from-blue-50 to-indigo-50"
-            >
-              <ul className="space-y-4">
-                {['reviewStrategy', 'increaseContributions', 'scheduleReview'].map((step) => (
-                  <li key={step} className="flex items-start gap-3">
-                    <div className="mt-1.5 h-2 w-2 bg-blue-600 rounded-full" />
-                    <p className="text-sm text-gray-700 leading-relaxed">
-                      {t(`dashboard.nextSteps.items.${step}`)}
-                    </p>
-                  </li>
-                ))}
-              </ul>
-            </DashboardCard>
-          </div>
+          <DashboardCard 
+            title={t('dashboard.nextSteps.title')}
+            className="bg-gradient-to-br from-blue-50 to-indigo-50"
+          >
+            <ul className="space-y-4">
+              {['reviewStrategy', 'increaseContributions', 'scheduleReview'].map((step) => (
+                <li key={step} className="flex items-start gap-3">
+                  <div className="mt-1.5 h-2 w-2 bg-blue-600 rounded-full" />
+                  <p className="text-sm text-gray-700 leading-relaxed">
+                    {t(`dashboard.nextSteps.items.${step}`)}
+                  </p>
+                </li>
+              ))}
+            </ul>
+          </DashboardCard>
         </div>
 
         <section className="bg-white rounded-xl shadow-sm">

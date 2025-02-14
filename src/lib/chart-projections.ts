@@ -1,6 +1,6 @@
 import { WithdrawalStrategy, calculateMonthlyWithdrawal } from './withdrawal-strategies';
 import { yearlyReturnRateToMonthlyReturnRate } from './financial-math';
-import { FinancialRecord } from '@/types/financial';
+import { FinancialRecord, Goal } from '@/types/financial';
 
 interface InvestmentPlan {
   initial_amount: number;
@@ -19,13 +19,16 @@ interface ChartDataPoint {
   age: string;
   actualValue?: number | null;
   projectedValue?: number;
+  goalAchievedProjected?: boolean;
+  goalAchievedActual?: boolean;
 }
 
 export function generateChartProjections(
   profile: { birth_date: string },
   investmentPlan: InvestmentPlan,
   financialRecordsByYear: FinancialRecord[],
-  withdrawalStrategy: WithdrawalStrategy
+  withdrawalStrategy: WithdrawalStrategy,
+  goals?: Goal[]
 ): ChartDataPoint[] {
   const getEndAge = () => {
     if ((investmentPlan.plan_type === "1" || investmentPlan.plan_type === "2") && investmentPlan.limit_age) {
@@ -41,20 +44,23 @@ export function generateChartProjections(
     (_, i) => investmentPlan.initial_age + i
   );
 
-  const projectedValues = generateProjectedPortfolioValues(investmentPlan, allAges, endAge, withdrawalStrategy);
+  const projectedValues = generateProjectedPortfolioValues(investmentPlan, allAges, endAge, withdrawalStrategy, goals);
   const actualValues = generateHistoricalPortfolioValues(
     profile,
     investmentPlan,
     financialRecordsByYear,
     allAges,
     endAge,
-    withdrawalStrategy
+    withdrawalStrategy,
+    goals
   );
 
   return allAges.map(age => ({
     age: age.toString(),
     actualValue: actualValues.find(v => v.age === age)?.actualValue,
-    projectedValue: projectedValues.find(v => v.age === age)?.projectedValue
+    projectedValue: projectedValues.find(v => v.age === age)?.projectedValue,
+    goalAchievedProjected: projectedValues.find(v => v.age === age)?.goalAchieved,
+    goalAchievedActual: actualValues.find(v => v.age === age)?.goalAchieved
   }));
 }
 
@@ -62,7 +68,8 @@ function generateProjectedPortfolioValues(
   investmentPlan: InvestmentPlan,
   allAges: number[],
   endAge: number,
-  withdrawalStrategy: WithdrawalStrategy
+  withdrawalStrategy: WithdrawalStrategy,
+  goals?: Goal[]
 ) {
   const monthlyReturnRate = yearlyReturnRateToMonthlyReturnRate(
     investmentPlan.expected_return/100 + investmentPlan.inflation/100
@@ -72,9 +79,14 @@ function generateProjectedPortfolioValues(
   let currentBalance = investmentPlan.initial_amount;
   let currentMonthlyDeposit = investmentPlan.monthly_deposit;
   let currentMonthlyWithdrawal = investmentPlan.desired_income;
+  
+  // Sort goals by priority (lower number = higher priority)
+  const pendingGoals = goals 
+    ? [...goals].sort((a, b) => a.priority - b.priority)
+    : [];
 
   return allAges.map(age => {
-    const isRetirementAge = age >= investmentPlan.final_age;
+    let goalAchievedThisYear = false;
     
     for (let month = 0; month < 12; month++) {
       if (investmentPlan.adjust_contribution_for_inflation) {
@@ -82,6 +94,17 @@ function generateProjectedPortfolioValues(
       }
       currentMonthlyWithdrawal *= (1 + monthlyInflationRate);
 
+      if (pendingGoals.length > 0) {
+        const highestPriorityGoal = pendingGoals[0];
+        if (currentBalance >= highestPriorityGoal.target_amount) {
+          currentBalance -= highestPriorityGoal.target_amount;
+          pendingGoals.shift();
+          goalAchievedThisYear = true;
+        }
+      }
+
+      const isRetirementAge = age >= investmentPlan.final_age;
+      
       if (isRetirementAge) {
         const monthsUntilEnd = (endAge - age) * 12 - month;
         const withdrawal = calculateMonthlyWithdrawal(
@@ -105,7 +128,8 @@ function generateProjectedPortfolioValues(
     
     return {
       age,
-      projectedValue: Math.round(Math.max(0, currentBalance))
+      projectedValue: Math.round(Math.max(0, currentBalance)),
+      goalAchieved: goalAchievedThisYear
     };
   });
 }
@@ -116,7 +140,8 @@ function generateHistoricalPortfolioValues(
   financialRecordsByYear: FinancialRecord[],
   allAges: number[],
   endAge: number,
-  withdrawalStrategy: WithdrawalStrategy
+  withdrawalStrategy: WithdrawalStrategy,
+  goals?: Goal[]
 ) {
   const birthYear = new Date(profile.birth_date).getFullYear();
 
@@ -125,7 +150,8 @@ function generateHistoricalPortfolioValues(
       investmentPlan,
       allAges,
       endAge,
-      withdrawalStrategy
+      withdrawalStrategy,
+      goals
     );
   }
 
@@ -134,14 +160,30 @@ function generateHistoricalPortfolioValues(
   let currentMonthlyDeposit = investmentPlan.monthly_deposit;
   let currentMonthlyWithdrawal = investmentPlan.desired_income;
 
+  // Sort goals by priority (lower number = higher priority)
+  const pendingGoals = goals 
+    ? [...goals].sort((a, b) => a.priority - b.priority)
+    : [];
+
   return allAges.map(age => {
+    let goalAchievedThisYear = false;
     const year = birthYear + age;
     const record = financialRecordsByYear.find(record => record.record_year === year);
     
     if (record) {
       beforeFirstRecord = false;
       lastBalance = record.ending_balance;
-      return { age, actualValue: record.ending_balance };
+
+      if (pendingGoals.length > 0) {
+        const highestPriorityGoal = pendingGoals[0];
+        if (lastBalance >= highestPriorityGoal.target_amount) {
+          lastBalance -= highestPriorityGoal.target_amount;
+          pendingGoals.shift();
+          goalAchievedThisYear = true;
+        }
+      }
+
+      return { age, actualValue: lastBalance, goalAchieved: goalAchievedThisYear };
     }
 
     if (beforeFirstRecord) {
@@ -159,6 +201,15 @@ function generateHistoricalPortfolioValues(
         currentMonthlyDeposit *= (1 + monthlyInflationRate);
       }
       currentMonthlyWithdrawal *= (1 + monthlyInflationRate);
+
+      if (pendingGoals.length > 0) {
+        const highestPriorityGoal = pendingGoals[0];
+        if (lastBalance >= highestPriorityGoal.target_amount) {
+          lastBalance -= highestPriorityGoal.target_amount;
+          pendingGoals.shift();
+          goalAchievedThisYear = true;
+        }
+      }
 
       if (isRetirementAge) {
         const monthsUntilEnd = (endAge - age) * 12 - month;
@@ -181,6 +232,10 @@ function generateHistoricalPortfolioValues(
       }
     }
 
-    return { age, actualValue: Math.max(0, lastBalance) };
+    return { 
+      age, 
+      actualValue: Math.max(0, lastBalance),
+      goalAchieved: goalAchievedThisYear 
+    };
   });
 } 

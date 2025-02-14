@@ -1,9 +1,11 @@
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend, ReferenceLine } from 'recharts';
 import { useTranslation } from "react-i18next";
-import { FinancialRecord } from '@/types/financial';
+import { FinancialRecord, Goal } from '@/types/financial';
 import { WithdrawalStrategy } from '@/lib/withdrawal-strategies';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { generateChartProjections } from '@/lib/chart-projections';
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/lib/supabase";
 
 interface Profile {
   birth_date: string;
@@ -31,6 +33,17 @@ interface ExpenseChartProps {
   withdrawalStrategy?: WithdrawalStrategy;
 }
 
+// Add goalIcons constant (you might want to move this to a shared constants file)
+const goalIcons = {
+  house: "🏠",
+  car: "🚗",
+  education: "🎓",
+  retirement: "👴",
+  travel: "✈️",
+  emergency: "🚨",
+  other: "🎯",
+};
+
 export const ExpenseChart = ({ 
   profile, 
   investmentPlan, 
@@ -43,6 +56,21 @@ export const ExpenseChart = ({
 }) => {
   const { t } = useTranslation();
   
+  // Add query for financial goals
+  const { data: goals } = useQuery<Goal[]>({
+    queryKey: ["financial-goals", clientId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("financial_goals")
+        .select("*")
+        .eq("profile_id", clientId)
+        .order("priority", { ascending: true });
+
+      if (error) throw error;
+      return data;
+    },
+  });
+
   if (!profile || !investmentPlan || !clientId || !financialRecordsByYear) {
     return (
       <div className="flex items-center justify-center h-[300px] bg-gray-50 rounded-lg">
@@ -50,27 +78,13 @@ export const ExpenseChart = ({
       </div>
     );
   }
-  
-  // Use initial_age from investment plan
-  const clientAge = investmentPlan.initial_age;
-  const getEndAge = () => {
-    if ((investmentPlan.plan_type === "1" || investmentPlan.plan_type === "2") && investmentPlan.limit_age) {
-      return investmentPlan.limit_age;
-    }
-    return 120;
-  };
-  
-  const endAge = getEndAge();
-  const yearsUntilEnd = endAge - clientAge;
-  
-  // Create array of ages from initial_age to endAge
-  const allAges = Array.from({ length: yearsUntilEnd + 1 }, (_, i) => clientAge + i);
 
   const chartData = generateChartProjections(
     profile,
     investmentPlan,
     financialRecordsByYear,
-    withdrawalStrategy
+    withdrawalStrategy,
+    goals
   );
 
   return (
@@ -99,8 +113,15 @@ export const ExpenseChart = ({
         </Select>
       </div>
 
-      <ResponsiveContainer width="100%" height={300}>
-        <LineChart data={chartData}>
+      <ResponsiveContainer 
+        width="100%" 
+        height={300}
+        key={JSON.stringify(chartData)}
+      >
+        <LineChart 
+          data={chartData}
+          margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
+        >
           <CartesianGrid strokeDasharray="3 3" />
           <XAxis 
             dataKey="age"
@@ -125,6 +146,91 @@ export const ExpenseChart = ({
             }
           />
           <Legend />
+
+          {/* Update reference lines for goals */}
+          {goals
+            ?.sort((a, b) => a.priority - b.priority)
+            .reduce((acc: React.ReactNode[], goal, index, sortedGoals) => {
+              // Get the last achievement age from previous goals
+              const lastAchievementAge = index > 0 
+                ? Number(acc[index - 1]?.props?.x ?? 0)
+                : 0;
+              console.log(lastAchievementAge);
+              // Find the first data point where a goal is achieved after the last goal
+              console.log(chartData);
+              const achievementPoint = chartData.find(
+                point => 
+                  point.goalAchievedActual && 
+                  Number(point.age) > lastAchievementAge
+              );
+              
+              // Only add reference line if:
+              // 1. We found an achievement point
+              // 2. The initial value is less than the goal (to avoid showing goals already achieved)
+              if (achievementPoint) {
+                console.log(achievementPoint);
+                acc.push(
+                  <ReferenceLine
+                    key={goal.id}
+                    x={achievementPoint.age}
+                    stroke="blue"
+                    strokeDasharray="3 3"
+                    ifOverflow="extendDomain"
+                    label={{
+                      value: `${goalIcons[goal.icon]}`,
+                      position: 'top',
+                      fill: 'blue',
+                      fontSize: 14,
+                      dy: 0,
+                      className: "font-medium"
+                    }}
+                  />
+                );
+              }
+              return acc;
+            }, [])}
+
+            {goals
+            ?.sort((a, b) => a.priority - b.priority)
+            .reduce((acc: React.ReactNode[], goal, index, sortedGoals) => {
+              // Get the last achievement age from previous goals
+              const lastAchievementAge = index > 0 
+                ? Number(acc[index - 1]?.props?.x ?? 0)
+                : 0;
+
+              // Find the first data point where a goal is achieved after the last goal
+              const achievementPoint = chartData.find(
+                point => 
+                  point.goalAchievedProjected && 
+                  Number(point.age) > lastAchievementAge
+              );
+              
+              // Only add reference line if:
+              // 1. We found an achievement point
+              // 2. The initial value is less than the goal (to avoid showing goals already achieved)
+              if (achievementPoint && 
+                  (chartData[0]?.actualValue ?? chartData[0]?.projectedValue) < goal.target_amount) {
+                acc.push(
+                  <ReferenceLine
+                    key={goal.id}
+                    x={achievementPoint.age}
+                    stroke="#f97316"
+                    strokeDasharray="3 3"
+                    ifOverflow="extendDomain"
+                    label={{
+                      value: `${goalIcons[goal.icon]}`,
+                      position: 'top',
+                      fill: '#f97316',
+                      fontSize: 14,
+                      dy: 0,
+                      className: "font-medium"
+                    }}
+                  />
+                );
+              }
+              return acc;
+            }, [])}
+
           <Line 
             type="natural"
             dataKey="actualValue" 

@@ -1,4 +1,3 @@
-
 export interface FinancialRecord {
   id: string;
   user_id: string;
@@ -45,3 +44,19 @@ export interface MonthlyMetrics {
 }
 
 export type MonthNumber = 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12;
+
+export interface Goal {
+  id: string;
+  user_id: string;
+  title: string;
+  icon: 'house' | 'car' | 'education' | 'retirement' | 'travel' | 'emergency' | 'other';
+  target_amount: number;
+  target_date?: string;
+  priority: number;
+  created_at?: string;
+  updated_at?: string;
+}
+
+export type CreateGoal = Omit<Goal, 'id' | 'created_at' | 'updated_at'>;
+
+export type UpdateGoal = Partial<CreateGoal>;
