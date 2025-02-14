@@ -92,6 +92,16 @@ export const ptBR = {
   },
   dashboard: {
     title: "Portfólio de Investimentos",
+    highlights: {
+      title: "Destaques",
+      tooltip: "Suas principais conquistas e marcos no plano de investimento",
+      contributionStreak: "Sequência atual: {{months}} meses de aportes consistentes!",
+      goalProgress: "Já conquistou {{progress}}% do objetivo (R$ {{amount}})",
+      returnOnContributions: "Seus investimentos já renderam {{percentage}}% sobre os aportes",
+      bestReturn: "Seu melhor mês teve retorno de {{return}}%",
+      patrimonyGrowth: "Seu patrimônio cresceu {{growth}}% desde o início",
+      planAge: "Seu plano completa {{months}} meses de jornada!"
+    },
     cards: {
       portfolioValue: {
         title: "Valor Total do Portfólio",

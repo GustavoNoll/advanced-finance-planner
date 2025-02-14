@@ -12,7 +12,7 @@ import { z } from "zod";
 import { useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 import CurrencyInput from 'react-currency-input-field';
-import { FinancialRecord, CreateFinancialRecord, MonthNumber } from '@/types/financial';
+import { FinancialRecord, MonthNumber } from '@/types/financial';
 
 const formSchema = z.object({
   record_year: z.number(),

@@ -2,7 +2,7 @@ import { DashboardCard } from "@/components/DashboardCard";
 import { ExpenseChart } from "@/components/ExpenseChart";
 import { SavingsGoal } from "@/components/SavingsGoal";
 import { MonthlyView } from "@/components/MonthlyView";
-import { Briefcase, TrendingUp, PiggyBank, Plus, Pencil, Settings, LogOut, ArrowLeft, History, Search, User, Info, Target } from "lucide-react";
+import { Briefcase, TrendingUp, PiggyBank, Plus, Pencil, Settings, LogOut, ArrowLeft, History, Search, User, Info, Target, Trophy, LineChart, Calendar } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { useAuth } from "@/components/auth/AuthProvider";
@@ -204,6 +204,64 @@ const Index = () => {
   }, [processedRecords.financialRecords]);
 
   const { totalAmount, percentageReturn } = calculateTotalReturns(selectedPeriod);
+
+  const calculateHighlights = useCallback(() => {
+    if (!processedRecords.financialRecords?.length || !investmentPlan) return [];
+
+    const latest = processedRecords.latestRecord;
+    const highlights: { message: string; value: number; icon: JSX.Element }[] = [];
+
+    // Cálculo da sequência de aportes consistentes
+    let streak = 0;
+    for (const record of processedRecords.financialRecords) {
+      if (record.monthly_contribution >= (investmentPlan.required_monthly_deposit || 0)) {
+        streak++;
+      } else break;
+    }
+    if (streak > 0) {
+      highlights.push({
+        message: t('dashboard.highlights.contributionStreak', { months: streak }),
+        value: streak,
+        icon: <Target className="h-4 w-4" />
+      });
+    }
+
+    // Retorno sobre aportes
+    const totalContributions = processedRecords.financialRecords
+      .reduce((sum, record) => sum + (record.monthly_contribution || 0), 0);
+    const returnOnContributions = ((latest?.ending_balance || 0) - totalContributions) / totalContributions * 100;
+    if (returnOnContributions > 0) {
+      highlights.push({
+        message: t('dashboard.highlights.returnOnContributions', { 
+          percentage: returnOnContributions.toFixed(1) 
+        }),
+        value: returnOnContributions,
+        icon: <PiggyBank className="h-4 w-4" />
+      });
+    }
+
+    // Melhor mês de rentabilidade
+    const bestReturn = Math.max(...processedRecords.financialRecords
+      .map(record => record.monthly_return_rate));
+    highlights.push({
+      message: t('dashboard.highlights.bestReturn', { 
+        return: bestReturn.toFixed(2) 
+      }),
+      value: bestReturn,
+      icon: <Trophy className="h-4 w-4" />
+    });
+
+    // Tempo do plano
+    const planMonths = processedRecords.financialRecords.length;
+    highlights.push({
+      message: t('dashboard.highlights.planAge', { months: planMonths }),
+      value: planMonths,
+      icon: <Calendar className="h-4 w-4" />
+    });
+
+    // Retorna os 3 highlights com maiores valores
+    return highlights.sort((a, b) => b.value - a.value).slice(0, 3);
+  }, [processedRecords.financialRecords, processedRecords.latestRecord, investmentPlan, t]);
 
   useEffect(() => {
     if (!isInvestmentPlanLoading && !isProfilesLoading) {
@@ -531,19 +589,27 @@ const Index = () => {
           />
           
           <DashboardCard 
-            title={t('dashboard.nextSteps.title')}
+            title={t('dashboard.highlights.title')}
             className="bg-gradient-to-br from-blue-50 to-indigo-50"
           >
-            <ul className="space-y-4">
-              {['reviewStrategy', 'increaseContributions', 'scheduleReview'].map((step) => (
-                <li key={step} className="flex items-start gap-3">
-                  <div className="mt-1.5 h-2 w-2 bg-blue-600 rounded-full" />
-                  <p className="text-sm text-gray-700 leading-relaxed">
-                    {t(`dashboard.nextSteps.items.${step}`)}
-                  </p>
-                </li>
+            <div className="space-y-4">
+              {calculateHighlights().map((highlight, index) => (
+                <div key={index} className="flex items-start gap-3">
+                  <div className={`mt-1 p-2 rounded-lg ${
+                    index === 0 ? 'bg-green-100 text-green-600' :
+                    index === 1 ? 'bg-blue-100 text-blue-600' :
+                    'bg-purple-100 text-purple-600'
+                  }`}>
+                    {highlight.icon}
+                  </div>
+                  <div>
+                    <p className="text-sm text-gray-700 leading-relaxed">
+                      {highlight.message}
+                    </p>
+                  </div>
+                </div>
               ))}
-            </ul>
+            </div>
           </DashboardCard>
         </div>
 

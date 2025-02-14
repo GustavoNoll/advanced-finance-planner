@@ -5,7 +5,7 @@ import { supabase } from "@/lib/supabase";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/components/ui/use-toast";
 import { Spinner } from "@/components/ui/spinner";
-import { ArrowLeft, Plus, Trash2 } from "lucide-react";
+import { ArrowLeft, Plus } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import {
   Form,
@@ -15,7 +15,6 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
-import { Input } from "@/components/ui/input";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -23,7 +22,8 @@ import { useTranslation } from "react-i18next";
 import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors } from '@dnd-kit/core';
 import { arrayMove, SortableContext, sortableKeyboardCoordinates, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import { SortableGoalCard } from '@/components/financial-goals/SortableGoalCard';
-import { goalIcons, goalNames } from "@/constants/goals";
+import { goalIcons } from "@/constants/goals";
+import CurrencyInput from 'react-currency-input-field';
 
 
 const formSchema = z.object({
@@ -104,12 +104,31 @@ const FinancialGoals = () => {
 
   const deleteGoal = useMutation({
     mutationFn: async (goalId: string) => {
-      const { error } = await supabase
+      // First, get the goal to be deleted to know its priority
+      const { data: goalToDelete, error: fetchError } = await supabase
+        .from("financial_goals")
+        .select("priority")
+        .eq("id", goalId)
+        .single();
+
+      if (fetchError) throw fetchError;
+
+      // Delete the goal
+      const { error: deleteError } = await supabase
         .from("financial_goals")
         .delete()
         .eq("id", goalId);
 
-      if (error) throw error;
+      if (deleteError) throw deleteError;
+
+      // Update priorities for remaining goals to fill the gap
+      const { error: updateError } = await supabase
+        .rpc('update_goals_priority', { 
+          deleted_priority: goalToDelete.priority,
+          user_id: userId 
+        });
+
+      if (updateError) throw updateError;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["financial-goals"] });
@@ -220,11 +239,15 @@ const FinancialGoals = () => {
               <FormItem>
                 <FormLabel>{t("financialGoals.form.assetValue")}</FormLabel>
                 <FormControl>
-                  <Input
-                    {...field}
-                    type="number"
-                    step="0.01"
-                    min="0"
+                  <CurrencyInput
+                    id="asset_value"
+                    className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                    value={field.value}
+                    onValueChange={(value) => field.onChange(value)}
+                    prefix="R$ "
+                    groupSeparator="."
+                    decimalSeparator=","
+                    decimalsLimit={2}
                   />
                 </FormControl>
                 <FormMessage />
@@ -239,11 +262,15 @@ const FinancialGoals = () => {
               <FormItem>
                 <FormLabel>{t("financialGoals.form.targetAmount")}</FormLabel>
                 <FormControl>
-                  <Input
-                    {...field}
-                    type="number"
-                    step="0.01"
-                    min="0"
+                  <CurrencyInput
+                    id="target_amount"
+                    className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                    value={field.value}
+                    onValueChange={(value) => field.onChange(value)}
+                    prefix="R$ "
+                    groupSeparator="."
+                    decimalSeparator=","
+                    decimalsLimit={2}
                   />
                 </FormControl>
                 <FormMessage />
