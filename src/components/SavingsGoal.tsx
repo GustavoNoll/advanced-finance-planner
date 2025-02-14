@@ -36,11 +36,9 @@ export const SavingsGoal = ({ allFinancialRecords, investmentPlan, profile }: Sa
   const birthDate = profile?.birth_date;
 
   const calculateProjectedAge = () => {
-    if (!birthDate || !investmentPlan || !allFinancialRecords.length) return null;
+    if (!birthDate || !investmentPlan) return null;
 
-    const currentDate = new Date();
     const birthDateObj = new Date(birthDate);
-    const currentAge = Math.floor((currentDate.getTime() - birthDateObj.getTime()) / (365.25 * 24 * 60 * 60 * 1000));
 
     const birthYear = birthDateObj.getFullYear();
     const startYear = birthYear + investmentPlan.initial_age;
@@ -54,7 +52,6 @@ export const SavingsGoal = ({ allFinancialRecords, investmentPlan, profile }: Sa
     );
 
     const targetYearData = projectionData.find(data => data.balance >= investmentGoal);
-    
     if (!targetYearData) return null;
 
     const targetMonth = targetYearData.months?.findIndex(month => month.balance >= investmentGoal) ?? 0;

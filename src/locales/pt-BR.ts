@@ -334,7 +334,7 @@ export const ptBR = {
     }
   },
   savingsGoal: {
-    ageNotAvailable: "Idade não disponível",
+    ageNotAvailable: "Idade projetada não disponível",
     title: "Meta de Investimento",
     currentValue: "R$ {{value}}",
     returnRate: "{{value}}% a.a.",
