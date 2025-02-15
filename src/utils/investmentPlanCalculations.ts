@@ -80,18 +80,14 @@ export const calculateFutureValues = (data: FormData): Calculations => {
 
   const annualTotalReturn = calculateCompoundedRates([expectedReturn, inflation]);
   const monthlyTotalReturn = yearlyReturnRateToMonthlyReturnRate(annualTotalReturn);
+  
 
   // Renda ajustada para inflação
   const inflationAdjustedIncome = fv(monthInflationRate, monthsToRetirement, 0, desiredIncome);
   
   let presentValue, futureValue, necessaryFutureValue;
-  let rate;
-  let targetLegacy;
-  let monthlyIncomeRequired, incomePresentValue;
-  let annualReturn, monthlyReturnRate;
-  let yearsRetired;
   let requiredMonthlyDeposit = 0;
-  let realReturn = 0, inflationReturn = 0, totalMonthlyReturn = 0, totalRate = 0;
+  let realReturn = 0, inflationReturn = 0, totalMonthlyReturn = 0;
   let necessaryDepositToNecessaryFutureValue;
   
   const formatDecimals = (num: number, fixed: number = 10): number => {
@@ -101,10 +97,16 @@ export const calculateFutureValues = (data: FormData): Calculations => {
   switch (planType) {
     case "1":
       presentValue = vp(monthExpectedReturnRate, monthsToEndMoney, -desiredIncome, 0);
+      // revisar
+      necessaryFutureValue = formatDecimals(inflationAdjustedIncome / monthExpectedReturnRate);
+      necessaryDepositToNecessaryFutureValue = formatDecimals(pmt(monthlyTotalReturn, yearsDepositing * 12, -initialAmount, necessaryFutureValue), 2);
       break;
       
     case "2":
       presentValue = vp(monthExpectedReturnRate, monthsToEndMoney, -desiredIncome, -legacyAmount);
+      // necessaryFutureValue
+      // necessaryDepositToNecessaryFutureValue
+      
       break;
       
     case "3":
@@ -116,6 +118,11 @@ export const calculateFutureValues = (data: FormData): Calculations => {
   }
 
   futureValue = Math.abs(-fv(monthInflationRate, monthsToRetirement, 0, presentValue));
+  requiredMonthlyDeposit = formatDecimals(pmt(monthlyTotalReturn, yearsDepositing * 12, -initialAmount, futureValue));
+  realReturn = formatDecimals(futureValue * monthExpectedReturnRate);
+  inflationReturn = formatDecimals(futureValue * monthInflationRate);
+  totalMonthlyReturn = formatDecimals(futureValue * monthlyTotalReturn);
+
   return {
     futureValue: formatDecimals(futureValue),
     inflationAdjustedIncome: formatDecimals(inflationAdjustedIncome),
