@@ -148,6 +148,7 @@ export const ptBR = {
       clientProfile: "Informações do Cliente",
       editPlan: "Editar Plano",
       financialGoals: "Objetivos Financeiros",
+      events: 'Eventos',
     },
     messages: {
       contactBroker: {
@@ -165,7 +166,12 @@ export const ptBR = {
         fetchProfile: "Erro ao buscar perfil do corretor"
       }
     },
-    loading: "Carregando..."
+    loading: "Carregando...",
+    buttonGroups: {
+      main: "Principal",
+      planning: "Planejamento",
+      management: "Gerenciamento",
+    },
   },
   brokerDashboard: {
     title: "Painel do Corretor",
@@ -504,5 +510,26 @@ export const ptBR = {
       emergency: "Emergência",
       other: "Outro",
     },
-  }
+  },
+  events: {
+    title: 'Eventos',
+    addNew: 'Adicionar Novo Evento',
+    projected: 'Eventos Projetados',
+    showCompleted: 'Mostrar Eventos Concluídos',
+    hideCompleted: 'Ocultar Eventos Concluídos',
+    complete: 'Concluir',
+    reopen: 'Reabrir',
+    form: {
+      name: 'Nome do Evento',
+      amount: 'Valor',
+      month: 'Mês',
+      year: 'Ano',
+    },
+    messages: {
+      createSuccess: 'Evento criado com sucesso',
+      createError: 'Erro ao criar evento',
+      deleteSuccess: 'Evento excluído com sucesso',
+      deleteError: 'Erro ao excluir evento',
+    },
+  },
 };

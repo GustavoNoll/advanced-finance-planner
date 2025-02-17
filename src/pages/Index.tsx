@@ -268,6 +268,37 @@ const Index = () => {
     return highlights.sort((a, b) => b.value - a.value).slice(0, 3);
   }, [processedRecords.financialRecords, processedRecords.latestRecord, investmentPlan, t]);
 
+  // Add these queries after the existing useQuery hooks
+  const { data: counters } = useQuery({
+    queryKey: ['counters', clientId],
+    queryFn: async () => {
+      if (!clientId) return { goals: 0, events: 0 };
+      
+      const today = new Date();
+      const currentYear = today.getFullYear();
+      const currentMonth = today.getMonth() + 1;
+
+      const [goalsResponse, eventsResponse] = await Promise.all([
+        supabase
+          .from('financial_goals')
+          .select('*', { count: 'exact', head: true })
+          .eq('profile_id', clientId)
+          .or(`year.gt.${currentYear},and(year.eq.${currentYear},month.gte.${currentMonth})`),
+        supabase
+          .from('events')
+          .select('*', { count: 'exact', head: true })
+          .eq('profile_id', clientId)
+          .eq('status', 'projected')
+      ]);
+
+      return {
+        goals: goalsResponse.count || 0,
+        events: eventsResponse.count || 0
+      };
+    },
+    enabled: !!clientId,
+  });
+
   useEffect(() => {
     if (!isInvestmentPlanLoading && !isProfilesLoading) {
       if (brokerProfile && !params.id) {
@@ -347,7 +378,7 @@ const Index = () => {
       </header>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-4">
           <Link 
             to={`/financial-records${params.id ? `/${params.id}` : ''}`} 
             state={{ records: allFinancialRecords }}
@@ -358,7 +389,7 @@ const Index = () => {
             >
               <div className="flex items-center gap-2">
                 <History className="h-4 w-4 text-blue-600" />
-                <span className="text-sm font-medium text-gray-700">{t('dashboard.buttons.financialRecords')}</span>
+                <span className="text-sm font-medium text-gray-700 whitespace-nowrap">{t('dashboard.buttons.financialRecords')}</span>
               </div>
             </Button>
           </Link>
@@ -370,7 +401,49 @@ const Index = () => {
             >
               <div className="flex items-center gap-2">
                 <TrendingUp className="h-4 w-4 text-blue-600" />
-                <span className="text-sm font-medium text-gray-700">{t('dashboard.buttons.investmentPlan')}</span>
+                <span className="text-sm font-medium text-gray-700 whitespace-nowrap">{t('dashboard.buttons.investmentPlan')}</span>
+              </div>
+            </Button>
+          </Link>
+
+          <Link 
+            to={`/financial-goals${params.id ? `/${params.id}` : ''}`}
+          >
+            <Button 
+              variant="ghost"
+              className="w-full h-14 flex flex-col items-center justify-center gap-1 bg-gradient-to-br from-white to-gray-50 hover:from-blue-50 hover:to-blue-100 shadow-sm hover:shadow transition-all duration-200 border border-gray-100"
+            >
+              <div className="flex items-center gap-2">
+                <div className="relative">
+                  <Target className="h-4 w-4 text-blue-600" />
+                  {counters?.goals > 0 && (
+                    <div className="absolute -top-2 -right-2 bg-blue-600 text-white text-xs rounded-full min-w-[16px] h-4 flex items-center justify-center px-1">
+                      {counters.goals}
+                    </div>
+                  )}
+                </div>
+                <span className="text-sm font-medium text-gray-700 whitespace-nowrap">{t('dashboard.buttons.financialGoals')}</span>
+              </div>
+            </Button>
+          </Link>
+
+          <Link 
+            to={`/events${params.id ? `/${params.id}` : ''}`}
+          >
+            <Button 
+              variant="ghost"
+              className="w-full h-14 flex flex-col items-center justify-center gap-1 bg-gradient-to-br from-white to-gray-50 hover:from-blue-50 hover:to-blue-100 shadow-sm hover:shadow transition-all duration-200 border border-gray-100"
+            >
+              <div className="flex items-center gap-2">
+                <div className="relative">
+                  <Calendar className="h-4 w-4 text-blue-600" />
+                  {counters?.events > 0 && (
+                    <div className="absolute -top-2 -right-2 bg-blue-600 text-white text-xs rounded-full min-w-[16px] h-4 flex items-center justify-center px-1">
+                      {counters.events}
+                    </div>
+                  )}
+                </div>
+                <span className="text-sm font-medium text-gray-700 whitespace-nowrap">{t('dashboard.buttons.events')}</span>
               </div>
             </Button>
           </Link>
@@ -383,25 +456,11 @@ const Index = () => {
               >
                 <div className="flex items-center gap-2">
                   <User className="h-4 w-4 text-blue-600" />
-                  <span className="text-sm font-medium text-gray-700">{t('dashboard.buttons.clientInfo')}</span>
+                  <span className="text-sm font-medium text-gray-700 whitespace-nowrap">{t('dashboard.buttons.clientInfo')}</span>
                 </div>
               </Button>
             </Link>
           )}
-
-          <Link 
-            to={`/financial-goals${params.id ? `/${params.id}` : ''}`}
-          >
-            <Button 
-              variant="ghost"
-              className="w-full h-14 flex flex-col items-center justify-center gap-1 bg-gradient-to-br from-white to-gray-50 hover:from-blue-50 hover:to-blue-100 shadow-sm hover:shadow transition-all duration-200 border border-gray-100"
-            >
-              <div className="flex items-center gap-2">
-                <Target className="h-4 w-4 text-blue-600" />
-                <span className="text-sm font-medium text-gray-700">{t('dashboard.buttons.financialGoals')}</span>
-              </div>
-            </Button>
-          </Link>
         </div>
       </div>
 
