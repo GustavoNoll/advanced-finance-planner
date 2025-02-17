@@ -220,7 +220,9 @@ export const ptBR = {
     reset: "Resetar",
     logout: "Sair",
     update: "Atualizar",
-    add: "Adicionar"
+    add: "Adicionar",
+    select: "Selecione",
+    confirmDelete: "Tem certeza que deseja excluir este item?"
   },
   createClient: {
     title: "Criar Novo Cliente",
@@ -483,8 +485,11 @@ export const ptBR = {
     form: {
       icon: "Ícone",
       assetValue: "Valor do bem",
-      targetAmount: "Valor necessário",
-      priority: "Prioridade (1-5)",
+      goalMonth: "Mês do objetivo",
+      goalYear: "Ano do objetivo",
+      isInstallment: "Parcelado?",
+      isInstallmentHelp: "Marque esta opção se o objetivo será pago em parcelas",
+      installmentCount: "Número de parcelas"
     },
     labels: {
       assetValue: "Valor do bem",

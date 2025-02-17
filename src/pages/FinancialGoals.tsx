@@ -19,17 +19,35 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { useTranslation } from "react-i18next";
-import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors } from '@dnd-kit/core';
-import { arrayMove, SortableContext, sortableKeyboardCoordinates, verticalListSortingStrategy } from '@dnd-kit/sortable';
-import { SortableGoalCard } from '@/components/financial-goals/SortableGoalCard';
+import { GoalCard } from '@/components/financial-goals/GoalCard';
 import { goalIcons } from "@/constants/goals";
 import CurrencyInput from 'react-currency-input-field';
 
 
 const formSchema = z.object({
   icon: z.enum(Object.keys(goalIcons) as [string, ...string[]]),
-  target_amount: z.string().min(1, "Valor necessário é obrigatório"),
   asset_value: z.string().min(1, "Valor do bem é obrigatório"),
+  goal_month: z.string().min(1, "Mês é obrigatório"),
+  goal_year: z.string().min(1, "Ano é obrigatório"),
+  installment_project: z.boolean().default(false),
+  installment_count: z.string().optional(),
+}).refine((data) => {
+  const currentDate = new Date();
+  const selectedDate = new Date(
+    parseInt(data.goal_year),
+    parseInt(data.goal_month) - 1
+  );
+  
+  // Set both dates to the first of the month to compare only month/year
+  currentDate.setDate(1);
+  currentDate.setHours(0, 0, 0, 0);
+  selectedDate.setDate(1);
+  selectedDate.setHours(0, 0, 0, 0);
+  
+  return selectedDate >= currentDate;
+}, {
+  message: "A data selecionada não pode ser no passado",
+  path: ["goal_month"] // This will show the error under the month field
 });
 
 const FinancialGoals = () => {
@@ -43,8 +61,11 @@ const FinancialGoals = () => {
     resolver: zodResolver(formSchema),
     defaultValues: {
       icon: "other",
-      target_amount: "",
       asset_value: "",
+      goal_month: "",
+      goal_year: "",
+      installment_project: false,
+      installment_count: "",
     },
   });
 
@@ -55,31 +76,25 @@ const FinancialGoals = () => {
         .from("financial_goals")
         .select("*")
         .eq("profile_id", userId)
-        .order("priority", { ascending: true });
+        .order('year', { ascending: true })
+        .order('month', { ascending: true });
 
       if (error) throw error;
       return data;
     },
   });
 
-  const sensors = useSensors(
-    useSensor(PointerSensor),
-    useSensor(KeyboardSensor, {
-      coordinateGetter: sortableKeyboardCoordinates,
-    })
-  );
-
   const createGoal = useMutation({
     mutationFn: async (values: z.infer<typeof formSchema>) => {
-      const maxPriority = goals?.reduce((max, goal) => Math.max(max, goal.priority), 0) ?? 0;
-      
       const { data, error } = await supabase.from("financial_goals").insert([
         {
           profile_id: userId,
           icon: values.icon,
-          target_amount: parseFloat(values.target_amount),
-          asset_value: parseFloat(values.asset_value),
-          priority: maxPriority + 1,
+          asset_value: parseFloat(values.asset_value.replace(/[^\d.,]/g, '').replace(',', '.')),
+          month: parseInt(values.goal_month),
+          year: parseInt(values.goal_year),
+          installment_project: values.installment_project,
+          installment_count: values.installment_project ? parseInt(values.installment_count || "0") : null,
         },
       ]);
 
@@ -104,15 +119,6 @@ const FinancialGoals = () => {
 
   const deleteGoal = useMutation({
     mutationFn: async (goalId: string) => {
-      // First, get the goal to be deleted to know its priority
-      const { data: goalToDelete, error: fetchError } = await supabase
-        .from("financial_goals")
-        .select("priority")
-        .eq("id", goalId)
-        .single();
-
-      if (fetchError) throw fetchError;
-
       // Delete the goal
       const { error: deleteError } = await supabase
         .from("financial_goals")
@@ -120,15 +126,6 @@ const FinancialGoals = () => {
         .eq("id", goalId);
 
       if (deleteError) throw deleteError;
-
-      // Update priorities for remaining goals to fill the gap
-      const { error: updateError } = await supabase
-        .rpc('update_goals_priority', { 
-          deleted_priority: goalToDelete.priority,
-          user_id: userId 
-        });
-
-      if (updateError) throw updateError;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["financial-goals"] });
@@ -143,56 +140,6 @@ const FinancialGoals = () => {
       });
     },
   });
-
-  const updatePriorities = useMutation({
-    mutationFn: async (updatedGoals: typeof goals) => {
-      if (!updatedGoals) return;
-      
-      const updates = updatedGoals.map((goal) => ({
-        id: goal.id,
-        profile_id: goal.profile_id,
-        priority: goal.priority,
-        icon: goal.icon,
-        target_amount: goal.target_amount,
-        asset_value: goal.asset_value
-      }));
-
-      const { error } = await supabase
-        .from("financial_goals")
-        .upsert(updates);
-
-      if (error) {
-        console.error("Error updating priorities:", error);
-        throw error;
-      }
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["financial-goals"] });
-    },
-    onError: () => {
-      console.log("Error updating priorities");
-      toast({
-        title: t("financialGoals.messages.priorityUpdateError"),
-        variant: "destructive",
-      });
-    },
-  });
-
-  const handleDragEnd = (event: any) => {
-    const { active, over } = event;
-    
-    if (active.id !== over.id && goals) {
-      const oldIndex = goals.findIndex((goal) => goal.id === active.id);
-      const newIndex = goals.findIndex((goal) => goal.id === over.id);
-      
-      const newGoals = arrayMove(goals, oldIndex, newIndex).map((goal, index) => ({
-        ...goal,
-        priority: index + 1
-      }));
-
-      updatePriorities.mutate(newGoals);
-    }
-  };
 
   if (isLoading) {
     return (
@@ -241,7 +188,7 @@ const FinancialGoals = () => {
                 <FormControl>
                   <CurrencyInput
                     id="asset_value"
-                    className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                    className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
                     value={field.value}
                     onValueChange={(value) => field.onChange(value)}
                     prefix="R$ "
@@ -255,29 +202,103 @@ const FinancialGoals = () => {
             )}
           />
 
+          <div className="grid grid-cols-2 gap-2">
+            <FormField
+              control={form.control}
+              name="goal_month"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>{t("financialGoals.form.goalMonth")}</FormLabel>
+                  <FormControl>
+                    <select
+                      className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                      {...field}
+                    >
+                      <option value="">{t("common.select")}</option>
+                      {Array.from({ length: 12 }, (_, i) => {
+                        const month = (i + 1).toString().padStart(2, '0');
+                        return (
+                          <option key={month} value={month}>
+                            {new Date(2000, i).toLocaleDateString('pt-BR', { month: 'long' })}
+                          </option>
+                        );
+                      })}
+                    </select>
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="goal_year"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>{t("financialGoals.form.goalYear")}</FormLabel>
+                  <FormControl>
+                    <select
+                      className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                      {...field}
+                    >
+                      <option value="">{t("common.select")}</option>
+                      {Array.from({ length: 2300 - new Date().getFullYear() + 1 }, (_, i) => {
+                        const year = (new Date().getFullYear() + i).toString();
+                        return (
+                          <option key={year} value={year}>
+                            {year}
+                          </option>
+                        );
+                      })}
+                    </select>
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          </div>
+        </div>
+
+        <FormField
+          control={form.control}
+          name="installment_project"
+          render={({ field }) => (
+            <FormItem className="flex items-center space-x-2">
+              <FormControl>
+                <input
+                  type="checkbox"
+                  checked={field.value}
+                  onChange={field.onChange}
+                  className="h-4 w-4"
+                />
+              </FormControl>
+              <FormLabel className="font-normal">
+                {t("financialGoals.form.isInstallment")}
+              </FormLabel>
+            </FormItem>
+          )}
+        />
+
+        {form.watch("installment_project") && (
           <FormField
             control={form.control}
-            name="target_amount"
+            name="installment_count"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>{t("financialGoals.form.targetAmount")}</FormLabel>
+                <FormLabel>{t("financialGoals.form.installmentCount")}</FormLabel>
                 <FormControl>
-                  <CurrencyInput
-                    id="target_amount"
-                    className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                    value={field.value}
-                    onValueChange={(value) => field.onChange(value)}
-                    prefix="R$ "
-                    groupSeparator="."
-                    decimalSeparator=","
-                    decimalsLimit={2}
+                  <input
+                    type="number"
+                    min="1"
+                    className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                    {...field}
                   />
                 </FormControl>
                 <FormMessage />
               </FormItem>
             )}
           />
-        </div>
+        )}
 
         <div className="flex gap-2 justify-end">
           <Button 
@@ -340,18 +361,10 @@ const FinancialGoals = () => {
       </div>
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <DndContext
-          sensors={sensors}
-          collisionDetection={closestCenter}
-          onDragEnd={handleDragEnd}
-        >
-          <SortableContext
-            items={goals?.map(g => g.id) ?? []}
-            strategy={verticalListSortingStrategy}
-          >
+
             <div className="space-y-4">
               {goals?.map((goal) => (
-                <SortableGoalCard
+                <GoalCard
                   key={goal.id}
                   goal={goal}
                   onDelete={() => {
@@ -362,8 +375,6 @@ const FinancialGoals = () => {
                 />
               ))}
             </div>
-          </SortableContext>
-        </DndContext>
       </main>
     </div>
   );

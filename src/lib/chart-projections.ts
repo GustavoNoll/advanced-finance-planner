@@ -1,6 +1,6 @@
 import { WithdrawalStrategy, calculateMonthlyWithdrawal } from './withdrawal-strategies';
 import { yearlyReturnRateToMonthlyReturnRate } from './financial-math';
-import { FinancialRecord, Goal } from '@/types/financial';
+import { FinancialRecord, Goal, MonthNumber } from '@/types/financial';
 
 interface InvestmentPlan {
   initial_amount: number;
@@ -17,10 +17,16 @@ interface InvestmentPlan {
 
 interface ChartDataPoint {
   age: string;
+  year: number;
   actualValue?: number | null;
   projectedValue?: number;
-  goalAchievedProjected?: boolean;
-  goalAchievedActual?: boolean;
+  realDataPoint?: boolean;
+}
+
+interface GoalForChart extends Goal {
+  year: number;
+  month: MonthNumber;
+  value: number;
 }
 
 export function generateChartProjections(
@@ -37,6 +43,30 @@ export function generateChartProjections(
     return 120;
   };
 
+  // Convert goals to GoalForChart
+  const goalsForChart = goals?.flatMap(goal => {
+    const baseGoal = {
+      ...goal,
+      year: goal.year,
+      month: goal.month as MonthNumber,
+      value: goal.asset_value
+    };
+
+    if (!goal.installment_project || !goal.installment_count) {
+      return [baseGoal];
+    }
+
+    // Create installments
+    return Array.from({ length: goal.installment_count }, (_, index) => ({
+      ...baseGoal,
+      month: (((goal.month - 1 + index) % 12) + 1) as MonthNumber,
+      year: goal.year + Math.floor((goal.month - 1 + index) / 12),
+      value: goal.asset_value / goal.installment_count,
+      isInstallment: true,
+      installmentNumber: index + 1
+    }));
+  });
+
   const endAge = getEndAge();
   const yearsUntilEnd = endAge - investmentPlan.initial_age;
   const allAges = Array.from(
@@ -44,7 +74,7 @@ export function generateChartProjections(
     (_, i) => investmentPlan.initial_age + i
   );
 
-  const projectedValues = generateProjectedPortfolioValues(investmentPlan, allAges, endAge, withdrawalStrategy, goals);
+  const projectedValues = generateProjectedPortfolioValues(investmentPlan, allAges, endAge, withdrawalStrategy, goalsForChart);
   const actualValues = generateHistoricalPortfolioValues(
     profile,
     investmentPlan,
@@ -52,15 +82,18 @@ export function generateChartProjections(
     allAges,
     endAge,
     withdrawalStrategy,
-    goals
+    goalsForChart
   );
+
+
+  const birthYear = new Date().getFullYear() - investmentPlan.initial_age;
 
   return allAges.map(age => ({
     age: age.toString(),
+    year: birthYear + age,
     actualValue: actualValues.find(v => v.age === age)?.actualValue,
     projectedValue: projectedValues.find(v => v.age === age)?.projectedValue,
-    goalAchievedProjected: projectedValues.find(v => v.age === age)?.goalAchieved,
-    goalAchievedActual: actualValues.find(v => v.age === age)?.goalAchieved
+    realDataPoint: actualValues.find(v => v.age === age)?.realDataPoint
   }));
 }
 
@@ -69,7 +102,7 @@ function generateProjectedPortfolioValues(
   allAges: number[],
   endAge: number,
   withdrawalStrategy: WithdrawalStrategy,
-  goals?: Goal[]
+  goals?: GoalForChart[]
 ) {
   const monthlyReturnRate = yearlyReturnRateToMonthlyReturnRate(
     investmentPlan.expected_return/100 + investmentPlan.inflation/100
@@ -79,29 +112,26 @@ function generateProjectedPortfolioValues(
   let currentBalance = investmentPlan.initial_amount;
   let currentMonthlyDeposit = investmentPlan.monthly_deposit;
   let currentMonthlyWithdrawal = investmentPlan.desired_income;
-  
-  // Sort goals by priority (lower number = higher priority)
-  const pendingGoals = goals 
-    ? [...goals].sort((a, b) => a.priority - b.priority)
-    : [];
+  const birthYear = new Date().getFullYear() - investmentPlan.initial_age;
 
   return allAges.map(age => {
-    let goalAchievedThisYear = false;
+    const currentYear = birthYear + age;
     
     for (let month = 0; month < 12; month++) {
+      // Handle goals for current month/year
+      const currentGoals = goals?.filter(goal => 
+        goal.year === currentYear && goal.month === (month + 1)
+      );
+      
+      if (currentGoals?.length) {
+        const totalGoalWithdrawal = currentGoals.reduce((sum, goal) => sum + goal.value, 0);
+        currentBalance -= totalGoalWithdrawal;
+      }
+
       if (investmentPlan.adjust_contribution_for_inflation) {
         currentMonthlyDeposit *= (1 + monthlyInflationRate);
       }
       currentMonthlyWithdrawal *= (1 + monthlyInflationRate);
-
-      if (pendingGoals.length > 0) {
-        const highestPriorityGoal = pendingGoals[0];
-        if (currentBalance >= highestPriorityGoal.target_amount) {
-          currentBalance -= highestPriorityGoal.target_amount;
-          pendingGoals.shift();
-          goalAchievedThisYear = true;
-        }
-      }
 
       const isRetirementAge = age >= investmentPlan.final_age;
       
@@ -128,8 +158,10 @@ function generateProjectedPortfolioValues(
     
     return {
       age,
+      year: currentYear,
       projectedValue: Math.round(Math.max(0, currentBalance)),
-      goalAchieved: goalAchievedThisYear
+      actualValue: null,
+      realDataPoint: false
     };
   });
 }
@@ -141,7 +173,7 @@ function generateHistoricalPortfolioValues(
   allAges: number[],
   endAge: number,
   withdrawalStrategy: WithdrawalStrategy,
-  goals?: Goal[]
+  goals?: GoalForChart[]
 ) {
   const birthYear = new Date(profile.birth_date).getFullYear();
 
@@ -160,34 +192,17 @@ function generateHistoricalPortfolioValues(
   let currentMonthlyDeposit = investmentPlan.monthly_deposit;
   let currentMonthlyWithdrawal = investmentPlan.desired_income;
 
-  // Sort goals by priority (lower number = higher priority)
-  const pendingGoals = goals 
-    ? [...goals].sort((a, b) => a.priority - b.priority)
-    : [];
-
   return allAges.map(age => {
-    let goalAchievedThisYear = false;
     const year = birthYear + age;
     const record = financialRecordsByYear.find(record => record.record_year === year);
-    
     if (record) {
       beforeFirstRecord = false;
       lastBalance = record.ending_balance;
-
-      if (pendingGoals.length > 0) {
-        const highestPriorityGoal = pendingGoals[0];
-        if (lastBalance >= highestPriorityGoal.target_amount) {
-          lastBalance -= highestPriorityGoal.target_amount;
-          pendingGoals.shift();
-          goalAchievedThisYear = true;
-        }
-      }
-
-      return { age, actualValue: lastBalance, goalAchieved: goalAchievedThisYear };
+      return { age, year, actualValue: lastBalance, projectedValue: null, realDataPoint: true };
     }
 
     if (beforeFirstRecord) {
-      return { age, actualValue: 0 };
+      return { age, year, actualValue: 0, projectedValue: null, realDataPoint: false };
     }
 
     const monthlyReturnRate = yearlyReturnRateToMonthlyReturnRate(
@@ -197,19 +212,20 @@ function generateHistoricalPortfolioValues(
     const isRetirementAge = age >= investmentPlan.final_age;
 
     for (let month = 0; month < 12; month++) {
+      // Handle goals for current month/year
+      const currentGoals = goals?.filter(goal => 
+        goal.year === year && goal.month === (month + 1)
+      );
+      
+      if (currentGoals?.length) {
+        const totalGoalWithdrawal = currentGoals.reduce((sum, goal) => sum + goal.value, 0);
+        lastBalance -= totalGoalWithdrawal;
+      }
+
       if (investmentPlan.adjust_contribution_for_inflation) {
         currentMonthlyDeposit *= (1 + monthlyInflationRate);
       }
       currentMonthlyWithdrawal *= (1 + monthlyInflationRate);
-
-      if (pendingGoals.length > 0) {
-        const highestPriorityGoal = pendingGoals[0];
-        if (lastBalance >= highestPriorityGoal.target_amount) {
-          lastBalance -= highestPriorityGoal.target_amount;
-          pendingGoals.shift();
-          goalAchievedThisYear = true;
-        }
-      }
 
       if (isRetirementAge) {
         const monthsUntilEnd = (endAge - age) * 12 - month;
@@ -232,10 +248,13 @@ function generateHistoricalPortfolioValues(
       }
     }
 
+
     return { 
       age, 
-      actualValue: Math.max(0, lastBalance),
-      goalAchieved: goalAchievedThisYear 
+      year,
+      actualValue: Math.round(Math.max(0, lastBalance)),
+      realDataPoint: false,
+      projectedValue: null
     };
   });
 } 

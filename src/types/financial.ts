@@ -47,12 +47,13 @@ export type MonthNumber = 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12;
 
 export interface Goal {
   id: string;
-  user_id: string;
-  title: string;
+  profile_id: string;
   icon: 'house' | 'car' | 'education' | 'retirement' | 'travel' | 'emergency' | 'other';
-  target_amount: number;
-  target_date?: string;
-  priority: number;
+  asset_value: number;
+  month: MonthNumber;
+  year: number;
+  installment_project: boolean;
+  installment_count?: number;
   created_at?: string;
   updated_at?: string;
 }

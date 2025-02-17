@@ -13,7 +13,6 @@ import { useEffect, useMemo, useCallback, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Spinner } from "@/components/ui/spinner";
 import { FinancialRecord } from "@/types/financial";
-import { useQueryClient } from "@tanstack/react-query";
 import { WithdrawalStrategy } from '@/lib/withdrawal-strategies';
 import {
   HoverCard,
@@ -30,7 +29,6 @@ const Index = () => {
   const clientId = params.id || user?.id;
   const { t } = useTranslation();
   const [selectedPeriod, setSelectedPeriod] = useState<TimePeriod>('all');
-  const queryClient = useQueryClient();
   const [withdrawalStrategy, setWithdrawalStrategy] = useState<WithdrawalStrategy>({
     type: 'fixed'
   });

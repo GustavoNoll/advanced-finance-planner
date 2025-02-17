@@ -64,7 +64,8 @@ export const ExpenseChart = ({
         .from("financial_goals")
         .select("*")
         .eq("profile_id", clientId)
-        .order("priority", { ascending: true });
+        .order("year", { ascending: true })
+        .order("month", { ascending: true });
 
       if (error) throw error;
       return data;
@@ -149,7 +150,7 @@ export const ExpenseChart = ({
 
           {/* Update reference lines for goals */}
           {goals
-            ?.sort((a, b) => a.priority - b.priority)
+            ?.sort((a, b) => a.year - b.year)
             .reduce((acc: React.ReactNode[], goal, index, sortedGoals) => {
               // Get the last achievement age from previous goals
               const lastAchievementAge = index > 0 
@@ -180,47 +181,6 @@ export const ExpenseChart = ({
                       value: `${goalIcons[goal.icon]}`,
                       position: 'top',
                       fill: 'blue',
-                      fontSize: 14,
-                      dy: 0,
-                      className: "font-medium"
-                    }}
-                  />
-                );
-              }
-              return acc;
-            }, [])}
-
-            {goals
-            ?.sort((a, b) => a.priority - b.priority)
-            .reduce((acc: React.ReactNode[], goal, index, sortedGoals) => {
-              // Get the last achievement age from previous goals
-              const lastAchievementAge = index > 0 
-                ? Number(acc[index - 1]?.props?.x ?? 0)
-                : 0;
-
-              // Find the first data point where a goal is achieved after the last goal
-              const achievementPoint = chartData.find(
-                point => 
-                  point.goalAchievedProjected && 
-                  Number(point.age) > lastAchievementAge
-              );
-              
-              // Only add reference line if:
-              // 1. We found an achievement point
-              // 2. The initial value is less than the goal (to avoid showing goals already achieved)
-              if (achievementPoint && 
-                  (chartData[0]?.actualValue ?? chartData[0]?.projectedValue) < goal.target_amount) {
-                acc.push(
-                  <ReferenceLine
-                    key={`${goal.id}-projected`}
-                    x={achievementPoint.age}
-                    stroke="#f97316"
-                    strokeDasharray="3 3"
-                    ifOverflow="extendDomain"
-                    label={{
-                      value: `${goalIcons[goal.icon]}`,
-                      position: 'top',
-                      fill: '#f97316',
                       fontSize: 14,
                       dy: 0,
                       className: "font-medium"
