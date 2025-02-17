@@ -103,10 +103,10 @@ export const CreatePlan = () => {
         if (profile) {
           newFormData.expectedReturn = profile.return;
         }
-      } else if (e.target.type === 'checkbox') {
+      } else if (name === 'adjustContributionForInflation') {
         newFormData.adjustContributionForInflation = checked;
-      } else {
-        newFormData[name as keyof FormData] = value;
+      } else if (name in prev) {
+        (newFormData as any)[name] = value;
       }
       
       if (isCalculationReady(newFormData)) {
@@ -410,16 +410,13 @@ export const CreatePlan = () => {
                   <div className="flex items-center space-x-2">
                     <input
                       type="checkbox"
-                      id="adjust_contribution_for_inflation"
-                      name="adjust_contribution_for_inflation"
+                      id="adjustContributionForInflation"
+                      name="adjustContributionForInflation"
                       checked={formData.adjustContributionForInflation}
-                      onChange={(e) => setFormData(prev => ({
-                        ...prev,
-                        adjust_contribution_for_inflation: e.target.checked
-                      }))}
+                      onChange={handleChange}
                       className="h-4 w-4 rounded border-gray-300"
                     />
-                    <label htmlFor="adjust_contribution_for_inflation" className="text-sm font-medium text-gray-700">
+                    <label htmlFor="adjustContributionForInflation" className="text-sm font-medium text-gray-700">
                       {t('investmentPlan.form.adjustContributionForInflation')}
                     </label>
                   </div>
