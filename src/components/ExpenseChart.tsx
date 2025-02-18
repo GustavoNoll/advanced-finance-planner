@@ -297,7 +297,7 @@ export const ExpenseChart = ({
       >
         <LineChart 
           data={chartData}
-          margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
+          margin={{ top: 20, right: 30, left: 50, bottom: 5 }}
         >
           <defs>
             <linearGradient id="colorUv" x1="0" y1="0" x2="1" y2="0">
