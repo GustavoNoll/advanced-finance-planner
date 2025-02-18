@@ -10,8 +10,19 @@ export interface FinancialRecord {
   ending_balance: number;
   target_rentability?: number;
   growth_percentage?: number;
+  events_balance: number | null;
   created_at?: string;
   updated_at?: string;
+  selected_items?: SelectedGoalsEvents;
+}
+
+export interface ChartDataPoint {
+  age: string;
+  year: number;
+  actualValue?: number | null;
+  projectedValue?: number;
+  realDataPoint?: boolean;
+  realValue?: number;
 }
 
 export type CreateFinancialRecord = Omit<FinancialRecord, 'id' | 'created_at' | 'updated_at'>;
@@ -54,10 +65,27 @@ export interface Goal {
   year: number;
   installment_project: boolean;
   installment_count?: number;
+  status?: 'pending' | 'completed';
   created_at?: string;
   updated_at?: string;
+  description?: string;
 }
 
 export type CreateGoal = Omit<Goal, 'id' | 'created_at' | 'updated_at'>;
 
 export type UpdateGoal = Partial<CreateGoal>;
+
+export interface ProjectedEvent {
+  id: string;
+  name: string;
+  amount: number;
+  status: 'pending' | 'completed' | 'projected';
+  month: MonthNumber;
+  year: number;
+}
+
+export interface SelectedGoalsEvents {
+  goals: string[];
+  events: string[];
+  totalValue: number;
+}

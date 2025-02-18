@@ -1,6 +1,6 @@
 import { WithdrawalStrategy, calculateMonthlyWithdrawal } from './withdrawal-strategies';
 import { yearlyReturnRateToMonthlyReturnRate } from './financial-math';
-import { FinancialRecord, Goal, MonthNumber } from '@/types/financial';
+import { ChartDataPoint, FinancialRecord, Goal, MonthNumber } from '@/types/financial';
 
 interface InvestmentPlan {
   initial_amount: number;
@@ -13,14 +13,6 @@ interface InvestmentPlan {
   adjust_contribution_for_inflation: boolean;
   plan_type: string;
   limit_age?: number;
-}
-
-interface ChartDataPoint {
-  age: string;
-  year: number;
-  actualValue?: number | null;
-  projectedValue?: number;
-  realDataPoint?: boolean;
 }
 
 interface GoalForChart extends Goal {
@@ -87,7 +79,7 @@ export function generateChartProjections(
 
 
   const birthYear = new Date().getFullYear() - investmentPlan.initial_age;
-
+  console.log(actualValues)
   return allAges.map(age => ({
     age: age.toString(),
     year: birthYear + age,

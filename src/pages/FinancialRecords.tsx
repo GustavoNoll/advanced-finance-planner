@@ -23,6 +23,18 @@ interface CSVRecord {
   Retorno: string;
   RetornoPercentual: string;
   RentabilidadeMeta: string;
+  Eventos: string;
+}
+
+interface CSVRow {
+  Data: string;
+  PatrimonioInicial: string;
+  Aporte: string;
+  PatrimonioFinal: string;
+  Retorno: string;
+  RetornoPercentual: string;
+  RentabilidadeMeta: string;
+  Eventos: string;
 }
 
 interface ValidationResult {
@@ -39,6 +51,24 @@ interface ImportResult {
 interface LocationState {
   records?: FinancialRecord[];
 }
+
+interface CSVRecordValidation {
+  record_year: number;
+  record_month: number;
+  starting_balance: number;
+  ending_balance: number;
+  monthly_contribution: number;
+  monthly_return: number;
+}
+
+const sortRecords = (records: FinancialRecord[]) => {
+  return records.sort((a, b) => {
+    if (a.record_year !== b.record_year) {
+      return b.record_year - a.record_year;
+    }
+    return b.record_month - a.record_month;
+  });
+};
 
 const FinancialRecords = () => {
   const { user } = useAuth();
@@ -75,6 +105,7 @@ const FinancialRecords = () => {
     },
     initialData: initialRecords,
     enabled: !!clientId,
+    staleTime: 0,
   });
 
   const { data: investmentPlan } = useQuery({
@@ -103,7 +134,7 @@ const FinancialRecords = () => {
   };
 
   const deleteMutation = useMutation({
-    mutationFn: async (recordId: number) => {
+    mutationFn: async (recordId: string) => {
       const { error } = await supabase
         .from('user_financial_records')
         .delete()
@@ -114,7 +145,8 @@ const FinancialRecords = () => {
     },
     onSuccess: (deletedId) => {
       queryClient.setQueryData(['financialRecords', clientId], (oldData: FinancialRecord[] | undefined) => {
-        return oldData?.filter(record => record.id !== deletedId) || [];
+        if (!oldData) return [];
+        return sortRecords(oldData.filter(record => record.id !== deletedId));
       });
       
       toast({
@@ -143,7 +175,7 @@ const FinancialRecords = () => {
         existingRecords?.map(r => `${r.record_year}-${r.record_month}`) || []
       );
 
-      const validateRecord = (record: any): ValidationResult => {
+      const validateRecord = (record: CSVRecordValidation): ValidationResult => {
         if (!record.record_year || !record.record_month) {
           return { valid: false, error: 'Data inválida' };
         }
@@ -185,6 +217,7 @@ const FinancialRecords = () => {
             target_rentability: parseFloat(record.RentabilidadeMeta.replace('%', '').replace(',', '.')),
             growth_percentage: null,
             monthly_return: parseFloat(record.Retorno.replace('R$ ', '').replace('.', '').replace(',', '.')),
+            events_balance: record.Eventos ? parseFloat(record.Eventos.replace('R$ ', '').replace('.', '').replace(',', '.')) : null,
           };
           formattedRecord.growth_percentage = ((formattedRecord.ending_balance - formattedRecord.starting_balance) / formattedRecord.starting_balance) * 100;
 
@@ -307,9 +340,9 @@ const FinancialRecords = () => {
     },
   });
 
-  const handleDelete = async (recordId: number) => {
+  const handleDelete = (recordId: string) => {
     if (window.confirm(t('financialRecords.confirmDelete'))) {
-      await deleteMutation.mutate(recordId);
+      deleteMutation.mutate(recordId);
     }
   };
 
@@ -343,7 +376,7 @@ const FinancialRecords = () => {
       skipEmptyLines: true,
       complete: async (results) => {
         const records = results.data
-          .map((row: any) => {
+          .map((row: CSVRow) => {
             if (Object.keys(row).length >= 6) {
               const record: CSVRecord = {
                 Data: row.Data,
@@ -352,7 +385,8 @@ const FinancialRecords = () => {
                 PatrimonioFinal: row.PatrimonioFinal,
                 RetornoPercentual: row.RetornoPercentual,
                 RentabilidadeMeta: row.RentabilidadeMeta,
-                Retorno: row.Retorno
+                Retorno: row.Retorno,
+                Eventos: row.Eventos
               };
               return record;
             }
@@ -457,6 +491,7 @@ const FinancialRecords = () => {
                         <th className="whitespace-nowrap px-3 py-2 text-left font-medium text-gray-900 border-b">Retorno</th>
                         <th className="whitespace-nowrap px-3 py-2 text-left font-medium text-gray-900 border-b">RetornoPercentual</th>
                         <th className="whitespace-nowrap px-3 py-2 text-left font-medium text-gray-900 border-b">RentabilidadeMeta</th>
+                        <th className="whitespace-nowrap px-3 py-2 text-left font-medium text-gray-900 border-b">Eventos</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -468,6 +503,7 @@ const FinancialRecords = () => {
                         <td className="whitespace-nowrap px-3 py-2 text-gray-700">R$ 1.000,00</td>
                         <td className="whitespace-nowrap px-3 py-2 text-gray-700">1,19%</td>
                         <td className="whitespace-nowrap px-3 py-2 text-gray-700">0,64%</td>
+                        <td className="whitespace-nowrap px-3 py-2 text-gray-700">R$ 500,00</td>
                       </tr>
                     </tbody>
                   </table>
@@ -545,6 +581,11 @@ const FinancialRecords = () => {
                   <div>
                     <p className="text-sm text-gray-500">{t('financialRecords.endingBalance')}</p>
                     <p className="font-semibold">{formatCurrency(record.ending_balance)}</p>
+                    {record.events_balance != null && record.events_balance !== 0 && (
+                      <p className="text-xs text-gray-500 mt-0.5">
+                        Eventos: {formatCurrency(record.events_balance)}
+                      </p>
+                    )}
                   </div>
                   <div>
                     <p className="text-sm text-gray-500">{t('financialRecords.growth')}</p>

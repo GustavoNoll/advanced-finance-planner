@@ -1,11 +1,13 @@
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend, ReferenceLine } from 'recharts';
 import { useTranslation } from "react-i18next";
-import { FinancialRecord, Goal } from '@/types/financial';
+import { ChartDataPoint, FinancialRecord, Goal } from '@/types/financial';
 import { WithdrawalStrategy } from '@/lib/withdrawal-strategies';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { generateChartProjections } from '@/lib/chart-projections';
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
+import { useState } from "react";
+import { goalIcons } from '@/constants/goals';
 
 interface Profile {
   birth_date: string;
@@ -33,17 +35,6 @@ interface ExpenseChartProps {
   withdrawalStrategy?: WithdrawalStrategy;
 }
 
-// Add goalIcons constant (you might want to move this to a shared constants file)
-const goalIcons = {
-  house: "🏠",
-  car: "🚗",
-  education: "🎓",
-  retirement: "👴",
-  travel: "✈️",
-  emergency: "🚨",
-  other: "🎯",
-};
-
 export const ExpenseChart = ({ 
   profile, 
   investmentPlan, 
@@ -55,6 +46,7 @@ export const ExpenseChart = ({
   onWithdrawalStrategyChange?: (strategy: WithdrawalStrategy) => void;
 }) => {
   const { t } = useTranslation();
+  const [zoomLevel, setZoomLevel] = useState<'1y' | '5y' | '10y' | 'all'>('all');
   
   // Add query for financial goals
   const { data: goals } = useQuery<Goal[]>({
@@ -64,6 +56,7 @@ export const ExpenseChart = ({
         .from("financial_goals")
         .select("*")
         .eq("profile_id", clientId)
+        .eq("status", "pending")
         .order("year", { ascending: true })
         .order("month", { ascending: true });
 
@@ -80,38 +73,102 @@ export const ExpenseChart = ({
     );
   }
 
-  const chartData = generateChartProjections(
+  const getZoomedData = (data: ChartDataPoint[]) => {
+    if (zoomLevel === 'all') return data;
+    
+    const currentAge = Number(data[0]?.age);
+    const yearsToShow = {
+      '1y': 1,
+      '5y': 5,
+      '10y': 10,
+    }[zoomLevel];
+
+    return data.filter(point => 
+      Number(point.age) >= currentAge && 
+      Number(point.age) <= currentAge + yearsToShow
+    );
+  };
+
+  const chartData = getZoomedData(generateChartProjections(
     profile,
     investmentPlan,
     financialRecordsByYear,
     withdrawalStrategy,
     goals
-  );
+  ));
+
+  console.log(chartData);
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between mb-4">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-4">
         <h2 className="text-lg font-semibold">{t('dashboard.charts.portfolioPerformance')}</h2>
-        <Select
-          value={withdrawalStrategy.type}
-          onValueChange={(value) => {
-            onWithdrawalStrategyChange?.({
-              type: value as WithdrawalStrategy['type'],
-              monthlyAmount: value === 'fixed' ? investmentPlan?.desired_income : undefined,
-              targetLegacy: value === 'legacy' ? 1000000 : undefined
-            });
-          }}
-        >
-          <SelectTrigger className="w-[200px]">
-            <SelectValue placeholder={t('expenseChart.selectStrategy')} />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="fixed">{t('monthlyView.futureProjection.strategies.fixed')}</SelectItem>
-            <SelectItem value="preservation">{t('monthlyView.futureProjection.strategies.preservation')}</SelectItem>
-            <SelectItem value="spend-all">{t('monthlyView.futureProjection.strategies.spendAll')}</SelectItem>
-            <SelectItem value="legacy">{t('monthlyView.futureProjection.strategies.legacy')}</SelectItem>
-          </SelectContent>
-        </Select>
+        
+        <div className="flex flex-wrap items-center gap-4">
+          <div className="inline-flex items-center rounded-md border border-gray-200 p-1 bg-gray-50">
+            <button
+              onClick={() => setZoomLevel('1y')}
+              className={`px-3 py-1.5 text-sm font-medium rounded-md transition-colors ${
+                zoomLevel === '1y' 
+                  ? 'bg-white text-blue-600 shadow-sm' 
+                  : 'text-gray-600 hover:text-gray-900'
+              }`}
+            >
+              {t('common.last1YearS')}
+            </button>
+            <button
+              onClick={() => setZoomLevel('5y')}
+              className={`px-3 py-1.5 text-sm font-medium rounded-md transition-colors ${
+                zoomLevel === '5y' 
+                  ? 'bg-white text-blue-600 shadow-sm' 
+                  : 'text-gray-600 hover:text-gray-900'
+              }`}
+            >
+              {t('common.last5YearsS')}
+            </button>
+            <button
+              onClick={() => setZoomLevel('10y')}
+              className={`px-3 py-1.5 text-sm font-medium rounded-md transition-colors ${
+                zoomLevel === '10y' 
+                  ? 'bg-white text-blue-600 shadow-sm' 
+                  : 'text-gray-600 hover:text-gray-900'
+              }`}
+            >
+              {t('common.last10YearsS')}
+            </button>
+            <button
+              onClick={() => setZoomLevel('all')}
+              className={`px-3 py-1.5 text-sm font-medium rounded-md transition-colors ${
+                zoomLevel === 'all' 
+                  ? 'bg-white text-blue-600 shadow-sm' 
+                  : 'text-gray-600 hover:text-gray-900'
+              }`}
+            >
+              {t('common.all')}
+            </button>
+          </div>
+
+          <Select
+            value={withdrawalStrategy.type}
+            onValueChange={(value) => {
+              onWithdrawalStrategyChange?.({
+                type: value as WithdrawalStrategy['type'],
+                monthlyAmount: value === 'fixed' ? investmentPlan?.desired_income : undefined,
+                targetLegacy: value === 'legacy' ? 1000000 : undefined
+              });
+            }}
+          >
+            <SelectTrigger className="w-[180px]">
+              <SelectValue placeholder={t('expenseChart.selectStrategy')} />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="fixed">{t('monthlyView.futureProjection.strategies.fixed')}</SelectItem>
+              <SelectItem value="preservation">{t('monthlyView.futureProjection.strategies.preservation')}</SelectItem>
+              <SelectItem value="spend-all">{t('monthlyView.futureProjection.strategies.spendAll')}</SelectItem>
+              <SelectItem value="legacy">{t('monthlyView.futureProjection.strategies.legacy')}</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
       </div>
 
       <ResponsiveContainer 
@@ -145,6 +202,10 @@ export const ExpenseChart = ({
                 currency: 'BRL'
               }).format(value)
             }
+            labelFormatter={(label) => {
+              const dataPoint = chartData.find(point => point.age === label);
+              return `${label} ${t('expenseChart.years')} (${dataPoint?.year})`;
+            }}
           />
           <Legend />
 
@@ -152,28 +213,19 @@ export const ExpenseChart = ({
           {goals
             ?.sort((a, b) => a.year - b.year)
             .reduce((acc: React.ReactNode[], goal, index, sortedGoals) => {
-              // Get the last achievement age from previous goals
-              const lastAchievementAge = index > 0 
-                ? Number(acc[index - 1]?.props?.x ?? 0)
-                : 0;
-              console.log(lastAchievementAge);
-              // Find the first data point where a goal is achieved after the last goal
-              console.log(chartData);
               const achievementPoint = chartData.find(
-                point => 
-                  point.goalAchievedActual && 
-                  Number(point.age) > lastAchievementAge
+                point => point.year === goal.year
               );
               
-              // Only add reference line if:
-              // 1. We found an achievement point
-              // 2. The initial value is less than the goal (to avoid showing goals already achieved)
-              if (achievementPoint) {
-                console.log(achievementPoint);
+              const age = achievementPoint?.age;
+              if (
+                achievementPoint && 
+                goal.status === 'pending'
+              ) {
                 acc.push(
                   <ReferenceLine
                     key={`${goal.id}-actual`}
-                    x={achievementPoint.age}
+                    x={String(age)}
                     stroke="blue"
                     strokeDasharray="3 3"
                     ifOverflow="extendDomain"
@@ -191,16 +243,19 @@ export const ExpenseChart = ({
               return acc;
             }, [])}
 
+          {/* Line for actual values (solid) */}
           <Line 
             type="natural"
-            dataKey="actualValue" 
+            dataKey="actualValue"
             stroke="#3b82f6"
             name={t('expenseChart.actualValue')}
             strokeWidth={2.5}
             connectNulls
             dot={false}
             activeDot={{ r: 6, strokeWidth: 0 }}
+            //data={chartData.filter(point => point.realDataPoint)}
           />
+        
           <Line 
             type="natural"
             dataKey="projectedValue" 

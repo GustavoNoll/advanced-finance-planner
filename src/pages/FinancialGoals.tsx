@@ -56,6 +56,7 @@ const FinancialGoals = () => {
   const { t } = useTranslation();
   const queryClient = useQueryClient();
   const [showAddForm, setShowAddForm] = useState(false);
+  const [showCompleted, setShowCompleted] = useState(false);
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -95,6 +96,7 @@ const FinancialGoals = () => {
           year: parseInt(values.goal_year),
           installment_project: values.installment_project,
           installment_count: values.installment_project ? parseInt(values.installment_count || "0") : null,
+          status: 'pending',
         },
       ]);
 
@@ -138,6 +140,20 @@ const FinancialGoals = () => {
         title: t("financialGoals.messages.deleteError"),
         variant: "destructive",
       });
+    },
+  });
+
+  const toggleGoalStatus = useMutation({
+    mutationFn: async ({ goalId, status }: { goalId: string; status: 'pending' | 'completed' }) => {
+      const { error } = await supabase
+        .from("financial_goals")
+        .update({ status })
+        .eq("id", goalId);
+
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["financial-goals"] });
     },
   });
 
@@ -316,6 +332,10 @@ const FinancialGoals = () => {
     </Form>
   );
 
+  // Separate goals into projected and completed
+  const projectedGoals = goals?.filter(goal => goal.status === 'pending') || [];
+  const completedGoals = goals?.filter(goal => goal.status === 'completed') || [];
+
   return (
     <div className="min-h-screen bg-gradient-to-b from-gray-50 to-gray-100">
       <header className="bg-white border-b">
@@ -361,20 +381,48 @@ const FinancialGoals = () => {
       </div>
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="space-y-6">
+          <div className="space-y-4">
+            <h2 className="text-lg font-medium">{t("financialGoals.projected")}</h2>
+            {projectedGoals.map((goal) => (
+              <GoalCard
+                key={goal.id}
+                goal={goal}
+                onDelete={() => {
+                  if (window.confirm(t("common.confirmDelete"))) {
+                    deleteGoal.mutate(goal.id);
+                  }
+                }}
+              />
+            ))}
+          </div>
 
-            <div className="space-y-4">
-              {goals?.map((goal) => (
-                <GoalCard
-                  key={goal.id}
-                  goal={goal}
-                  onDelete={() => {
-                    if (window.confirm(t("common.confirmDelete"))) {
-                      deleteGoal.mutate(goal.id);
-                    }
-                  }}
-                />
-              ))}
-            </div>
+          <div>
+            <Button
+              variant="ghost"
+              onClick={() => setShowCompleted(!showCompleted)}
+              className="w-full justify-start text-gray-500"
+            >
+              {showCompleted ? t("financialGoals.hideCompleted") : t("financialGoals.showCompleted")}
+            </Button>
+            
+            {showCompleted && completedGoals.length > 0 && (
+              <div className="mt-4 space-y-4">
+                {completedGoals.map((goal) => (
+                  <GoalCard
+                    key={goal.id}
+                    goal={goal}
+                    onDelete={() => {
+                      if (window.confirm(t("common.confirmDelete"))) {
+                        deleteGoal.mutate(goal.id);
+                      }
+                    }}
+                  />
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
       </main>
     </div>
   );

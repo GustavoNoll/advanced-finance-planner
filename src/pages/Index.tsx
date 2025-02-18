@@ -283,6 +283,7 @@ const Index = () => {
           .from('financial_goals')
           .select('*', { count: 'exact', head: true })
           .eq('profile_id', clientId)
+          .eq('status', 'pending')
           .or(`year.gt.${currentYear},and(year.eq.${currentYear},month.gte.${currentMonth})`),
         supabase
           .from('events')

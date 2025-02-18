@@ -205,6 +205,10 @@ export const ptBR = {
     }
   },
   common: {
+    last1YearS: "1A",
+    last5YearsS: "5A",
+    last10YearsS: "10A",
+    all: "Todos",
     allTime: "Todos os Tempos",
     last6Months: "Últimos 6 Meses",
     last12Months: "Últimos 12 Meses",
@@ -342,6 +346,7 @@ export const ptBR = {
     portfolioValue: "Valor do Portfólio",
     inflationAdjusted: "Ajustado pela Inflação",
     actualValue: "Valor Real",
+    actualValueProjection: "Valor Real Projetado",
     projectedValue: "Valor Projetado",
     years: "anos",
     goalAchievement: "Meta atingida"
@@ -395,7 +400,13 @@ export const ptBR = {
       monthlyReturnRate: "Taxa de Rendimento Mensal (%)",
       endingBalance: "Saldo Final",
       targetRentability: "Rentabilidade Alvo (%)",
-      submit: "Salvar Registro"
+      submit: "Salvar Registro",
+      goalsAndEvents: 'Objetivos e Eventos Pendentes',
+      noGoalsOrEvents: 'Não há objetivos ou eventos pendentes para este período',
+      goals: 'Objetivos',
+      events: 'Eventos',
+      selectedTotal: 'Saldo de Eventos Selecionados',
+      eventsBalance: 'Saldo de Eventos'
     },
     importTitle: "Importar Registros",
     importInstructions: "Selecione um arquivo CSV ou TXT com os registros financeiros. O arquivo deve seguir o formato abaixo:",
@@ -481,6 +492,8 @@ export const ptBR = {
     title: "Objetivos Financeiros",
     addNew: "Novo Objetivo",
     newGoal: "Novo Objetivo Financeiro",
+    projected: "Objetivos Projetados",
+    showCompleted: "Mostrar Objetivos Concluídos",
     messages: {
       createSuccess: "Objetivo criado com sucesso",
       createError: "Erro ao criar objetivo",
