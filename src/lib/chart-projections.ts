@@ -15,10 +15,18 @@ interface InvestmentPlan {
   limit_age?: number;
 }
 
+interface DataPoint {
+  age: string;
+  month: MonthNumber;
+  year: number;
+}
+
 interface GoalForChart extends Goal {
   year: number;
   month: MonthNumber;
   value: number;
+  isInstallment?: boolean;
+  installmentNumber?: number;
 }
 
 export function generateChartProjections(
@@ -29,15 +37,55 @@ export function generateChartProjections(
   goals?: Goal[],
   events?: ProjectedEvent[]
 ): ChartDataPoint[] {
-  const getEndAge = () => {
-    if ((investmentPlan.plan_type === "1" || investmentPlan.plan_type === "2") && investmentPlan.limit_age) {
-      return investmentPlan.limit_age;
-    }
-    return 120;
-  };
+  const birthYear = new Date(profile.birth_date).getFullYear();
+  const endAge = getEndAge(investmentPlan);
+  const yearsUntilEnd = endAge - investmentPlan.initial_age;
+  const goalsForChart = processGoals(goals);
+  
+  // Generate monthly data points
+  const allDataPoints = generateDataPoints(investmentPlan, yearsUntilEnd, birthYear);
 
-  // Convert goals to GoalForChart
-  const goalsForChart = goals?.flatMap(goal => {
+  const projectedValues = generateProjectedPortfolioValues(
+    investmentPlan,
+    allDataPoints,
+    endAge,
+    withdrawalStrategy,
+    goalsForChart,
+    events
+  );
+
+  const actualValues = generateHistoricalPortfolioValues(
+    birthYear,
+    investmentPlan,
+    financialRecordsByYear,
+    allDataPoints,
+    endAge,
+    withdrawalStrategy,
+    goalsForChart,
+    events
+  );
+
+  return allDataPoints.map(point => ({
+    age: point.age,
+    year: point.year,
+    month: point.month,
+    actualValue: actualValues.find(v => v.age === point.age && v.month === point.month)?.actualValue,
+    projectedValue: projectedValues.find(v => v.age === point.age && v.month === point.month)?.projectedValue,
+    realDataPoint: actualValues.find(v => v.age === point.age && v.month === point.month)?.realDataPoint
+  }));
+}
+
+function getEndAge(investmentPlan: InvestmentPlan): number {
+  if ((investmentPlan.plan_type === "1" || investmentPlan.plan_type === "2") && investmentPlan.limit_age) {
+    return investmentPlan.limit_age;
+  }
+  return 120;
+}
+
+function processGoals(goals?: Goal[]): GoalForChart[] {
+  if (!goals) return [];
+  
+  return goals.flatMap(goal => {
     const baseGoal = {
       ...goal,
       year: goal.year,
@@ -49,7 +97,6 @@ export function generateChartProjections(
       return [baseGoal];
     }
 
-    // Create installments
     return Array.from({ length: goal.installment_count }, (_, index) => ({
       ...baseGoal,
       month: (((goal.month - 1 + index) % 12) + 1) as MonthNumber,
@@ -59,34 +106,25 @@ export function generateChartProjections(
       installmentNumber: index + 1
     }));
   });
+}
 
-  const endAge = getEndAge();
-  const yearsUntilEnd = endAge - investmentPlan.initial_age;
-  const allAges = Array.from(
-    { length: yearsUntilEnd + 1 }, 
-    (_, i) => investmentPlan.initial_age + i
+function generateDataPoints(
+  investmentPlan: InvestmentPlan,
+  yearsUntilEnd: number,
+  birthYear: number
+): DataPoint[] {
+  return Array.from(
+    { length: (yearsUntilEnd + 1) * 12 }, 
+    (_, i) => {
+      const monthsFromStart = i;
+      const age = investmentPlan.initial_age + (monthsFromStart / 12);
+      return {
+        age: age.toFixed(1),
+        month: ((monthsFromStart % 12) + 1) as MonthNumber,
+        year: birthYear + Math.floor(age)
+      };
+    }
   );
-
-  const birthYear = new Date(profile.birth_date).getFullYear();
-  const projectedValues = generateProjectedPortfolioValues(birthYear, investmentPlan, allAges, endAge, withdrawalStrategy, goalsForChart, events);
-  const actualValues = generateHistoricalPortfolioValues(
-    birthYear,
-    investmentPlan,
-    financialRecordsByYear,
-    allAges,
-    endAge,
-    withdrawalStrategy,
-    goalsForChart,
-    events
-  );
-
-  return allAges.map(age => ({
-    age: age.toString(),
-    year: birthYear + age,
-    actualValue: actualValues.find(v => v.age === age)?.actualValue,
-    projectedValue: projectedValues.find(v => v.age === age)?.projectedValue,
-    realDataPoint: actualValues.find(v => v.age === age)?.realDataPoint
-  }));
 }
 
 function handleMonthlyGoalsAndEvents(
@@ -122,9 +160,8 @@ function handleMonthlyGoalsAndEvents(
 }
 
 function generateProjectedPortfolioValues(
-  birthYear: number,
   investmentPlan: InvestmentPlan,
-  allAges: number[],
+  allDataPoints: DataPoint[],
   endAge: number,
   withdrawalStrategy: WithdrawalStrategy,
   goals?: GoalForChart[],
@@ -138,50 +175,48 @@ function generateProjectedPortfolioValues(
   let currentMonthlyDeposit = investmentPlan.monthly_deposit;
   let currentMonthlyWithdrawal = investmentPlan.desired_income;
 
-  return allAges.map(age => {
-    const currentYear = birthYear + age;
+  return allDataPoints.map(point => {
+    const age = parseFloat(point.age);
     
-    for (let month = 0; month < 12; month++) {
-      // Replace goals handling with new function
-      currentBalance = handleMonthlyGoalsAndEvents(
-        currentBalance,
-        currentYear,
-        month,
-        goals,
-        events
+    currentBalance = handleMonthlyGoalsAndEvents(
+      currentBalance,
+      point.year,
+      point.month - 1,
+      goals,
+      events
+    );
+
+    if (investmentPlan.adjust_contribution_for_inflation) {
+      currentMonthlyDeposit *= (1 + monthlyInflationRate);
+    }
+    currentMonthlyWithdrawal *= (1 + monthlyInflationRate);
+
+    const isRetirementAge = age >= investmentPlan.final_age;
+    
+    if (isRetirementAge) {
+      const monthsUntilEnd = (endAge - age) * 12;
+      const withdrawal = calculateMonthlyWithdrawal(
+        withdrawalStrategy,
+        {
+          currentBalance,
+          monthlyReturnRate,
+          monthlyInflationRate,
+          currentAge: age,
+          monthsUntilEnd,
+          currentMonth: point.month - 1,
+          desiredIncome: currentMonthlyWithdrawal
+        }
       );
-
-      if (investmentPlan.adjust_contribution_for_inflation) {
-        currentMonthlyDeposit *= (1 + monthlyInflationRate);
-      }
-      currentMonthlyWithdrawal *= (1 + monthlyInflationRate);
-
-      const isRetirementAge = age >= investmentPlan.final_age;
       
-      if (isRetirementAge) {
-        const monthsUntilEnd = (endAge - age) * 12 - month;
-        const withdrawal = calculateMonthlyWithdrawal(
-          withdrawalStrategy,
-          {
-            currentBalance,
-            monthlyReturnRate,
-            monthlyInflationRate,
-            currentAge: age,
-            monthsUntilEnd,
-            currentMonth: month,
-            desiredIncome: currentMonthlyWithdrawal
-          }
-        );
-        
-        currentBalance = (currentBalance - withdrawal) * (1 + monthlyReturnRate);
-      } else {
-        currentBalance = (currentBalance + currentMonthlyDeposit) * (1 + monthlyReturnRate);
-      }
+      currentBalance = (currentBalance - withdrawal) * (1 + monthlyReturnRate);
+    } else {
+      currentBalance = (currentBalance + currentMonthlyDeposit) * (1 + monthlyReturnRate);
     }
     
     return {
-      age,
-      year: currentYear,
+      age: point.age,
+      year: point.year,
+      month: point.month,
       projectedValue: Math.round(Math.max(0, currentBalance)),
       actualValue: null,
       realDataPoint: false
@@ -192,19 +227,17 @@ function generateProjectedPortfolioValues(
 function generateHistoricalPortfolioValues(
   birthYear: number,
   investmentPlan: InvestmentPlan,
-  financialRecordsByYear: FinancialRecord[],
-  allAges: number[],
+  allFinancialRecords: FinancialRecord[],
+  allDataPoints: DataPoint[],
   endAge: number,
   withdrawalStrategy: WithdrawalStrategy,
   goals?: GoalForChart[],
   events?: ProjectedEvent[]
 ) {
-
-  if (financialRecordsByYear.length === 0) {
+  if (allFinancialRecords.length === 0) {
     return generateProjectedPortfolioValues(
-      birthYear,
       investmentPlan,
-      allAges,
+      allDataPoints,
       endAge,
       withdrawalStrategy,
       goals,
@@ -212,72 +245,123 @@ function generateHistoricalPortfolioValues(
     );
   }
 
-  let beforeFirstRecord = true;
-  let lastBalance = 0;
+  // Sort records chronologically
+  const sortedRecords = allFinancialRecords.sort((a, b) => {
+    if (a.record_year !== b.record_year) {
+      return a.record_year - b.record_year;
+    }
+    return a.record_month - b.record_month;
+  });
+
+  const firstRecord = sortedRecords[0];
+  const lastRecord = sortedRecords[sortedRecords.length - 1];
+
+  // Initialize projection variables
+  const monthlyInflationRate = yearlyReturnRateToMonthlyReturnRate(investmentPlan.inflation/100);
+  const monthlyExpectedReturnRate = yearlyReturnRateToMonthlyReturnRate(investmentPlan.expected_return/100);
+  const monthlyReturnRate = calculateCompoundedRates([monthlyExpectedReturnRate, monthlyInflationRate]);
+  
+  let currentBalance = lastRecord.ending_balance;
   let currentMonthlyDeposit = investmentPlan.monthly_deposit;
   let currentMonthlyWithdrawal = investmentPlan.desired_income;
 
-  return allAges.map(age => {
-    const year = birthYear + age;
-    const record = financialRecordsByYear.find(record => record.record_year === year);
+  return allDataPoints.map(point => {
+    // Check if this point is before our first historical record
+    if (
+      point.year < firstRecord.record_year || 
+      (point.year === firstRecord.record_year && point.month < firstRecord.record_month)
+    ) {
+      return {
+        age: point.age,
+        year: point.year,
+        month: point.month,
+        actualValue: 0,
+        projectedValue: null,
+        realDataPoint: false
+      };
+    }
+
+    // Check if we have actual data for this point
+    const record = allFinancialRecords.find(record => 
+      record.record_year === point.year && 
+      record.record_month === point.month
+    );
+    
     if (record) {
-      beforeFirstRecord = false;
-      lastBalance = record.ending_balance;
-      return { age, year, actualValue: lastBalance, projectedValue: null, realDataPoint: true };
+      currentBalance = record.ending_balance; // Update balance for future projections
+      return {
+        age: point.age,
+        year: point.year,
+        month: point.month,
+        actualValue: record.ending_balance,
+        projectedValue: null,
+        realDataPoint: true
+      };
     }
 
-    if (beforeFirstRecord) {
-      return { age, year, actualValue: 0, projectedValue: null, realDataPoint: false };
-    }
-
-    const monthlyInflationRate = yearlyReturnRateToMonthlyReturnRate(investmentPlan.inflation/100);
-    const monthlyExpectedReturnRate = yearlyReturnRateToMonthlyReturnRate(investmentPlan.expected_return/100);
-    const monthlyReturnRate = calculateCompoundedRates([monthlyExpectedReturnRate, monthlyInflationRate]);
-    const isRetirementAge = age >= investmentPlan.final_age;
-
-    for (let month = 0; month < 12; month++) {
-      // Replace goals and events handling with new function
-      lastBalance = handleMonthlyGoalsAndEvents(
-        lastBalance,
-        year,
-        month,
+    // If this point is after our last historical record, project values
+    if (
+      point.year > lastRecord.record_year || 
+      (point.year === lastRecord.record_year && point.month > lastRecord.record_month)
+    ) {
+      const age = parseFloat(point.age);
+      
+      // Handle monthly goals and events
+      currentBalance = handleMonthlyGoalsAndEvents(
+        currentBalance,
+        point.year,
+        point.month - 1,
         goals,
         events
       );
 
+      // Apply inflation adjustments
       if (investmentPlan.adjust_contribution_for_inflation) {
         currentMonthlyDeposit *= (1 + monthlyInflationRate);
       }
       currentMonthlyWithdrawal *= (1 + monthlyInflationRate);
 
+      // Calculate balance changes based on retirement status
+      const isRetirementAge = age >= investmentPlan.final_age;
+      
       if (isRetirementAge) {
-        const monthsUntilEnd = (endAge - age) * 12 - month;
+        const monthsUntilEnd = (endAge - age) * 12;
         const withdrawal = calculateMonthlyWithdrawal(
           withdrawalStrategy,
           {
-            currentBalance: lastBalance,
+            currentBalance,
             monthlyReturnRate,
             monthlyInflationRate,
             currentAge: age,
             monthsUntilEnd,
-            currentMonth: month,
+            currentMonth: point.month - 1,
             desiredIncome: currentMonthlyWithdrawal
           }
         );
         
-        lastBalance = (lastBalance - withdrawal) * (1 + monthlyReturnRate);
+        currentBalance = (currentBalance - withdrawal) * (1 + monthlyReturnRate);
       } else {
-        lastBalance = (lastBalance + currentMonthlyDeposit) * (1 + monthlyReturnRate);
+        currentBalance = (currentBalance + currentMonthlyDeposit) * (1 + monthlyReturnRate);
       }
+
+      return {
+        age: point.age,
+        year: point.year,
+        month: point.month,
+        actualValue: Math.round(Math.max(0, currentBalance)),
+        projectedValue: null,
+        realDataPoint: false
+      };
     }
 
-
-    return { 
-      age, 
-      year,
-      actualValue: Math.round(Math.max(0, lastBalance)),
-      realDataPoint: false,
-      projectedValue: null
+    // For gaps in historical data
+    return {
+      age: point.age,
+      year: point.year,
+      month: point.month,
+      actualValue: null,
+      projectedValue: null,
+      realDataPoint: false
     };
   });
 } 

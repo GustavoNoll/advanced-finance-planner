@@ -30,7 +30,7 @@ interface InvestmentPlan {
 interface ExpenseChartProps {
   investmentPlan: InvestmentPlan;
   clientId: string;
-  financialRecordsByYear: FinancialRecord[];
+  allFinancialRecords: FinancialRecord[];
   profile: Profile;
   withdrawalStrategy?: WithdrawalStrategy;
 }
@@ -39,7 +39,7 @@ export const ExpenseChart = ({
   profile, 
   investmentPlan, 
   clientId, 
-  financialRecordsByYear, 
+  allFinancialRecords, 
   withdrawalStrategy = { type: 'fixed' },
   onWithdrawalStrategyChange
 }: ExpenseChartProps & {
@@ -79,7 +79,7 @@ export const ExpenseChart = ({
     },
   });
 
-  if (!profile || !investmentPlan || !clientId || !financialRecordsByYear) {
+  if (!profile || !investmentPlan || !clientId || !allFinancialRecords) {
     return (
       <div className="flex items-center justify-center h-[300px] bg-gray-50 rounded-lg">
         <p className="text-gray-500">{t('common.loading')}</p>
@@ -87,30 +87,119 @@ export const ExpenseChart = ({
     );
   }
 
-  const getZoomedData = (data: ChartDataPoint[]) => {
-    if (zoomLevel === 'all') return data;
+  const formatXAxisLabel = (point: ChartDataPoint) => {
+    if (zoomLevel === 'all' || zoomLevel === '10y') {
+      return point.year.toString();
+    }
     
-    const currentAge = Number(data[0]?.age);
+    const monthName = new Date(0, point.month - 1).toLocaleString('default', { month: 'short' });
+    const shortYear = String(point.year).slice(-2);
+    return `${monthName}/${shortYear}`;
+  };
+
+  const getZoomedData = (data: ChartDataPoint[]) => {
+    if (zoomLevel === 'all') {
+      // Group by year and calculate average/last value for each year
+      const yearlyData = data.reduce((acc: { [key: string]: ChartDataPoint[] }, point) => {
+        const year = point.year.toString();
+        if (!acc[year]) {
+          acc[year] = [];
+        }
+        acc[year].push(point);
+        return acc;
+      }, {});
+
+      return Object.entries(yearlyData).map(([year, points]) => {
+        // Find the last real data point for the year
+        const lastRealPoint = points.reverse().find(p => p.realDataPoint);
+        
+        if (lastRealPoint) {
+          return {
+            ...lastRealPoint,
+            age: Math.floor(Number(lastRealPoint.age)).toString() // Remove decimal part
+          };
+        }
+
+        // If no real data points, use the last point of the year
+        const lastPoint = points[0];
+        return {
+          ...lastPoint,
+          actualValue: lastPoint.actualValue || lastPoint.projectedValue,
+          age: Math.floor(Number(lastPoint.age)).toString() // Remove decimal part
+        };
+      });
+    }
+    
+    // Get current date
+    const currentDate = new Date();
+    const currentYear = currentDate.getFullYear();
+    const currentMonth = currentDate.getMonth() + 1;
+
+    // Find the starting point (current month/year)
+    const startPoint = data.find(point => 
+      point.year === currentYear && 
+      point.month === currentMonth
+    ) || data[0];
+
+    if (!startPoint) return data;
+
+    const startAge = Number(startPoint.age);
     const yearsToShow = {
       '1y': 1,
       '5y': 5,
       '10y': 10,
     }[zoomLevel];
 
-    return data.filter(point => 
-      Number(point.age) >= currentAge && 
-      Number(point.age) <= currentAge + yearsToShow
-    );
+    const filteredData = data.filter(point => {
+      const pointAge = Number(point.age);
+      return pointAge >= startAge && pointAge <= startAge + yearsToShow;
+    });
+
+    // Para 10 anos, agrupar por ano como no modo 'all'
+    if (zoomLevel === '10y') {
+      const yearlyData = filteredData.reduce((acc: { [key: string]: ChartDataPoint[] }, point) => {
+        const year = point.year.toString();
+        if (!acc[year]) {
+          acc[year] = [];
+        }
+        acc[year].push(point);
+        return acc;
+      }, {});
+
+      return Object.entries(yearlyData).map(([year, points]) => {
+        const lastRealPoint = points.reverse().find(p => p.realDataPoint);
+        
+        if (lastRealPoint) {
+          return {
+            ...lastRealPoint,
+            age: Math.floor(Number(lastRealPoint.age)).toString()
+          };
+        }
+
+        const lastPoint = points[0];
+        return {
+          ...lastPoint,
+          actualValue: lastPoint.actualValue || lastPoint.projectedValue,
+          age: Math.floor(Number(lastPoint.age)).toString()
+        };
+      });
+    }
+
+    return filteredData;
   };
 
+  // Adicionar o label formatado aos dados do gráfico
   const chartData = getZoomedData(generateChartProjections(
     profile,
     investmentPlan,
-    financialRecordsByYear,
+    allFinancialRecords,
     withdrawalStrategy,
     goals,
     events
-  ));
+  )).map(point => ({
+    ...point,
+    xAxisLabel: formatXAxisLabel(point)
+  }));
 
   const colorOffset = () => {
     // Find the last real data point index
@@ -128,8 +217,6 @@ export const ExpenseChart = ({
 
   const offset = colorOffset();
 
-
-  console.log(chartData);
 
   return (
     <div className="space-y-4">
@@ -220,8 +307,8 @@ export const ExpenseChart = ({
           </defs>
           <CartesianGrid strokeDasharray="3 3" />
           <XAxis 
-            dataKey="age"
-            tickFormatter={(value) => `${value} ${t('expenseChart.years')}`}
+            dataKey="xAxisLabel"
+            interval={zoomLevel === 'all' || zoomLevel === '10y' ? 'preserveStartEnd' : 3}
           />
           <YAxis 
             tickFormatter={(value) => 
@@ -241,29 +328,36 @@ export const ExpenseChart = ({
               }).format(value)
             }
             labelFormatter={(label) => {
-              const dataPoint = chartData.find(point => point.age === label);
-              return `${label} ${t('expenseChart.years')} (${dataPoint?.year})`;
+              const dataPoint = chartData.find(point => point.xAxisLabel === label);
+              if (!dataPoint) return '';
+
+              if (zoomLevel === 'all') {
+                return `${Math.floor(Number(dataPoint.age))} ${t('expenseChart.years')} (${dataPoint.year})`;
+              }
+
+              const monthName = new Date(0, dataPoint.month - 1).toLocaleString('default', { month: 'long' });
+              const wholeAge = Math.floor(Number(dataPoint.age));
+              
+              return `${wholeAge} ${t('expenseChart.years')} (${t('monthlyView.table.months.' + monthName)} ${dataPoint.year})`;
             }}
           />
           <Legend />
 
           {/* Update reference lines for goals */}
-          {goals
-            ?.sort((a, b) => a.year - b.year)
-            .reduce((acc: React.ReactNode[], goal, index, sortedGoals) => {
-              const achievementPoint = chartData.find(
-                point => point.year === goal.year
-              );
+          {goals?.sort((a, b) => a.year - b.year)
+            .reduce((acc: React.ReactNode[], goal) => {
+              const achievementPoint = chartData.find(point => {
+                if (zoomLevel === 'all' || zoomLevel === '10y') {
+                  return point.year === goal.year;
+                }
+                return point.year === goal.year && point.month === goal.month;
+              });
               
-              const age = achievementPoint?.age;
-              if (
-                achievementPoint && 
-                goal.status === 'pending'
-              ) {
+              if (achievementPoint && goal.status === 'pending') {
                 acc.push(
                   <ReferenceLine
                     key={`${goal.id}-actual`}
-                    x={String(age)}
+                    x={achievementPoint.xAxisLabel}
                     stroke="black"
                     strokeDasharray="3 3"
                     ifOverflow="extendDomain"
@@ -283,11 +377,13 @@ export const ExpenseChart = ({
 
           {events?.sort((a, b) => a.year - b.year)
             .reduce((acc: React.ReactNode[], event, index, sortedEvents) => {
-              const achievementPoint = chartData.find(
-                point => point.year === event.year
-              );
+              const achievementPoint = chartData.find(point => {
+                if (zoomLevel === 'all' || zoomLevel === '10y') {
+                  return point.year === event.year;
+                }
+                return point.year === event.year && point.month === event.month;
+              });
 
-              const age = achievementPoint?.age;
               if (
                 achievementPoint && 
                 event.status === 'projected'
@@ -295,7 +391,7 @@ export const ExpenseChart = ({
                 acc.push(
                   <ReferenceLine
                     key={event.id}
-                    x={String(age)}
+                    x={achievementPoint.xAxisLabel}
                     stroke="black"
                     strokeDasharray="3 3"
                     ifOverflow="extendDomain"

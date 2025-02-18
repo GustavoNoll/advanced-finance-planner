@@ -19,6 +19,7 @@ export interface FinancialRecord {
 export interface ChartDataPoint {
   age: string;
   year: number;
+  month: MonthNumber;
   actualValue?: number | null;
   projectedValue?: number;
   realDataPoint?: boolean;

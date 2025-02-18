@@ -61,7 +61,6 @@ const Index = () => {
         .select('*')
         .eq('user_id', clientId);
 
-      console.log(data);
       if (error) {
         console.error(t('dashboard.messages.errors.fetchPlan'), error);
         return null;
@@ -337,7 +336,6 @@ const Index = () => {
 
   const portfolioValue = processedRecords.latestRecord?.ending_balance || 0;
   const portfolioIncreaseRate = ((portfolioValue - processedRecords.latestRecord?.starting_balance) / processedRecords.latestRecord?.starting_balance) * 100 || null;
-  console.log(portfolioIncreaseRate);
   const monthlyContribution = processedRecords.currentMonthRecord?.monthly_contribution || 0;
 
   return (
@@ -624,7 +622,7 @@ const Index = () => {
             profile={clientProfile}
             investmentPlan={investmentPlan}
             clientId={clientId}
-            financialRecordsByYear={processedRecords.financialRecordsByYear as FinancialRecord[]}
+            allFinancialRecords={allFinancialRecords || []}
             withdrawalStrategy={withdrawalStrategy}
             onWithdrawalStrategyChange={setWithdrawalStrategy}
           />
