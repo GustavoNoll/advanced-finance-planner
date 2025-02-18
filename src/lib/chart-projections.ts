@@ -1,6 +1,6 @@
 import { WithdrawalStrategy, calculateMonthlyWithdrawal } from './withdrawal-strategies';
 import { yearlyReturnRateToMonthlyReturnRate, calculateCompoundedRates } from './financial-math';
-import { ChartDataPoint, FinancialRecord, Goal, MonthNumber } from '@/types/financial';
+import { ChartDataPoint, FinancialRecord, Goal, MonthNumber, ProjectedEvent } from '@/types/financial';
 
 interface InvestmentPlan {
   initial_amount: number;
@@ -26,7 +26,8 @@ export function generateChartProjections(
   investmentPlan: InvestmentPlan,
   financialRecordsByYear: FinancialRecord[],
   withdrawalStrategy: WithdrawalStrategy,
-  goals?: Goal[]
+  goals?: Goal[],
+  events?: ProjectedEvent[]
 ): ChartDataPoint[] {
   const getEndAge = () => {
     if ((investmentPlan.plan_type === "1" || investmentPlan.plan_type === "2") && investmentPlan.limit_age) {
@@ -66,8 +67,8 @@ export function generateChartProjections(
     (_, i) => investmentPlan.initial_age + i
   );
 
-  const birthYear = new Date().getFullYear() - investmentPlan.initial_age;
-  const projectedValues = generateProjectedPortfolioValues(birthYear, investmentPlan, allAges, endAge, withdrawalStrategy, goalsForChart);
+  const birthYear = new Date(profile.birth_date).getFullYear();
+  const projectedValues = generateProjectedPortfolioValues(birthYear, investmentPlan, allAges, endAge, withdrawalStrategy, goalsForChart, events);
   const actualValues = generateHistoricalPortfolioValues(
     birthYear,
     investmentPlan,
@@ -75,7 +76,8 @@ export function generateChartProjections(
     allAges,
     endAge,
     withdrawalStrategy,
-    goalsForChart
+    goalsForChart,
+    events
   );
 
   return allAges.map(age => ({
@@ -87,13 +89,46 @@ export function generateChartProjections(
   }));
 }
 
+function handleMonthlyGoalsAndEvents(
+  balance: number,
+  year: number,
+  month: number,
+  goals?: GoalForChart[],
+  events?: ProjectedEvent[]
+): number {
+  let updatedBalance = balance;
+
+  // Handle goals
+  const currentGoals = goals?.filter(goal => 
+    goal.year === year && goal.month === (month + 1)
+  );
+
+  if (currentGoals?.length) {
+    const totalGoalWithdrawal = currentGoals.reduce((sum, goal) => sum + goal.value, 0);
+    updatedBalance -= totalGoalWithdrawal;
+  }
+
+  // Handle events
+  const currentEvents = events?.filter(event => 
+    event.year === year && event.month === (month + 1)
+  );
+
+  if (currentEvents?.length) {
+    const totalEventWithdrawal = currentEvents.reduce((sum, event) => sum + event.amount, 0);
+    updatedBalance += totalEventWithdrawal;
+  }
+
+  return updatedBalance;
+}
+
 function generateProjectedPortfolioValues(
   birthYear: number,
   investmentPlan: InvestmentPlan,
   allAges: number[],
   endAge: number,
   withdrawalStrategy: WithdrawalStrategy,
-  goals?: GoalForChart[]
+  goals?: GoalForChart[],
+  events?: ProjectedEvent[]
 ) {
   const monthlyInflationRate = yearlyReturnRateToMonthlyReturnRate(investmentPlan.inflation/100);
   const monthlyExpectedReturnRate = yearlyReturnRateToMonthlyReturnRate(investmentPlan.expected_return/100);
@@ -107,15 +142,14 @@ function generateProjectedPortfolioValues(
     const currentYear = birthYear + age;
     
     for (let month = 0; month < 12; month++) {
-      // Handle goals for current month/year
-      const currentGoals = goals?.filter(goal => 
-        goal.year === currentYear && goal.month === (month + 1)
+      // Replace goals handling with new function
+      currentBalance = handleMonthlyGoalsAndEvents(
+        currentBalance,
+        currentYear,
+        month,
+        goals,
+        events
       );
-      
-      if (currentGoals?.length) {
-        const totalGoalWithdrawal = currentGoals.reduce((sum, goal) => sum + goal.value, 0);
-        currentBalance -= totalGoalWithdrawal;
-      }
 
       if (investmentPlan.adjust_contribution_for_inflation) {
         currentMonthlyDeposit *= (1 + monthlyInflationRate);
@@ -162,7 +196,8 @@ function generateHistoricalPortfolioValues(
   allAges: number[],
   endAge: number,
   withdrawalStrategy: WithdrawalStrategy,
-  goals?: GoalForChart[]
+  goals?: GoalForChart[],
+  events?: ProjectedEvent[]
 ) {
 
   if (financialRecordsByYear.length === 0) {
@@ -172,7 +207,8 @@ function generateHistoricalPortfolioValues(
       allAges,
       endAge,
       withdrawalStrategy,
-      goals
+      goals,
+      events
     );
   }
 
@@ -200,15 +236,14 @@ function generateHistoricalPortfolioValues(
     const isRetirementAge = age >= investmentPlan.final_age;
 
     for (let month = 0; month < 12; month++) {
-      // Handle goals for current month/year
-      const currentGoals = goals?.filter(goal => 
-        goal.year === year && goal.month === (month + 1)
+      // Replace goals and events handling with new function
+      lastBalance = handleMonthlyGoalsAndEvents(
+        lastBalance,
+        year,
+        month,
+        goals,
+        events
       );
-      
-      if (currentGoals?.length) {
-        const totalGoalWithdrawal = currentGoals.reduce((sum, goal) => sum + goal.value, 0);
-        lastBalance -= totalGoalWithdrawal;
-      }
 
       if (investmentPlan.adjust_contribution_for_inflation) {
         currentMonthlyDeposit *= (1 + monthlyInflationRate);

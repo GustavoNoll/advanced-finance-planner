@@ -90,11 +90,19 @@ const Events = () => {
 
   const createEvent = useMutation({
     mutationFn: async (values: z.infer<typeof formSchema>) => {
+      // Remove currency symbol, group separators, and convert comma to dot
+      const cleanAmount = values.amount
+        .replace(/[R$\s]/g, '')  // Remove R$ and spaces
+        .replace(/\./g, '')      // Remove thousand separators
+        .replace(',', '.');      // Convert decimal comma to dot
+
+      const amount = parseFloat(cleanAmount);
+
       const { data, error } = await supabase.from("events").insert([
         {
           profile_id: userId,
           name: values.name,
-          amount: parseFloat(values.amount.replace(/[^\d.,]/g, '').replace(',', '.')),
+          amount: amount,
           month: parseInt(values.month),
           year: parseInt(values.year),
           status: 'projected'
@@ -303,10 +311,11 @@ const Events = () => {
               .toLocaleDateString('pt-BR', { month: 'long' })
               .replace(/^\w/, (c) => c.toUpperCase())} / {event.year}
           </p>
-          <p className="font-medium text-blue-600">
+          <p className={`font-medium ${event.amount >= 0 ? 'text-green-600' : 'text-red-600'}`}>
             {new Intl.NumberFormat('pt-BR', {
               style: 'currency',
-              currency: 'BRL'
+              currency: 'BRL',
+              signDisplay: 'always'
             }).format(event.amount)}
           </p>
         </div>

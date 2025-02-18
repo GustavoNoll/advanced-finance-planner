@@ -1,6 +1,6 @@
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend, ReferenceLine } from 'recharts';
 import { useTranslation } from "react-i18next";
-import { ChartDataPoint, FinancialRecord, Goal } from '@/types/financial';
+import { ChartDataPoint, FinancialRecord, Goal, ProjectedEvent } from '@/types/financial';
 import { WithdrawalStrategy } from '@/lib/withdrawal-strategies';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { generateChartProjections } from '@/lib/chart-projections';
@@ -65,6 +65,20 @@ export const ExpenseChart = ({
     },
   });
 
+  const { data: events } = useQuery<ProjectedEvent[]>({
+    queryKey: ["events", clientId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("events")
+        .select("*")
+        .eq("profile_id", clientId)
+        .eq("status", "projected"); 
+
+      if (error) throw error;
+      return data;
+    },
+  });
+
   if (!profile || !investmentPlan || !clientId || !financialRecordsByYear) {
     return (
       <div className="flex items-center justify-center h-[300px] bg-gray-50 rounded-lg">
@@ -94,8 +108,26 @@ export const ExpenseChart = ({
     investmentPlan,
     financialRecordsByYear,
     withdrawalStrategy,
-    goals
+    goals,
+    events
   ));
+
+  const colorOffset = () => {
+    // Find the last real data point index
+    const lastRealIndex = chartData.findIndex(point => !point.realDataPoint);
+    
+    // If no projection points found, return 1 (all blue)
+    if (lastRealIndex === -1) return 1;
+    
+    // If no real points found, return 0 (all red)
+    if (lastRealIndex === 0) return 0;
+    
+    // Calculate offset based on the position of the last real point
+    return lastRealIndex / chartData.length;
+  };
+
+  const offset = colorOffset();
+
 
   console.log(chartData);
 
@@ -180,6 +212,12 @@ export const ExpenseChart = ({
           data={chartData}
           margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
         >
+          <defs>
+            <linearGradient id="colorUv" x1="0" y1="0" x2="1" y2="0">
+              <stop offset={offset} stopColor="#2563eb" /> {/* blue-600 */}
+              <stop offset={offset} stopColor="#93c5fd" /> {/* blue-300 */}
+            </linearGradient>
+          </defs>
           <CartesianGrid strokeDasharray="3 3" />
           <XAxis 
             dataKey="age"
@@ -226,7 +264,7 @@ export const ExpenseChart = ({
                   <ReferenceLine
                     key={`${goal.id}-actual`}
                     x={String(age)}
-                    stroke="blue"
+                    stroke="black"
                     strokeDasharray="3 3"
                     ifOverflow="extendDomain"
                     label={{
@@ -243,11 +281,39 @@ export const ExpenseChart = ({
               return acc;
             }, [])}
 
+          {events?.sort((a, b) => a.year - b.year)
+            .reduce((acc: React.ReactNode[], event, index, sortedEvents) => {
+              const achievementPoint = chartData.find(
+                point => point.year === event.year
+              );
+
+              const age = achievementPoint?.age;
+              if (
+                achievementPoint && 
+                event.status === 'projected'
+              ) {
+                acc.push(
+                  <ReferenceLine
+                    key={event.id}
+                    x={String(age)}
+                    stroke="black"
+                    strokeDasharray="3 3"
+                    ifOverflow="extendDomain"
+                    label={{
+                      value: `📅`,
+                      position: 'top',
+                    }}
+                  />
+                );
+              }
+              return acc;
+            }, [])}
+
           {/* Line for actual values (solid) */}
           <Line 
             type="natural"
             dataKey="actualValue"
-            stroke="#3b82f6"
+            stroke="url(#colorUv)"
             name={t('expenseChart.actualValue')}
             strokeWidth={2.5}
             connectNulls
