@@ -14,6 +14,13 @@ interface SavingsGoalProps {
   };
 }
 
+interface ProjectedAgeResult {
+  years: number;
+  months: number;
+  isAheadOfSchedule: boolean;
+  ageDifference: number;
+}
+
 export const SavingsGoal = ({ allFinancialRecords, investmentPlan, profile }: SavingsGoalProps) => {
   const { t } = useTranslation();
   
@@ -35,8 +42,8 @@ export const SavingsGoal = ({ allFinancialRecords, investmentPlan, profile }: Sa
   const finalAge = investmentPlan?.final_age ?? 0;
   const birthDate = profile?.birth_date;
 
-  const calculateProjectedAge = () => {
-    if (!birthDate || !investmentPlan) return null;
+  const calculateProjectedAge = (): ProjectedAgeResult | 'ageNotAvailable' | 'metaNotAchieved' => {
+    if (!birthDate || !investmentPlan) return 'ageNotAvailable';
 
     const birthDateObj = new Date(birthDate);
 
@@ -52,7 +59,7 @@ export const SavingsGoal = ({ allFinancialRecords, investmentPlan, profile }: Sa
     );
 
     const targetYearData = projectionData.find(data => data.balance >= investmentGoal);
-    if (!targetYearData) return null;
+    if (!targetYearData) return 'metaNotAchieved';
 
     const targetMonth = targetYearData.months?.findIndex(month => month.balance >= investmentGoal) ?? 0;
     
@@ -96,12 +103,12 @@ export const SavingsGoal = ({ allFinancialRecords, investmentPlan, profile }: Sa
                 {t('savingsGoal.returnRate', { value: returnRate })}
               </span>
               <span className={`flex items-center gap-2 mt-1 ${
-                projectedAge?.isAheadOfSchedule ? 'text-green-600' : 'text-red-600'
+                typeof projectedAge !== 'string' && projectedAge.isAheadOfSchedule ? 'text-green-600' : 'text-red-600'
               }`}>
                 <Clock className="h-4 w-4" />
                 <div className="flex flex-col">
                   <span className="font-medium">
-                    {projectedAge ? (
+                    {typeof projectedAge !== 'string' ? (
                       <>
                         {t('savingsGoal.projectedAge.label')}
                         <span className="ml-1 font-semibold">
@@ -120,7 +127,7 @@ export const SavingsGoal = ({ allFinancialRecords, investmentPlan, profile }: Sa
                       </>
                     ) : (
                       <span className="text-muted-foreground italic">
-                        {t('savingsGoal.ageNotAvailable')}
+                        {t(`savingsGoal.${projectedAge}`)}
                       </span>
                     )}
                   </span>
