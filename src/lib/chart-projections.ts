@@ -1,5 +1,5 @@
 import { WithdrawalStrategy, calculateMonthlyWithdrawal } from './withdrawal-strategies';
-import { yearlyReturnRateToMonthlyReturnRate } from './financial-math';
+import { yearlyReturnRateToMonthlyReturnRate, calculateCompoundedRates } from './financial-math';
 import { ChartDataPoint, FinancialRecord, Goal, MonthNumber } from '@/types/financial';
 
 interface InvestmentPlan {
@@ -66,9 +66,10 @@ export function generateChartProjections(
     (_, i) => investmentPlan.initial_age + i
   );
 
-  const projectedValues = generateProjectedPortfolioValues(investmentPlan, allAges, endAge, withdrawalStrategy, goalsForChart);
+  const birthYear = new Date().getFullYear() - investmentPlan.initial_age;
+  const projectedValues = generateProjectedPortfolioValues(birthYear, investmentPlan, allAges, endAge, withdrawalStrategy, goalsForChart);
   const actualValues = generateHistoricalPortfolioValues(
-    profile,
+    birthYear,
     investmentPlan,
     financialRecordsByYear,
     allAges,
@@ -77,9 +78,6 @@ export function generateChartProjections(
     goalsForChart
   );
 
-
-  const birthYear = new Date().getFullYear() - investmentPlan.initial_age;
-  console.log(actualValues)
   return allAges.map(age => ({
     age: age.toString(),
     year: birthYear + age,
@@ -90,21 +88,20 @@ export function generateChartProjections(
 }
 
 function generateProjectedPortfolioValues(
+  birthYear: number,
   investmentPlan: InvestmentPlan,
   allAges: number[],
   endAge: number,
   withdrawalStrategy: WithdrawalStrategy,
   goals?: GoalForChart[]
 ) {
-  const monthlyReturnRate = yearlyReturnRateToMonthlyReturnRate(
-    investmentPlan.expected_return/100 + investmentPlan.inflation/100
-  );
   const monthlyInflationRate = yearlyReturnRateToMonthlyReturnRate(investmentPlan.inflation/100);
+  const monthlyExpectedReturnRate = yearlyReturnRateToMonthlyReturnRate(investmentPlan.expected_return/100);
+  const monthlyReturnRate = calculateCompoundedRates([monthlyExpectedReturnRate, monthlyInflationRate]);
 
   let currentBalance = investmentPlan.initial_amount;
   let currentMonthlyDeposit = investmentPlan.monthly_deposit;
   let currentMonthlyWithdrawal = investmentPlan.desired_income;
-  const birthYear = new Date().getFullYear() - investmentPlan.initial_age;
 
   return allAges.map(age => {
     const currentYear = birthYear + age;
@@ -159,7 +156,7 @@ function generateProjectedPortfolioValues(
 }
 
 function generateHistoricalPortfolioValues(
-  profile: { birth_date: string },
+  birthYear: number,
   investmentPlan: InvestmentPlan,
   financialRecordsByYear: FinancialRecord[],
   allAges: number[],
@@ -167,10 +164,10 @@ function generateHistoricalPortfolioValues(
   withdrawalStrategy: WithdrawalStrategy,
   goals?: GoalForChart[]
 ) {
-  const birthYear = new Date(profile.birth_date).getFullYear();
 
   if (financialRecordsByYear.length === 0) {
     return generateProjectedPortfolioValues(
+      birthYear,
       investmentPlan,
       allAges,
       endAge,
@@ -197,10 +194,9 @@ function generateHistoricalPortfolioValues(
       return { age, year, actualValue: 0, projectedValue: null, realDataPoint: false };
     }
 
-    const monthlyReturnRate = yearlyReturnRateToMonthlyReturnRate(
-      investmentPlan.expected_return/100 + investmentPlan.inflation/100
-    );
     const monthlyInflationRate = yearlyReturnRateToMonthlyReturnRate(investmentPlan.inflation/100);
+    const monthlyExpectedReturnRate = yearlyReturnRateToMonthlyReturnRate(investmentPlan.expected_return/100);
+    const monthlyReturnRate = calculateCompoundedRates([monthlyExpectedReturnRate, monthlyInflationRate]);
     const isRetirementAge = age >= investmentPlan.final_age;
 
     for (let month = 0; month < 12; month++) {
