@@ -24,6 +24,13 @@ interface ProjectedAgeResult {
 export const SavingsGoal = ({ allFinancialRecords, investmentPlan, profile }: SavingsGoalProps) => {
   const { t } = useTranslation();
   
+  const formatCurrency = (value: number) => {
+    return new Intl.NumberFormat('pt-BR', {
+      style: 'currency',
+      currency: 'BRL'
+    }).format(value);
+  };
+
   const lastFinancialRecord = useMemo(() => {
     if (!allFinancialRecords.length) return null;
     
@@ -36,8 +43,8 @@ export const SavingsGoal = ({ allFinancialRecords, investmentPlan, profile }: Sa
   }, [allFinancialRecords]);
 
   const currentInvestment = lastFinancialRecord?.ending_balance ?? 0;
+  const presentFutureValue = investmentPlan?.present_future_value ?? 0;
   const investmentGoal = investmentPlan?.future_value ?? 0;
-  const monthlyDeposit = investmentPlan?.monthly_deposit ?? 0;
   const returnRate = (investmentPlan?.inflation ?? 0) + (investmentPlan?.expected_return ?? 0);
   const finalAge = investmentPlan?.final_age ?? 0;
   const birthDate = profile?.birth_date;
@@ -45,17 +52,12 @@ export const SavingsGoal = ({ allFinancialRecords, investmentPlan, profile }: Sa
   const calculateProjectedAge = (): ProjectedAgeResult | 'ageNotAvailable' | 'metaNotAchieved' => {
     if (!birthDate || !investmentPlan) return 'ageNotAvailable';
 
-    const birthDateObj = new Date(birthDate);
-
-    const birthYear = birthDateObj.getFullYear();
-    const startYear = birthYear + investmentPlan.initial_age;
-    const birthMonth = birthDateObj.getMonth() + 1;
     const projectionData = generateProjectionData(
-      { type: 'fixed', monthlyAmount: 0 },
       investmentPlan,
       { birth_date: birthDate },
-      [{ record_year: startYear, record_month: birthMonth, ending_balance: currentInvestment, monthly_contribution: monthlyDeposit }],
-      allFinancialRecords
+      allFinancialRecords,
+      [],
+      []
     );
 
     const targetYearData = projectionData.find(data => data.balance >= investmentGoal);
@@ -96,7 +98,9 @@ export const SavingsGoal = ({ allFinancialRecords, investmentPlan, profile }: Sa
           <div className="flex justify-between text-sm">
             <div>
               <span className="block text-lg font-semibold">
-                {t('savingsGoal.currentValue', { value: currentInvestment.toLocaleString() })}
+                {t('savingsGoal.currentValue', { 
+                  value: formatCurrency(currentInvestment)
+                })}
               </span>
               <span className="text-600 flex items-center gap-1">
                 <ArrowUpRight className="h-4 w-4" />
@@ -136,8 +140,16 @@ export const SavingsGoal = ({ allFinancialRecords, investmentPlan, profile }: Sa
             </div>
             <div className="text-right">
               <span className="block text-lg font-semibold text-muted-foreground">
-                {t('savingsGoal.goal.label', { value: investmentGoal.toLocaleString() })}
+                {t('savingsGoal.goal.label', { 
+                  value: formatCurrency(investmentGoal)
+                })}
               </span>
+              <span className="text-sm text-muted-foreground">
+                {t('savingsGoal.goal.presentFutureValue', { 
+                  value: formatCurrency(presentFutureValue)
+                })}
+              </span>
+              <p></p>
               <span className="text-sm text-muted-foreground">
                 {t('savingsGoal.goal.targetAge', { age: finalAge })}
               </span>

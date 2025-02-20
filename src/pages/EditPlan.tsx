@@ -165,6 +165,7 @@ export const EditPlan = () => {
           inflation: parseFloat(formData.inflation.replace(',', '.')),
           plan_type: formData.planType,
           future_value: calculations.futureValue,
+          present_future_value: calculations.presentFutureValue,
           inflation_adjusted_income: calculations.inflationAdjustedIncome,
           required_monthly_deposit: calculations.requiredMonthlyDeposit,
           adjust_contribution_for_inflation: formData.adjustContributionForInflation,

@@ -26,7 +26,8 @@ export const ptBR = {
         title: "Objetivos Financeiros",
         desiredMonthlyIncome: "Renda Mensal Desejada",
         inflationAdjustedIncome: "Renda Ajustada pela Inflação",
-        futureValue: "Valor Futuro"
+        futureValue: "Meta Valor Futuro",
+        presentFutureValue: "Meta Valor Real"
       },
       investmentParams: {
         title: "Parâmetros do Investimento",
@@ -364,11 +365,12 @@ export const ptBR = {
     ageNotAvailable: "Idade projetada não disponível",
     metaNotAchieved: "Meta não irá ser atingida na idade projetada",
     title: "Meta de Investimento",
-    currentValue: "R$ {{value}}",
+    currentValue: "{{value}}",
     returnRate: "{{value}}% a.a.",
     goal: {
-      label: "Meta: R$ {{value}}",
-      targetAge: "Idade Alvo: {{age}}"
+      label: "Meta: {{value}}",
+      targetAge: "Idade Alvo: {{age}}",
+      presentFutureValue: "Valor Real: {{value}}"
     },
     projectedAge:{
       label: "Idade Projetada:",

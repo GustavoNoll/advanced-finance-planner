@@ -631,22 +631,7 @@ const Index = () => {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <SavingsGoal 
             allFinancialRecords={allFinancialRecords || []}
-            investmentPlan={{
-              future_value: investmentPlan?.future_value ?? 0,
-              monthly_deposit: investmentPlan?.monthly_deposit ?? 0,
-              inflation: investmentPlan?.inflation ?? 0,
-              expected_return: investmentPlan?.expected_return ?? 0,
-              final_age: investmentPlan?.final_age ?? 0,
-              plan_type: investmentPlan?.plan_type ?? '',
-              desired_income: investmentPlan?.desired_income ?? 0,
-              initial_amount: investmentPlan?.initial_amount ?? 0,
-              target_amount: investmentPlan?.target_amount ?? 0,
-              initial_age: investmentPlan?.initial_age ?? 0,
-              limit_age: investmentPlan?.limit_age ?? 0,
-              adjust_contribution_for_inflation: investmentPlan?.adjust_contribution_for_inflation ?? false,
-              id: investmentPlan?.id ?? '',
-              user_id: investmentPlan?.user_id ?? ''
-            }}
+            investmentPlan={investmentPlan}
             profile={{
               birth_date: clientProfile?.birth_date
             }}

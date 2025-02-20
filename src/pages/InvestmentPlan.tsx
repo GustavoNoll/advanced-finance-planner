@@ -196,6 +196,13 @@ export const InvestmentPlanShow = () => {
                 </p>
               </div>
               <div>
+                <p className="text-sm text-gray-500">{t('investmentPlan.details.financialGoals.presentFutureValue')}</p>
+                <p className="font-medium">
+                  {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' })
+                    .format(plan.present_future_value)}
+                </p>
+              </div>
+              <div>
                 <p className="text-sm text-gray-500">{t('investmentPlan.details.financialGoals.futureValue')}</p>
                 <p className="font-medium">
                   {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' })

@@ -183,6 +183,7 @@ export const CreatePlan = () => {
           future_value: calculations.futureValue,
           inflation_adjusted_income: calculations.inflationAdjustedIncome,
           required_monthly_deposit: calculations.requiredMonthlyDeposit,
+          present_future_value: calculations.presentFutureValue,
           status: "active",
           adjust_contribution_for_inflation: formData.adjustContributionForInflation,
           limit_age: formData.limitAge,

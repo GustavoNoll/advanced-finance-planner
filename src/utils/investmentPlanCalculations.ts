@@ -16,6 +16,7 @@ export type FormData = {
 
 export type Calculations = {
   futureValue: number;
+  presentFutureValue: number;
   inflationAdjustedIncome: number;
   realReturn: number;
   inflationReturn: number;
@@ -125,6 +126,7 @@ export const calculateFutureValues = (data: FormData): Calculations => {
 
   return {
     futureValue: formatDecimals(futureValue),
+    presentFutureValue: formatDecimals(presentValue),
     inflationAdjustedIncome: formatDecimals(inflationAdjustedIncome),
     realReturn,
     inflationReturn,
