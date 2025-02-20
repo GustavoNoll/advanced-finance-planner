@@ -1,4 +1,13 @@
 export const ptBR = { 
+  software: {
+    title: "InvestSmart",
+    description: "Plano de Investimento",
+    version: "Versão 1.0.0",
+    author: "InvestSmart",
+    year: "2024",
+    month: "Fevereiro",
+    day: "20"
+  },
   investmentPlan: {
     messages: {
       notFound: {

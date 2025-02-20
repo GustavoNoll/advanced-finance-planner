@@ -17,14 +17,14 @@ import ClientProfile from "@/pages/ClientProfile";
 import EditFinancialRecord from "@/pages/EditFinancialRecord";
 import FinancialGoals from "@/pages/FinancialGoals";
 import Events from "@/pages/Events";
-
+import { LoadingScreen } from "@/components/ui/loading-screen";
 const queryClient = new QueryClient();
 
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   const { user, loading } = useAuth();
 
   if (loading) {
-    return <div>Loading...</div>;
+    return <LoadingScreen />;
   }
 
   if (!user) {
