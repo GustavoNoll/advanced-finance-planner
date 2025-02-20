@@ -7,7 +7,7 @@ import { useToast } from "@/components/ui/use-toast";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/components/auth/AuthProvider";
 import { ptBR } from "@/locales/pt-BR";
-import { RISK_PROFILES, type RiskProfile } from '@/constants/riskProfiles';
+import { RISK_PROFILES } from '@/constants/riskProfiles';
 import { ArrowLeft, ChevronDown, ChevronRight } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { calculateFutureValues, isCalculationReady, type FormData, type Calculations } from '@/utils/investmentPlanCalculations';
@@ -23,8 +23,8 @@ export const CreatePlan = () => {
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
     initialAmount: "100000",
-    initialAge: "25",
-    finalAge: "50",
+    initialAge: "",
+    finalAge: "",
     monthlyDeposit: "5000",
     desiredIncome: "10000",
     expectedReturn: RISK_PROFILES[1].return,
@@ -89,6 +89,49 @@ export const CreatePlan = () => {
 
     checkExistingPlan();
   }, [clientId, toast, loading]); // Add loading to dependencies
+
+  // Add useEffect to fetch profile data and calculate age
+  useEffect(() => {
+    const fetchProfileAndSetAge = async () => {
+      if (!clientId) return;
+
+      try {
+        const { data, error } = await supabase
+          .from('profiles')
+          .select('birth_date')
+          .eq('id', clientId)
+          .single();
+
+        if (error) throw error;
+
+        if (data?.birth_date) {
+          const birthDate = new Date(data.birth_date);
+          const today = new Date();
+          let age = today.getFullYear() - birthDate.getFullYear();
+          const monthDiff = today.getMonth() - birthDate.getMonth();
+          
+          if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
+            age--;
+          }
+
+          setFormData(prev => ({
+            ...prev,
+            initialAge: age.toString(),
+            finalAge: (age + 30).toString()  // Set final age as current age + 30
+          }));
+        }
+      } catch (error) {
+        console.error('Error fetching profile:', error);
+        toast({
+          title: "Error",
+          description: "Failed to fetch client's age",
+          variant: "destructive",
+        });
+      }
+    };
+
+    fetchProfileAndSetAge();
+  }, [clientId, toast]);
 
   // Modify handleChange to update calculations when form values change
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
@@ -219,7 +262,6 @@ export const CreatePlan = () => {
                   name="initialAge"
                   value={formData.initialAge}
                   onChange={handleChange}
-                  placeholder="30"
                   required
                   min="0"
                   step="1"
