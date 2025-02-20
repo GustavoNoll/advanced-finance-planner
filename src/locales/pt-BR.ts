@@ -1,9 +1,9 @@
 export const ptBR = { 
   software: {
-    title: "InvestSmart",
+    title: "NextWealth",
     description: "Plano de Investimento",
     version: "Versão 1.0.0",
-    author: "InvestSmart",
+    author: "Gustavo Noll",
     year: "2024",
     month: "Fevereiro",
     day: "20"
