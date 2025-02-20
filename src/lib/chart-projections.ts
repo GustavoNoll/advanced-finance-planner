@@ -55,12 +55,10 @@ export function generateChartProjections(
   );
 
   const actualValues = generateHistoricalPortfolioValues(
-    birthYear,
     investmentPlan,
     financialRecordsByYear,
     allDataPoints,
     endAge,
-    withdrawalStrategy,
     goalsForChart,
     events
   );
@@ -75,14 +73,14 @@ export function generateChartProjections(
   }));
 }
 
-function getEndAge(investmentPlan: InvestmentPlan): number {
+export function getEndAge(investmentPlan: InvestmentPlan): number {
   if ((investmentPlan.plan_type === "1" || investmentPlan.plan_type === "2") && investmentPlan.limit_age) {
     return investmentPlan.limit_age;
   }
   return 120;
 }
 
-function processGoals(goals?: Goal[]): GoalForChart[] {
+export function processGoals(goals?: Goal[]): GoalForChart[] {
   if (!goals) return [];
   
   return goals.flatMap(goal => {
@@ -108,7 +106,7 @@ function processGoals(goals?: Goal[]): GoalForChart[] {
   });
 }
 
-function generateDataPoints(
+export function generateDataPoints(
   investmentPlan: InvestmentPlan,
   yearsUntilEnd: number,
   birthYear: number
@@ -127,7 +125,7 @@ function generateDataPoints(
   );
 }
 
-function handleMonthlyGoalsAndEvents(
+export function handleMonthlyGoalsAndEvents(
   balance: number,
   year: number,
   month: number,
@@ -159,7 +157,7 @@ function handleMonthlyGoalsAndEvents(
   return updatedBalance;
 }
 
-function generateProjectedPortfolioValues(
+export function generateProjectedPortfolioValues(
   investmentPlan: InvestmentPlan,
   allDataPoints: DataPoint[],
   endAge: number,
@@ -224,25 +222,29 @@ function generateProjectedPortfolioValues(
   });
 }
 
-function generateHistoricalPortfolioValues(
-  birthYear: number,
+export function generateHistoricalPortfolioValues(
   investmentPlan: InvestmentPlan,
   allFinancialRecords: FinancialRecord[],
   allDataPoints: DataPoint[],
   endAge: number,
-  withdrawalStrategy: WithdrawalStrategy,
   goals?: GoalForChart[],
   events?: ProjectedEvent[]
 ) {
   if (allFinancialRecords.length === 0) {
-    return generateProjectedPortfolioValues(
+    const projectedValues = generateProjectedPortfolioValues(
       investmentPlan,
       allDataPoints,
       endAge,
-      withdrawalStrategy,
+      { type: 'fixed' },
       goals,
       events
     );
+    
+      return projectedValues.map(value => ({
+        ...value,
+        actualValue: value.projectedValue,
+        projectedValue: null
+      }));
   }
 
   // Sort records chronologically
@@ -325,19 +327,7 @@ function generateHistoricalPortfolioValues(
       const isRetirementAge = age >= investmentPlan.final_age;
       
       if (isRetirementAge) {
-        const monthsUntilEnd = (endAge - age) * 12;
-        const withdrawal = calculateMonthlyWithdrawal(
-          withdrawalStrategy,
-          {
-            currentBalance,
-            monthlyReturnRate,
-            monthlyInflationRate,
-            currentAge: age,
-            monthsUntilEnd,
-            currentMonth: point.month - 1,
-            desiredIncome: currentMonthlyWithdrawal
-          }
-        );
+        const withdrawal = currentMonthlyWithdrawal
         
         currentBalance = (currentBalance - withdrawal) * (1 + monthlyReturnRate);
       } else {

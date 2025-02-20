@@ -99,7 +99,7 @@ export const ExpenseChart = ({
 
   const getZoomedData = (data: ChartDataPoint[]) => {
     if (zoomLevel === 'all') {
-      // Group by year and calculate average/last value for each year
+      // Group by year and calculate last value for each year
       const yearlyData = data.reduce((acc: { [key: string]: ChartDataPoint[] }, point) => {
         const year = point.year.toString();
         if (!acc[year]) {
@@ -110,22 +110,13 @@ export const ExpenseChart = ({
       }, {});
 
       return Object.entries(yearlyData).map(([year, points]) => {
-        // Find the last real data point for the year
-        const lastRealPoint = points.reverse().find(p => p.realDataPoint);
-        
-        if (lastRealPoint) {
-          return {
-            ...lastRealPoint,
-            age: Math.floor(Number(lastRealPoint.age)).toString() // Remove decimal part
-          };
-        }
+        // Sort points by month (descending) to get the last month
+        const sortedPoints = [...points].sort((a, b) => b.month - a.month);
+        const lastMonthPoint = sortedPoints[0];
 
-        // If no real data points, use the last point of the year
-        const lastPoint = points[0];
         return {
-          ...lastPoint,
-          actualValue: lastPoint.actualValue || lastPoint.projectedValue,
-          age: Math.floor(Number(lastPoint.age)).toString() // Remove decimal part
+          ...lastMonthPoint,
+          age: Math.floor(Number(lastMonthPoint.age)).toString() // Remove decimal part
         };
       });
     }
@@ -179,12 +170,11 @@ export const ExpenseChart = ({
         const lastPoint = points[0];
         return {
           ...lastPoint,
-          actualValue: lastPoint.actualValue || lastPoint.projectedValue,
+          actualValue: lastPoint.actualValue,
           age: Math.floor(Number(lastPoint.age)).toString()
         };
       });
     }
-
     return filteredData;
   };
 
@@ -200,6 +190,7 @@ export const ExpenseChart = ({
     ...point,
     xAxisLabel: formatXAxisLabel(point)
   }));
+
 
   const colorOffset = () => {
     // Find the last real data point index

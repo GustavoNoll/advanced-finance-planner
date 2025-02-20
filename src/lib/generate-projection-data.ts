@@ -1,25 +1,7 @@
-import { WithdrawalStrategy, calculateMonthlyWithdrawal } from './withdrawal-strategies';
-import { yearlyReturnRateToMonthlyReturnRate } from './financial-math';
-
-interface FinancialRecord {
-  record_year: number;
-  record_month: number;
-  ending_balance: number;
-  monthly_contribution: number;
-}
-
-interface InvestmentPlan {
-  initial_age: number;
-  final_age: number;
-  monthly_deposit: number;
-  expected_return: number;
-  inflation: number;
-  adjust_contribution_for_inflation: boolean;
-  desired_income: number;
-  plan_type: string;
-  limit_age?: number;
-}
-
+import { calculateMonthlyWithdrawal } from './withdrawal-strategies';
+import { calculateCompoundedRates, yearlyReturnRateToMonthlyReturnRate } from './financial-math';
+import { FinancialRecord, InvestmentPlan, Goal, ProjectedEvent } from '@/types/financial';
+import { getEndAge, handleMonthlyGoalsAndEvents, processGoals } from './chart-projections';
 interface ProjectionData {
   age: number;
   year: number;
@@ -33,34 +15,30 @@ interface ProjectionData {
     isHistorical: boolean;
     balance: number;
     returns?: number;
+    goalsEventsImpact?: number;
   }[];
   isRetirementTransitionYear?: boolean;
   hasHistoricalData: boolean;
   returns: number;
+  goalsEventsImpact?: number;
 }
 
 export function generateProjectionData(
-  strategy: WithdrawalStrategy,
   investmentPlan: InvestmentPlan,
   profile: { birth_date: string },
   initialRecords: FinancialRecord[],
-  allFinancialRecords: FinancialRecord[]
+  goals: Goal[],
+  events: ProjectedEvent[]
 ): ProjectionData[] {
-  const getEndAge = () => {
-    if ((investmentPlan.plan_type === "1" || investmentPlan.plan_type === "2") && investmentPlan.limit_age) {
-      return investmentPlan.limit_age;
-    }
-    return 120;
-  };
-
-  const endAge = getEndAge();
   const projectionData: ProjectionData[] = [];
   
   if (!profile?.birth_date || !investmentPlan || !initialRecords.length) {
     return [];
   }
+  const endAge = getEndAge(investmentPlan);
 
   try {
+    const goalsForChart = processGoals(goals);
     const birthDate = new Date(profile.birth_date);
     const birthYear = birthDate.getFullYear();
     const birthMonth = birthDate.getMonth() + 1;
@@ -72,11 +50,12 @@ export function generateProjectionData(
     let currentBalance = initialRecords[0]?.ending_balance || 0;
     let currentMonthlyDeposit = investmentPlan.monthly_deposit;
     let currentMonthlyWithdrawal = investmentPlan.desired_income;
-    const yearlyReturnRate = investmentPlan.expected_return / 100 + investmentPlan.inflation / 100;
-    const yearlyInflationRate = investmentPlan.inflation / 100;
+    const monthlyInflationRate = yearlyReturnRateToMonthlyReturnRate(investmentPlan.inflation/100);
+    const monthlyExpectedReturnRate = yearlyReturnRateToMonthlyReturnRate(investmentPlan.expected_return/100);
+    const monthlyReturnRate = calculateCompoundedRates([monthlyExpectedReturnRate, monthlyInflationRate]);
 
     const historicalRecordsMap = new Map(
-      allFinancialRecords.map(record => [
+      initialRecords.map(record => [
         `${record.record_year}-${record.record_month}`,
         record
       ])
@@ -112,33 +91,27 @@ export function generateProjectionData(
           };
         }
 
+        const previousBalance = currentBalance;
+        currentBalance = handleMonthlyGoalsAndEvents(
+          currentBalance,
+          year,
+          currentMonthNumber - 1,
+          goalsForChart,
+          events
+        );
+        const goalsEventsImpact = currentBalance - previousBalance;
+
         const isRetirementAge = age > investmentPlan.final_age || 
           (age === investmentPlan.final_age && currentMonthNumber >= birthMonth);
 
-        if (currentMonthNumber === 1 && i > 0) {
-          if (investmentPlan.adjust_contribution_for_inflation && !isRetirementAge) {
-            currentMonthlyDeposit *= (1 + yearlyInflationRate);
-          }
-          currentMonthlyWithdrawal *= (1 + yearlyInflationRate);
+        if (investmentPlan.adjust_contribution_for_inflation && !isRetirementAge) {
+          currentMonthlyDeposit *= (1 + monthlyInflationRate);
         }
-
-        const monthlyReturnRate = yearlyReturnRateToMonthlyReturnRate(yearlyReturnRate);
+        currentMonthlyWithdrawal *= (1 + monthlyInflationRate);
 
         if (isRetirementAge) {
-          const monthsUntilEnd = (endAge - age) * 12 - month;
           const monthlyReturn = currentBalance * monthlyReturnRate;
-          const withdrawal = calculateMonthlyWithdrawal(
-            strategy,
-            {
-              currentBalance,
-              monthlyReturnRate,
-              monthlyInflationRate: yearlyInflationRate,
-              currentAge: age,
-              monthsUntilEnd: monthsUntilEnd,
-              currentMonth: month,
-              desiredIncome: currentMonthlyWithdrawal
-            }
-          );
+          const withdrawal = currentMonthlyWithdrawal;
           
           currentBalance = (currentBalance - withdrawal) * (1 + monthlyReturnRate);
 
@@ -148,7 +121,8 @@ export function generateProjectionData(
             withdrawal,
             balance: currentBalance,
             returns: monthlyReturn,
-            isHistorical: false
+            isHistorical: false,
+            goalsEventsImpact: goalsEventsImpact
           };
         } else {
           const monthlyReturn = currentBalance * monthlyReturnRate;
@@ -160,7 +134,8 @@ export function generateProjectionData(
             withdrawal: 0,
             balance: currentBalance,
             returns: monthlyReturn,
-            isHistorical: false
+            isHistorical: false,
+            goalsEventsImpact: goalsEventsImpact
           };
         }
       });
@@ -178,7 +153,8 @@ export function generateProjectionData(
         months: monthlyData,
         isRetirementTransitionYear: hasRetirementTransition,
         hasHistoricalData: monthlyData.some(m => m.isHistorical),
-        returns: monthlyData[11].returns || 0
+        returns: monthlyData[11].returns || 0,
+        goalsEventsImpact: monthlyData.reduce((sum, month) => sum + (month.goalsEventsImpact || 0), 0)
       });
     }
 

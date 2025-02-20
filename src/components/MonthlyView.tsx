@@ -7,33 +7,10 @@ import { useState, useCallback, useMemo } from "react";
 import { toast } from "@/components/ui/use-toast";
 import { fetchCDIRates, fetchIPCARates } from '@/lib/bcb-api';
 import { ChevronDown, ChevronRight } from "lucide-react";
-import { WithdrawalStrategy } from '@/lib/withdrawal-strategies';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { generateProjectionData } from '@/lib/generate-projection-data';
 import React from "react";
-
-interface FinancialRecord {
-  record_year: number;
-  record_month: number;
-  ending_balance: number;
-  starting_balance: number;
-  monthly_contribution: number;
-  monthly_return_rate: number;
-  monthly_return: number;
-  target_rentability: number;
-}
-
-interface InvestmentPlan {
-  initial_age: number;
-  final_age: number;
-  monthly_deposit: number;
-  expected_return: number;
-  inflation: number;
-  adjust_contribution_for_inflation: boolean;
-  desired_income: number;
-  plan_type: string;
-  limit_age?: number;
-}
+import { FinancialRecord, InvestmentPlan, Goal, ProjectedEvent } from '@/types/financial';
+import { supabase } from "@/lib/supabase";
 
 export const MonthlyView = ({ 
   userId, 
@@ -41,8 +18,6 @@ export const MonthlyView = ({
   allFinancialRecords,
   investmentPlan, 
   profile,
-  withdrawalStrategy = { type: 'fixed' },
-  onWithdrawalStrategyChange
 }: {
   userId: string;
   initialRecords: FinancialRecord[];
@@ -51,8 +26,6 @@ export const MonthlyView = ({
   profile: {
     birth_date: string;
   };
-  withdrawalStrategy?: WithdrawalStrategy;
-  onWithdrawalStrategyChange?: (strategy: WithdrawalStrategy) => void;
 }) => {
   const { t } = useTranslation();
   const RECORDS_PER_PAGE = 12;
@@ -124,6 +97,36 @@ export const MonthlyView = ({
       return await fetchIPCARates(startDate, endDate);
     },
     enabled: Boolean(allFinancialRecords?.length),
+  });
+
+  const { data: goals } = useQuery<Goal[]>({
+    queryKey: ["financial-goals", userId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("financial_goals")
+        .select("*")
+        .eq("profile_id", userId)
+        .eq("status", "pending")
+        .order("year", { ascending: true })
+        .order("month", { ascending: true });
+
+      if (error) throw error;
+      return data;
+    },
+  });
+
+  const { data: events } = useQuery<ProjectedEvent[]>({
+    queryKey: ["events", userId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("events")
+        .select("*")
+        .eq("profile_id", userId)
+        .eq("status", "projected"); 
+
+      if (error) throw error;
+      return data;
+    },
   });
 
   // 4. All other hooks and functions
@@ -213,7 +216,6 @@ export const MonthlyView = ({
   const monthlyData = sortedRecords.map(record => {
     const monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 
       'July', 'August', 'September', 'October', 'November', 'December'];
-      
       
     return {
       month: `${monthNames[record.record_month - 1]}/${record.record_year}`,
@@ -438,29 +440,6 @@ export const MonthlyView = ({
         </TabsContent>
 
         <TabsContent value="futureProjection">
-          <div className="flex justify-end gap-2 mb-4">
-            <Select
-              value={withdrawalStrategy.type}
-              onValueChange={(value) => {
-                onWithdrawalStrategyChange?.({
-                  type: value as WithdrawalStrategy['type'],
-                  monthlyAmount: value === 'fixed' ? investmentPlan?.desired_income : undefined,
-                  targetLegacy: value === 'legacy' ? 1000000 : undefined
-                });
-              }}
-            >
-              <SelectTrigger className="w-[200px]">
-                <SelectValue placeholder={t('expenseChart.selectStrategy')} />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="fixed">{t('monthlyView.futureProjection.strategies.fixed')}</SelectItem>
-                <SelectItem value="preservation">{t('monthlyView.futureProjection.strategies.preservation')}</SelectItem>
-                <SelectItem value="spend-all">{t('monthlyView.futureProjection.strategies.spendAll')}</SelectItem>
-                <SelectItem value="legacy">{t('monthlyView.futureProjection.strategies.legacy')}</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-
           <div className="rounded-md border overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
@@ -468,17 +447,18 @@ export const MonthlyView = ({
                   <th className="p-2 text-left whitespace-nowrap">{t('monthlyView.futureProjection.age')}</th>
                   <th className="p-2 text-left whitespace-nowrap">{t('monthlyView.futureProjection.year')}</th>
                   <th className="p-2 text-right whitespace-nowrap">{t('monthlyView.futureProjection.cashFlow')}</th>
+                  <th className="p-2 text-right whitespace-nowrap">{t('monthlyView.futureProjection.goalsEventsImpact')}</th>
                   <th className="p-2 text-right whitespace-nowrap">{t('monthlyView.futureProjection.balance')}</th>
                   <th className="p-2 text-center w-10"></th>
                 </tr>
               </thead>
               <tbody>
                 {generateProjectionData(
-                  withdrawalStrategy,
                   investmentPlan,
                   profile,
                   allFinancialRecords,
-                  allFinancialRecords
+                  goals,
+                  events
                 ).map((projection, index) => (
                   <React.Fragment key={`${projection.year}-${index}-group`}>
                     <tr key={`${projection.year}-${index}`} className={`border-b hover:bg-muted/50 transition-colors ${
@@ -503,6 +483,17 @@ export const MonthlyView = ({
                             -R$ {projection.withdrawal.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                           </span>
                         ) : '-'}
+                      </td>
+                      <td className="p-2 text-right">
+                        <span className={`${
+                          projection.goalsEventsImpact > 0 
+                            ? 'text-green-600' 
+                            : projection.goalsEventsImpact < 0 
+                              ? 'text-red-600' 
+                              : 'text-black'
+                        }`}>
+                          R$ {projection.goalsEventsImpact?.toLocaleString('pt-BR', { maximumFractionDigits: 2 })}
+                        </span>
                       </td>
                       <td className="p-2 text-right font-medium">
                         R$ {projection.balance.toLocaleString('pt-BR', { maximumFractionDigits: 2 })}
@@ -531,7 +522,13 @@ export const MonthlyView = ({
                                 ? 'bg-blue-50/50' 
                                 : 'bg-muted/20'
                             }`}>
-                          <td className="p-2"></td>
+                           <td className="p-2">
+                            {month.isHistorical && (
+                              <span className="mr-2 text-xs text-blue-600 font-medium">
+                                {'H'}
+                              </span>
+                            )}
+                          </td>
                           <td className="p-2">{monthNames[month.month - 1]}</td>
                           <td className="p-2 text-right">
                             {month.contribution > 0 ? (
@@ -543,6 +540,17 @@ export const MonthlyView = ({
                                 -R$ {month.withdrawal.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                               </span>
                             ) : '-'}
+                          </td>
+                          <td className="p-2 text-right">
+                            <span className={`${
+                              month.goalsEventsImpact > 0 
+                                ? 'text-green-600' 
+                                : month.goalsEventsImpact < 0 
+                                  ? 'text-red-600' 
+                                  : 'text-black'
+                            }`}>
+                              R$ {month.goalsEventsImpact?.toLocaleString('pt-BR', { maximumFractionDigits: 2 })}
+                            </span>
                           </td>
                           <td className="p-2 text-right">
                             R$ {month.balance.toLocaleString('pt-BR', { maximumFractionDigits: 2 })}

@@ -334,6 +334,7 @@ export const ptBR = {
       monthlyDetails: "Mês",
       cashFlow: "Fluxo de Caixa",
       historical: 'Histórico',
+      goalsEventsImpact: 'Objetivos e Eventos',
       strategies: {
         fixed: "Renda Desejada",
         preservation: "Preservação",

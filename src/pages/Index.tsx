@@ -642,6 +642,7 @@ const Index = () => {
               initial_amount: investmentPlan?.initial_amount ?? 0,
               target_amount: investmentPlan?.target_amount ?? 0,
               initial_age: investmentPlan?.initial_age ?? 0,
+              limit_age: investmentPlan?.limit_age ?? 0,
               adjust_contribution_for_inflation: investmentPlan?.adjust_contribution_for_inflation ?? false,
               id: investmentPlan?.id ?? '',
               user_id: investmentPlan?.user_id ?? ''
@@ -681,8 +682,6 @@ const Index = () => {
             allFinancialRecords={allFinancialRecords || []}
             investmentPlan={investmentPlan}
             profile={clientProfile}
-            withdrawalStrategy={withdrawalStrategy}
-            onWithdrawalStrategyChange={setWithdrawalStrategy}
           />
         </section>
       </main>

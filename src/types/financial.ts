@@ -38,6 +38,7 @@ export interface InvestmentPlan {
   initial_age: number;
   final_age: number;
   future_value: number;
+  limit_age: number;
   monthly_deposit: number;
   inflation: number;
   expected_return: number;
