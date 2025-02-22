@@ -1,4 +1,4 @@
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend, ReferenceLine } from 'recharts';
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend, ReferenceLine, Label } from 'recharts';
 import { useTranslation } from "react-i18next";
 import { ChartDataPoint, FinancialRecord, Goal, ProjectedEvent } from '@/types/financial';
 import { WithdrawalStrategy } from '@/lib/withdrawal-strategies';
@@ -7,7 +7,6 @@ import { generateChartProjections } from '@/lib/chart-projections';
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
 import { useState } from "react";
-import { goalIcons } from '@/constants/goals';
 
 interface Profile {
   birth_date: string;
@@ -208,6 +207,58 @@ export const ExpenseChart = ({
 
   const offset = colorOffset();
 
+  const renderContent = (props: any, goal?: Goal, event?: ProjectedEvent) => {
+    if (!props.viewBox?.x || !props.viewBox?.y || (!goal && !event)) return null;
+    
+    const { viewBox: { x, y } } = props;
+    const icon = goal ? goal.icon === 'car' ? '🚗' : 
+                 goal.icon === 'house' ? '🏠' : 
+                 goal.icon === 'travel' ? '✈️' : 
+                 goal.icon === 'education' ? '🎓' :
+                 goal.icon === 'retirement' ? '👴' :
+                 goal.icon === 'emergency' ? '🚨' : '🎯' :
+                 event ? '📅' : null;
+    
+    // Format currency for goal/event amount
+    const formattedAmount = (goal?.asset_value || event?.amount) 
+      ? new Intl.NumberFormat('pt-BR', {
+          style: 'currency',
+          currency: 'BRL'
+        }).format(goal?.asset_value || event?.amount || 0)
+      : '';
+
+    return (
+      <g transform={`translate(${x - 7}, ${y - 7})`}>
+        <title>
+          {goal 
+            ? `${t('financialGoals.icons.' + goal.icon)}\n` +
+              `${t('financialGoals.labels.assetValue')}: ${formattedAmount}\n` +
+              `${t('financialGoals.form.goalMonth')}: ${t('monthlyView.table.months.' + new Date(0, goal.month - 1).toLocaleString('default', { month: 'long' }))}\n` +
+              `${t('financialGoals.form.goalYear')}: ${goal.year}\n` +
+              (goal.description ? `${t('financialGoals.description')}: ${goal.description}\n` : '') +
+              (goal.installment_project ? `${t('financialGoals.form.isInstallment')}: ${t('common.yes')}\n` : '') +
+              (goal.installment_count ? `${t('financialGoals.form.installmentCount')}: ${goal.installment_count}` : '')
+            : event
+              ? `${t('events.form.name')}: ${event.name}\n` +
+                `${t('events.form.amount')}: ${formattedAmount}\n` +
+                `${t('events.form.month')}: ${t('monthlyView.table.months.' + new Date(0, event.month - 1).toLocaleString('default', { month: 'long' }))}\n` +
+                `${t('events.form.year')}: ${event.year}`
+              : ''
+          }
+        </title>
+        <text 
+          x="0" 
+          y="0" 
+          fontSize="14" 
+          fill="#374151"
+          style={{ cursor: 'help' }}
+        >
+          {`${icon}`}
+        </text>
+      </g>
+    );
+  };
+
 
   return (
     <div className="space-y-4">
@@ -353,12 +404,8 @@ export const ExpenseChart = ({
                     strokeDasharray="3 3"
                     ifOverflow="extendDomain"
                     label={{
-                      value: `${goalIcons[goal.icon]}`,
                       position: 'top',
-                      fill: 'blue',
-                      fontSize: 14,
-                      dy: 0,
-                      className: "font-medium"
+                      content: (props) => renderContent(props, goal)
                     }}
                   />
                 );
@@ -387,8 +434,8 @@ export const ExpenseChart = ({
                     strokeDasharray="3 3"
                     ifOverflow="extendDomain"
                     label={{
-                      value: `📅`,
                       position: 'top',
+                      content: (props) => renderContent(props, null,  event)
                     }}
                   />
                 );
