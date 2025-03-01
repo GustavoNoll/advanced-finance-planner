@@ -19,6 +19,7 @@ import {
   HoverCardContent,
   HoverCardTrigger,
 } from "@/components/ui/hover-card";
+import { PlanProgress } from "@/components/PlanProgress";
 
 type TimePeriod = 'all' | '6m' | '12m' | '24m';
 
@@ -628,7 +629,15 @@ const Index = () => {
           />
         </div>
         
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <PlanProgress 
+            allFinancialRecords={allFinancialRecords || []}
+            investmentPlan={investmentPlan}
+            profile={{
+              birth_date: clientProfile?.birth_date
+            }}
+          />
+          
           <SavingsGoal 
             allFinancialRecords={allFinancialRecords || []}
             investmentPlan={investmentPlan}

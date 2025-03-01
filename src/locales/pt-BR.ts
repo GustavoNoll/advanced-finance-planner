@@ -182,6 +182,20 @@ export const ptBR = {
       planning: "Planejamento",
       management: "Gerenciamento",
     },
+    planProgress: {
+      title: "Progresso do Plano",
+      tooltip: "Acompanhamento do seu plano de aposentadoria baseado nos dados atuais",
+      currentAge: "Idade Atual",
+      yearsToRetirement: "Anos para Aposentadoria",
+      onTrack: "No Caminho Certo",
+      needsAttention: "Precisa de Atenção",
+      behind: "de atraso",
+      monthlyContribution: "Contribuição Mensal",
+      monthlyWithdrawal: "Renda Mensal",
+      planned: "Planejado",
+      projected: "Projetado",
+      difference: "diferença"
+    },
   },
   brokerDashboard: {
     title: "Painel do Corretor",
@@ -242,7 +256,12 @@ export const ptBR = {
     update: "Atualizar",
     add: "Adicionar",
     select: "Selecione",
-    confirmDelete: "Tem certeza que deseja excluir este item?"
+    confirmDelete: "Tem certeza que deseja excluir este item?",
+    current: "Atual",
+    required: "Necessário",
+    target: "Meta",
+    projected: "Projetado",
+    years: "anos",
   },
   createClient: {
     title: "Criar Novo Cliente",
@@ -356,9 +375,9 @@ export const ptBR = {
   expenseChart: {
     portfolioValue: "Valor do Portfólio",
     inflationAdjusted: "Ajustado pela Inflação",
-    actualValue: "Valor Real",
+    actualValue: "Valor Projetado",
     actualValueProjection: "Valor Real Projetado",
-    projectedValue: "Valor Projetado",
+    projectedValue: "Valor Planejado",
     years: "anos",
     goalAchievement: "Meta atingida"
   },
