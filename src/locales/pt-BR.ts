@@ -186,7 +186,7 @@ export const ptBR = {
       title: "Progresso do Plano",
       tooltip: "Acompanhamento do seu plano de aposentadoria baseado nos dados atuais",
       currentAge: "Idade Atual",
-      yearsToRetirement: "Anos para Aposentadoria",
+      monthsToRetirement: "Meses para Aposentadoria",
       onTrack: "No Caminho Certo",
       needsAttention: "Precisa de Atenção",
       behind: "de atraso",
@@ -229,6 +229,7 @@ export const ptBR = {
     }
   },
   common: {
+    months: "Meses",
     last1YearS: "1A",
     last5YearsS: "5A",
     last10YearsS: "10A",

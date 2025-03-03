@@ -300,6 +300,29 @@ const Index = () => {
     enabled: !!clientId,
   });
 
+  const { data: goalsAndEvents, isLoading: isGoalsLoading } = useQuery({
+    queryKey: ['goalsAndEvents', clientId],
+    queryFn: async () => {
+      const [goalsResponse, eventsResponse] = await Promise.all([
+        supabase
+          .from('financial_goals')
+          .select('*')
+          .eq('profile_id', clientId)
+          .eq('status', 'pending'),
+        supabase
+          .from('events')
+          .select('*')
+          .eq('profile_id', clientId)
+          .eq('status', 'projected')
+      ]);
+      return {
+        goals: goalsResponse.data || [],
+        events: eventsResponse.data || []
+      };
+    },
+    enabled: !!clientId
+  });
+
   useEffect(() => {
     if (!isInvestmentPlanLoading && !isProfilesLoading) {
       if (brokerProfile && !params.id) {
@@ -327,7 +350,7 @@ const Index = () => {
     }
   }, [investmentPlan, brokerProfile, isInvestmentPlanLoading, isProfilesLoading, navigate, params.id]);
 
-  if (isInvestmentPlanLoading || isProfilesLoading || isFinancialRecordsLoading || (!investmentPlan && !brokerProfile)) {
+  if (isInvestmentPlanLoading || isProfilesLoading || isFinancialRecordsLoading || isGoalsLoading || (!investmentPlan && !brokerProfile)) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <Spinner size="lg" />
@@ -636,6 +659,8 @@ const Index = () => {
             profile={{
               birth_date: clientProfile?.birth_date
             }}
+            goals={goalsAndEvents?.goals || []}
+            events={goalsAndEvents?.events || []}
           />
           
           <SavingsGoal 
