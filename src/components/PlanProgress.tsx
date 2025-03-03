@@ -43,75 +43,109 @@ function generatePreCalculationHash(
   currentAge: number,
   monthlyInflation: number,
   goals: Goal[],
-  events: ProjectedEvent[]
-): Record<number, MonthlyValues> {
-  // Process goals and create installments if needed
+  events: ProjectedEvent[],
+  finalAgeMonths: number,
+  birthDate: Date,
+  initialAge: number
+): {
+  preRetirementHash: Record<number, MonthlyValues>;
+  postRetirementHash: Record<number, MonthlyValues>;
+} {
+  // Calculate the reference date (when initial_age starts)
+  const referenceDate = new Date(birthDate);
+  referenceDate.setFullYear(referenceDate.getFullYear() + initialAge);
+
+  // Process goals and events relative to the reference date
   const processedGoals = goals.flatMap(goal => {
-    const goalMonth = Math.floor(new Date(goal.year, goal.month - 1).getTime() / (30.44 * 24 * 60 * 60 * 1000));
+    const goalDate = new Date(goal.year, goal.month - 1);
+    const monthsSinceReference = Math.floor((goalDate.getTime() - referenceDate.getTime()) / (30.44 * 24 * 60 * 60 * 1000));
     
     if (goal.installment_project && goal.installment_count) {
-      // Create monthly installments
       const monthlyAmount = goal.asset_value / goal.installment_count;
       return Array.from({ length: goal.installment_count }, (_, index) => ({
         amount: monthlyAmount,
-        month: goalMonth + index,
+        month: monthsSinceReference + index,
         description: `${goal.description} (${index + 1}/${goal.installment_count})`
       }));
     } else {
-      // Single payment goal
       return [{
         amount: goal.asset_value,
-        month: goalMonth,
+        month: monthsSinceReference,
         description: goal.description
       }];
     }
   });
 
-  // Process events
-  const processedEvents = events.map(event => ({
-    amount: event.amount,
-    month: Math.floor(new Date(event.year, event.month - 1).getTime() / (30.44 * 24 * 60 * 60 * 1000)),
-    name: event.name
-  }));
-  console.log(processedEvents);
-  console.log(processedGoals);
+  const processedEvents = events.map(event => {
+    const eventDate = new Date(event.year, event.month - 1);
+    const monthsSinceReference = Math.floor((eventDate.getTime() - referenceDate.getTime()) / (30.44 * 24 * 60 * 60 * 1000));
+    return {
+      amount: event.amount,
+      month: monthsSinceReference,
+      name: event.name
+    };
+  });
 
-  // Get all relevant months
+  // Separate into pre and post retirement
+  const preRetirementGoals = processedGoals.filter(g => g.month <= finalAgeMonths);
+  const postRetirementGoals = processedGoals.filter(g => g.month > finalAgeMonths);
+  const preRetirementEvents = processedEvents.filter(e => e.month <= finalAgeMonths);
+  const postRetirementEvents = processedEvents.filter(e => e.month > finalAgeMonths);
+
+  // Create separate hashes for pre and post retirement
+  const preRetirementHash = createMonthlyValuesHash(
+    currentAge,
+    monthlyInflation,
+    preRetirementGoals,
+    preRetirementEvents
+  );
+
+  const postRetirementHash = createMonthlyValuesHash(
+    finalAgeMonths,
+    monthlyInflation,
+    postRetirementGoals,
+    postRetirementEvents
+  );
+
+  return { preRetirementHash, postRetirementHash };
+}
+
+// Helper function to create hash for a set of goals and events
+function createMonthlyValuesHash(
+  startMonth: number,
+  monthlyInflation: number,
+  goals: Array<{ amount: number; month: number; description?: string }>,
+  events: Array<{ amount: number; month: number; name: string }>
+): Record<number, MonthlyValues> {
   const relevantMonths = new Set([
-    ...processedGoals.map(g => g.month),
-    ...processedEvents.map(e => e.month)
+    ...goals.map(g => g.month),
+    ...events.map(e => e.month)
   ].sort((a, b) => a - b));
 
-  console.log(relevantMonths);
-
-  const preCalculationHash: Record<number, MonthlyValues> = {};
-  let currentMonth = currentAge;
+  const hash: Record<number, MonthlyValues> = {};
+  let currentMonth = startMonth;
   let inflationFactor = 1;
 
   for (const month of relevantMonths) {
-    // Update inflation factor for all months up to this point
     while (currentMonth <= month) {
       inflationFactor *= (1 + monthlyInflation);
       currentMonth++;
     }
 
-    // Get goals for this month
-    const monthlyGoals = processedGoals
+    const monthlyGoals = goals
       .filter(goal => goal.month === month)
       .map(goal => ({
         amount: goal.amount,
         description: goal.description
       }));
 
-    // Get events for this month
-    const monthlyEvents = processedEvents
+    const monthlyEvents = events
       .filter(event => event.month === month)
       .map(event => ({
         amount: event.amount,
         name: event.name
       }));
 
-    // Only create hash entry if there are goals or events
     if (monthlyGoals.length > 0 || monthlyEvents.length > 0) {
       const adjustedGoals = monthlyGoals.map(goal => ({
         amount: goal.amount * inflationFactor,
@@ -123,7 +157,7 @@ function generatePreCalculationHash(
         name: event.name
       }));
 
-      preCalculationHash[month] = {
+      hash[month] = {
         month,
         originalValues: {
           goals: monthlyGoals,
@@ -134,7 +168,7 @@ function generatePreCalculationHash(
           goals: adjustedGoals,
           events: adjustedEvents,
           total: [
-            ...adjustedGoals.map(g => g.amount),
+            ...adjustedGoals.map(g => -g.amount),
             ...adjustedEvents.map(e => e.amount)
           ].reduce((sum, val) => sum + val, 0)
         }
@@ -142,7 +176,7 @@ function generatePreCalculationHash(
     }
   }
 
-  return preCalculationHash;
+  return hash;
 }
 
 function calculateProjections(
@@ -151,20 +185,25 @@ function calculateProjections(
   investmentPlan: InvestmentPlan,
   currentAge: number,
   goals: Goal[],
-  events: ProjectedEvent[]
+  events: ProjectedEvent[],
+  birthDate: Date
 ): ProjectionResult {
   const monthlyExpectedReturn = yearlyReturnRateToMonthlyReturnRate(investmentPlan.expected_return/100);
   const monthlyInflation = yearlyReturnRateToMonthlyReturnRate(investmentPlan.inflation/100);
+  const finalAgeMonths = (investmentPlan.final_age - investmentPlan.initial_age) * 12;
 
-  // Generate pre-calculation hash
-  const preCalculationHash = generatePreCalculationHash(
+  const { preRetirementHash, postRetirementHash } = generatePreCalculationHash(
     currentAge,
     monthlyInflation,
     goals,
-    events
+    events,
+    finalAgeMonths,
+    birthDate,
+    investmentPlan.initial_age
   );
 
-  console.log(preCalculationHash);
+  console.log(preRetirementHash);
+  console.log(postRetirementHash);
 
   // Calculate average contribution from records
   const projectedContribution = 0;
@@ -214,7 +253,15 @@ export const PlanProgress = ({ allFinancialRecords, investmentPlan, profile, goa
     projectedMonthsToRetirement,
     projectedContribution,
     projectedMonthlyIncome
-  } = calculateProjections(currentBalance, allFinancialRecords, investmentPlan, currentAgeMonths, goals, events);
+  } = calculateProjections(
+    currentBalance, 
+    allFinancialRecords, 
+    investmentPlan, 
+    currentAgeMonths, 
+    goals, 
+    events,
+    birthDate
+  );
 
   // Calculate months remaining and retirement status
   const monthsToRetirement = Math.max(0, projectedMonthsToRetirement - currentAgeMonths);
