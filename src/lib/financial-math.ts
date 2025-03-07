@@ -110,3 +110,47 @@ export function calculateFutureValue(
  * // Calculate present value of R$100000 in 10 years with 12% annual interest
  * calculatePresentValue(100000, 0.12, 10)
  */
+
+/**
+ * Calcula o número de períodos necessários para atingir um valor futuro com base na taxa de juros e pagamentos
+ * Funciona como a função NPER do Excel
+ * Fórmula: NPER = ln((PMT * (1 + taxa * tipo) - VF * taxa) / (VP * taxa + PMT * (1 + taxa * tipo))) / ln(1 + taxa)
+ * 
+ * @param taxa - Taxa de juros por período em decimal
+ * @param valor_do_pagamento - Pagamento feito em cada período (negativo se você estiver pagando)
+ * @param valor_atual - Valor presente (positivo para dinheiro recebido, negativo para investimento)
+ * @param valor_futuro - O valor futuro ou saldo de caixa após o último pagamento (padrão: 0)
+ * @param fim_ou_inicio - Se os pagamentos são devidos no início (true) ou fim (false) do período (padrão: false)
+ * @returns Número de períodos (períodos fracionários são possíveis)
+ * 
+ * @example
+ * // Quantos meses para pagar um empréstimo de R$10000 com taxa de juros de 1% mensal com pagamentos de R$1000 mensais
+ * nper(0.01, -1000, 10000)
+ */
+export function nper(
+  taxa: number,
+  valor_do_pagamento: number,
+  valor_atual: number,
+  valor_futuro: number = 0,
+  fim_ou_inicio: boolean = false
+): number {
+  // Tratamento de caso especial para taxa zero
+  if (taxa === 0) {
+    return -(valor_atual + valor_futuro) / valor_do_pagamento;
+  }
+
+  const tipo = fim_ou_inicio ? 1 : 0;
+  const PMT = valor_do_pagamento;
+  const PV = valor_atual;
+  const FV = valor_futuro;
+  
+  const numerador = PMT * (1 + taxa * tipo) - FV * taxa;
+  const denominador = PV * taxa + PMT * (1 + taxa * tipo);
+  
+  // Se o denominador for zero ou o cálculo resultar em um valor negativo dentro do logaritmo
+  if (denominador === 0 || (numerador / denominador) <= 0) {
+    throw new Error('Não é possível calcular o número de períodos com estes parâmetros');
+  }
+  
+  return Math.log(numerador / denominador) / Math.log(1 + taxa);
+}

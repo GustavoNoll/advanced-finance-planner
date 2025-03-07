@@ -6,7 +6,7 @@ import {
   HoverCardContent,
   HoverCardTrigger,
 } from "@/components/ui/hover-card";
-import { yearlyReturnRateToMonthlyReturnRate } from "@/lib/financial-math";
+import { calculateCompoundedRates, nper, yearlyReturnRateToMonthlyReturnRate } from "@/lib/financial-math";
 
 
 interface PlanProgressProps {
@@ -40,20 +40,16 @@ type MonthlyValues = {
 };
 
 function generatePreCalculationHash(
-  currentAge: number,
+  monthlyExpectedReturn: number,
   monthlyInflation: number,
   goals: Goal[],
   events: ProjectedEvent[],
   finalAgeMonths: number,
-  birthDate: Date,
-  initialAge: number
+  referenceDate: Date
 ): {
   preRetirementHash: Record<number, MonthlyValues>;
   postRetirementHash: Record<number, MonthlyValues>;
 } {
-  // Calculate the reference date (when initial_age starts)
-  const referenceDate = new Date(birthDate);
-  referenceDate.setFullYear(referenceDate.getFullYear() + initialAge);
 
   // Process goals and events relative to the reference date
   const processedGoals = goals.flatMap(goal => {
@@ -65,13 +61,13 @@ function generatePreCalculationHash(
       return Array.from({ length: goal.installment_count }, (_, index) => ({
         amount: monthlyAmount,
         month: monthsSinceReference + index,
-        description: `${goal.description} (${index + 1}/${goal.installment_count})`
+        description: `${goal.icon} (${index + 1}/${goal.installment_count})`
       }));
     } else {
       return [{
         amount: goal.asset_value,
         month: monthsSinceReference,
-        description: goal.description
+        description: goal.icon
       }];
     }
   });
@@ -94,17 +90,21 @@ function generatePreCalculationHash(
 
   // Create separate hashes for pre and post retirement
   const preRetirementHash = createMonthlyValuesHash(
-    currentAge,
     monthlyInflation,
+    monthlyExpectedReturn,
     preRetirementGoals,
-    preRetirementEvents
+    preRetirementEvents,
+    true,
+    finalAgeMonths
   );
 
   const postRetirementHash = createMonthlyValuesHash(
-    finalAgeMonths,
     monthlyInflation,
+    monthlyExpectedReturn,
     postRetirementGoals,
-    postRetirementEvents
+    postRetirementEvents,
+    false,
+    finalAgeMonths
   );
 
   return { preRetirementHash, postRetirementHash };
@@ -112,10 +112,12 @@ function generatePreCalculationHash(
 
 // Helper function to create hash for a set of goals and events
 function createMonthlyValuesHash(
-  startMonth: number,
   monthlyInflation: number,
+  monthlyExpectedReturn: number,
   goals: Array<{ amount: number; month: number; description?: string }>,
-  events: Array<{ amount: number; month: number; name: string }>
+  events: Array<{ amount: number; month: number; name: string }>,
+  preRetirement: boolean,
+  finalAgeMonths: number
 ): Record<number, MonthlyValues> {
   const relevantMonths = new Set([
     ...goals.map(g => g.month),
@@ -123,8 +125,9 @@ function createMonthlyValuesHash(
   ].sort((a, b) => a - b));
 
   const hash: Record<number, MonthlyValues> = {};
-  let currentMonth = startMonth;
+  let currentMonth = 0;
   let inflationFactor = 1;
+  const monthlyReturn = calculateCompoundedRates([monthlyExpectedReturn, monthlyInflation]);
 
   for (const month of relevantMonths) {
     while (currentMonth <= month) {
@@ -148,12 +151,12 @@ function createMonthlyValuesHash(
 
     if (monthlyGoals.length > 0 || monthlyEvents.length > 0) {
       const adjustedGoals = monthlyGoals.map(goal => ({
-        amount: goal.amount * inflationFactor,
+        amount: goal.amount/((1 + monthlyReturn)**(preRetirement ? month : month - finalAgeMonths)),
         description: goal.description
       }));
       
       const adjustedEvents = monthlyEvents.map(event => ({
-        amount: event.amount * inflationFactor,
+        amount: event.amount/((1 + monthlyReturn)**(preRetirement ? month : month - finalAgeMonths)),
         name: event.name
       }));
 
@@ -188,40 +191,72 @@ function calculateProjections(
   events: ProjectedEvent[],
   birthDate: Date
 ): ProjectionResult {
+  const lastRecord = allFinancialRecords[allFinancialRecords.length - 1];
+  const actualMonth = lastRecord?.record_month || 0;
+  const actualYear = lastRecord?.record_year || 0;
+
   const monthlyExpectedReturn = yearlyReturnRateToMonthlyReturnRate(investmentPlan.expected_return/100);
   const monthlyInflation = yearlyReturnRateToMonthlyReturnRate(investmentPlan.inflation/100);
-  const finalAgeMonths = (investmentPlan.final_age - investmentPlan.initial_age) * 12;
+  
+  // Calculate months until retirement based on current age
+  let finalAgeMonths;
+  let currentDate;
+  if (actualMonth === 0 && actualYear === 0) {
+    finalAgeMonths = (investmentPlan.final_age - investmentPlan.initial_age) * 12;
+    currentDate = new Date(birthDate);
+    currentDate.setFullYear(currentDate.getFullYear() + investmentPlan.initial_age);
+  } else {
+    currentDate = new Date(actualYear, actualMonth - 1);
+    const finalAgeDate = new Date(birthDate);
+    finalAgeDate.setFullYear(birthDate.getFullYear() + investmentPlan.final_age);
+    // Ajuste para manter o mesmo dia do mês
+    finalAgeDate.setDate(birthDate.getDate());
+    
+    // Calcula a diferença em meses
+    const yearDiff = finalAgeDate.getFullYear() - currentDate.getFullYear();
+    const monthDiff = finalAgeDate.getMonth() - currentDate.getMonth();
+    finalAgeMonths = (yearDiff * 12) + monthDiff;
+    
+    // Ajuste para dias parciais do mês
+    if (finalAgeDate.getDate() < currentDate.getDate()) {
+      finalAgeMonths--;
+    }
+  }
 
   const { preRetirementHash, postRetirementHash } = generatePreCalculationHash(
-    currentAge,
+    monthlyExpectedReturn,
     monthlyInflation,
     goals,
     events,
     finalAgeMonths,
-    birthDate,
-    investmentPlan.initial_age
+    currentDate
   );
-
-  console.log(preRetirementHash);
-  console.log(postRetirementHash);
 
   // Calculate average contribution from records
   const projectedContribution = 0;
-
-  // Calculate projected retirement age
-  const projectedMonthsToRetirement = 51 * 12;
+  const initialAmount = currentBalance;
+  
   // G13 Retorno Esperado Mês (IPCA+) monthlyExpectedReturn
   // G16 Ajusta aporte pela inflação? adjustContributionForInflation
   // G11 inflação monthlyInflation
   // G18 deposito acordado monthlyDeposit
   // G17 valor inicial initialAmount
   // d6 + d13 soma objetivos pre aposentadoria (multiplicado cada um pela inflação)
+  const preRetirementGoals = Object.values(preRetirementHash).reduce((sum, monthlyValues) => sum + monthlyValues.adjustedValues.total, 0);
+  const postRetirementGoals = Object.values(postRetirementHash).reduce((sum, monthlyValues) => sum + monthlyValues.adjustedValues.total, 0);
   // G25 VALOR PRESENTE NECESSARIO presentFutureValue
   // d14 + d20 soma objetivos pós aposentadoria (multiplicado cada um pela inflação)
   const adjustContributionForInflation = investmentPlan.adjust_contribution_for_inflation;
-  const contribution = adjustContributionForInflation ? monthlyInflation : 0;
-  const initialAmount = investmentPlan.initial_amount;
+  const contribution = investmentPlan.monthly_deposit;
   const presentFutureValue = investmentPlan.present_future_value;
+
+  // Calculate projected retirement months
+  const projectedMonthsToRetirement = nper(
+    monthlyExpectedReturn * (adjustContributionForInflation ? 1 : monthlyInflation),
+    -contribution,
+    -(initialAmount + preRetirementGoals),
+    (presentFutureValue - postRetirementGoals) * (1) // TO DO: Verify se p7
+  );
 
   // Calculate projected monthly income
   const projectedMonthlyIncome = 0;
@@ -246,8 +281,7 @@ export const PlanProgress = ({ allFinancialRecords, investmentPlan, profile, goa
   );
   const currentAge = Math.floor((currentDate.getTime() - birthDate.getTime()) / (365.25 * 24 * 60 * 60 * 1000));
 
-  
-  const currentBalance = allFinancialRecords[0]?.ending_balance || 0;
+  const currentBalance = allFinancialRecords[allFinancialRecords.length - 1]?.ending_balance || investmentPlan.initial_amount;
   
   const {
     projectedMonthsToRetirement,
@@ -264,7 +298,7 @@ export const PlanProgress = ({ allFinancialRecords, investmentPlan, profile, goa
   );
 
   // Calculate months remaining and retirement status
-  const monthsToRetirement = Math.max(0, projectedMonthsToRetirement - currentAgeMonths);
+  const monthsToRetirement = Math.max(0, projectedMonthsToRetirement).toFixed(0);
   const isOnTrack = projectedMonthsToRetirement <= (investmentPlan.final_age * 12);
   
   return (
