@@ -421,7 +421,7 @@ export const MonthlyView = ({
                       {data.percentage >= 0 ? '+' : ''}{data.percentage.toFixed(2)}%
                     </td>
                     <td className="p-2 text-right font-medium">R$ {data.endBalance.toLocaleString()}</td>
-                    <td className="p-2 text-right font-medium">{data.targetRentability.toFixed(2)}%</td>
+                    <td className="p-2 text-right font-medium">{data.targetRentability?.toFixed(2)}%</td>
                   </tr>
                 ))}
               </tbody>
