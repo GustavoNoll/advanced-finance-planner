@@ -384,7 +384,7 @@ export function processPlanProgressData(
 
   const birthDate = new Date(profile.birth_date);
   const lastRecord = allFinancialRecords[0];
-  console.log(lastRecord);
+
   const currentBalance = lastRecord?.ending_balance || investmentPlan.initial_amount;
   const investmentGoal = investmentPlan.future_value || 0;
   const currentProgress = (currentBalance / investmentGoal) * 100;

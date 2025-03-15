@@ -21,6 +21,7 @@ interface ProjectedAgeResult {
   months: number;
   isAheadOfSchedule: boolean;
   monthsDifference: number;
+  progressPercentage: number;
 }
 
 export const SavingsGoal = ({ allFinancialRecords, investmentPlan, profile, planProgressData }: SavingsGoalProps) => {
@@ -53,6 +54,7 @@ export const SavingsGoal = ({ allFinancialRecords, investmentPlan, profile, plan
 
   const calculateProjectedAge = (): ProjectedAgeResult | 'ageNotAvailable' | 'metaNotAchieved' => {
     if (planProgressData) {
+      console.log(planProgressData);
       const projectedDate = planProgressData.projectedRetirementDate;
       const birthDateObj = birthDate ? new Date(birthDate) : null;
       
