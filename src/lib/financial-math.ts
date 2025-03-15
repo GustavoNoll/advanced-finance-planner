@@ -154,3 +154,41 @@ export function nper(
   
   return Math.log(numerador / denominador) / Math.log(1 + taxa);
 }
+
+/**
+ * Calculates the payment for a loan based on constant payments and a constant interest rate
+ * Implements Excel's PMT function
+ * Formula: PMT = (PV * rate * (1 + rate)^nper) / ((1 + rate)^nper - 1)
+ * If FV is included: PMT = (rate * (FV + PV * (1 + rate)^nper)) / ((1 + rate)^nper - 1)
+ * 
+ * @param taxa - Interest rate per period as decimal
+ * @param numero_de_periodos - Total number of payment periods
+ * @param valor_atual - Present value (positive if receiving money, negative for investment/loan)
+ * @param valor_futuro - Future value or cash balance after last payment (default: 0)
+ * @param fim_ou_inicio - Whether payments are due at the beginning (true) or end (false) of period (default: false)
+ * @returns Payment amount (negative if you're paying, positive if you're receiving)
+ * 
+ * @example
+ * // Calculate monthly payment for a R$10000 loan at 1% monthly interest for 12 months
+ * pmt(0.01, 12, 10000) // Returns negative value (payment you need to make)
+ */
+export function pmt(
+  taxa: number,
+  numero_de_periodos: number,
+  valor_atual: number,
+  valor_futuro: number = 0,
+  fim_ou_inicio: boolean = false
+): number {
+  // Special handling for zero rate
+  if (taxa === 0) {
+    return -(valor_atual + valor_futuro) / numero_de_periodos;
+  }
+
+  const tipo = fim_ou_inicio ? 1 : 0;
+  const pvif = Math.pow(1 + taxa, numero_de_periodos);
+  
+  const pagamento = (taxa * (valor_futuro + valor_atual * pvif)) / 
+                  ((1 + taxa * tipo) * (pvif - 1));
+
+  return -pagamento; // Negative because payment is outflow
+}

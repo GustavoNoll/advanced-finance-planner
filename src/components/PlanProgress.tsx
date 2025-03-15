@@ -6,45 +6,118 @@ import {
   HoverCardContent,
   HoverCardTrigger,
 } from "@/components/ui/hover-card";
-import { calculateCompoundedRates, nper, yearlyReturnRateToMonthlyReturnRate } from "@/lib/financial-math";
+import { calculateCompoundedRates, nper, yearlyReturnRateToMonthlyReturnRate, pmt } from "@/lib/financial-math";
 
-
+/**
+ * Props for the PlanProgress component
+ */
 interface PlanProgressProps {
+  /** List of all financial records */
   allFinancialRecords: FinancialRecord[];
+  /** Investment plan details */
   investmentPlan: InvestmentPlan;
+  /** User profile information */
   profile: {
     birth_date?: string;
   };
+  /** Financial goals */
   goals: Goal[];
+  /** Projected financial events */
   events: ProjectedEvent[];
 }
 
+/**
+ * Result of financial projections calculation
+ */
 interface ProjectionResult {
+  /** Projected number of months until retirement */
   projectedMonthsToRetirement: number;
+  /** Projected monthly contribution amount */
   projectedContribution: number;
+  /** Projected monthly income during retirement */
   projectedMonthlyIncome: number;
+  /** Difference in months between projected and planned retirement */
+  monthsDifference: number;
+  /** Planned months until retirement */
+  plannedMonths: number;
+  /** Reference date for calculations */
+  referenceDate: Date;
+  /** Projected retirement date */
+  projectedRetirementDate: Date;
+  /** Final age date */
+  finalAgeDate: Date;
 }
 
+/**
+ * Monthly financial values for calculations
+ */
 type MonthlyValues = {
+  /** Month number */
   month: number;
+  /** Original financial values before adjustments */
   originalValues: {
+    /** Financial goals for the month */
     goals: Array<{ amount: number; description?: string }>;
+    /** Financial events for the month */
     events: Array<{ amount: number; name: string }>;
   };
+  /** Inflation factor for the month */
   inflationFactor: number;
+  /** Values adjusted for inflation and returns */
   adjustedValues: {
+    /** Adjusted financial goals */
     goals: Array<{ amount: number; description?: string }>;
+    /** Adjusted financial events */
     events: Array<{ amount: number; name: string }>;
+    /** Total adjusted value */
     total: number;
   };
 };
 
+/**
+ * Constants for date calculations
+ */
+const DAYS_PER_MONTH = 30.44;
+const MS_PER_DAY = 24 * 60 * 60 * 1000;
+
+/**
+ * Calculates the number of months between two dates
+ * @param date1 - First date
+ * @param date2 - Second date
+ * @returns Number of months between the dates
+ */
+function calculateMonthsBetweenDates(date1: Date, date2: Date): number {
+  return Math.floor((date2.getTime() - date1.getTime()) / (DAYS_PER_MONTH * MS_PER_DAY));
+}
+
+/**
+ * Formats a currency value in BRL format
+ * @param value - The value to format
+ * @returns Formatted currency string
+ */
+function formatCurrency(value: number): string {
+  return new Intl.NumberFormat('pt-BR', {
+    style: 'currency',
+    currency: 'BRL'
+  }).format(value);
+}
+
+/**
+ * Generates pre-calculation hash for financial projections
+ * @param monthlyExpectedReturn - Monthly expected return rate
+ * @param monthlyInflation - Monthly inflation rate
+ * @param goals - List of financial goals
+ * @param events - List of projected events
+ * @param monthsToR - Months to retirement
+ * @param referenceDate - Reference date for calculations
+ * @returns Object containing pre and post retirement hashes
+ */
 function generatePreCalculationHash(
   monthlyExpectedReturn: number,
   monthlyInflation: number,
   goals: Goal[],
   events: ProjectedEvent[],
-  finalAgeMonths: number,
+  monthsToR: number,
   referenceDate: Date
 ): {
   preRetirementHash: Record<number, MonthlyValues>;
@@ -54,7 +127,7 @@ function generatePreCalculationHash(
   // Process goals and events relative to the reference date
   const processedGoals = goals.flatMap(goal => {
     const goalDate = new Date(goal.year, goal.month - 1);
-    const monthsSinceReference = Math.floor((goalDate.getTime() - referenceDate.getTime()) / (30.44 * 24 * 60 * 60 * 1000));
+    const monthsSinceReference = calculateMonthsBetweenDates(referenceDate, goalDate);
     
     if (goal.installment_project && goal.installment_count) {
       const monthlyAmount = goal.asset_value / goal.installment_count;
@@ -74,7 +147,7 @@ function generatePreCalculationHash(
 
   const processedEvents = events.map(event => {
     const eventDate = new Date(event.year, event.month - 1);
-    const monthsSinceReference = Math.floor((eventDate.getTime() - referenceDate.getTime()) / (30.44 * 24 * 60 * 60 * 1000));
+    const monthsSinceReference = calculateMonthsBetweenDates(referenceDate, eventDate);
     return {
       amount: event.amount,
       month: monthsSinceReference,
@@ -83,10 +156,10 @@ function generatePreCalculationHash(
   });
 
   // Separate into pre and post retirement
-  const preRetirementGoals = processedGoals.filter(g => g.month <= finalAgeMonths);
-  const postRetirementGoals = processedGoals.filter(g => g.month > finalAgeMonths);
-  const preRetirementEvents = processedEvents.filter(e => e.month <= finalAgeMonths);
-  const postRetirementEvents = processedEvents.filter(e => e.month > finalAgeMonths);
+  const preRetirementGoals = processedGoals.filter(g => g.month <= monthsToR);
+  const postRetirementGoals = processedGoals.filter(g => g.month > monthsToR);
+  const preRetirementEvents = processedEvents.filter(e => e.month <= monthsToR);
+  const postRetirementEvents = processedEvents.filter(e => e.month > monthsToR);
 
   // Create separate hashes for pre and post retirement
   const preRetirementHash = createMonthlyValuesHash(
@@ -95,7 +168,7 @@ function generatePreCalculationHash(
     preRetirementGoals,
     preRetirementEvents,
     true,
-    finalAgeMonths
+    monthsToR
   );
 
   const postRetirementHash = createMonthlyValuesHash(
@@ -104,20 +177,29 @@ function generatePreCalculationHash(
     postRetirementGoals,
     postRetirementEvents,
     false,
-    finalAgeMonths
+    monthsToR
   );
 
   return { preRetirementHash, postRetirementHash };
 }
 
-// Helper function to create hash for a set of goals and events
+/**
+ * Creates a hash of monthly values for financial calculations
+ * @param monthlyInflation - Monthly inflation rate
+ * @param monthlyExpectedReturn - Monthly expected return rate
+ * @param goals - List of processed goals
+ * @param events - List of processed events
+ * @param preRetirement - Whether this is for pre-retirement period
+ * @param monthsToR - Months to retirement
+ * @returns Record of monthly values indexed by month
+ */
 function createMonthlyValuesHash(
   monthlyInflation: number,
   monthlyExpectedReturn: number,
   goals: Array<{ amount: number; month: number; description?: string }>,
   events: Array<{ amount: number; month: number; name: string }>,
   preRetirement: boolean,
-  finalAgeMonths: number
+  monthsToR: number
 ): Record<number, MonthlyValues> {
   const relevantMonths = new Set([
     ...goals.map(g => g.month),
@@ -151,12 +233,12 @@ function createMonthlyValuesHash(
 
     if (monthlyGoals.length > 0 || monthlyEvents.length > 0) {
       const adjustedGoals = monthlyGoals.map(goal => ({
-        amount: goal.amount/((1 + monthlyReturn)**(preRetirement ? month : month - finalAgeMonths)),
+        amount: goal.amount/((1 + monthlyReturn)**(preRetirement ? month : month - monthsToR)),
         description: goal.description
       }));
       
       const adjustedEvents = monthlyEvents.map(event => ({
-        amount: event.amount/((1 + monthlyReturn)**(preRetirement ? month : month - finalAgeMonths)),
+        amount: event.amount/((1 + monthlyReturn)**(preRetirement ? month : month - monthsToR)),
         name: event.name
       }));
 
@@ -182,6 +264,17 @@ function createMonthlyValuesHash(
   return hash;
 }
 
+/**
+ * Calculates financial projections based on current state and plan
+ * @param currentBalance - Current financial balance
+ * @param allFinancialRecords - All financial records
+ * @param investmentPlan - Investment plan details
+ * @param currentAge - Current age in months
+ * @param goals - Financial goals
+ * @param events - Projected events
+ * @param birthDate - User's birth date
+ * @returns Projection results
+ */
 function calculateProjections(
   currentBalance: number,
   allFinancialRecords: FinancialRecord[],
@@ -199,27 +292,28 @@ function calculateProjections(
   const monthlyInflation = yearlyReturnRateToMonthlyReturnRate(investmentPlan.inflation/100);
   
   // Calculate months until retirement based on current age
-  let finalAgeMonths;
-  let currentDate;
+  let monthsToRetirement;
+  let referenceDate;
+  
   if (actualMonth === 0 && actualYear === 0) {
-    finalAgeMonths = (investmentPlan.final_age - investmentPlan.initial_age) * 12;
-    currentDate = new Date(birthDate);
-    currentDate.setFullYear(currentDate.getFullYear() + investmentPlan.initial_age);
+    monthsToRetirement = (investmentPlan.final_age - investmentPlan.initial_age) * 12;
+    referenceDate = new Date(birthDate);
+    referenceDate.setFullYear(referenceDate.getFullYear() + investmentPlan.initial_age);
   } else {
-    currentDate = new Date(actualYear, actualMonth - 1);
+    referenceDate = new Date(actualYear, actualMonth - 1);
     const finalAgeDate = new Date(birthDate);
     finalAgeDate.setFullYear(birthDate.getFullYear() + investmentPlan.final_age);
-    // Ajuste para manter o mesmo dia do mês
+    // Adjust to keep the same day of month
     finalAgeDate.setDate(birthDate.getDate());
     
-    // Calcula a diferença em meses
-    const yearDiff = finalAgeDate.getFullYear() - currentDate.getFullYear();
-    const monthDiff = finalAgeDate.getMonth() - currentDate.getMonth();
-    finalAgeMonths = (yearDiff * 12) + monthDiff;
+    // Calculate difference in months
+    const yearDiff = finalAgeDate.getFullYear() - referenceDate.getFullYear();
+    const monthDiff = finalAgeDate.getMonth() - referenceDate.getMonth();
+    monthsToRetirement = (yearDiff * 12) + monthDiff;
     
-    // Ajuste para dias parciais do mês
-    if (finalAgeDate.getDate() < currentDate.getDate()) {
-      finalAgeMonths--;
+    // Adjust for partial days of month
+    if (finalAgeDate.getDate() < referenceDate.getDate()) {
+      monthsToRetirement--;
     }
   }
 
@@ -228,66 +322,171 @@ function calculateProjections(
     monthlyInflation,
     goals,
     events,
-    finalAgeMonths,
-    currentDate
+    monthsToRetirement,
+    referenceDate
   );
 
-  // Calculate average contribution from records
-  const projectedContribution = 0;
   const initialAmount = currentBalance;
   
-  // G13 Retorno Esperado Mês (IPCA+) monthlyExpectedReturn
-  // G16 Ajusta aporte pela inflação? adjustContributionForInflation
-  // G11 inflação monthlyInflation
-  // G18 deposito acordado monthlyDeposit
-  // G17 valor inicial initialAmount
-  // d6 + d13 soma objetivos pre aposentadoria (multiplicado cada um pela inflação)
+  // Sum of pre-retirement goals (each multiplied by inflation)
   const preRetirementGoals = Object.values(preRetirementHash).reduce((sum, monthlyValues) => sum + monthlyValues.adjustedValues.total, 0);
   const postRetirementGoals = Object.values(postRetirementHash).reduce((sum, monthlyValues) => sum + monthlyValues.adjustedValues.total, 0);
-  // G25 VALOR PRESENTE NECESSARIO presentFutureValue
-  // d14 + d20 soma objetivos pós aposentadoria (multiplicado cada um pela inflação)
+  
   const adjustContributionForInflation = investmentPlan.adjust_contribution_for_inflation;
   const contribution = investmentPlan.monthly_deposit;
   const presentFutureValue = investmentPlan.present_future_value;
+  const monthsRetired = (investmentPlan.limit_age - investmentPlan.final_age) * 12;
+
+  // Calculate effective rate based on inflation adjustment setting
+  const effectiveRate = monthlyExpectedReturn * (adjustContributionForInflation ? 1 : monthlyInflation);
 
   // Calculate projected retirement months
   const projectedMonthsToRetirement = nper(
-    monthlyExpectedReturn * (adjustContributionForInflation ? 1 : monthlyInflation),
+    effectiveRate,
     -contribution,
     -(initialAmount + preRetirementGoals),
-    (presentFutureValue - postRetirementGoals) * (1) // TO DO: Verify se p7
+    (presentFutureValue - postRetirementGoals)
+  );
+
+  // Calculate average contribution from records
+  const projectedContribution = -pmt(
+    effectiveRate,
+    monthsToRetirement,
+    -(initialAmount + preRetirementGoals),
+    (presentFutureValue - postRetirementGoals)
   );
 
   // Calculate projected monthly income
-  const projectedMonthlyIncome = 0;
+  const projectedMonthlyIncome = -pmt(
+    effectiveRate,
+    monthsRetired,
+    presentFutureValue,
+    0
+  );
+
+  // Calculate planned months (from initial to final age)
+  const plannedMonths = (investmentPlan.final_age - investmentPlan.initial_age) * 12;
+  
+  // Calculate projected retirement date
+  const projectedRetirementDate = new Date(referenceDate);
+  projectedRetirementDate.setMonth(projectedRetirementDate.getMonth() + projectedMonthsToRetirement);
+
+  // Calculate final age date
+  const finalAgeDate = new Date(birthDate);
+  finalAgeDate.setFullYear(birthDate.getFullYear() + investmentPlan.final_age);
+
+  // Calculate months difference between dates
+  const monthsDifference = calculateMonthsBetweenDates(projectedRetirementDate, finalAgeDate);
 
   return {
     projectedMonthsToRetirement,
     projectedContribution,
-    projectedMonthlyIncome
+    projectedMonthlyIncome,
+    monthsDifference,
+    plannedMonths,
+    referenceDate,
+    projectedRetirementDate,
+    finalAgeDate
   };
 }
 
-export const PlanProgress = ({ allFinancialRecords, investmentPlan, profile, goals, events }: PlanProgressProps) => {
-  const { t } = useTranslation();
+/**
+ * Component to display comparison between planned and projected values
+ */
+interface ComparisonRowProps {
+  /** Title of the comparison */
+  title: string;
+  /** Planned value */
+  planned: number;
+  /** Projected value */
+  projected: number;
+  /** Whether the comparison is for currency values */
+  isCurrency?: boolean;
+  /** Whether a higher projected value is better */
+  isHigherBetter?: boolean;
+  /** Translation function */
+  t: (key: string) => string;
+}
 
+/**
+ * Renders a comparison row between planned and projected values
+ */
+const ComparisonRow = ({ 
+  title, 
+  planned, 
+  projected, 
+  isCurrency = true, 
+  isHigherBetter = false,
+  t
+}: ComparisonRowProps) => {
+  const difference = projected - planned;
+  const isPositive = difference >= 0;
+  const isGood = isHigherBetter ? isPositive : !isPositive;
+  
+  return (
+    <div>
+      <h3 className="text-sm font-medium text-gray-700 mb-2">{title}</h3>
+      <div className="flex justify-between items-baseline">
+        <div>
+          <p className="text-sm text-gray-600">{t('dashboard.planProgress.planned')}:</p>
+          <p className="text-lg font-semibold text-blue-600">
+            {isCurrency 
+              ? formatCurrency(planned)
+              : `${planned} ${t('common.months')}`
+            }
+          </p>
+        </div>
+        <div className="text-right">
+          <p className="text-sm text-gray-600">{t('dashboard.planProgress.projected')}:</p>
+          <p className={`text-lg font-semibold ${isGood ? 'text-green-600' : 'text-red-600'}`}>
+            {isCurrency 
+              ? formatCurrency(projected)
+              : `${Math.round(projected)} ${t('common.months')}`
+            }
+            <span className="text-xs ml-1">
+              ({isPositive ? '+' : '-'}
+              {isCurrency 
+                ? Math.round(Math.abs(difference) * 100) / 100
+                : Math.abs(difference)
+              }
+              {!isCurrency && ` ${t('common.months')}`})
+            </span>
+          </p>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+/**
+ * Processes all data needed for the PlanProgress component
+ * @param allFinancialRecords - List of all financial records
+ * @param investmentPlan - Investment plan details
+ * @param profile - User profile with birth date
+ * @param goals - Financial goals
+ * @param events - Projected events
+ * @returns Processed data for rendering or null if required data is missing
+ */
+function processPlanProgressData(
+  allFinancialRecords: FinancialRecord[],
+  investmentPlan: InvestmentPlan,
+  profile: { birth_date?: string },
+  goals: Goal[],
+  events: ProjectedEvent[]
+) {
   if (!investmentPlan || !profile.birth_date) return null;
 
-  // Calculate current age in months
+  // Get birth date and current date
   const birthDate = new Date(profile.birth_date);
   const currentDate = new Date();
-  const currentAgeMonths = Math.floor(
-    (currentDate.getTime() - birthDate.getTime()) / (30.44 * 24 * 60 * 60 * 1000)
-  );
-  const currentAge = Math.floor((currentDate.getTime() - birthDate.getTime()) / (365.25 * 24 * 60 * 60 * 1000));
+  const currentAgeMonths = calculateMonthsBetweenDates(birthDate, currentDate);
 
-  const currentBalance = allFinancialRecords[allFinancialRecords.length - 1]?.ending_balance || investmentPlan.initial_amount;
+  // Get current balance from records
+  const lastRecord = allFinancialRecords[allFinancialRecords.length - 1];
+  const currentBalance = lastRecord?.ending_balance || investmentPlan.initial_amount;
   
-  const {
-    projectedMonthsToRetirement,
-    projectedContribution,
-    projectedMonthlyIncome
-  } = calculateProjections(
+  // Calculate projections
+  const projections = calculateProjections(
     currentBalance, 
     allFinancialRecords, 
     investmentPlan, 
@@ -297,10 +496,33 @@ export const PlanProgress = ({ allFinancialRecords, investmentPlan, profile, goa
     birthDate
   );
 
-  // Calculate months remaining and retirement status
-  const monthsToRetirement = Math.max(0, projectedMonthsToRetirement).toFixed(0);
-  const isOnTrack = projectedMonthsToRetirement <= (investmentPlan.final_age * 12);
+  // Return all processed data needed for rendering
+  return {
+    plannedMonths: projections.plannedMonths,
+    projectedMonths: projections.plannedMonths - projections.monthsDifference,
+    monthsDifference: projections.monthsDifference,
+    plannedContribution: investmentPlan.monthly_deposit,
+    projectedContribution: projections.projectedContribution,
+    plannedIncome: investmentPlan.desired_income,
+    projectedMonthlyIncome: projections.projectedMonthlyIncome,
+    projectedRetirementDate: projections.projectedRetirementDate,
+    finalAgeDate: projections.finalAgeDate
+  };
+}
+
+/**
+ * Component that displays the progress of a financial plan
+ * Compares planned values with projected values based on current progress
+ */
+export const PlanProgress = ({ allFinancialRecords, investmentPlan, profile, goals, events }: PlanProgressProps) => {
+  const { t } = useTranslation();
+
+  // Process all data in a single function
+  const data = processPlanProgressData(allFinancialRecords, investmentPlan, profile, goals, events);
   
+  // Return early if data is missing
+  if (!data) return null;
+
   return (
     <div className="bg-white rounded-xl shadow-sm p-6">
       <div className="flex items-center justify-between mb-4">
@@ -320,106 +542,33 @@ export const PlanProgress = ({ allFinancialRecords, investmentPlan, profile, goa
       </div>
 
       <div className="space-y-6">
-        <div className="bg-gray-50 p-4 rounded-lg">
-          <div className="flex justify-between items-center mb-4">
-            <div>
-              <p className="text-sm text-gray-600">{t('dashboard.planProgress.currentAge')}</p>
-              <p className="text-xl font-semibold text-gray-900">
-                {currentAge} {t('common.years')}
-              </p>
-            </div>
-            <div className="text-right">
-              <p className="text-sm text-gray-600">{t('dashboard.planProgress.monthsToRetirement')}</p>
-              <p className="text-xl font-semibold text-gray-900">
-                {monthsToRetirement} {t('common.months')}
-              </p>
-            </div>
-          </div>
-          
-          <div className="flex items-center gap-2">
-            <div className={`px-3 py-1 rounded-full text-sm font-medium ${
-              isOnTrack ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
-            }`}>
-              {isOnTrack 
-                ? t('dashboard.planProgress.onTrack') 
-                : t('dashboard.planProgress.needsAttention')}
-            </div>
-            {!isOnTrack && (
-              <span className="text-sm text-gray-600">
-                ({Math.abs((investmentPlan.final_age * 12) - projectedMonthsToRetirement)} {t('common.months')} {t('dashboard.planProgress.behind')})
-              </span>
-            )}
-          </div>
-        </div>
+        <ComparisonRow
+          title={t('dashboard.planProgress.timeToRetirement')}
+          planned={data.plannedMonths}
+          projected={data.projectedMonths}
+          isCurrency={false}
+          isHigherBetter={false}
+          t={t}
+        />
 
         <div className="space-y-4">
-          <div>
-            <h3 className="text-sm font-medium text-gray-700 mb-2">
-              {t('dashboard.planProgress.monthlyContribution')}
-            </h3>
-            <div className="flex justify-between items-baseline">
-              <div>
-                <p className="text-sm text-gray-600">{t('dashboard.planProgress.planned')}:</p>
-                <p className="text-lg font-semibold text-blue-600">
-                  {new Intl.NumberFormat('pt-BR', {
-                    style: 'currency',
-                    currency: 'BRL'
-                  }).format(investmentPlan.monthly_deposit)}
-                </p>
-              </div>
-              <div className="text-right">
-                <p className="text-sm text-gray-600">{t('dashboard.planProgress.projected')}:</p>
-                <p className={`text-lg font-semibold ${
-                  projectedContribution <= investmentPlan.monthly_deposit 
-                    ? 'text-green-600' 
-                    : 'text-red-600'
-                }`}>
-                  {new Intl.NumberFormat('pt-BR', {
-                    style: 'currency',
-                    currency: 'BRL'
-                  }).format(projectedContribution)}
-                  <span className="text-xs ml-1">
-                    ({projectedContribution <= investmentPlan.monthly_deposit ? '-' : '+'}
-                    {Math.round(Math.abs(projectedContribution - investmentPlan.monthly_deposit) * 100) / 100})
-                  </span>
-                </p>
-              </div>
-            </div>
-          </div>
+          <ComparisonRow
+            title={t('dashboard.planProgress.monthlyContribution')}
+            planned={data.plannedContribution}
+            projected={data.projectedContribution}
+            isCurrency={true}
+            isHigherBetter={false}
+            t={t}
+          />
 
-          <div>
-            <h3 className="text-sm font-medium text-gray-700 mb-2">
-              {t('dashboard.planProgress.monthlyWithdrawal')}
-            </h3>
-            <div className="flex justify-between items-baseline">
-              <div>
-                <p className="text-sm text-gray-600">{t('dashboard.planProgress.planned')}:</p>
-                <p className="text-lg font-semibold text-blue-600">
-                  {new Intl.NumberFormat('pt-BR', {
-                    style: 'currency',
-                    currency: 'BRL'
-                  }).format(investmentPlan.desired_income)}
-                </p>
-              </div>
-              <div className="text-right">
-                <p className="text-sm text-gray-600">{t('dashboard.planProgress.projected')}:</p>
-                <p className={`text-lg font-semibold ${
-                  projectedMonthlyIncome >= investmentPlan.desired_income 
-                    ? 'text-green-600' 
-                    : 'text-red-600'
-                }`}>
-                  {new Intl.NumberFormat('pt-BR', {
-                    style: 'currency',
-                    currency: 'BRL'
-                  }).format(projectedMonthlyIncome)}
-                  <span className="text-xs ml-1">
-                    ({projectedMonthlyIncome >= investmentPlan.desired_income ? '+' : ''}
-                    {Math.round((projectedMonthlyIncome - investmentPlan.desired_income) * 100) / 100})
-                  </span>
-                </p>
-              </div>
-            </div>
-          </div>
+          <ComparisonRow
+            title={t('dashboard.planProgress.monthlyWithdrawal')}
+            planned={data.plannedIncome}
+            projected={data.projectedMonthlyIncome}
+            isCurrency={true}
+            isHigherBetter={true}
+            t={t}
+          />
         </div>
       </div>
     </div>

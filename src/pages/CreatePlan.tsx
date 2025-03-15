@@ -35,7 +35,7 @@ export const CreatePlan = () => {
     legacyAmount: "1000000",
   });
 
-  // Add new state for calculations
+  // Update the calculations type to remove necessary values
   const [calculations, setCalculations] = useState<{
     futureValue: number;
     inflationAdjustedIncome: number;
@@ -43,8 +43,6 @@ export const CreatePlan = () => {
     inflationReturn: number;
     totalMonthlyReturn: number;
     requiredMonthlyDeposit: number;
-    necessaryFutureValue: number;
-    necessaryDepositToNecessaryFutureValue: number;
   } | null>(null);
 
   // Add new state for tracking which row is expanded
@@ -114,11 +112,21 @@ export const CreatePlan = () => {
             age--;
           }
 
-          setFormData(prev => ({
-            ...prev,
-            initialAge: age.toString(),
-            finalAge: (age + 30).toString()  // Set final age as current age + 30
-          }));
+          setFormData((prev) => {
+            const newFormData = {...prev,
+              initialAge: age.toString(),
+              finalAge: (age + 30).toString()  // Set final age as current age + 30
+            }
+
+            if (isCalculationReady(newFormData)) {
+              setCalculations(calculateFutureValues(newFormData));
+            } else {
+              setCalculations(null);
+            }
+            
+            return newFormData
+          });
+          
         }
       } catch (error) {
         console.error('Error fetching profile:', error);
@@ -480,10 +488,8 @@ export const CreatePlan = () => {
               <div className="space-y-2">
                 <div 
                   className="flex justify-between p-2 hover:bg-gray-100 cursor-pointer rounded"
-                  onClick={() => setExpandedRow(expandedRow === 'income' ? null : 'income')}
                 >
                   <div className="flex items-center gap-2 w-3/4">
-                    <div className="w-4" />
                     <span>{t('investmentPlan.create.calculations.inflationAdjustedIncome')}:</span>
                   </div>
                   <span>R$ {calculations?.inflationAdjustedIncome.toLocaleString('pt-BR', { maximumFractionDigits: 2 }) || '---'}/ano</span>
@@ -491,43 +497,21 @@ export const CreatePlan = () => {
                 
                 <div 
                   className="flex justify-between p-2 hover:bg-gray-100 cursor-pointer rounded"
-                  onClick={() => setExpandedRow(expandedRow === 'future' ? null : 'future')}
                 >
                   <div className="flex items-center gap-2 w-3/4">
-                    {expandedRow === 'future' ? (
-                      <ChevronDown className="h-4 w-4 text-gray-400" />
-                    ) : (
-                      <ChevronRight className="h-4 w-4 text-gray-400" />
-                    )}
                     <span>{t('investmentPlan.create.calculations.requiredFutureValue')}:</span>
                   </div>
-                  <span className={calculations?.futureValue < (calculations?.necessaryFutureValue || 0) ? 'text-red-500' : ''}>
+                  <span>
                     R$ {calculations?.futureValue.toLocaleString('pt-BR', { maximumFractionDigits: 2 }) || '---'}
                   </span>
                 </div>
-                {expandedRow === 'future' && typeof calculations?.necessaryFutureValue === 'number' && (
-                  <div className="pl-4 space-y-2 border-l-2 border-gray-200 mt-2 bg-gray-50 p-2 rounded">
-                    <div className="flex justify-between">
-                      <div className="flex items-center gap-2 w-3/4">
-                        <div className="w-4" />
-                        <span>{t('investmentPlan.create.calculations.necessaryFutureValue')}:</span>
-                      </div>
-                      <span>R$ {calculations.necessaryFutureValue.toLocaleString('pt-BR', { maximumFractionDigits: 2 })}</span>
-                    </div>
-                  </div>
-                )}
 
                 <div>
                   <div 
-                    className="flex justify-between p-2 hover:bg-gray-100 cursor-pointer rounded group"
+                    className="flex justify-between p-2 hover:bg-gray-100 cursor-pointer rounded"
                     onClick={() => setExpandedRow(expandedRow === 'return' ? null : 'return')}
                   >
                     <div className="flex items-center gap-2 w-3/4">
-                      {expandedRow === 'return' ? (
-                        <ChevronDown className="h-4 w-4 text-gray-400" />
-                      ) : (
-                        <ChevronRight className="h-4 w-4 text-gray-400" />
-                      )}
                       <span>{t('investmentPlan.create.calculations.totalMonthlyReturn')}:</span>
                     </div>
                     <span>R$ {calculations?.totalMonthlyReturn.toLocaleString('pt-BR', { maximumFractionDigits: 2 }) || '---'}</span>
@@ -536,14 +520,12 @@ export const CreatePlan = () => {
                     <div className="pl-4 space-y-2 border-l-2 border-gray-200 mt-2 bg-gray-50 p-2 rounded">
                       <div className="flex justify-between">
                         <div className="flex items-center gap-2 w-3/4">
-                          <div className="w-4" />
                           <span>{t('investmentPlan.create.calculations.monthlyRealReturn')}:</span>
                         </div>
                         <span>R$ {calculations?.realReturn.toLocaleString('pt-BR', { maximumFractionDigits: 2 }) || '---'}</span>
                       </div>
                       <div className="flex justify-between">
                         <div className="flex items-center gap-2 w-3/4">
-                          <div className="w-4" />
                           <span>{t('investmentPlan.create.calculations.monthlyInflationReturn')}:</span>
                         </div>
                         <span>R$ {calculations?.inflationReturn.toLocaleString('pt-BR', { maximumFractionDigits: 2 }) || '---'}</span>
@@ -558,28 +540,12 @@ export const CreatePlan = () => {
                     onClick={() => setExpandedRow(expandedRow === 'deposit' ? null : 'deposit')}
                   >
                     <div className="flex items-center gap-2 w-3/4">
-                      {expandedRow === 'deposit' ? (
-                        <ChevronDown className="h-4 w-4 text-gray-400" />
-                      ) : (
-                        <ChevronRight className="h-4 w-4 text-gray-400" />
-                      )}
                       <span>{t('investmentPlan.create.calculations.requiredMonthlyDeposit')}:</span>
                     </div>
-                    <span className={calculations?.requiredMonthlyDeposit < (calculations?.necessaryDepositToNecessaryFutureValue || 0) ? 'text-red-500' : ''}>
+                    <span>
                       R$ {calculations?.requiredMonthlyDeposit.toLocaleString('pt-BR', { maximumFractionDigits: 2 }) || '---'}
                     </span>
                   </div>
-                  {expandedRow === 'deposit' && typeof calculations?.necessaryDepositToNecessaryFutureValue === 'number' && (
-                    <div className="pl-4 space-y-2 border-l-2 border-gray-200 mt-2 bg-gray-50 p-2 rounded">
-                      <div className="flex justify-between">
-                        <div className="flex items-center gap-2 w-3/4">
-                          <div className="w-4" />
-                          <span>{t('investmentPlan.create.calculations.necessaryMonthlyDeposit')}:</span>
-                        </div>
-                        <span>R$ {calculations.necessaryDepositToNecessaryFutureValue.toLocaleString('pt-BR', { maximumFractionDigits: 2 })}</span>
-                      </div>
-                    </div>
-                  )}
                 </div>
               </div>
             ) : (
