@@ -406,8 +406,10 @@ export const ptBR = {
       label: "Idade Projetada:",
       years: " anos",
       months: " meses",
-      aheadOfSchedule: "Avançado em {{years}} anos",
-      behindSchedule: "Atrasado em {{years}} anos"
+      aheadOfSchedule: "Avançado em {{years}} anos e {{months}} meses",
+      behindSchedule: "Atrasado em {{years}} anos e {{months}} meses",
+      behindScheduleMonths: "Atrasado em {{months}} meses",
+      aheadOfScheduleMonths: "Avançado em {{months}} meses"
     },
   },
   financialRecords: {

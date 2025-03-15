@@ -82,6 +82,10 @@ export interface PlanProgressData {
   projectedMonthlyIncome: number;
   projectedRetirementDate: Date;
   finalAgeDate: Date;
+  currentProgress: number;
+  projectedAgeYears: number;
+  projectedAgeMonths: number;
+  isAheadOfSchedule: boolean;
 }
 
 /**
@@ -382,6 +386,8 @@ export function processPlanProgressData(
   const lastRecord = allFinancialRecords[0];
   console.log(lastRecord);
   const currentBalance = lastRecord?.ending_balance || investmentPlan.initial_amount;
+  const investmentGoal = investmentPlan.future_value || 0;
+  const currentProgress = (currentBalance / investmentGoal) * 100;
   
   // Calculate projections
   const projections = financialCalculations.calculateProjections(
@@ -393,6 +399,17 @@ export function processPlanProgressData(
     events
   );
 
+  // Calcular a idade projetada em anos e meses
+  const projectedDate = projections.projectedRetirementDate;
+  let projectedAgeYears = projectedDate.getFullYear() - birthDate.getFullYear();
+  let projectedAgeMonths = projectedDate.getMonth() - birthDate.getMonth();
+  
+  // Ajustar meses se negativo
+  if (projectedAgeMonths < 0) {
+    projectedAgeYears--;
+    projectedAgeMonths += 12;
+  }
+
   return {
     plannedMonths: projections.plannedMonths,
     projectedMonths: projections.plannedMonths - projections.monthsDifference,
@@ -402,6 +419,10 @@ export function processPlanProgressData(
     plannedIncome: investmentPlan.desired_income,
     projectedMonthlyIncome: projections.projectedMonthlyIncome,
     projectedRetirementDate: projections.projectedRetirementDate,
-    finalAgeDate: projections.finalAgeDate
+    finalAgeDate: projections.finalAgeDate,
+    currentProgress,
+    projectedAgeYears,
+    projectedAgeMonths,
+    isAheadOfSchedule: projections.monthsDifference > 0
   };
 } 

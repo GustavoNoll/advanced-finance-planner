@@ -5,6 +5,7 @@ import { useTranslation } from "react-i18next";
 import { FinancialRecord, InvestmentPlan } from "@/types/financial";
 import { useMemo } from "react";
 import { generateProjectionData } from "@/lib/generate-projection-data";
+import { PlanProgressData } from "@/lib/plan-progress";
 
 interface SavingsGoalProps {
   allFinancialRecords: FinancialRecord[];
@@ -12,16 +13,17 @@ interface SavingsGoalProps {
   profile?: {
     birth_date: string;
   };
+  planProgressData?: PlanProgressData;
 }
 
 interface ProjectedAgeResult {
   years: number;
   months: number;
   isAheadOfSchedule: boolean;
-  ageDifference: number;
+  monthsDifference: number;
 }
 
-export const SavingsGoal = ({ allFinancialRecords, investmentPlan, profile }: SavingsGoalProps) => {
+export const SavingsGoal = ({ allFinancialRecords, investmentPlan, profile, planProgressData }: SavingsGoalProps) => {
   const { t } = useTranslation();
   
   const formatCurrency = (value: number) => {
@@ -50,34 +52,30 @@ export const SavingsGoal = ({ allFinancialRecords, investmentPlan, profile }: Sa
   const birthDate = profile?.birth_date;
 
   const calculateProjectedAge = (): ProjectedAgeResult | 'ageNotAvailable' | 'metaNotAchieved' => {
-    if (!birthDate || !investmentPlan) return 'ageNotAvailable';
-
-    const projectionData = generateProjectionData(
-      investmentPlan,
-      { birth_date: birthDate },
-      allFinancialRecords,
-      [],
-      []
-    );
-
-    const targetYearData = projectionData.find(data => data.balance >= investmentGoal);
-    if (!targetYearData) return 'metaNotAchieved';
-
-    const targetMonth = targetYearData.months?.findIndex(month => month.balance >= investmentGoal) ?? 0;
+    if (planProgressData) {
+      const projectedDate = planProgressData.projectedRetirementDate;
+      const birthDateObj = birthDate ? new Date(birthDate) : null;
+      
+      if (!birthDateObj) return 'ageNotAvailable';
+      
+      const monthsDifference = planProgressData.monthsDifference;
+      const isAheadOfSchedule = planProgressData.monthsDifference > 0;
+      
+      return {
+        years: planProgressData.projectedAgeYears || 0,
+        months: planProgressData.projectedAgeMonths || 0,
+        isAheadOfSchedule,
+        monthsDifference
+      };
+    }
     
-    const isAheadOfSchedule = targetYearData.age < finalAge;
-    const ageDifference = Math.abs(targetYearData.age - finalAge);
-
-    return {
-      years: targetYearData.age,
-      months: targetMonth,
-      isAheadOfSchedule,
-      ageDifference
-    };
+    if (!birthDate || !investmentPlan) return 'ageNotAvailable';
   };
 
   const projectedAge = calculateProjectedAge();
-  const percentage = (currentInvestment / investmentGoal) * 100;
+  const percentage = planProgressData?.currentProgress !== undefined 
+    ? planProgressData.currentProgress 
+    : (currentInvestment / investmentGoal) * 100;
 
   return (
     <Card>
@@ -124,9 +122,22 @@ export const SavingsGoal = ({ allFinancialRecords, investmentPlan, profile }: Sa
                           )}
                         </span>
                         <span className="block text-sm">
-                          {projectedAge.isAheadOfSchedule
-                            ? t('savingsGoal.projectedAge.aheadOfSchedule', { years: projectedAge.ageDifference })
-                            : t('savingsGoal.projectedAge.behindSchedule', { years: projectedAge.ageDifference })}
+                          {typeof projectedAge !== 'string' && (
+                            <>
+                              {projectedAge.isAheadOfSchedule
+                                ? (
+                                  projectedAge.monthsDifference >= 12
+                                    ? t('savingsGoal.projectedAge.aheadOfSchedule', { years: Math.floor(projectedAge.monthsDifference / 12), months: projectedAge.monthsDifference % 12 })
+                                    : t('savingsGoal.projectedAge.aheadOfScheduleMonths', { months: Math.abs(projectedAge.monthsDifference) })
+                                )
+                                : (
+                                  projectedAge.monthsDifference >= 12
+                                    ? t('savingsGoal.projectedAge.behindSchedule', { years: Math.floor(projectedAge.monthsDifference / 12), months: projectedAge.monthsDifference % 12 })
+                                    : t('savingsGoal.projectedAge.behindScheduleMonths', { months: Math.abs(projectedAge.monthsDifference) })
+                                )
+                              }
+                            </>
+                          )}
                         </span>
                       </>
                     ) : (

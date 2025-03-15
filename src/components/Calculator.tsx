@@ -92,7 +92,7 @@ const ComparisonRow = ({
 /**
  * Component that displays the progress of a financial plan
  */
-export const PlanProgress = ({ data }: PlanProgressProps) => {
+export const Calculator = ({ data }: PlanProgressProps) => {
   const { t } = useTranslation();
   console.log(data);
   return (

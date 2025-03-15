@@ -162,13 +162,6 @@ export const InvestmentPlanShow = () => {
                 </p>
               </div>
               <div>
-                <p className="text-sm text-gray-500">{t('investmentPlan.details.planOverview.requiredMonthlyDeposit')}</p>
-                <p className="font-medium">
-                  {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' })
-                    .format(plan.required_monthly_deposit)}
-                </p>
-              </div>
-              <div>
                 <p className="text-sm text-gray-500">{t('investmentPlan.details.planOverview.adjustContributionForInflation')}</p>
                 <p className="font-medium">
                   {plan.adjust_contribution_for_inflation ? t('common.yes') : t('common.no')}

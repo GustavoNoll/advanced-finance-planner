@@ -19,7 +19,7 @@ import {
   HoverCardContent,
   HoverCardTrigger,
 } from "@/components/ui/hover-card";
-import { PlanProgress } from "@/components/PlanProgress";
+import { Calculator } from "@/components/Calculator";
 import { processPlanProgressData } from "@/lib/plan-progress";
 
 type TimePeriod = 'all' | '6m' | '12m' | '24m';
@@ -585,14 +585,6 @@ const Index = () => {
                   }).format(investmentPlan.monthly_deposit)}
                 </p>
               )}
-              {investmentPlan?.required_monthly_deposit && (
-                <p className="text-sm text-muted-foreground">
-                  {t('dashboard.cards.monthlyContributions.required')}: {new Intl.NumberFormat('pt-BR', {
-                    style: 'currency',
-                    currency: 'BRL'
-                  }).format(investmentPlan.required_monthly_deposit)}
-                </p>
-              )}
             </div>
           </DashboardCard>
           
@@ -665,7 +657,7 @@ const Index = () => {
         
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           {planProgressData && (
-            <PlanProgress data={planProgressData} />
+            <Calculator data={planProgressData} />
           )}
           
           <SavingsGoal 
@@ -674,6 +666,7 @@ const Index = () => {
             profile={{
               birth_date: clientProfile?.birth_date
             }}
+            planProgressData={planProgressData}
           />
           
           <DashboardCard 
