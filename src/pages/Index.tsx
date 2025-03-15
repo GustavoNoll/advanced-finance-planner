@@ -20,6 +20,7 @@ import {
   HoverCardTrigger,
 } from "@/components/ui/hover-card";
 import { PlanProgress } from "@/components/PlanProgress";
+import { processPlanProgressData } from "@/lib/plan-progress";
 
 type TimePeriod = 'all' | '6m' | '12m' | '24m';
 
@@ -362,6 +363,16 @@ const Index = () => {
   const portfolioIncreaseRate = ((portfolioValue - processedRecords.latestRecord?.starting_balance) / processedRecords.latestRecord?.starting_balance) * 100 || null;
   const monthlyContribution = processedRecords.currentMonthRecord?.monthly_contribution || 0;
 
+  const planProgressData = processPlanProgressData(
+    allFinancialRecords,
+    investmentPlan,
+    {
+      birth_date: clientProfile?.birth_date
+    },
+    goalsAndEvents?.goals || [],
+    goalsAndEvents?.events || []
+  );
+
   return (
     <div className="min-h-screen bg-gradient-to-b from-gray-50 to-gray-100">
       <header className="bg-white border-b sticky top-0 z-50 shadow-sm">
@@ -653,15 +664,9 @@ const Index = () => {
         </div>
         
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <PlanProgress 
-            allFinancialRecords={allFinancialRecords || []}
-            investmentPlan={investmentPlan}
-            profile={{
-              birth_date: clientProfile?.birth_date
-            }}
-            goals={goalsAndEvents?.goals || []}
-            events={goalsAndEvents?.events || []}
-          />
+          {planProgressData && (
+            <PlanProgress data={planProgressData} />
+          )}
           
           <SavingsGoal 
             allFinancialRecords={allFinancialRecords || []}
