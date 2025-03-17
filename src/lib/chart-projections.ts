@@ -1,4 +1,3 @@
-import { WithdrawalStrategy, calculateMonthlyWithdrawal } from './withdrawal-strategies';
 import { yearlyReturnRateToMonthlyReturnRate, calculateCompoundedRates } from './financial-math';
 import { ChartDataPoint, FinancialRecord, Goal, MonthNumber, ProjectedEvent } from '@/types/financial';
 
@@ -33,9 +32,8 @@ export function generateChartProjections(
   profile: { birth_date: string },
   investmentPlan: InvestmentPlan,
   financialRecordsByYear: FinancialRecord[],
-  withdrawalStrategy: WithdrawalStrategy,
   goals?: Goal[],
-  events?: ProjectedEvent[]
+  events?: ProjectedEvent[],
 ): ChartDataPoint[] {
   const birthYear = new Date(profile.birth_date).getFullYear();
   const endAge = getEndAge(investmentPlan);
@@ -49,7 +47,6 @@ export function generateChartProjections(
     investmentPlan,
     allDataPoints,
     endAge,
-    withdrawalStrategy,
     goalsForChart,
     events
   );
@@ -112,7 +109,7 @@ export function generateDataPoints(
   birthYear: number
 ): DataPoint[] {
   return Array.from(
-    { length: (yearsUntilEnd + 1) * 12 }, 
+    { length: (yearsUntilEnd) * 12 + 1 }, 
     (_, i) => {
       const monthsFromStart = i;
       const age = investmentPlan.initial_age + (monthsFromStart / 12);
@@ -161,9 +158,9 @@ export function generateProjectedPortfolioValues(
   investmentPlan: InvestmentPlan,
   allDataPoints: DataPoint[],
   endAge: number,
-  withdrawalStrategy: WithdrawalStrategy,
   goals?: GoalForChart[],
-  events?: ProjectedEvent[]
+  events?: ProjectedEvent[],
+  includeEvents: boolean = false
 ) {
   const monthlyInflationRate = yearlyReturnRateToMonthlyReturnRate(investmentPlan.inflation/100);
   const monthlyExpectedReturnRate = yearlyReturnRateToMonthlyReturnRate(investmentPlan.expected_return/100);
@@ -176,13 +173,15 @@ export function generateProjectedPortfolioValues(
   return allDataPoints.map(point => {
     const age = parseFloat(point.age);
     
-    currentBalance = handleMonthlyGoalsAndEvents(
-      currentBalance,
-      point.year,
-      point.month - 1,
-      goals,
-      events
-    );
+    if (includeEvents) {
+      currentBalance = handleMonthlyGoalsAndEvents(
+        currentBalance,
+        point.year,
+        point.month - 1,
+        goals,
+        events
+      );
+    }
 
     if (investmentPlan.adjust_contribution_for_inflation) {
       currentMonthlyDeposit *= (1 + monthlyInflationRate);
@@ -192,19 +191,7 @@ export function generateProjectedPortfolioValues(
     const isRetirementAge = age >= investmentPlan.final_age;
     
     if (isRetirementAge) {
-      const monthsUntilEnd = (endAge - age) * 12;
-      const withdrawal = calculateMonthlyWithdrawal(
-        withdrawalStrategy,
-        {
-          currentBalance,
-          monthlyReturnRate,
-          monthlyInflationRate,
-          currentAge: age,
-          monthsUntilEnd,
-          currentMonth: point.month - 1,
-          desiredIncome: currentMonthlyWithdrawal
-        }
-      );
+      const withdrawal = currentMonthlyWithdrawal
       
       currentBalance = (currentBalance - withdrawal) * (1 + monthlyReturnRate);
     } else {
@@ -235,9 +222,9 @@ export function generateHistoricalPortfolioValues(
       investmentPlan,
       allDataPoints,
       endAge,
-      { type: 'fixed' },
       goals,
-      events
+      events,
+      true
     );
     
       return projectedValues.map(value => ({
@@ -283,6 +270,12 @@ export function generateHistoricalPortfolioValues(
       };
     }
 
+    // Apply inflation adjustments
+    if (investmentPlan.adjust_contribution_for_inflation) {
+      currentMonthlyDeposit *= (1 + monthlyInflationRate);
+    }
+    currentMonthlyWithdrawal *= (1 + monthlyInflationRate);
+
     // Check if we have actual data for this point
     const record = allFinancialRecords.find(record => 
       record.record_year === point.year && 
@@ -316,12 +309,6 @@ export function generateHistoricalPortfolioValues(
         goals,
         events
       );
-
-      // Apply inflation adjustments
-      if (investmentPlan.adjust_contribution_for_inflation) {
-        currentMonthlyDeposit *= (1 + monthlyInflationRate);
-      }
-      currentMonthlyWithdrawal *= (1 + monthlyInflationRate);
 
       // Calculate balance changes based on retirement status
       const isRetirementAge = age >= investmentPlan.final_age;

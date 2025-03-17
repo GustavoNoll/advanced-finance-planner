@@ -1,4 +1,3 @@
-import { calculateMonthlyWithdrawal } from './withdrawal-strategies';
 import { calculateCompoundedRates, yearlyReturnRateToMonthlyReturnRate } from './financial-math';
 import { FinancialRecord, InvestmentPlan, Goal, ProjectedEvent } from '@/types/financial';
 import { getEndAge, handleMonthlyGoalsAndEvents, processGoals } from './chart-projections';

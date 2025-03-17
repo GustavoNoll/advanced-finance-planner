@@ -127,7 +127,8 @@ export const ptBR = {
         target: "Acordado",
         amount: "R$ {{value}}",
         required: "Necessário",
-        tooltip: "Contribuição mensal no mês."
+        tooltip: "Contribuição mensal no mês.",
+        inflationAdjusted: "Ajustado pela inflação"
       },
       totalReturns: {
         title: "Rendimento",

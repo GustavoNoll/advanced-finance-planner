@@ -13,7 +13,7 @@ import { useEffect, useMemo, useCallback, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Spinner } from "@/components/ui/spinner";
 import { FinancialRecord } from "@/types/financial";
-import { WithdrawalStrategy } from '@/lib/withdrawal-strategies';
+import { yearlyReturnRateToMonthlyReturnRate } from '@/lib/financial-math';
 import {
   HoverCard,
   HoverCardContent,
@@ -31,9 +31,6 @@ const Index = () => {
   const clientId = params.id || user?.id;
   const { t } = useTranslation();
   const [selectedPeriod, setSelectedPeriod] = useState<TimePeriod>('all');
-  const [withdrawalStrategy, setWithdrawalStrategy] = useState<WithdrawalStrategy>({
-    type: 'fixed'
-  });
 
   const handleLogout = useCallback(async () => {
     try {
@@ -324,6 +321,25 @@ const Index = () => {
     enabled: !!clientId
   });
 
+  const calculateAccumulatedInflation = useCallback((investmentPlan: {
+    initial_age?: number;
+    inflation?: number;
+    adjust_contribution_for_inflation?: boolean;
+  }) => {
+    if (!investmentPlan?.initial_age || !investmentPlan?.inflation || !clientProfile?.birth_date || !investmentPlan.adjust_contribution_for_inflation) return 1;
+
+    const birthDate = new Date(clientProfile.birth_date);
+    const initialAgeDate = new Date(birthDate);
+    initialAgeDate.setFullYear(birthDate.getFullYear() + investmentPlan.initial_age);
+
+    const currentDate = new Date();
+    const monthsPassed = (currentDate.getFullYear() - initialAgeDate.getFullYear()) * 12 + 
+                        (currentDate.getMonth() - initialAgeDate.getMonth());
+
+    const monthlyInflationRate = yearlyReturnRateToMonthlyReturnRate(investmentPlan.inflation / 100);
+    return Math.pow(1 + monthlyInflationRate, monthsPassed);
+  }, [clientProfile?.birth_date]);
+
   useEffect(() => {
     if (!isInvestmentPlanLoading && !isProfilesLoading) {
       if (brokerProfile && !params.id) {
@@ -582,7 +598,23 @@ const Index = () => {
                   {t('dashboard.cards.monthlyContributions.target')}: {new Intl.NumberFormat('pt-BR', {
                     style: 'currency',
                     currency: 'BRL'
-                  }).format(investmentPlan.monthly_deposit)}
+                  }).format(
+                    investmentPlan.adjust_contribution_for_inflation 
+                      ? investmentPlan.monthly_deposit * calculateAccumulatedInflation(investmentPlan)
+                      : investmentPlan.monthly_deposit
+                  )}
+                  {investmentPlan.adjust_contribution_for_inflation && (
+                    <HoverCard>
+                      <HoverCardTrigger>
+                        <span className="ml-1 text-blue-600 cursor-help">*</span>
+                      </HoverCardTrigger>
+                      <HoverCardContent className="w-80">
+                        <p className="text-sm text-gray-600">
+                          {t('dashboard.cards.monthlyContributions.inflationAdjusted')}
+                        </p>
+                      </HoverCardContent>
+                    </HoverCard>
+                  )}
                 </p>
               )}
             </div>
@@ -650,8 +682,6 @@ const Index = () => {
             investmentPlan={investmentPlan}
             clientId={clientId}
             allFinancialRecords={allFinancialRecords || []}
-            withdrawalStrategy={withdrawalStrategy}
-            onWithdrawalStrategyChange={setWithdrawalStrategy}
           />
         </div>
         

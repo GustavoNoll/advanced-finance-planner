@@ -1,8 +1,6 @@
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend, ReferenceLine, Label } from 'recharts';
 import { useTranslation } from "react-i18next";
 import { ChartDataPoint, FinancialRecord, Goal, ProjectedEvent } from '@/types/financial';
-import { WithdrawalStrategy } from '@/lib/withdrawal-strategies';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { generateChartProjections } from '@/lib/chart-projections';
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
@@ -31,7 +29,6 @@ interface ExpenseChartProps {
   clientId: string;
   allFinancialRecords: FinancialRecord[];
   profile: Profile;
-  withdrawalStrategy?: WithdrawalStrategy;
 }
 
 export const ExpenseChart = ({ 
@@ -39,11 +36,7 @@ export const ExpenseChart = ({
   investmentPlan, 
   clientId, 
   allFinancialRecords, 
-  withdrawalStrategy = { type: 'fixed' },
-  onWithdrawalStrategyChange
-}: ExpenseChartProps & {
-  onWithdrawalStrategyChange?: (strategy: WithdrawalStrategy) => void;
-}) => {
+}: ExpenseChartProps) => {
   const { t } = useTranslation();
   const [zoomLevel, setZoomLevel] = useState<'1y' | '5y' | '10y' | 'all'>('all');
   
@@ -182,7 +175,6 @@ export const ExpenseChart = ({
     profile,
     investmentPlan,
     allFinancialRecords,
-    withdrawalStrategy,
     goals,
     events
   )).map(point => ({
@@ -308,27 +300,6 @@ export const ExpenseChart = ({
               {t('common.all')}
             </button>
           </div>
-
-          <Select
-            value={withdrawalStrategy.type}
-            onValueChange={(value) => {
-              onWithdrawalStrategyChange?.({
-                type: value as WithdrawalStrategy['type'],
-                monthlyAmount: value === 'fixed' ? investmentPlan?.desired_income : undefined,
-                targetLegacy: value === 'legacy' ? 1000000 : undefined
-              });
-            }}
-          >
-            <SelectTrigger className="w-[180px]">
-              <SelectValue placeholder={t('expenseChart.selectStrategy')} />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="fixed">{t('monthlyView.futureProjection.strategies.fixed')}</SelectItem>
-              <SelectItem value="preservation">{t('monthlyView.futureProjection.strategies.preservation')}</SelectItem>
-              <SelectItem value="spend-all">{t('monthlyView.futureProjection.strategies.spendAll')}</SelectItem>
-              <SelectItem value="legacy">{t('monthlyView.futureProjection.strategies.legacy')}</SelectItem>
-            </SelectContent>
-          </Select>
         </div>
       </div>
 
