@@ -384,11 +384,14 @@ const FinancialRecords = () => {
           if (ipcaRateMap.has(recordKey)) {
             const ipcaRate = ipcaRateMap.get(recordKey);
             // Apenas incluímos o ID e o valor a ser atualizado
-            updates.push({
-              id: record.id,
-              target_rentability: parseFloat(ipcaRate.toFixed(2))
-            });
-            updatedCount++;
+            const parsedIpcaRate = parseFloat(ipcaRate.toFixed(2));
+            if (record.target_rentability !== parsedIpcaRate) {
+              updates.push({
+                id: record.id,
+                target_rentability: parsedIpcaRate
+              });
+              updatedCount++;
+            }
           }
         }
         
@@ -408,6 +411,7 @@ const FinancialRecords = () => {
           }
         }
         
+        console.log(updatedCount);
         return { 
           count: updatedCount
         };
@@ -421,11 +425,17 @@ const FinancialRecords = () => {
       
       queryClient.invalidateQueries({ queryKey: ['financialRecords', clientId] });
       
-      toast({
-        title: t('financialRecords.ipcaSyncSuccess', { 
-          count: result.count,
-        }),
-      });
+      if (result.count > 0) {
+        toast({
+          title: t('financialRecords.ipcaSyncSuccess', { 
+            count: result.count,
+          }),
+        });
+      } else {
+        toast({
+          title: t('financialRecords.ipcaSyncZeroRecords'),
+        });
+      }
     },
     onError: (error) => {
       console.error('Error syncing IPCA rates:', error);

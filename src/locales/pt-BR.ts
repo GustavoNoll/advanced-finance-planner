@@ -418,7 +418,8 @@ export const ptBR = {
     },
   },
   financialRecords: {
-    ipcaSyncSuccess: "IPCA sincronizado com sucesso",
+    ipcaSyncSuccess: "{{count}} IPCA sincronizado com sucesso",
+    ipcaSyncZeroRecords: "Nenhum registro financeiro diferente do IPCA para sincronizar",
     syncIPCA: "Sincronizar IPCA",
     editTitle: "Editar Registro Financeiro",  
     updateSuccess: "Registro atualizado com sucesso",
