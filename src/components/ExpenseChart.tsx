@@ -5,6 +5,7 @@ import { generateChartProjections } from '@/lib/chart-projections';
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
 import { useState } from "react";
+import { calculateCompoundedRates, yearlyReturnRateToMonthlyReturnRate } from '@/lib/financial-math';
 
 interface Profile {
   birth_date: string;
@@ -39,6 +40,7 @@ export const ExpenseChart = ({
 }: ExpenseChartProps) => {
   const { t } = useTranslation();
   const [zoomLevel, setZoomLevel] = useState<'1y' | '5y' | '10y' | 'all'>('all');
+  const [showRealValues, setShowRealValues] = useState<boolean>(false);
   
   // Add query for financial goals
   const { data: goals } = useQuery<Goal[]>({
@@ -78,6 +80,48 @@ export const ExpenseChart = ({
       </div>
     );
   }
+
+  // Function to calculate inflation-adjusted values
+  const calculateInflationAdjustedValue = (
+    value: number | null | undefined,
+    baseYear: number,
+    baseMonth: number,
+    targetYear: number,
+    targetMonth: number,
+    monthlyInflationRate: number
+  ): number | null | undefined => {
+    if (value === null || value === undefined) return value;
+    
+    // Calculate total months between the dates
+    const monthsDiff = 
+      (targetYear - baseYear) * 12 + (targetMonth - baseMonth);
+    
+    // If the target date is before or equal to the base date, use historical inflation data
+    if (monthsDiff <= 0) {
+      // For historical values, use accumulated target_rentability from financial records
+      // Find all records between target date and base date
+      const recordsBetween = allFinancialRecords.filter(record => {
+        // Calculate if this record is older than target date (before target date)
+        const recordToTargetMonthDiff = 
+          (record.record_year - targetYear) * 12 + (record.record_month - targetMonth);
+        
+        return recordToTargetMonthDiff < 0; // Record is BEFORE target date (negative diff means older)
+      });
+      // Calculate accumulated inflation factor using target_rentability
+
+      const inflationFactor = 1 + (calculateCompoundedRates(recordsBetween.map(record => record.target_rentability/100)) || 1);
+      
+      // If we have inflation data, apply the adjustment
+      if (inflationFactor !== 1) {
+        return value / inflationFactor;
+      }
+      
+      // If no historical inflation data, return original value
+      return value;
+    }
+    // Discount the value by the accumulated inflation
+    return value / Math.pow(1 + monthlyInflationRate, monthsDiff);
+  };
 
   const formatXAxisLabel = (point: ChartDataPoint) => {
     if (zoomLevel === 'all' || zoomLevel === '10y') {
@@ -170,18 +214,60 @@ export const ExpenseChart = ({
     return filteredData;
   };
 
-  // Adicionar o label formatado aos dados do gráfico
-  const chartData = getZoomedData(generateChartProjections(
+  // Get base date (today) for inflation adjustment
+  const currentDate = new Date();
+  const sortedRecords = [...allFinancialRecords].sort((a, b) => {
+    if (a.record_year !== b.record_year) {
+      return b.record_year - a.record_year; // Descending by year
+    }
+    return b.record_month - a.record_month; // Descending by month
+  });
+  
+  const lastRecord = sortedRecords[0];
+  const baseYear = lastRecord ? lastRecord.record_year : currentDate.getFullYear();
+  const baseMonth = lastRecord ? lastRecord.record_month : currentDate.getMonth() + 1;
+
+  // Generate chart projections
+  const rawChartData = generateChartProjections(
     profile,
     investmentPlan,
     allFinancialRecords,
     goals,
     events
-  )).map(point => ({
+  );
+
+  // Apply adjustments based on showRealValues setting
+  // aplicar dado do bc se tem
+  // se assumir inflação 
+  const adjustedChartData = showRealValues 
+    ? rawChartData.map(point => ({
+        ...point,
+        actualValue: point.realDataPoint 
+          ? point.actualValue // Keep real data points as is
+          : calculateInflationAdjustedValue(
+              point.actualValue, 
+              baseYear, 
+              baseMonth, 
+              point.year, 
+              point.month, 
+              yearlyReturnRateToMonthlyReturnRate(investmentPlan.inflation/100)
+            ),
+        projectedValue: calculateInflationAdjustedValue(
+          point.projectedValue, 
+          baseYear, 
+          baseMonth, 
+          point.year, 
+          point.month, 
+          yearlyReturnRateToMonthlyReturnRate(investmentPlan.inflation/100)
+        ),
+      }))
+    : rawChartData;
+
+  // Get final data with zoom applied
+  const chartData = getZoomedData(adjustedChartData).map(point => ({
     ...point,
     xAxisLabel: formatXAxisLabel(point)
   }));
-
 
   const colorOffset = () => {
     // Find the last real data point index
@@ -199,6 +285,7 @@ export const ExpenseChart = ({
 
   const offset = colorOffset();
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const renderContent = (props: any, goal?: Goal, event?: ProjectedEvent) => {
     if (!props.viewBox?.x || !props.viewBox?.y || (!goal && !event)) return null;
     
@@ -258,6 +345,29 @@ export const ExpenseChart = ({
         <h2 className="text-lg font-semibold">{t('dashboard.charts.portfolioPerformance')}</h2>
         
         <div className="flex flex-wrap items-center gap-4">
+          {/* Inflation adjustment toggle */}
+          <div className="inline-flex items-center">
+            <button
+              onClick={() => setShowRealValues(!showRealValues)}
+              className={`flex items-center gap-2 px-3 py-1.5 text-sm font-medium rounded-md border transition-colors ${
+                showRealValues 
+                  ? 'bg-blue-50 border-blue-200 text-blue-700' 
+                  : 'bg-gray-50 border-gray-200 text-gray-700 hover:bg-gray-100'
+              }`}
+            >
+              {showRealValues ? (
+                <>
+                  <span>{t('expenseChart.realValues')}</span>
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                  </svg>
+                </>
+              ) : (
+                <span>{t('expenseChart.nominalValues')}</span>
+              )}
+            </button>
+          </div>
+          
           <div className="inline-flex items-center rounded-md border border-gray-200 p-1 bg-gray-50">
             <button
               onClick={() => setZoomLevel('1y')}
@@ -306,7 +416,7 @@ export const ExpenseChart = ({
       <ResponsiveContainer 
         width="100%" 
         height={300}
-        key={JSON.stringify(chartData)}
+        key={`${JSON.stringify(chartData)}-${showRealValues}`}
       >
         <LineChart 
           data={chartData}
@@ -345,13 +455,17 @@ export const ExpenseChart = ({
               if (!dataPoint) return '';
 
               if (zoomLevel === 'all') {
-                return `${Math.floor(Number(dataPoint.age))} ${t('expenseChart.years')} (${dataPoint.year})`;
+                return `${Math.floor(Number(dataPoint.age))} ${t('expenseChart.years')} (${dataPoint.year})${
+                  showRealValues ? ` - ${t('expenseChart.realValues')}` : ''
+                }`;
               }
 
               const monthName = new Date(0, dataPoint.month - 1).toLocaleString('default', { month: 'long' });
               const wholeAge = Math.floor(Number(dataPoint.age));
               
-              return `${wholeAge} ${t('expenseChart.years')} (${t('monthlyView.table.months.' + monthName)} ${dataPoint.year})`;
+              return `${wholeAge} ${t('expenseChart.years')} (${t('monthlyView.table.months.' + monthName)} ${dataPoint.year})${
+                showRealValues ? ` - ${t('expenseChart.realValues')}` : ''
+              }`;
             }}
           />
           <Legend />
@@ -406,7 +520,7 @@ export const ExpenseChart = ({
                     ifOverflow="extendDomain"
                     label={{
                       position: 'top',
-                      content: (props) => renderContent(props, null,  event)
+                      content: (props) => renderContent(props, null, event)
                     }}
                   />
                 );
@@ -419,19 +533,18 @@ export const ExpenseChart = ({
             type="natural"
             dataKey="actualValue"
             stroke="url(#colorUv)"
-            name={t('expenseChart.actualValue')}
+            name={showRealValues ? t('expenseChart.actualValueReal') : t('expenseChart.actualValue')}
             strokeWidth={2.5}
             connectNulls
             dot={false}
             activeDot={{ r: 6, strokeWidth: 0 }}
-            //data={chartData.filter(point => point.realDataPoint)}
           />
         
           <Line 
             type="natural"
             dataKey="projectedValue" 
             stroke="#f97316"
-            name={t('expenseChart.projectedValue')}
+            name={showRealValues ? t('expenseChart.projectedValueReal') : t('expenseChart.projectedValue')}
             strokeWidth={2.5}
             strokeDasharray="8 8"
             connectNulls

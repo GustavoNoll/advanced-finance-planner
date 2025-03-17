@@ -4,7 +4,7 @@ import { Card } from "@/components/ui/card";
 import { toast } from "@/components/ui/use-toast";
 import { supabase } from "@/lib/supabase";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { ArrowLeft, Plus, Trash2, LogOut, RefreshCcw, Upload, Pencil, MoreVertical } from "lucide-react";
+import { ArrowLeft, Plus, Trash2, RefreshCcw, Upload, Pencil, MoreVertical } from "lucide-react";
 import { Link, useNavigate, useParams, useLocation } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
@@ -14,6 +14,7 @@ import Papa from 'papaparse';
 import { Spinner } from "@/components/ui/spinner";
 import { AddRecordForm } from "@/components/financial-records/AddRecordForm";
 import { FinancialRecord } from "@/types/financial";
+import { fetchIPCARates } from "@/lib/bcb-api";
 
 interface CSVRecord {
   Data: string;
@@ -340,6 +341,101 @@ const FinancialRecords = () => {
     },
   });
 
+  const syncIPCAMutation = useMutation({
+    mutationFn: async () => {
+      if (!clientId || !records?.length) return;
+      
+      try {
+        // Find the oldest record's date
+        const sortedRecords = [...records].sort((a, b) => {
+          if (a.record_year !== b.record_year) {
+            return a.record_year - b.record_year;
+          }
+          return a.record_month - b.record_month;
+        });
+        
+        const oldestRecord = sortedRecords[0];
+        // Format the date as DD/MM/YYYY (pt-BR format)
+        const startDate = `01/${oldestRecord.record_month.toString().padStart(2, '0')}/${oldestRecord.record_year}`;
+        
+        // Fetch IPCA rates from the oldest record to current date
+        const response = await fetchIPCARates(startDate, new Date().toLocaleDateString('pt-BR', {
+          day: '2-digit',
+          month: '2-digit',
+          year: 'numeric'
+        }));
+        
+        // Create a map of IPCA rates by month/year for easier lookup
+        const ipcaRateMap = new Map();
+        response.forEach(item => {
+          const date = new Date(item.date);
+          const year = date.getFullYear();
+          const month = date.getMonth() + 1; // JavaScript months are 0-indexed
+          const key = `${year}-${month}`;
+          ipcaRateMap.set(key, Number(item.monthlyRate));
+        });
+        
+        // Prepare batch updates for each record that has a matching IPCA rate
+        const updates = [];
+        let updatedCount = 0;
+        
+        for (const record of records) {
+          const recordKey = `${record.record_year}-${record.record_month}`;
+          if (ipcaRateMap.has(recordKey)) {
+            const ipcaRate = ipcaRateMap.get(recordKey);
+            // Apenas incluímos o ID e o valor a ser atualizado
+            updates.push({
+              id: record.id,
+              target_rentability: parseFloat(ipcaRate.toFixed(2))
+            });
+            updatedCount++;
+          }
+        }
+        
+        // Atualiza records com IPCA correspondente
+        if (updates.length > 0) {
+          // Processa cada atualização individualmente para garantir que são apenas updates
+          for (const update of updates) {
+            const { error } = await supabase
+              .from('user_financial_records')
+              .update({ target_rentability: update.target_rentability })
+              .eq('id', update.id);
+            
+            if (error) {
+              console.error(`Error updating record ${update.id}:`, error);
+              throw error;
+            }
+          }
+        }
+        
+        return { 
+          count: updatedCount
+        };
+      } catch (error) {
+        console.error('Error syncing IPCA rates:', error);
+        throw error;
+      }
+    },
+    onSuccess: (result) => {
+      if (!result) return;
+      
+      queryClient.invalidateQueries({ queryKey: ['financialRecords', clientId] });
+      
+      toast({
+        title: t('financialRecords.ipcaSyncSuccess', { 
+          count: result.count,
+        }),
+      });
+    },
+    onError: (error) => {
+      console.error('Error syncing IPCA rates:', error);
+      toast({
+        title: t('financialRecords.errors.ipcaSyncFailed'),
+        variant: "destructive",
+      });
+    },
+  });
+
   const handleDelete = (recordId: string) => {
     if (window.confirm(t('financialRecords.confirmDelete'))) {
       deleteMutation.mutate(recordId);
@@ -349,6 +445,12 @@ const FinancialRecords = () => {
   const handleReset = async () => {
     if (window.confirm(t('financialRecords.confirmReset'))) {
       await resetMutation.mutate();
+    }
+  };
+
+  const handleSyncIPCA = async () => {
+    if (window.confirm(t('financialRecords.confirmIPCASync'))) {
+      await syncIPCAMutation.mutate();
     }
   };
 
@@ -526,6 +628,17 @@ const FinancialRecords = () => {
             <div className="flex items-center gap-2">
               <RefreshCcw className="h-4 w-4 text-red-600" />
               <span className="text-sm font-medium text-gray-700">{t('financialRecords.resetRecords')}</span>
+            </div>
+          </Button>
+
+          <Button 
+            variant="ghost"
+            onClick={handleSyncIPCA}
+            className="w-full h-14 flex flex-col items-center justify-center gap-1 bg-gradient-to-br from-white to-gray-50 hover:from-green-50 hover:to-green-100 shadow-sm hover:shadow transition-all duration-200 border border-gray-100"
+          >
+            <div className="flex items-center gap-2">
+              <ArrowLeft className="h-4 w-4 text-green-600" />
+              <span className="text-sm font-medium text-gray-700">{t('financialRecords.syncIPCA')}</span>
             </div>
           </Button>
         </div>

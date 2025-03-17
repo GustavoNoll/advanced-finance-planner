@@ -379,10 +379,14 @@ export const ptBR = {
     portfolioValue: "Valor do Portfólio",
     inflationAdjusted: "Ajustado pela Inflação",
     actualValue: "Valor Projetado",
+    actualValueReal: "Valor Projetado Real",
     actualValueProjection: "Valor Real Projetado",
     projectedValue: "Valor Planejado",
+    projectedValueReal: "Valor Planejado Real",
     years: "anos",
-    goalAchievement: "Meta atingida"
+    goalAchievement: "Meta atingida",
+    realValues: "Valores Reais",
+    nominalValues: "Valores Nominais"
   },
   budgetCategories: {
     categories: {
@@ -414,6 +418,8 @@ export const ptBR = {
     },
   },
   financialRecords: {
+    ipcaSyncSuccess: "IPCA sincronizado com sucesso",
+    syncIPCA: "Sincronizar IPCA",
     editTitle: "Editar Registro Financeiro",  
     updateSuccess: "Registro atualizado com sucesso",
     partialImport: "Importação Parcial",
@@ -453,6 +459,7 @@ export const ptBR = {
     confirmReset: "Tem certeza que deseja resetar todos os registros? Esta ação não pode ser desfeita.",
     resetSuccess: "Registros resetados com sucesso",
     errors: {
+      ipcaSyncFailed: "Erro ao sincronizar IPCA",
       fetchFailed: "Erro ao buscar registros financeiros",
       createFailed: "Erro ao criar registro financeiro",
       duplicateRecord: "Registro Duplicado",
