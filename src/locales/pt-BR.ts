@@ -127,8 +127,10 @@ export const ptBR = {
         target: "Acordado",
         amount: "R$ {{value}}",
         required: "Necessário",
-        tooltip: "Contribuição mensal no mês.",
-        inflationAdjusted: "Ajustado pela inflação"
+        tooltip: "Total de contribuições mensais no período selecionado.",
+        inflationAdjusted: "Ajustado pela inflação",
+        currentMonth: "Mês atual",
+        total: "Total do período"
       },
       totalReturns: {
         title: "Rendimento",

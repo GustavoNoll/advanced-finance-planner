@@ -31,6 +31,7 @@ const Index = () => {
   const clientId = params.id || user?.id;
   const { t } = useTranslation();
   const [selectedPeriod, setSelectedPeriod] = useState<TimePeriod>('all');
+  const [contributionPeriod, setContributionPeriod] = useState<TimePeriod>('all');
 
   const handleLogout = useCallback(async () => {
     try {
@@ -340,6 +341,41 @@ const Index = () => {
     return Math.pow(1 + monthlyInflationRate, monthsPassed);
   }, [clientProfile?.birth_date]);
 
+  const calculateMonthlyContributions = useCallback((period: TimePeriod = 'all') => {
+    if (!processedRecords.financialRecords?.length) return 0;
+
+    const currentDate = new Date();
+    let filteredRecords = [...processedRecords.financialRecords];
+
+    // Filter records based on selected period
+    if (period !== 'all') {
+      const months = parseInt(period);
+      const cutoffDate = new Date(
+        currentDate.getFullYear(),
+        currentDate.getMonth() - months,
+        1
+      );
+
+      filteredRecords = filteredRecords.filter(record => {
+        const recordDate = new Date(record.record_year, record.record_month - 1, 1);
+        return recordDate >= cutoffDate;
+      });
+    }
+
+    // If we're showing current month's contribution or all periods and current month record exists
+    if (period === 'all' && processedRecords.currentMonthRecord) {
+      return processedRecords.currentMonthRecord.monthly_contribution || 0;
+    }
+
+    // Calculate the total contribution over the selected period instead of average
+    const totalContribution = filteredRecords.reduce((sum, record) => 
+      sum + (record.monthly_contribution || 0), 0);
+    
+    return totalContribution;
+  }, [processedRecords.financialRecords, processedRecords.currentMonthRecord]);
+
+  const totalContribution = calculateMonthlyContributions(contributionPeriod);
+
   useEffect(() => {
     if (!isInvestmentPlanLoading && !isProfilesLoading) {
       if (brokerProfile && !params.id) {
@@ -392,7 +428,7 @@ const Index = () => {
   return (
     <div className="min-h-screen bg-gradient-to-b from-gray-50 to-gray-100">
       <header className="bg-white border-b sticky top-0 z-50 shadow-sm">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+        <div className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8 py-4">
           <div className="flex items-center justify-between">
             <div className="w-1/3">
               {brokerProfile && (
@@ -427,7 +463,7 @@ const Index = () => {
         </div>
       </header>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+      <div className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8 py-6">
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-4">
           <Link 
             to={`/financial-records${params.id ? `/${params.id}` : ''}`} 
@@ -514,7 +550,7 @@ const Index = () => {
         </div>
       </div>
 
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
+      <main className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <DashboardCard 
             className="transform transition-all hover:scale-102 hover:shadow-lg bg-gradient-to-br from-white to-gray-50"
@@ -575,48 +611,34 @@ const Index = () => {
                     </HoverCardContent>
                   </HoverCard>
                 </div>
-                <span className="text-sm text-muted-foreground">
-                  {new Date().toLocaleString('pt-BR', { month: 'long' }).replace(/^\w/, c => c.toUpperCase())}
-                </span>
+                <select
+                  value={contributionPeriod}
+                  onChange={(e) => setContributionPeriod(e.target.value as TimePeriod)}
+                  className="text-sm border border-gray-200 rounded-md px-2 py-1 bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                >
+                  <option value="all">{t('common.allTime')}</option>
+                  <option value="6m">{t('common.last6Months')}</option>
+                  <option value="12m">{t('common.last12Months')}</option>
+                  <option value="24m">{t('common.last24Months')}</option>
+                </select>
               </div>
             }
           >
             <div className="space-y-2">
               <p className={`text-2xl font-bold ${
                 investmentPlan?.required_monthly_deposit && 
-                monthlyContribution >= investmentPlan.required_monthly_deposit 
+                totalContribution >= investmentPlan.required_monthly_deposit 
                   ? 'text-green-600' 
                   : 'text-red-600'
               }`}>
                 {new Intl.NumberFormat('pt-BR', {
                   style: 'currency',
                   currency: 'BRL'
-                }).format(monthlyContribution)}
+                }).format(totalContribution)}
               </p>
-              {investmentPlan?.monthly_deposit && (
-                <p className="text-sm text-muted-foreground">
-                  {t('dashboard.cards.monthlyContributions.target')}: {new Intl.NumberFormat('pt-BR', {
-                    style: 'currency',
-                    currency: 'BRL'
-                  }).format(
-                    investmentPlan.adjust_contribution_for_inflation 
-                      ? investmentPlan.monthly_deposit * calculateAccumulatedInflation(investmentPlan)
-                      : investmentPlan.monthly_deposit
-                  )}
-                  {investmentPlan.adjust_contribution_for_inflation && (
-                    <HoverCard>
-                      <HoverCardTrigger>
-                        <span className="ml-1 text-blue-600 cursor-help">*</span>
-                      </HoverCardTrigger>
-                      <HoverCardContent className="w-80">
-                        <p className="text-sm text-gray-600">
-                          {t('dashboard.cards.monthlyContributions.inflationAdjusted')}
-                        </p>
-                      </HoverCardContent>
-                    </HoverCard>
-                  )}
-                </p>
-              )}
+              <p className="text-sm text-muted-foreground">
+                {t('dashboard.cards.monthlyContributions.total')}
+              </p>
             </div>
           </DashboardCard>
           
