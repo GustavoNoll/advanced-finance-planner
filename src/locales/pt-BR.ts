@@ -122,8 +122,8 @@ export const ptBR = {
         monthlyReturn: "de aumento no último mês",
         tooltip: "Valor baseado no ultimo registro financeiro."
       },
-      monthlyContributions: {
-        title: "Contribuições Mensais",
+      contributions: {
+        title: "Contribuição Total",
         subtitle: "Depósitos regulares",
         target: "Acordado",
         amount: "R$ {{value}}",

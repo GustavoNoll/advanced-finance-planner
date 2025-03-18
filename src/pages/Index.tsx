@@ -322,34 +322,26 @@ const Index = () => {
     enabled: !!clientId
   });
 
-  const calculateAccumulatedInflation = useCallback((investmentPlan: {
-    initial_age?: number;
-    inflation?: number;
-    adjust_contribution_for_inflation?: boolean;
-  }) => {
-    if (!investmentPlan?.initial_age || !investmentPlan?.inflation || !clientProfile?.birth_date || !investmentPlan.adjust_contribution_for_inflation) return 1;
-
-    const birthDate = new Date(clientProfile.birth_date);
-    const initialAgeDate = new Date(birthDate);
-    initialAgeDate.setFullYear(birthDate.getFullYear() + investmentPlan.initial_age);
-
-    const currentDate = new Date();
-    const monthsPassed = (currentDate.getFullYear() - initialAgeDate.getFullYear()) * 12 + 
-                        (currentDate.getMonth() - initialAgeDate.getMonth());
-
-    const monthlyInflationRate = yearlyReturnRateToMonthlyReturnRate(investmentPlan.inflation / 100);
-    return Math.pow(1 + monthlyInflationRate, monthsPassed);
-  }, [clientProfile?.birth_date]);
+  // Memoize the oldest record outside the callback
+  const oldestRecord = useMemo(() => {
+    if (!processedRecords.financialRecords?.length) return null;
+    
+    return [...processedRecords.financialRecords].sort((a, b) => {
+      // Comparação mais eficiente usando uma única expressão
+      return (a.record_year * 12 + a.record_month) - (b.record_year * 12 + b.record_month);
+    })[0];
+  }, [processedRecords.financialRecords]);
 
   const calculateMonthlyContributions = useCallback((period: TimePeriod = 'all') => {
     if (!processedRecords.financialRecords?.length) return 0;
 
     const currentDate = new Date();
     let filteredRecords = [...processedRecords.financialRecords];
+    let includesOldestRecord = true; // Por padrão, considerar que inclui o registro mais antigo
 
-    // Filter records based on selected period
+    // Filtrar registros apenas quando necessário
     if (period !== 'all') {
-      const months = parseInt(period);
+      const months = parseInt(period.replace('m', ''));
       const cutoffDate = new Date(
         currentDate.getFullYear(),
         currentDate.getMonth() - months,
@@ -360,19 +352,21 @@ const Index = () => {
         const recordDate = new Date(record.record_year, record.record_month - 1, 1);
         return recordDate >= cutoffDate;
       });
+
+      // Verificar se o registro mais antigo está incluído apenas quando filtramos
+      includesOldestRecord = filteredRecords.some(record => 
+        record.record_year === oldestRecord?.record_year && 
+        record.record_month === oldestRecord?.record_month
+      );
     }
 
-    // If we're showing current month's contribution or all periods and current month record exists
-    if (period === 'all' && processedRecords.currentMonthRecord) {
-      return processedRecords.currentMonthRecord.monthly_contribution || 0;
-    }
-
-    // Calculate the total contribution over the selected period instead of average
+    // Calcular a contribuição total de uma só vez
     const totalContribution = filteredRecords.reduce((sum, record) => 
       sum + (record.monthly_contribution || 0), 0);
     
-    return totalContribution;
-  }, [processedRecords.financialRecords, processedRecords.currentMonthRecord]);
+    // Adicionar initial_amount apenas se o registro mais antigo estiver incluído
+    return totalContribution + (includesOldestRecord ? (investmentPlan?.initial_amount || 0) : 0);
+  }, [processedRecords.financialRecords, investmentPlan?.initial_amount, oldestRecord]);
 
   const totalContribution = calculateMonthlyContributions(contributionPeriod);
 
@@ -413,7 +407,6 @@ const Index = () => {
 
   const portfolioValue = processedRecords.latestRecord?.ending_balance || 0;
   const portfolioIncreaseRate = ((portfolioValue - processedRecords.latestRecord?.starting_balance) / processedRecords.latestRecord?.starting_balance) * 100 || null;
-  const monthlyContribution = processedRecords.currentMonthRecord?.monthly_contribution || 0;
 
   const planProgressData = processPlanProgressData(
     allFinancialRecords,
@@ -599,14 +592,14 @@ const Index = () => {
             title={
               <div className="flex items-center justify-between w-full">
                 <div className="flex items-center gap-2">
-                  <span>{t('dashboard.cards.monthlyContributions.title')}</span>
+                  <span>{t('dashboard.cards.contributions.title')}</span>
                   <HoverCard>
                     <HoverCardTrigger>
                       <Info className="h-4 w-4 text-gray-400 cursor-help" />
                     </HoverCardTrigger>
                     <HoverCardContent className="w-80">
                       <p className="text-sm text-gray-600">
-                        {t('dashboard.cards.monthlyContributions.tooltip')}
+                        {t('dashboard.cards.contributions.tooltip')}
                       </p>
                     </HoverCardContent>
                   </HoverCard>
@@ -637,7 +630,7 @@ const Index = () => {
                 }).format(totalContribution)}
               </p>
               <p className="text-sm text-muted-foreground">
-                {t('dashboard.cards.monthlyContributions.total')}
+                {t('dashboard.cards.contributions.total')}
               </p>
             </div>
           </DashboardCard>
