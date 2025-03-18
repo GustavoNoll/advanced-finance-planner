@@ -71,10 +71,10 @@ export function generateChartProjections(
 }
 
 export function getEndAge(investmentPlan: InvestmentPlan): number {
-  if ((investmentPlan.plan_type === "1" || investmentPlan.plan_type === "2") && investmentPlan.limit_age) {
+  if (investmentPlan.limit_age) {
     return investmentPlan.limit_age;
   }
-  return 120;
+  return 100;
 }
 
 export function processGoals(goals?: Goal[]): GoalForChart[] {

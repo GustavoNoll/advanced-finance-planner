@@ -69,6 +69,7 @@ export const ptBR = {
       advancedSettings: "Configurações Avançadas",
       endAge: "Idade de Encerramento",
       legacyAge: "Idade para Deixar Herança",
+      keepAge: "Idade para Fim do Planejamento",
       legacyAmount: "Valor da Herança"
     },
     planTypes: {

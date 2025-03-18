@@ -252,6 +252,13 @@ export const InvestmentPlanShow = () => {
                   )}
                 </>
               )}
+
+              {plan.plan_type === "3" && (
+                <div>
+                  <p className="text-sm text-gray-500">{t('investmentPlan.form.keepAge')}</p>
+                  <p className="font-medium">{plan.limit_age} {t('investmentPlan.details.clientInfo.years')}</p>
+                </div>
+              )}
             </div>
           </DashboardCard>
         </div>

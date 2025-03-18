@@ -35,7 +35,7 @@ export const EditPlan = () => {
     inflation: "6.0",
     planType: "3",
     adjustContributionForInflation: false,
-    limitAge: "",
+    limitAge: "100",
     legacyAmount: "1000000",
   });
 
@@ -96,7 +96,6 @@ export const EditPlan = () => {
         return;
       }
 
-      console.log(data);
       setFormData({
         initialAmount: data.initial_amount.toString(),
         initialAge: data.initial_age.toString(),
@@ -368,12 +367,12 @@ export const EditPlan = () => {
                   </select>
                 </div>
 
-                {(formData.planType === "1" || formData.planType === "2") && (
+                {(
                   <div className="space-y-2">
                     <label className="text-sm font-medium">
                       {formData.planType === "1" 
-                        ? t('investmentPlan.form.endAge')
-                        : t('investmentPlan.form.legacyAge')}
+                        ? t('investmentPlan.form.endAge') 
+                        : (formData.planType === "2" ? t('investmentPlan.form.legacyAge') : t('investmentPlan.form.keepAge'))}
                     </label>
                     <Input
                       type="number"
