@@ -15,6 +15,7 @@ import { Spinner } from "@/components/ui/spinner";
 import { AddRecordForm } from "@/components/financial-records/AddRecordForm";
 import { FinancialRecord } from "@/types/financial";
 import { fetchIPCARates } from "@/lib/bcb-api";
+import { calculateCompoundedRates, yearlyReturnRateToMonthlyReturnRate } from "@/lib/financial-math";
 
 interface CSVRecord {
   Data: string;
@@ -116,7 +117,7 @@ const FinancialRecords = () => {
       
       const { data, error } = await supabase
         .from('investment_plans')
-        .select('monthly_deposit')
+        .select('monthly_deposit, expected_return')
         .eq('user_id', clientId)
         .single();
 
@@ -385,10 +386,11 @@ const FinancialRecords = () => {
             const ipcaRate = ipcaRateMap.get(recordKey);
             // Apenas incluímos o ID e o valor a ser atualizado
             const parsedIpcaRate = parseFloat(ipcaRate.toFixed(2));
-            if (record.target_rentability !== parsedIpcaRate) {
+            const ipcaRateConverted = calculateCompoundedRates([parsedIpcaRate/100, yearlyReturnRateToMonthlyReturnRate(investmentPlan?.expected_return/100)]);
+            if (record.target_rentability !== ipcaRateConverted) {
               updates.push({
                 id: record.id,
-                target_rentability: parsedIpcaRate
+                target_rentability: ipcaRateConverted*100
               });
               updatedCount++;
             }
@@ -411,7 +413,6 @@ const FinancialRecords = () => {
           }
         }
         
-        console.log(updatedCount);
         return { 
           count: updatedCount
         };

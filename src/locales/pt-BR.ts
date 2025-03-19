@@ -321,7 +321,7 @@ export const ptBR = {
       table: "Histórico",
       returnChart: "Comparação de Retorno",
       balanceChart: "Comparação de Saldo",
-      futureProjection: "Projeção Futura",
+      futureProjection: "Projeção Futura"
     },
     chart: {
       accumulatedReturn: "Retorno Acumulado",
@@ -366,6 +366,7 @@ export const ptBR = {
       balance: "Saldo",
       expandYear: "Expandir detalhes mensais",
       collapseYear: "Recolher detalhes mensais",
+      projectedBalance: "Projeção Financeira",
       monthlyDetails: "Mês",
       cashFlow: "Fluxo de Caixa",
       historical: 'Histórico',
@@ -381,11 +382,11 @@ export const ptBR = {
   expenseChart: {
     portfolioValue: "Valor do Portfólio",
     inflationAdjusted: "Ajustado pela Inflação",
-    actualValue: "Valor Projetado",
-    actualValueReal: "Valor Projetado Real",
-    actualValueProjection: "Valor Real Projetado",
-    projectedValue: "Valor Planejado",
-    projectedValueReal: "Valor Planejado Real",
+    actualValue: "Evolução Real",
+    actualValueReal: "Evolução Real",
+    actualValueProjection: "Evolução Projetada",
+    projectedValue: "Projeção Financeira",
+    projectedValueReal: "Projeção Financeira Real",
     years: "anos",
     goalAchievement: "Meta atingida",
     realValues: "Valores Reais",

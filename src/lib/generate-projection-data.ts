@@ -7,18 +7,22 @@ interface ProjectionData {
   contribution: number;
   withdrawal: number;
   balance: number;
+  projected_balance: number;  // Projeção pura sem dados históricos
   months?: {
     month: number;
     contribution: number;
     withdrawal: number;
     isHistorical: boolean;
     balance: number;
+    projected_balance: number;  // Projeção pura sem dados históricos
     returns?: number;
     goalsEventsImpact?: number;
+    difference_from_projected_balance: number;
   }[];
   isRetirementTransitionYear?: boolean;
   hasHistoricalData: boolean;
   returns: number;
+  difference_from_projected_balance: number;
   goalsEventsImpact?: number;
 }
 
@@ -47,6 +51,7 @@ export function generateProjectionData(
     const startYear = birthYear + investmentPlan.initial_age;
     
     let currentBalance = initialRecords[0]?.ending_balance || 0;
+    let projectedBalance = investmentPlan.initial_amount;
     let currentMonthlyDeposit = investmentPlan.monthly_deposit;
     let currentMonthlyWithdrawal = investmentPlan.desired_income;
     const monthlyInflationRate = yearlyReturnRateToMonthlyReturnRate(investmentPlan.inflation/100);
@@ -71,22 +76,28 @@ export function generateProjectionData(
         const isInPast = new Date(year, month) < currentDate;
           
         if (historicalRecord) {
+          projectedBalance = (projectedBalance + currentMonthlyDeposit) * (1 + monthlyReturnRate);
           return {
             month: currentMonthNumber,
             contribution: historicalRecord.monthly_contribution,
             withdrawal: 0,
             balance: historicalRecord.ending_balance,
-            isHistorical: true
+            projected_balance: projectedBalance,
+            isHistorical: true,
+            difference_from_projected_balance: historicalRecord.ending_balance - projectedBalance
           };
         }
 
         if (isInPast) {
+          projectedBalance = (projectedBalance + currentMonthlyDeposit) * (1 + monthlyReturnRate);
           return {
             month: currentMonthNumber,
             contribution: 0,
             withdrawal: 0,
             balance: 0,
-            isHistorical: false
+            projected_balance: projectedBalance,
+            isHistorical: false,
+            difference_from_projected_balance: projectedBalance - currentBalance
           };
         }
 
@@ -113,27 +124,33 @@ export function generateProjectionData(
           const withdrawal = currentMonthlyWithdrawal;
           
           currentBalance = (currentBalance - withdrawal) * (1 + monthlyReturnRate);
+          projectedBalance = (projectedBalance - withdrawal) * (1 + monthlyReturnRate);
 
           return {
             month: currentMonthNumber,
             contribution: 0,
             withdrawal,
             balance: currentBalance,
+            projected_balance: projectedBalance,
             returns: monthlyReturn,
             isHistorical: false,
+            difference_from_projected_balance: projectedBalance - currentBalance,
             goalsEventsImpact: goalsEventsImpact
           };
         } else {
           const monthlyReturn = currentBalance * monthlyReturnRate;
           currentBalance = (currentBalance + currentMonthlyDeposit) * (1 + monthlyReturnRate);
+          projectedBalance = (projectedBalance + currentMonthlyDeposit) * (1 + monthlyReturnRate);
           
           return {
             month: currentMonthNumber,
             contribution: currentMonthlyDeposit,
             withdrawal: 0,
             balance: currentBalance,
+            projected_balance: projectedBalance,
             returns: monthlyReturn,
             isHistorical: false,
+            difference_from_projected_balance: projectedBalance - currentBalance,
             goalsEventsImpact: goalsEventsImpact
           };
         }
@@ -149,11 +166,13 @@ export function generateProjectionData(
         contribution: yearlyContribution,
         withdrawal: yearlyWithdrawal,
         balance: monthlyData[11].balance,
+        projected_balance: monthlyData[11].projected_balance,
         months: monthlyData,
         isRetirementTransitionYear: hasRetirementTransition,
         hasHistoricalData: monthlyData.some(m => m.isHistorical),
         returns: monthlyData[11].returns || 0,
-        goalsEventsImpact: monthlyData.reduce((sum, month) => sum + (month.goalsEventsImpact || 0), 0)
+        goalsEventsImpact: monthlyData.reduce((sum, month) => sum + (month.goalsEventsImpact || 0), 0),
+        difference_from_projected_balance: monthlyData[11].projected_balance - monthlyData[11].balance
       });
     }
 

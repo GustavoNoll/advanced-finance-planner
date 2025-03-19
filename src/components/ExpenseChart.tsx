@@ -125,12 +125,11 @@ export const ExpenseChart = ({
 
   const formatXAxisLabel = (point: ChartDataPoint) => {
     if (zoomLevel === 'all' || zoomLevel === '10y') {
-      return point.year.toString();
+      return Math.floor(Number(point.age)).toString();
     }
     
     const monthName = new Date(0, point.month - 1).toLocaleString('default', { month: 'short' });
-    const shortYear = String(point.year).slice(-2);
-    return `${monthName}/${shortYear}`;
+    return `${Math.floor(Number(point.age))}/${monthName}`;
   };
 
   const getZoomedData = (data: ChartDataPoint[]) => {
@@ -420,7 +419,7 @@ export const ExpenseChart = ({
       >
         <LineChart 
           data={chartData}
-          margin={{ top: 20, right: 30, left: 50, bottom: 5 }}
+          margin={{ top: 20, right: 30, left: 50, bottom: 25 }}
         >
           <defs>
             <linearGradient id="colorUv" x1="0" y1="0" x2="1" y2="0">
@@ -432,6 +431,11 @@ export const ExpenseChart = ({
           <XAxis 
             dataKey="xAxisLabel"
             interval={zoomLevel === 'all' || zoomLevel === '10y' ? 'preserveStartEnd' : 3}
+            label={{ 
+              value: t('expenseChart.years'), 
+              position: 'bottom', 
+              offset: 0 
+            }}
           />
           <YAxis 
             tickFormatter={(value) => 
@@ -468,7 +472,14 @@ export const ExpenseChart = ({
               }`;
             }}
           />
-          <Legend />
+          <Legend 
+            verticalAlign="bottom" 
+            align="center"
+            wrapperStyle={{ 
+              paddingTop: '20px',
+              bottom: 0
+            }}
+          />
 
           {/* Update reference lines for goals */}
           {goals?.sort((a, b) => a.year - b.year)
