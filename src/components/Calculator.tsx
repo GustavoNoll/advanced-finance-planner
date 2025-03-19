@@ -94,7 +94,7 @@ const ComparisonRow = ({
  */
 export const Calculator = ({ data }: PlanProgressProps) => {
   const { t } = useTranslation();
-  console.log(data);
+
   return (
     <div className="bg-white rounded-xl shadow-sm p-6">
       <div className="flex items-center justify-between mb-4">

@@ -136,14 +136,12 @@ const Index = () => {
     const currentMonth = new Date().getMonth() + 1;
     const currentYear = new Date().getFullYear();
     
-    // Get last 12 months records
-    const today = new Date();
-    
-    const financialRecords = allFinancialRecords
+    // Create a copy of allFinancialRecords
+    const financialRecords = [...allFinancialRecords];
 
-    // Get records by year
+    // Get records by year using a copy
     const financialRecordsByYear = Object.values(
-      allFinancialRecords.reduce((acc: Record<string, FinancialRecord>, record: FinancialRecord) => {
+      [...allFinancialRecords].reduce((acc: Record<string, FinancialRecord>, record: FinancialRecord) => {
         acc[record.record_year] = record;
         return acc;
       }, {})
@@ -337,9 +335,8 @@ const Index = () => {
 
     const currentDate = new Date();
     let filteredRecords = [...processedRecords.financialRecords];
-    let includesOldestRecord = true; // Por padrão, considerar que inclui o registro mais antigo
+    let includesOldestRecord = true;
 
-    // Filtrar registros apenas quando necessário
     if (period !== 'all') {
       const months = parseInt(period.replace('m', ''));
       const cutoffDate = new Date(
@@ -353,25 +350,22 @@ const Index = () => {
         return recordDate >= cutoffDate;
       });
 
-      // Verificar se o registro mais antigo está incluído apenas quando filtramos
       includesOldestRecord = filteredRecords.some(record => 
         record.record_year === oldestRecord?.record_year && 
         record.record_month === oldestRecord?.record_month
       );
     }
 
-    // Calcular a contribuição total de uma só vez
     const totalContribution = filteredRecords.reduce((sum, record) => 
       sum + (record.monthly_contribution || 0), 0);
     
-    // Adicionar initial_amount apenas se o registro mais antigo estiver incluído
     return totalContribution + (includesOldestRecord ? (investmentPlan?.initial_amount || 0) : 0);
   }, [processedRecords.financialRecords, investmentPlan?.initial_amount, oldestRecord]);
 
   const totalContribution = calculateMonthlyContributions(contributionPeriod);
 
   useEffect(() => {
-    if (!isInvestmentPlanLoading && !isProfilesLoading) {
+    if (!isInvestmentPlanLoading && !isProfilesLoading) { 
       if (brokerProfile && !params.id) {
         navigate('/broker-dashboard');
         return;
@@ -696,7 +690,7 @@ const Index = () => {
             profile={clientProfile}
             investmentPlan={investmentPlan}
             clientId={clientId}
-            allFinancialRecords={allFinancialRecords || []}
+            allFinancialRecords={[...(allFinancialRecords || [])]}
           />
         </div>
         
@@ -706,7 +700,7 @@ const Index = () => {
           )}
           
           <SavingsGoal 
-            allFinancialRecords={allFinancialRecords || []}
+            allFinancialRecords={[...(allFinancialRecords || [])]}
             investmentPlan={investmentPlan}
             profile={{
               birth_date: clientProfile?.birth_date
@@ -740,8 +734,8 @@ const Index = () => {
         <section className="bg-white rounded-xl shadow-sm">
           <MonthlyView 
             userId={clientId} 
-            initialRecords={processedRecords.financialRecords} 
-            allFinancialRecords={allFinancialRecords || []}
+            initialRecords={[...processedRecords.financialRecords]} 
+            allFinancialRecords={[...(allFinancialRecords || [])]}
             investmentPlan={investmentPlan}
             profile={clientProfile}
           />
