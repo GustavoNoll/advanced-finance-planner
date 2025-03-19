@@ -16,6 +16,7 @@ import { AddRecordForm } from "@/components/financial-records/AddRecordForm";
 import { FinancialRecord } from "@/types/financial";
 import { fetchIPCARates } from "@/lib/bcb-api";
 import { calculateCompoundedRates, yearlyReturnRateToMonthlyReturnRate } from "@/lib/financial-math";
+import { SuccessAnimation } from "@/components/ui/success-animation";
 
 interface CSVRecord {
   Data: string;
@@ -85,6 +86,9 @@ const FinancialRecords = () => {
   const location = useLocation();
   const state = location.state as LocationState;
   const initialRecords = state?.records || [];
+  const [showSuccessAnimation, setShowSuccessAnimation] = useState(false);
+  const [animationPosition, setAnimationPosition] = useState<{ top: number; left: number } | null>(null);
+  const [updatedRecordIds, setUpdatedRecordIds] = useState<string[]>([]);
 
   const { data: records, isLoading: recordsLoading } = useQuery({
     queryKey: ['financialRecords', clientId],
@@ -385,12 +389,13 @@ const FinancialRecords = () => {
           if (ipcaRateMap.has(recordKey)) {
             const ipcaRate = ipcaRateMap.get(recordKey);
             // Apenas incluímos o ID e o valor a ser atualizado
-            const parsedIpcaRate = parseFloat(ipcaRate.toFixed(2));
-            const ipcaRateConverted = calculateCompoundedRates([parsedIpcaRate/100, yearlyReturnRateToMonthlyReturnRate(investmentPlan?.expected_return/100)]);
-            if (record.target_rentability !== ipcaRateConverted) {
+            const parsedIpcaRate = ipcaRate;
+            const ipcaRateConverted = parseFloat((calculateCompoundedRates([parsedIpcaRate/100, yearlyReturnRateToMonthlyReturnRate(investmentPlan?.expected_return/100)]) * 100).toFixed(4));
+            const parsedTargetRentability = parseFloat(record.target_rentability.toFixed(2));
+            if (parsedTargetRentability !== ipcaRateConverted) {
               updates.push({
                 id: record.id,
-                target_rentability: ipcaRateConverted*100
+                target_rentability: ipcaRateConverted
               });
               updatedCount++;
             }
@@ -399,6 +404,7 @@ const FinancialRecords = () => {
         
         // Atualiza records com IPCA correspondente
         if (updates.length > 0) {
+          const updatedIds: string[] = [];
           // Processa cada atualização individualmente para garantir que são apenas updates
           for (const update of updates) {
             const { error } = await supabase
@@ -410,7 +416,9 @@ const FinancialRecords = () => {
               console.error(`Error updating record ${update.id}:`, error);
               throw error;
             }
+            updatedIds.push(update.id);
           }
+          setUpdatedRecordIds(updatedIds);
         }
         
         return { 
@@ -541,6 +549,15 @@ const FinancialRecords = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-gray-50 to-gray-100">
+      <SuccessAnimation 
+        show={showSuccessAnimation} 
+        onComplete={() => {
+          setShowSuccessAnimation(false);
+          setAnimationPosition(null);
+          setUpdatedRecordIds([]);
+        }}
+        position={animationPosition}
+      />
       <header className="bg-white border-b">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
           <div className="flex items-center justify-between">
@@ -670,7 +687,22 @@ const FinancialRecords = () => {
             </Card>
           ) : (
             records?.map((record) => (
-              <Card key={record.id} className="p-6">
+              <Card 
+                key={record.id} 
+                className={`p-6 relative ${
+                  updatedRecordIds.includes(record.id) ? 'animate-pulse bg-green-50' : ''
+                }`}
+                ref={(el) => {
+                  if (el && updatedRecordIds.includes(record.id) && !showSuccessAnimation) {
+                    const rect = el.getBoundingClientRect();
+                    setAnimationPosition({
+                      top: rect.top + rect.height / 2,
+                      left: rect.left + rect.width / 2
+                    });
+                    setShowSuccessAnimation(true);
+                  }
+                }}
+              >
                 <div className="grid grid-cols-1 md:grid-cols-[1fr_1fr_1fr_1fr_1fr_auto] gap-4">
                   <div>
                     <h3 className="font-semibold text-lg">
