@@ -11,7 +11,7 @@
  */
 export function calculateCompoundedRates(rates: number[]): number {
   const finalRate = rates.reduce((acc, rate) => acc * (1 + rate), 1);
-  return finalRate - 1;
+  return parseFloat((finalRate - 1).toFixed(4));
 }
 
 /**
@@ -26,7 +26,7 @@ export function calculateCompoundedRates(rates: number[]): number {
  * yearlyReturnRateToMonthlyReturnRate(0.12)
  */
 export function yearlyReturnRateToMonthlyReturnRate(yearlyRate: number): number {
-  return Math.pow(1 + yearlyRate, 1/12) - 1;
+  return parseFloat((Math.pow(1 + yearlyRate, 1/12) - 1).toFixed(4));
 }
 
 /**
@@ -41,7 +41,7 @@ export function yearlyReturnRateToMonthlyReturnRate(yearlyRate: number): number 
  * monthlyReturnRateToYearlyReturnRate(0.009488)
  */
 export function monthlyReturnRateToYearlyReturnRate(monthlyRate: number): number {
-  return Math.pow(1 + monthlyRate, 12) - 1;
+  return parseFloat((Math.pow(1 + monthlyRate, 12) - 1).toFixed(4));
 }
 
 /**
@@ -61,7 +61,7 @@ export function calculateEffectiveAnnualRate(
   nominalRate: number, 
   compoundingPeriodsPerYear: number
 ): number {
-  return Math.pow(1 + nominalRate / compoundingPeriodsPerYear, compoundingPeriodsPerYear) - 1;
+  return parseFloat((Math.pow(1 + nominalRate / compoundingPeriodsPerYear, compoundingPeriodsPerYear) - 1).toFixed(4));
 }
 
 /**
@@ -94,7 +94,7 @@ export function calculateFutureValue(
   const depositsFutureValue = monthlyDeposit * 
     (Math.pow(1 + monthlyRate, numberOfMonths) - 1) / monthlyRate;
   
-  return principalFutureValue + depositsFutureValue;
+  return parseFloat((principalFutureValue + depositsFutureValue).toFixed(4));
 }
 
 /**
@@ -136,7 +136,7 @@ export function nper(
 ): number {
   // Tratamento de caso especial para taxa zero
   if (taxa === 0) {
-    return -(valor_atual + valor_futuro) / valor_do_pagamento;
+    return parseFloat((-(valor_atual + valor_futuro) / valor_do_pagamento).toFixed(4));
   }
 
   const tipo = fim_ou_inicio ? 1 : 0;
@@ -152,7 +152,7 @@ export function nper(
     throw new Error('Não é possível calcular o número de períodos com estes parâmetros');
   }
   
-  return Math.log(numerador / denominador) / Math.log(1 + taxa);
+  return parseFloat((Math.log(numerador / denominador) / Math.log(1 + taxa)).toFixed(4));
 }
 
 /**
@@ -181,7 +181,7 @@ export function pmt(
 ): number {
   // Special handling for zero rate
   if (taxa === 0) {
-    return -(valor_atual + valor_futuro) / numero_de_periodos;
+    return parseFloat((-(valor_atual + valor_futuro) / numero_de_periodos).toFixed(4));
   }
 
   const tipo = fim_ou_inicio ? 1 : 0;
@@ -190,5 +190,5 @@ export function pmt(
   const pagamento = (taxa * (valor_futuro + valor_atual * pvif)) / 
                   ((1 + taxa * tipo) * (pvif - 1));
 
-  return -pagamento; // Negative because payment is outflow
+  return parseFloat((-pagamento).toFixed(4)); // Negative because payment is outflow
 }

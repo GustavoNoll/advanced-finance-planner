@@ -363,7 +363,7 @@ export const ptBR = {
       year: "Ano",
       contribution: "Aporte",
       withdrawal: "Retirada",
-      balance: "Saldo",
+      balance: "Evolução Real",
       expandYear: "Expandir detalhes mensais",
       collapseYear: "Recolher detalhes mensais",
       projectedBalance: "Projeção Financeira",
