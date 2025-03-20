@@ -1,38 +1,65 @@
 import { useState, useEffect } from 'react';
-import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/lib/supabase';
 import { useToast } from '@/components/ui/use-toast';
-import { Plus, Search, TrendingUp, X, LogOut } from 'lucide-react';
+import { Plus, LogOut } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip"
+import { SummaryMetrics } from '@/components/broker-dashboard/metrics/SummaryMetrics';
+import { WealthDistributionChart } from '@/components/broker-dashboard/charts/WealthDistributionChart';
+import { PlanningMetrics } from '@/components/broker-dashboard/metrics/PlanningMetrics';
+import { TrendMetrics } from '@/components/broker-dashboard/metrics/TrendMetrics';
+import { ActionMetrics } from '@/components/broker-dashboard/metrics/ActionMetrics';
+import { SearchBar } from '@/components/broker-dashboard/search/SearchBar';
+import { ClientList } from '@/components/broker-dashboard/client-list/ClientList';
+import { UserProfileInvestment, BrokerProfile } from '@/types/broker-dashboard';
 
-interface UserProfileInvestment {
-  broker_id: string;
-  email: string;
-  id: string;
-  investment_plan_id: string | null;
-  is_broker: boolean;
-  profile_id: string;
-  profile_name: string;
-  financial_created_at?: string;
-  monthly_return_rate?: number;
-  record_month?: number;
-  record_year?: number;
+interface WealthDistribution {
+  range: string;
+  count: number;
+  total: number;
 }
 
-interface BrokerProfile {
-  id: string;
-  name: string;
+interface PlanningMetrics {
+  averageAge: number;
+  averageRetirementAge: number;
+  averageDesiredIncome: number;
+  planTypes: {
+    type1: number; // Encerrar
+    type2: number; // Deixar Herança
+    type3: number; // Não tocar no principal
+  };
 }
 
+interface TrendMetrics {
+  newClientsThisMonth: number;
+  totalGrowthThisMonth: number;
+  averageMonthlyGrowth: number;
+  inactiveClients: number;
+}
+
+interface ActionMetrics {
+  needsPlanReview: number;
+  belowRequiredContribution: number;
+  nearRetirement: number;
+  lowReturns: number;
+}
+
+interface DashboardMetrics {
+  totalClients: number;
+  clientsWithPlan: number;
+  clientsWithOutdatedRecords: number;
+  totalBalance: number;
+  clientsWithActiveRecords: number;
+  wealthDistribution: WealthDistribution[];
+  planning: PlanningMetrics;
+  trends: TrendMetrics;
+  actions: ActionMetrics;
+}
+
+/**
+ * Main broker dashboard component that displays client metrics and management tools
+ */
 export const BrokerDashboard = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState<UserProfileInvestment[]>([]);
@@ -42,6 +69,36 @@ export const BrokerDashboard = () => {
   const { t } = useTranslation();
   const [currentBroker, setCurrentBroker] = useState<string | null>(null);
   const [brokerProfile, setBrokerProfile] = useState<BrokerProfile | null>(null);
+  const [metrics, setMetrics] = useState<DashboardMetrics>({
+    totalClients: 0,
+    clientsWithPlan: 0,
+    clientsWithOutdatedRecords: 0,
+    totalBalance: 0,
+    clientsWithActiveRecords: 0,
+    wealthDistribution: [],
+    planning: {
+      averageAge: 0,
+      averageRetirementAge: 0,
+      averageDesiredIncome: 0,
+      planTypes: {
+        type1: 0,
+        type2: 0,
+        type3: 0
+      }
+    },
+    trends: {
+      newClientsThisMonth: 0,
+      totalGrowthThisMonth: 0,
+      averageMonthlyGrowth: 0,
+      inactiveClients: 0
+    },
+    actions: {
+      needsPlanReview: 0,
+      belowRequiredContribution: 0,
+      nearRetirement: 0,
+      lowReturns: 0
+    }
+  });
 
   useEffect(() => {
     const getCurrentBroker = async () => {
@@ -83,6 +140,136 @@ export const BrokerDashboard = () => {
     return () => clearTimeout(debounceTimeout);
   }, [searchQuery, currentBroker]);
 
+  const calculateWealthDistribution = (users: UserProfileInvestment[]): WealthDistribution[] => {
+    const ranges = [
+      { min: 0, max: 500000, label: '0 - 500k' },
+      { min: 500000, max: 10000000, label: '500k - 10M' },
+      { min: 10000000, max: 50000000, label: '10M - 50M' },
+      { min: 50000000, max: Infinity, label: '50M+' }
+    ];
+
+    return ranges.map(range => {
+      const clients = users.filter(user => {
+        const balance = user.ending_balance || 0;
+        return balance >= range.min && balance < range.max;
+      });
+
+      return {
+        range: range.label,
+        count: clients.length,
+        total: clients.reduce((sum, user) => sum + (user.ending_balance || 0), 0)
+      };
+    });
+  };
+
+  const calculatePlanningMetrics = async (users: UserProfileInvestment[]) => {
+    const usersWithPlan = users.filter(user => user.investment_plan_id);
+    
+    // Fetch investment plans for these users
+    const { data: plans, error } = await supabase
+      .from('investment_plans')
+      .select('*')
+      .in('user_id', usersWithPlan.map(user => user.id));
+
+    if (error) {
+      console.error('Error fetching investment plans:', error);
+      return null;
+    }
+
+    const planTypes = {
+      type1: plans.filter(plan => plan.plan_type === '1').length,
+      type2: plans.filter(plan => plan.plan_type === '2').length,
+      type3: plans.filter(plan => plan.plan_type === '3').length
+    };
+
+    const averageDesiredIncome = plans.reduce((sum, plan) => sum + plan.desired_income, 0) / plans.length;
+    const averageRetirementAge = plans.reduce((sum, plan) => sum + plan.final_age, 0) / plans.length;
+
+    // Calculate average age using birth_date from the view
+    const averageAge = usersWithPlan.reduce((sum, user) => {
+      const birthDate = new Date(user.birth_date);
+      const today = new Date();
+      const age = today.getFullYear() - birthDate.getFullYear();
+      return sum + age;
+    }, 0) / usersWithPlan.length;
+
+    return {
+      averageAge,
+      averageRetirementAge,
+      averageDesiredIncome,
+      planTypes
+    };
+  };
+
+  const calculateTrendMetrics = async (users: UserProfileInvestment[]) => {
+    const today = new Date();
+    const firstDayOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
+
+    // New clients this month
+    const newClientsThisMonth = users.filter(user => {
+      const createdAt = new Date(user.financial_created_at || '');
+      return createdAt >= firstDayOfMonth;
+    }).length;
+
+    // Inactive clients (no records in last 6 months)
+    const inactiveClients = users.filter(user => user.is_inactive).length;
+
+    // Calculate growth metrics using the new fields
+    const totalGrowthThisMonth = users.reduce((sum, user) => 
+      sum + (user.total_returns || 0), 0);
+
+    const averageMonthlyGrowth = totalGrowthThisMonth / (users.length || 1);
+
+    return {
+      newClientsThisMonth,
+      totalGrowthThisMonth,
+      averageMonthlyGrowth,
+      inactiveClients
+    };
+  };
+
+  const calculateActionMetrics = async (users: UserProfileInvestment[]) => {
+    const needsPlanReview = users.filter(user => user.needs_plan_review).length;
+    const belowRequiredContribution = users.filter(user => user.below_required_contribution).length;
+    const nearRetirement = users.filter(user => user.near_retirement).length;
+    const lowReturns = users.filter(user => user.has_low_returns).length;
+
+    return {
+      needsPlanReview,
+      belowRequiredContribution,
+      nearRetirement,
+      lowReturns
+    };
+  };
+
+  const calculateMetrics = async (users: UserProfileInvestment[]) => {
+    const totalClients = users.length;
+    const clientsWithPlan = users.filter(user => user.investment_plan_id).length;
+    const clientsWithOutdatedRecords = users.filter(user => user.needs_plan_review).length;
+    const clientsWithActiveRecords = users.filter(user => !user.needs_plan_review).length;
+
+    const totalBalance = users.reduce((sum, user) => {
+      return sum + (user.ending_balance || 0);
+    }, 0);
+
+    const wealthDistribution = calculateWealthDistribution(users);
+    const planning = await calculatePlanningMetrics(users);
+    const trends = await calculateTrendMetrics(users);
+    const actions = await calculateActionMetrics(users);
+
+    setMetrics({
+      totalClients,
+      clientsWithPlan,
+      clientsWithOutdatedRecords,
+      totalBalance,
+      clientsWithActiveRecords,
+      wealthDistribution,
+      planning: planning || metrics.planning,
+      trends: trends || metrics.trends,
+      actions: actions || metrics.actions
+    });
+  };
+
   const fetchInitialUsers = async () => {
     if (!currentBroker) return;
     
@@ -94,11 +281,10 @@ export const BrokerDashboard = () => {
         .eq('broker_id', currentBroker)
         .order('profile_name');
 
-      console.log(users);
-      console.log(error);
       if (error) throw error;
       
       setSearchResults(users || []);
+      calculateMetrics(users || []);
     } catch (error: unknown) {
       toast({
         title: "Error",
@@ -129,6 +315,7 @@ export const BrokerDashboard = () => {
       if (error) throw error;
       
       setSearchResults(users || []);
+      calculateMetrics(users || []);
     } catch (error: unknown) {
       toast({
         title: t('common.error'),
@@ -171,7 +358,7 @@ export const BrokerDashboard = () => {
 
   return (
     <div className="min-h-screen bg-gray-50 p-8">
-      <div className="max-w-4xl mx-auto">
+      <div className="max-w-7xl mx-auto">
         <div className="flex justify-between items-center mb-8">
           <h1 className="text-2xl font-bold">{t('brokerDashboard.title')}</h1>
           <div className="flex gap-4">
@@ -211,129 +398,30 @@ export const BrokerDashboard = () => {
           </div>
         </div>
 
-        <div className="relative mb-8">
-          <div className="relative">
-            <Input
-              placeholder={t('brokerDashboard.search.placeholder')}
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-12 h-12 bg-white shadow-sm rounded-xl border-gray-200 focus:border-primary focus:ring-primary transition-all duration-200"
-            />
-            <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-              {isSearching ? (
-                <Search className="h-5 w-5 text-gray-400 animate-spin" />
-              ) : (
-                <Search className="h-5 w-5 text-gray-400" />
-              )}
-            </div>
-            {searchQuery && (
-              <Button
-                variant="ghost"
-                size="sm"
-                className="absolute inset-y-0 right-0 pr-3 flex items-center"
-                onClick={() => setSearchQuery('')}
-              >
-                <span className="sr-only">Clear search</span>
-                <X className="h-5 w-5 text-gray-400" />
-              </Button>
-            )}
-          </div>
+        <SummaryMetrics metrics={metrics} />
+
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+          <WealthDistributionChart metrics={metrics} />
+          <PlanningMetrics metrics={metrics} />
+          <TrendMetrics metrics={metrics} />
+          <ActionMetrics metrics={metrics} />
         </div>
 
+        <SearchBar
+          searchQuery={searchQuery}
+          onSearchChange={setSearchQuery}
+          onClearSearch={() => setSearchQuery('')}
+          isSearching={isSearching}
+        />
+
         {searchResults.length > 0 && (
-          <Card>
-            <CardHeader>
-              <CardTitle>{t('brokerDashboard.search.results')}</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="divide-y divide-gray-200">
-                {searchResults.map((user) => (
-                  <div
-                    key={user.id}
-                    className="relative flex items-center py-4 cursor-pointer hover:bg-gray-50 px-4 -mx-4 transition-colors duration-200"
-                    onClick={() => handleUserSelect(user.id)}
-                  >
-                    {user.monthly_return_rate !== undefined && user.monthly_return_rate !== null && (
-                      <TooltipProvider>
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <div className="absolute top-1/2 right-4 -translate-y-1/2 flex items-center gap-1">
-                              <TrendingUp className="h-4 w-4 text-green-600" />
-                              <p className="text-sm font-medium text-green-600">
-                                +{user.monthly_return_rate.toFixed(2)}%
-                              </p>
-                            </div>
-                          </TooltipTrigger>
-                          <TooltipContent>
-                            <p>{t('brokerDashboard.client.monthlyReturnTooltip', { defaultValue: 'Porcentagem de retorno no último mês' })}</p>
-                          </TooltipContent>
-                        </Tooltip>
-                      </TooltipProvider>
-                    )}
-                    <div className="flex items-center space-x-4">
-                      <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center">
-                        <span className="text-primary text-lg font-semibold">
-                          {user.profile_name ? user.profile_name[0].toUpperCase() : user.email[0].toUpperCase()}
-                        </span>
-                      </div>
-                      <div>
-                        <div className="flex items-center gap-2">
-                          <p className="text-sm font-medium text-gray-900">
-                            {user.profile_name || t('common.notAvailable')}
-                          </p>
-                          {!user.investment_plan_id && (
-                            <TooltipProvider>
-                              <Tooltip>
-                                <TooltipTrigger asChild>
-                                  <span className="px-2 py-1 text-xs font-medium bg-yellow-100 text-yellow-800 rounded-full">
-                                    {t('brokerDashboard.client.pendingPlan')}
-                                  </span>
-                                </TooltipTrigger>
-                                <TooltipContent>
-                                  <p>{t('brokerDashboard.client.pendingPlanTooltip', { defaultValue: 'Cliente sem plano de investimento cadastrado' })}</p>
-                                </TooltipContent>
-                              </Tooltip>
-                            </TooltipProvider>
-                          )}
-                          {user.investment_plan_id && isRecordOutdated(user.record_month, user.record_year) && (
-                            <TooltipProvider>
-                              <Tooltip>
-                                <TooltipTrigger asChild>
-                                  <span className="px-2 py-1 text-xs font-medium bg-red-100 text-red-800 rounded-full">
-                                    {t('brokerDashboard.client.outdatedRecord')}
-                                  </span>
-                                </TooltipTrigger>
-                                <TooltipContent>
-                                  <p>
-                                    {user.record_month && user.record_year
-                                      ? t('brokerDashboard.client.outdatedRecordTooltip', {
-                                          defaultValue: 'Último registro financeiro em: {{date}}',
-                                          date: new Date(user.record_year, user.record_month - 1).toLocaleDateString('pt-BR', {
-                                            month: 'long',
-                                            year: 'numeric'
-                                          })
-                                        })
-                                      : t('brokerDashboard.client.neverRecordedTooltip', {
-                                          defaultValue: 'Nunca registrado'
-                                        })
-                                    }
-                                  </p>
-                                </TooltipContent>
-                              </Tooltip>
-                            </TooltipProvider>
-                          )}
-                        </div>
-                        <p className="text-sm text-gray-500">{user.email}</p>
-                        <p className="text-xs text-gray-400">{t('brokerDashboard.client.id')}: {user.id}</p>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
+          <ClientList
+            clients={searchResults}
+            onClientSelect={handleUserSelect}
+          />
         )}
       </div>
     </div>
   );
 };
+

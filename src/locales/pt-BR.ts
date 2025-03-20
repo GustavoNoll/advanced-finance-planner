@@ -223,7 +223,73 @@ export const ptBR = {
       name: "Nome",
       email: "Email",
       outdatedRecord: "Registro Desatualizado",
-      monthlyReturn: "Retorno Mensal"
+      monthlyReturn: "Retorno Mensal",
+      pendingPlanTooltip: "Cliente sem plano de investimento cadastrado",
+      outdatedRecordTooltip: "Sem registros há {{months}} meses",
+      neverRecordedTooltip: "Nunca registrado",
+      monthlyReturnTooltip: "Porcentagem de retorno no último mês",
+      lowReturns: "Retornos Baixos",
+      lowReturnsTooltip: "Retornos abaixo de 0.5%",
+      belowRequiredContribution: "Aportes Insuficientes",
+      belowRequiredContributionTooltip: "Aportes abaixo do necessário",
+      lastActivity: "Última Atividade"
+    },
+    metrics: {
+      totalClients: "Total de Clientes",
+      withPlan: "Com Plano",
+      totalBalance: "Saldo Total",
+      activeRecords: "Registros em Dia",
+      outdatedRecords: "Registros Desatualizados",
+      totalPatrimony: "Patrimônio Total",
+      wealthDistribution: {
+        title: "Distribuição de Patrimônio",
+        clientCount: "Quantidade de Clientes",
+        tooltips: {
+          needsPlanReview: "Clientes que precisam revisar seu plano de investimentos por mudanças significativas ou por estar há mais de 12 meses sem atualização.",
+          belowRequiredContribution: "Clientes cujos aportes mensais estão abaixo do valor necessário para atingir os objetivos do plano de investimentos.",
+          nearRetirement: "Clientes a menos de 2 anos da idade planejada para aposentadoria e precisam de atenção especial na transição.",
+          lowReturns: "Clientes com retornos mensais consistentemente abaixo de 0.5% nos últimos 3 meses, indicando necessidade de ajuste na estratégia."
+        }
+      },
+      planning: {
+        title: "Métricas de Planejamento",
+        averageAge: "Idade Média",
+        averageRetirementAge: "Idade Média Aposentadoria",
+        averageDesiredIncome: "Renda Média Desejada",
+        planTypes: {
+          title: "Tipos de Planos",
+          endAt120: "Encerrar",
+          leave1M: "Herança",
+          keepPrincipal: "Principal",
+          count: "{{count}} clientes"
+        }
+      },
+      trends: {
+        title: "Tendências",
+        newClientsThisMonth: "Novos Clientes (Mês)",
+        totalGrowthThisMonth: "Crescimento (Mês)",
+        averageMonthlyGrowth: "Crescimento Médio Mensal",
+        inactiveClients: "Clientes Inativos",
+        tooltip: {
+          newClients: "Clientes que iniciaram neste mês",
+          totalGrowth: "Crescimento total no mês atual",
+          averageGrowth: "Média de crescimento mensal por cliente",
+          inactive: "Clientes sem registros nos últimos 6 meses"
+        }
+      },
+      actions: {
+        title: "Ações Necessárias",
+        needsPlanReview: "Revisão de Plano",
+        belowRequiredContribution: "Aportes Abaixo do Necessário",
+        nearRetirement: "Próximos da Aposentadoria",
+        lowReturns: "Retornos Baixos",
+        tooltip: {
+          needsPlanReview: "Clientes que precisam revisar seu plano",
+          belowContribution: "Clientes com aportes abaixo do necessário",
+          nearRetirement: "Clientes próximos da aposentadoria",
+          lowReturns: "Clientes com retornos abaixo do esperado"
+        }
+      }
     },
     messages: {
       error: {
