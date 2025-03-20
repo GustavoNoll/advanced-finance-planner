@@ -7,7 +7,7 @@ import { useState, useCallback, useMemo } from "react";
 import { toast } from "@/components/ui/use-toast";
 import { fetchCDIRates, fetchIPCARates } from '@/lib/bcb-api';
 import { ChevronDown, ChevronRight } from "lucide-react";
-import { generateProjectionData } from '@/lib/generate-projection-data';
+import { generateProjectionData } from '@/lib/chart-projections';
 import React from "react";
 import { FinancialRecord, InvestmentPlan, Goal, ProjectedEvent } from '@/types/financial';
 import { supabase } from "@/lib/supabase";
