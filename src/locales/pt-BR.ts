@@ -300,6 +300,7 @@ export const ptBR = {
     }
   },
   common: {
+    custom: "Personalizado",
     months: "Meses",
     last1YearS: "1A",
     last5YearsS: "5A",
@@ -446,6 +447,8 @@ export const ptBR = {
     }
   },
   expenseChart: {
+    pastYears: "Anos atrás",
+    futureYears: "Anos no futuro",
     portfolioValue: "Valor do Portfólio",
     inflationAdjusted: "Ajustado pela Inflação",
     actualValue: "Evolução Real",

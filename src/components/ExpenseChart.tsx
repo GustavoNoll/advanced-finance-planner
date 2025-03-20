@@ -32,6 +32,9 @@ interface ExpenseChartProps {
   profile: Profile;
 }
 
+// Update the zoom level type to include custom
+type ZoomLevel = '1y' | '5y' | '10y' | 'all' | 'custom';
+
 export const ExpenseChart = ({ 
   profile, 
   investmentPlan, 
@@ -39,8 +42,9 @@ export const ExpenseChart = ({
   allFinancialRecords, 
 }: ExpenseChartProps) => {
   const { t } = useTranslation();
-  const [zoomLevel, setZoomLevel] = useState<'1y' | '5y' | '10y' | 'all'>('all');
+  const [zoomLevel, setZoomLevel] = useState<ZoomLevel>('all');
   const [showRealValues, setShowRealValues] = useState<boolean>(false);
+  const [customRange, setCustomRange] = useState<{ past: number, future: number }>({ past: 1, future: 1 });
   
   // Add query for financial goals
   const { data: goals } = useQuery<Goal[]>({
@@ -132,6 +136,14 @@ export const ExpenseChart = ({
     return `${Math.floor(Number(point.age))}/${monthName}`;
   };
 
+  // Adicione esta função auxiliar
+  const reduceDataPoints = (data: ChartDataPoint[], maxPoints: number = 30) => {
+    if (data.length <= maxPoints) return data;
+    
+    const step = Math.ceil(data.length / maxPoints);
+    return data.filter((_, index) => index % step === 0);
+  };
+
   const getZoomedData = (data: ChartDataPoint[]) => {
     if (zoomLevel === 'all') {
       // Group by year and calculate last value for each year
@@ -144,16 +156,17 @@ export const ExpenseChart = ({
         return acc;
       }, {});
 
-      return Object.entries(yearlyData).map(([year, points]) => {
-        // Sort points by month (descending) to get the last month
+      const yearlyPoints = Object.entries(yearlyData).map(([year, points]) => {
         const sortedPoints = [...points].sort((a, b) => b.month - a.month);
         const lastMonthPoint = sortedPoints[0];
 
         return {
           ...lastMonthPoint,
-          age: Math.floor(Number(lastMonthPoint.age)).toString() // Remove decimal part
+          age: Math.floor(Number(lastMonthPoint.age)).toString()
         };
       });
+
+      return reduceDataPoints(yearlyPoints);
     }
     
     // Get current date
@@ -161,27 +174,31 @@ export const ExpenseChart = ({
     const currentYear = currentDate.getFullYear();
     const currentMonth = currentDate.getMonth() + 1;
 
-    // Find the starting point (current month/year)
-    const startPoint = data.find(point => 
+    // Find the current point in data
+    const currentPoint = data.find(point => 
       point.year === currentYear && 
       point.month === currentMonth
     ) || data[0];
 
-    if (!startPoint) return data;
+    if (!currentPoint) return data;
 
-    const startAge = Number(startPoint.age);
-    const yearsToShow = {
-      '1y': 1,
-      '5y': 5,
-      '10y': 10,
+    const currentAge = Number(currentPoint.age);
+    
+    // Define time ranges based on zoom level
+    const timeRanges = {
+      '1y': { past: 0.5, future: 0.5 }, // 6 months back, 6 months forward
+      '5y': { past: 1, future: 4 },     // 1 year back, 4 years forward
+      '10y': { past: 2, future: 8 },    // 2 years back, 8 years forward
+      'custom': customRange,             // Use custom range values
     }[zoomLevel];
 
     const filteredData = data.filter(point => {
       const pointAge = Number(point.age);
-      return pointAge >= startAge && pointAge <= startAge + yearsToShow;
+      return pointAge >= (currentAge - timeRanges.past) && 
+             pointAge <= (currentAge + timeRanges.future);
     });
 
-    // Para 10 anos, agrupar por ano como no modo 'all'
+    // For 10y view, group by year as in 'all' mode
     if (zoomLevel === '10y') {
       const yearlyData = filteredData.reduce((acc: { [key: string]: ChartDataPoint[] }, point) => {
         const year = point.year.toString();
@@ -192,7 +209,7 @@ export const ExpenseChart = ({
         return acc;
       }, {});
 
-      return Object.entries(yearlyData).map(([year, points]) => {
+      const yearlyPoints = Object.entries(yearlyData).map(([year, points]) => {
         const lastRealPoint = points.reverse().find(p => p.realDataPoint);
         
         if (lastRealPoint) {
@@ -209,8 +226,12 @@ export const ExpenseChart = ({
           age: Math.floor(Number(lastPoint.age)).toString()
         };
       });
+
+      return reduceDataPoints(yearlyPoints);
     }
-    return filteredData;
+
+    // Reduz os pontos para visualizações mensais também
+    return reduceDataPoints(filteredData);
   };
 
   // Get base date (today) for inflation adjustment
@@ -269,17 +290,25 @@ export const ExpenseChart = ({
   }));
 
   const colorOffset = () => {
-    // Find the last real data point index
-    const lastRealIndex = chartData.findIndex(point => !point.realDataPoint);
+    // Encontrar o ponto mais antigo com dados reais
+    const oldestRealDataPoint = chartData.find(point => point.realDataPoint);
+    if (!oldestRealDataPoint) return 0; // Se não houver pontos reais, tudo é projeção
     
-    // If no projection points found, return 1 (all blue)
-    if (lastRealIndex === -1) return 1;
+    // Encontrar o ponto mais recente com dados reais
+    const latestRealDataPoint = [...chartData].reverse().find(point => point.realDataPoint);
+    if (!latestRealDataPoint) return 0;
+
+    // Calcular o índice do último ponto real
+    const lastRealIndex = chartData.findIndex(point => 
+      point.year === latestRealDataPoint.year && 
+      point.month === latestRealDataPoint.month
+    );
+
+    // Se não encontrou o índice (não deveria acontecer), retorna 0
+    if (lastRealIndex === -1) return 0;
     
-    // If no real points found, return 0 (all red)
-    if (lastRealIndex === 0) return 0;
-    
-    // Calculate offset based on the position of the last real point
-    return lastRealIndex / chartData.length;
+    // Calcular offset baseado na posição do último ponto real
+    return (lastRealIndex + 1) / chartData.length;
   };
 
   const offset = colorOffset();
@@ -408,7 +437,59 @@ export const ExpenseChart = ({
             >
               {t('common.all')}
             </button>
+            <button
+              onClick={() => setZoomLevel('custom')}
+              className={`px-3 py-1.5 text-sm font-medium rounded-md transition-colors ${
+                zoomLevel === 'custom' 
+                  ? 'bg-white text-blue-600 shadow-sm' 
+                  : 'text-gray-600 hover:text-gray-900'
+              }`}
+            >
+              {t('common.custom')}
+            </button>
           </div>
+
+          {/* Custom range inputs */}
+          {zoomLevel === 'custom' && (
+            <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2">
+                <label className="text-sm text-gray-600">{t('expenseChart.pastYears')}:</label>
+                <input
+                  type="number"
+                  min="0"
+                  max="100"
+                  value={customRange.past.toString()}
+                  onChange={(e) => {
+                    const value = e.target.value === '' ? 0 : parseFloat(e.target.value);
+                    setCustomRange(prev => ({ 
+                      ...prev, 
+                      past: value 
+                    }));
+                  }}
+                  step="any"
+                  className="w-20 px-2 py-1 text-sm border rounded-md"
+                />
+              </div>
+              <div className="flex items-center gap-2">
+                <label className="text-sm text-gray-600">{t('expenseChart.futureYears')}:</label>
+                <input
+                  type="number"
+                  min="0"
+                  max="100"
+                  value={customRange.future.toString()}
+                  onChange={(e) => {
+                    const value = e.target.value === '' ? 0 : parseFloat(e.target.value);
+                    setCustomRange(prev => ({ 
+                      ...prev, 
+                      future: value 
+                    }));
+                  }}
+                  step="any"
+                  className="w-20 px-2 py-1 text-sm border rounded-md"
+                />
+              </div>
+            </div>
+          )}
         </div>
       </div>
 
