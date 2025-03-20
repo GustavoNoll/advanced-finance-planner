@@ -2,7 +2,7 @@ import { DashboardCard } from "@/components/DashboardCard";
 import { ExpenseChart } from "@/components/ExpenseChart";
 import { SavingsGoal } from "@/components/SavingsGoal";
 import { MonthlyView } from "@/components/MonthlyView";
-import { Briefcase, TrendingUp, PiggyBank, Plus, Pencil, Settings, LogOut, ArrowLeft, History, Search, User, Info, Target, Trophy, LineChart, Calendar } from "lucide-react";
+import { Briefcase, TrendingUp, PiggyBank, LogOut, History, Search, User, Info, Target, Trophy, Calendar } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { useAuth } from "@/components/auth/AuthProvider";
@@ -13,7 +13,6 @@ import { useEffect, useMemo, useCallback, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Spinner } from "@/components/ui/spinner";
 import { FinancialRecord } from "@/types/financial";
-import { yearlyReturnRateToMonthlyReturnRate } from '@/lib/financial-math';
 import {
   HoverCard,
   HoverCardContent,
@@ -21,6 +20,7 @@ import {
 } from "@/components/ui/hover-card";
 import { Calculator } from "@/components/Calculator";
 import { processPlanProgressData } from "@/lib/plan-progress";
+import { generateProjectionData } from '@/lib/chart-projections';
 
 type TimePeriod = 'all' | '6m' | '12m' | '24m';
 
@@ -391,6 +391,19 @@ const Index = () => {
     }
   }, [investmentPlan, brokerProfile, isInvestmentPlanLoading, isProfilesLoading, navigate, params.id]);
 
+  // Add this before the return statement, after other useMemo hooks
+  const projectionData = useMemo(() => {
+    if (!investmentPlan || !clientProfile || !allFinancialRecords) return null;
+
+    return generateProjectionData(
+      investmentPlan,
+      clientProfile,
+      allFinancialRecords,
+      goalsAndEvents?.goals,
+      goalsAndEvents?.events
+    );
+  }, [investmentPlan, clientProfile, allFinancialRecords, goalsAndEvents?.goals, goalsAndEvents?.events]);
+
   if (isInvestmentPlanLoading || isProfilesLoading || isFinancialRecordsLoading || isGoalsLoading || (!investmentPlan && !brokerProfile)) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -398,6 +411,7 @@ const Index = () => {
       </div>
     );
   }
+  console.log('projectionData', projectionData);
 
   const portfolioValue = processedRecords.latestRecord?.ending_balance || 0;
   const portfolioIncreaseRate = ((portfolioValue - processedRecords.latestRecord?.starting_balance) / processedRecords.latestRecord?.starting_balance) * 100 || null;
@@ -686,12 +700,19 @@ const Index = () => {
         </div>
 
         <div className="bg-white rounded-xl shadow-sm p-6">
-          <ExpenseChart 
-            profile={clientProfile}
-            investmentPlan={investmentPlan}
-            clientId={clientId}
-            allFinancialRecords={[...(allFinancialRecords || [])]}
-          />
+          {projectionData ? (
+            <ExpenseChart 
+              profile={clientProfile}
+              investmentPlan={investmentPlan}
+              clientId={clientId}
+              allFinancialRecords={[...(allFinancialRecords || [])]}
+              projectionData={projectionData}
+            />
+          ) : (
+            <div className="flex items-center justify-center h-[300px]">
+              <Spinner size="lg" />
+            </div>
+          )}
         </div>
         
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -732,13 +753,20 @@ const Index = () => {
         </div>
 
         <section className="bg-white rounded-xl shadow-sm">
-          <MonthlyView 
-            userId={clientId} 
-            initialRecords={[...processedRecords.financialRecords]} 
-            allFinancialRecords={[...(allFinancialRecords || [])]}
-            investmentPlan={investmentPlan}
-            profile={clientProfile}
-          />
+          {projectionData ? (
+            <MonthlyView 
+              userId={clientId} 
+              initialRecords={[...processedRecords.financialRecords]} 
+              allFinancialRecords={[...(allFinancialRecords || [])]}
+              investmentPlan={investmentPlan}
+              profile={clientProfile}
+              projectionData={projectionData}
+            />
+          ) : (
+            <div className="flex items-center justify-center h-[300px]">
+              <Spinner size="lg" />
+            </div>
+          )}
         </section>
       </main>
     </div>

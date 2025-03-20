@@ -7,7 +7,7 @@ import { useState, useCallback, useMemo } from "react";
 import { toast } from "@/components/ui/use-toast";
 import { fetchCDIRates, fetchIPCARates } from '@/lib/bcb-api';
 import { ChevronDown, ChevronRight } from "lucide-react";
-import { generateProjectionData } from '@/lib/chart-projections';
+import { generateProjectionData, YearlyProjectionData } from '@/lib/chart-projections';
 import React from "react";
 import { FinancialRecord, InvestmentPlan, Goal, ProjectedEvent } from '@/types/financial';
 import { supabase } from "@/lib/supabase";
@@ -18,6 +18,7 @@ export const MonthlyView = ({
   allFinancialRecords,
   investmentPlan, 
   profile,
+  projectionData
 }: {
   userId: string;
   initialRecords: FinancialRecord[];
@@ -26,6 +27,7 @@ export const MonthlyView = ({
   profile: {
     birth_date: string;
   };
+  projectionData?: YearlyProjectionData[];
 }) => {
   const { t } = useTranslation();
   const RECORDS_PER_PAGE = 12;
@@ -454,13 +456,13 @@ export const MonthlyView = ({
                 </tr>
               </thead>
               <tbody>
-                {generateProjectionData(
+                {(projectionData || generateProjectionData(
                   investmentPlan,
                   profile,
                   allFinancialRecords,
                   goals,
                   events
-                ).map((projection, index) => (
+                )).map((projection, index) => (
                   <React.Fragment key={`${projection.year}-${index}-group`}>
                     <tr key={`${projection.year}-${index}`} className={`border-b hover:bg-muted/50 transition-colors ${
                       projection.hasHistoricalData ? 'bg-blue-50/50' : ''

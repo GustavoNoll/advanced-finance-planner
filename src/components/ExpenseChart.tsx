@@ -1,7 +1,7 @@
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend, ReferenceLine, Label } from 'recharts';
 import { useTranslation } from "react-i18next";
-import { ChartDataPoint, FinancialRecord, Goal, ProjectedEvent } from '@/types/financial';
-import { generateChartProjections } from '@/lib/chart-projections';
+import { ChartDataPoint, FinancialRecord, Goal, ProjectedEvent, MonthNumber } from '@/types/financial';
+import { generateChartProjections, YearlyProjectionData } from '@/lib/chart-projections';
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
 import { useState } from "react";
@@ -30,6 +30,7 @@ interface ExpenseChartProps {
   clientId: string;
   allFinancialRecords: FinancialRecord[];
   profile: Profile;
+  projectionData?: YearlyProjectionData[];
 }
 
 // Update the zoom level type to include custom
@@ -39,7 +40,8 @@ export const ExpenseChart = ({
   profile, 
   investmentPlan, 
   clientId, 
-  allFinancialRecords, 
+  allFinancialRecords,
+  projectionData
 }: ExpenseChartProps) => {
   const { t } = useTranslation();
   const [zoomLevel, setZoomLevel] = useState<ZoomLevel>('all');
@@ -247,8 +249,17 @@ export const ExpenseChart = ({
   const baseYear = lastRecord ? lastRecord.record_year : currentDate.getFullYear();
   const baseMonth = lastRecord ? lastRecord.record_month : currentDate.getMonth() + 1;
 
-  // Generate chart projections
-  const rawChartData = generateChartProjections(
+  // Update the rawChartData generation to use projectionData if available
+  const rawChartData = projectionData?.flatMap(yearData => 
+    yearData.months?.map(monthData => ({
+      age: yearData.age.toString(),
+      year: yearData.year,
+      month: monthData.month as MonthNumber,
+      actualValue: monthData.balance,
+      projectedValue: monthData.projected_balance,
+      realDataPoint: monthData.isHistorical
+    })) || []
+  ) || generateChartProjections(
     profile,
     investmentPlan,
     allFinancialRecords,

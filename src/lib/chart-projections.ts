@@ -40,7 +40,7 @@ interface MonthlyProjectionData {
   difference_from_projected_balance: number;
 }
 
-interface YearlyProjectionData {
+export interface YearlyProjectionData {
   age: number;
   year: number;
   contribution: number;
@@ -64,7 +64,7 @@ export function generateProjectionData(
 ): YearlyProjectionData[] {
   const projectionData: YearlyProjectionData[] = [];
   
-  if (!profile?.birth_date || !investmentPlan || !initialRecords.length) {
+  if (!profile?.birth_date || !investmentPlan) {
     return [];
   }
 
