@@ -75,6 +75,7 @@ export function generateProjectionData(
   const birthMonth = birthDate.getMonth() + 1;
   const yearsUntilEnd = endAge - investmentPlan.initial_age;
   const currentDate = new Date();
+  const nextMonth = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1);
   const startYear = birthYear + investmentPlan.initial_age;
   
   let currentBalance = initialRecords[0]?.ending_balance || 0;
@@ -84,6 +85,7 @@ export function generateProjectionData(
   const monthlyInflationRate = yearlyReturnRateToMonthlyReturnRate(investmentPlan.inflation/100);
   const monthlyExpectedReturnRate = yearlyReturnRateToMonthlyReturnRate(investmentPlan.expected_return/100);
   const monthlyReturnRate = calculateCompoundedRates([monthlyExpectedReturnRate, monthlyInflationRate]);
+  let lastHistoricalRecord = null;
 
   const historicalRecordsMap = new Map(
     initialRecords.map(record => [
@@ -100,9 +102,10 @@ export function generateProjectionData(
       const currentMonthNumber = month + 1;
       const historicalKey = `${year}-${currentMonthNumber}`;
       const historicalRecord = historicalRecordsMap.get(historicalKey);
-      const isInPast = new Date(year, month) < currentDate;
+      const isInPast = lastHistoricalRecord ? lastHistoricalRecord > new Date(year, month) : new Date(year, month) < nextMonth;
         
       if (historicalRecord) {
+        lastHistoricalRecord = new Date(year, month + 1);
         projectedBalance = (projectedBalance + currentMonthlyDeposit) * (1 + monthlyReturnRate);
         return {
           month: currentMonthNumber,
