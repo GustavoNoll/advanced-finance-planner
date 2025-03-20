@@ -272,9 +272,14 @@ const financialCalculations = {
     let monthsToRetirement;
     let referenceDate;
     
+    const planStartDate = new Date(investmentPlan.plan_initial_date);
+    const yearDiff = planStartDate.getFullYear() - birthDate.getFullYear();
+    const monthDiff = planStartDate.getMonth() - birthDate.getMonth();
+    const initialAge = yearDiff + (monthDiff / 12);
+    monthsToRetirement = (investmentPlan.final_age - initialAge) * 12;
+    const plannedMonths = monthsToRetirement;
     if (actualMonth === 0 && actualYear === 0) {
-      monthsToRetirement = (investmentPlan.final_age - investmentPlan.initial_age) * 12;
-      referenceDate = utils.createDateAtAge(birthDate, investmentPlan.initial_age);
+      referenceDate = new Date(investmentPlan.plan_initial_date);
     } else {
       referenceDate = new Date(actualYear, actualMonth - 1);
       const finalAgeDate = utils.createDateAtAge(birthDate, investmentPlan.final_age);
@@ -290,9 +295,6 @@ const financialCalculations = {
         monthsToRetirement--;
       }
     }
-
-    // Calculate planned months (from initial to final age)
-    const plannedMonths = (investmentPlan.final_age - investmentPlan.initial_age) * 12;
 
     const { preRetirementHash, postRetirementHash } = financialCalculations.generatePreCalculationHash(
       monthlyExpectedReturn,

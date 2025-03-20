@@ -63,7 +63,7 @@ const ComparisonRow = ({
           <p className="text-lg font-semibold text-blue-600">
             {isCurrency 
               ? formatCurrency(planned)
-              : `${planned} ${t('common.months')}`
+              : `${planned.toFixed(0)} ${t('common.months')}`
             }
           </p>
         </div>

@@ -2,7 +2,7 @@ import { calculateCompoundedRates, yearlyReturnRateToMonthlyReturnRate } from "@
 
 export type FormData = {
   initialAmount: string;
-  initialAge: string;
+  plan_initial_date: string;
   finalAge: string;
   monthlyDeposit: string;
   desiredIncome: string;
@@ -29,7 +29,7 @@ export type Calculations = {
 export const isCalculationReady = (data: FormData) => {
   return Boolean(
     data.initialAmount &&
-    data.initialAge &&
+    data.plan_initial_date &&
     data.finalAge &&
     data.desiredIncome &&
     data.expectedReturn &&
@@ -39,7 +39,9 @@ export const isCalculationReady = (data: FormData) => {
 
 export const calculateFutureValues = (data: FormData): Calculations => {
   const initialAmount = parseFloat(data.initialAmount.replace(',', '.')) || 0;
-  const initialAge = parseFloat(data.initialAge) || 0;
+  const planInitialDate = new Date(data.plan_initial_date);
+  const today = new Date();
+  const initialAge = today.getFullYear() - planInitialDate.getFullYear();
   const finalAge = parseFloat(data.finalAge) || 0;
   const desiredIncome = parseFloat(data.desiredIncome.replace(',', '.')) || 0;
   const expectedReturn = parseFloat(data.expectedReturn.replace(',', '.')) / 100;

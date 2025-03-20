@@ -23,7 +23,7 @@ export const CreatePlan = () => {
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
     initialAmount: "100000",
-    initialAge: "",
+    plan_initial_date: new Date().toISOString().split('T')[0],
     finalAge: "",
     monthlyDeposit: "5000",
     desiredIncome: "10000",
@@ -88,9 +88,9 @@ export const CreatePlan = () => {
     checkExistingPlan();
   }, [clientId, toast, loading]); // Add loading to dependencies
 
-  // Add useEffect to fetch profile data and calculate age
+  // Update useEffect to fetch profile data and set initial date
   useEffect(() => {
-    const fetchProfileAndSetAge = async () => {
+    const fetchProfileAndSetDate = async () => {
       if (!clientId) return;
 
       try {
@@ -114,7 +114,7 @@ export const CreatePlan = () => {
 
           setFormData((prev) => {
             const newFormData = {...prev,
-              initialAge: age.toString(),
+              plan_initial_date: today.toISOString().split('T')[0],
               finalAge: (age + 30).toString()  // Set final age as current age + 30
             }
 
@@ -126,19 +126,18 @@ export const CreatePlan = () => {
             
             return newFormData
           });
-          
         }
       } catch (error) {
         console.error('Error fetching profile:', error);
         toast({
           title: "Error",
-          description: "Failed to fetch client's age",
+          description: "Failed to fetch client's data",
           variant: "destructive",
         });
       }
     };
 
-    fetchProfileAndSetAge();
+    fetchProfileAndSetDate();
   }, [clientId, toast]);
 
   // Modify handleChange to update calculations when form values change
@@ -157,7 +156,7 @@ export const CreatePlan = () => {
       } else if (name === 'adjustContributionForInflation') {
         newFormData.adjustContributionForInflation = checked;
       } else if (name in prev) {
-        (newFormData as any)[name] = value;
+        (newFormData[name as keyof typeof newFormData] as string) = value;
       }
       
       if (isCalculationReady(newFormData)) {
@@ -177,11 +176,15 @@ export const CreatePlan = () => {
     try {
       const calculations = calculateFutureValues(formData);
       
+      // Adjust the date to prevent UTC offset
+      const adjustedDate = new Date(formData.plan_initial_date);
+      adjustedDate.setDate(adjustedDate.getDate() + 1);
+      
       const { error } = await supabase.from("investment_plans").insert([
         {
           user_id: clientId,
           initial_amount: parseFloat(formData.initialAmount),
-          initial_age: parseInt(formData.initialAge),
+          plan_initial_date: adjustedDate.toISOString().split('T')[0],
           final_age: parseInt(formData.finalAge),
           monthly_deposit: parseFloat(formData.monthlyDeposit),
           desired_income: parseFloat(formData.desiredIncome),
@@ -264,21 +267,15 @@ export const CreatePlan = () => {
 
               <div className="space-y-2">
                 <label className="text-sm font-medium">
-                  {t('investmentPlan.form.initialAge')}
+                  {t('investmentPlan.form.planInitialDate')}
                 </label>
                 <Input
-                  type="number"
-                  name="initialAge"
-                  value={formData.initialAge}
+                  type="date"
+                  name="plan_initial_date"
+                  value={formData.plan_initial_date}
                   onChange={handleChange}
                   required
-                  min="0"
-                  step="1"
-                  onKeyDown={(e) => {
-                    if (e.key === "." || e.key === ",") {
-                      e.preventDefault();
-                    }
-                  }}
+                  max={new Date().toISOString().split('T')[0]}
                 />
               </div>
 

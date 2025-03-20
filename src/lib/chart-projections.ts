@@ -6,7 +6,7 @@ interface InvestmentPlan {
   monthly_deposit: number;
   expected_return: number;
   inflation: number;
-  initial_age: number;
+  plan_initial_date: string;
   final_age: number;
   desired_income: number;
   adjust_contribution_for_inflation: boolean;
@@ -73,10 +73,15 @@ export function generateProjectionData(
   const birthDate = new Date(profile.birth_date);
   const birthYear = birthDate.getFullYear();
   const birthMonth = birthDate.getMonth() + 1;
-  const yearsUntilEnd = endAge - investmentPlan.initial_age;
+  
+  // Calculate initial age from plan_initial_date and birth_date
+  const planStartDate = new Date(investmentPlan.plan_initial_date);
+  const initialAge = planStartDate.getFullYear() - birthYear;
+  const yearsUntilEnd = endAge - initialAge;
   const currentDate = new Date();
   const nextMonth = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1);
-  const startYear = birthYear + investmentPlan.initial_age;
+  const startYear = planStartDate.getFullYear();
+  const startMonth = planStartDate.getMonth() + 1;
   
   let currentBalance = initialRecords[0]?.ending_balance || 0;
   let projectedBalance = investmentPlan.initial_amount;
@@ -95,11 +100,24 @@ export function generateProjectionData(
   );
   
   for (let i = 0; i <= yearsUntilEnd; i++) {
-    const age = investmentPlan.initial_age + i;
+    const age = initialAge + i;
     const year = startYear + i;
     
     const monthlyData = Array.from({ length: 12 }, (_, month) => {
       const currentMonthNumber = month + 1;
+      // Skip months before the plan start month in the first year
+      if (i === 0 && currentMonthNumber < startMonth) {
+        return null;
+      }
+
+      const isRetirementAge = age > investmentPlan.final_age || 
+        (age === investmentPlan.final_age && currentMonthNumber >= birthMonth);
+
+      if (investmentPlan.adjust_contribution_for_inflation && !isRetirementAge) {
+        currentMonthlyDeposit *= (1 + monthlyInflationRate);
+      }
+      currentMonthlyWithdrawal *= (1 + monthlyInflationRate);
+      
       const historicalKey = `${year}-${currentMonthNumber}`;
       const historicalRecord = historicalRecordsMap.get(historicalKey);
       const isInPast = lastHistoricalRecord ? lastHistoricalRecord > new Date(year, month) : new Date(year, month) < nextMonth;
@@ -141,13 +159,6 @@ export function generateProjectionData(
       );
       const goalsEventsImpact = currentBalance - previousBalance;
 
-      const isRetirementAge = age > investmentPlan.final_age || 
-        (age === investmentPlan.final_age && currentMonthNumber >= birthMonth);
-
-      if (investmentPlan.adjust_contribution_for_inflation && !isRetirementAge) {
-        currentMonthlyDeposit *= (1 + monthlyInflationRate);
-      }
-      currentMonthlyWithdrawal *= (1 + monthlyInflationRate);
 
       if (isRetirementAge) {
         const monthlyReturn = currentBalance * monthlyReturnRate;
@@ -164,48 +175,52 @@ export function generateProjectionData(
           projected_balance: projectedBalance,
           returns: monthlyReturn,
           isHistorical: false,
-          difference_from_projected_balance: projectedBalance - currentBalance,
-          goalsEventsImpact: goalsEventsImpact
-        };
-      } else {
-        const monthlyReturn = currentBalance * monthlyReturnRate;
-        currentBalance = (currentBalance + currentMonthlyDeposit) * (1 + monthlyReturnRate);
-        projectedBalance = (projectedBalance + currentMonthlyDeposit) * (1 + monthlyReturnRate);
-        
-        return {
-          month: currentMonthNumber,
-          contribution: currentMonthlyDeposit,
-          withdrawal: 0,
-          balance: currentBalance,
-          projected_balance: projectedBalance,
-          returns: monthlyReturn,
-          isHistorical: false,
-          difference_from_projected_balance: projectedBalance - currentBalance,
-          goalsEventsImpact: goalsEventsImpact
+          difference_from_projected_balance: currentBalance - projectedBalance,
+          goalsEventsImpact
         };
       }
-    });
 
-    const hasRetirementTransition = age === investmentPlan.final_age;
-    const yearlyContribution = monthlyData.reduce((sum, month) => sum + month.contribution, 0);
-    const yearlyWithdrawal = monthlyData.reduce((sum, month) => sum + month.withdrawal, 0);
+      currentBalance = (currentBalance + currentMonthlyDeposit) * (1 + monthlyReturnRate);
+      projectedBalance = (projectedBalance + currentMonthlyDeposit) * (1 + monthlyReturnRate);
+      return {
+        month: currentMonthNumber,
+        contribution: currentMonthlyDeposit,
+        withdrawal: 0,
+        balance: currentBalance,
+        projected_balance: projectedBalance,
+        isHistorical: false,
+        difference_from_projected_balance: currentBalance - projectedBalance,
+        goalsEventsImpact
+      };
+    }).filter(Boolean) as MonthlyProjectionData[];
 
-    projectionData.push({
-      age,
-      year,
-      contribution: yearlyContribution,
-      withdrawal: yearlyWithdrawal,
-      balance: monthlyData[11].balance,
-      projected_balance: monthlyData[11].projected_balance,
-      months: monthlyData,
-      isRetirementTransitionYear: hasRetirementTransition,
-      hasHistoricalData: monthlyData.some(m => m.isHistorical),
-      returns: monthlyData[11].returns || 0,
-      goalsEventsImpact: monthlyData.reduce((sum, month) => sum + (month.goalsEventsImpact || 0), 0),
-      difference_from_projected_balance: monthlyData[11].projected_balance - monthlyData[11].balance
-    });
+    if (monthlyData.length > 0) {
+      const yearlyContribution = monthlyData.reduce((sum, month) => sum + month.contribution, 0);
+      const yearlyWithdrawal = monthlyData.reduce((sum, month) => sum + month.withdrawal, 0);
+      const lastMonth = monthlyData[monthlyData.length - 1];
+      const yearlyReturns = monthlyData.reduce((sum, month) => {
+        const monthReturn = month.balance - (month.balance / (1 + monthlyReturnRate)) - month.contribution + month.withdrawal;
+        return sum + monthReturn;
+      }, 0);
+      const yearlyGoalsEventsImpact = monthlyData.reduce((sum, month) => sum + (month.goalsEventsImpact || 0), 0);
+
+      projectionData.push({
+        age,
+        year,
+        contribution: yearlyContribution,
+        withdrawal: yearlyWithdrawal,
+        balance: lastMonth.balance,
+        projected_balance: lastMonth.projected_balance,
+        months: monthlyData,
+        isRetirementTransitionYear: age === investmentPlan.final_age,
+        hasHistoricalData: monthlyData.some(month => month.isHistorical),
+        returns: yearlyReturns,
+        difference_from_projected_balance: lastMonth.difference_from_projected_balance,
+        goalsEventsImpact: yearlyGoalsEventsImpact
+      });
+    }
   }
-
+  
   return projectionData;
 }
 
@@ -274,15 +289,23 @@ export function generateDataPoints(
   yearsUntilEnd: number,
   birthYear: number
 ): DataPoint[] {
+  const planStartDate = new Date(investmentPlan.plan_initial_date);
+  const startYear = planStartDate.getFullYear();
+  const startMonth = planStartDate.getMonth() + 1;
+  const initialAge = startYear - birthYear;
+
   return Array.from(
-    { length: (yearsUntilEnd) * 12 + 1 }, 
+    { length: (yearsUntilEnd) * 12 + (12 - startMonth + 1) }, 
     (_, i) => {
       const monthsFromStart = i;
-      const age = investmentPlan.initial_age + (monthsFromStart / 12);
+      const age = initialAge + (monthsFromStart / 12);
+      const month = ((startMonth - 1 + monthsFromStart) % 12) + 1;
+      const year = startYear + Math.floor((startMonth - 1 + monthsFromStart) / 12);
+      
       return {
         age: age.toFixed(1),
-        month: ((monthsFromStart % 12) + 1) as MonthNumber,
-        year: birthYear + Math.floor(age)
+        month: month as MonthNumber,
+        year
       };
     }
   );
@@ -319,192 +342,3 @@ export function handleMonthlyGoalsAndEvents(
 
   return updatedBalance;
 }
-
-export function generateProjectedPortfolioValues(
-  investmentPlan: InvestmentPlan,
-  allDataPoints: DataPoint[],
-  endAge: number,
-  goals?: GoalForChart[],
-  events?: ProjectedEvent[],
-  includeEvents: boolean = false
-) {
-  const monthlyInflationRate = yearlyReturnRateToMonthlyReturnRate(investmentPlan.inflation/100);
-  const monthlyExpectedReturnRate = yearlyReturnRateToMonthlyReturnRate(investmentPlan.expected_return/100);
-  const monthlyReturnRate = calculateCompoundedRates([monthlyExpectedReturnRate, monthlyInflationRate]);
-
-  let currentBalance = investmentPlan.initial_amount;
-  let currentMonthlyDeposit = investmentPlan.monthly_deposit;
-  let currentMonthlyWithdrawal = investmentPlan.desired_income;
-
-  return allDataPoints.map(point => {
-    const age = parseFloat(point.age);
-    
-    if (includeEvents) {
-      currentBalance = handleMonthlyGoalsAndEvents(
-        currentBalance,
-        point.year,
-        point.month - 1,
-        goals,
-        events
-      );
-    }
-
-    if (investmentPlan.adjust_contribution_for_inflation) {
-      currentMonthlyDeposit *= (1 + monthlyInflationRate);
-    }
-    currentMonthlyWithdrawal *= (1 + monthlyInflationRate);
-
-    const isRetirementAge = age >= investmentPlan.final_age;
-    
-    if (isRetirementAge) {
-      const withdrawal = currentMonthlyWithdrawal
-      
-      currentBalance = (currentBalance - withdrawal) * (1 + monthlyReturnRate);
-    } else {
-      currentBalance = (currentBalance + currentMonthlyDeposit) * (1 + monthlyReturnRate);
-    }
-    
-    return {
-      age: point.age,
-      year: point.year,
-      month: point.month,
-      projectedValue: Math.round(Math.max(0, currentBalance)),
-      actualValue: null,
-      realDataPoint: false
-    };
-  });
-}
-
-export function generateHistoricalPortfolioValues(
-  investmentPlan: InvestmentPlan,
-  allFinancialRecords: FinancialRecord[],
-  allDataPoints: DataPoint[],
-  endAge: number,
-  goals?: GoalForChart[],
-  events?: ProjectedEvent[]
-) {
-  if (allFinancialRecords.length === 0) {
-    const projectedValues = generateProjectedPortfolioValues(
-      investmentPlan,
-      allDataPoints,
-      endAge,
-      goals,
-      events,
-      true
-    );
-    
-      return projectedValues.map(value => ({
-        ...value,
-        actualValue: value.projectedValue,
-        projectedValue: null
-      }));
-  }
-
-  // Sort records chronologically
-  const sortedRecords = allFinancialRecords.sort((a, b) => {
-    if (a.record_year !== b.record_year) {
-      return a.record_year - b.record_year;
-    }
-    return a.record_month - b.record_month;
-  });
-
-  const firstRecord = sortedRecords[0];
-  const lastRecord = sortedRecords[sortedRecords.length - 1];
-
-  // Initialize projection variables
-  const monthlyInflationRate = yearlyReturnRateToMonthlyReturnRate(investmentPlan.inflation/100);
-  const monthlyExpectedReturnRate = yearlyReturnRateToMonthlyReturnRate(investmentPlan.expected_return/100);
-  const monthlyReturnRate = calculateCompoundedRates([monthlyExpectedReturnRate, monthlyInflationRate]);
-  
-  let currentBalance = lastRecord.ending_balance;
-  let currentMonthlyDeposit = investmentPlan.monthly_deposit;
-  let currentMonthlyWithdrawal = investmentPlan.desired_income;
-
-  return allDataPoints.map(point => {
-    // Check if this point is before our first historical record
-    if (
-      point.year < firstRecord.record_year || 
-      (point.year === firstRecord.record_year && point.month < firstRecord.record_month)
-    ) {
-      return {
-        age: point.age,
-        year: point.year,
-        month: point.month,
-        actualValue: 0,
-        projectedValue: null,
-        realDataPoint: false
-      };
-    }
-
-    // Apply inflation adjustments
-    if (investmentPlan.adjust_contribution_for_inflation) {
-      currentMonthlyDeposit *= (1 + monthlyInflationRate);
-    }
-    currentMonthlyWithdrawal *= (1 + monthlyInflationRate);
-
-    // Check if we have actual data for this point
-    const record = allFinancialRecords.find(record => 
-      record.record_year === point.year && 
-      record.record_month === point.month
-    );
-    
-    if (record) {
-      currentBalance = record.ending_balance; // Update balance for future projections
-      return {
-        age: point.age,
-        year: point.year,
-        month: point.month,
-        actualValue: record.ending_balance,
-        projectedValue: null,
-        realDataPoint: true
-      };
-    }
-
-    // If this point is after our last historical record, project values
-    if (
-      point.year > lastRecord.record_year || 
-      (point.year === lastRecord.record_year && point.month > lastRecord.record_month)
-    ) {
-      const age = parseFloat(point.age);
-      
-      // Handle monthly goals and events
-      currentBalance = handleMonthlyGoalsAndEvents(
-        currentBalance,
-        point.year,
-        point.month - 1,
-        goals,
-        events
-      );
-
-      // Calculate balance changes based on retirement status
-      const isRetirementAge = age >= investmentPlan.final_age;
-      
-      if (isRetirementAge) {
-        const withdrawal = currentMonthlyWithdrawal
-        
-        currentBalance = (currentBalance - withdrawal) * (1 + monthlyReturnRate);
-      } else {
-        currentBalance = (currentBalance + currentMonthlyDeposit) * (1 + monthlyReturnRate);
-      }
-
-      return {
-        age: point.age,
-        year: point.year,
-        month: point.month,
-        actualValue: Math.round(Math.max(0, currentBalance)),
-        projectedValue: null,
-        realDataPoint: false
-      };
-    }
-
-    // For gaps in historical data
-    return {
-      age: point.age,
-      year: point.year,
-      month: point.month,
-      actualValue: null,
-      projectedValue: null,
-      realDataPoint: false
-    };
-  });
-} 

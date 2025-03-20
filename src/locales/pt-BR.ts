@@ -56,6 +56,7 @@ export const ptBR = {
     },
     form: {
       initialAmount: "Valor Inicial",
+      planInitialDate: "Data de Início do Plano",
       initialAge: "Idade Inicial",
       finalAge: "Idade Final",
       monthlyDeposit: "Depósito Mensal",

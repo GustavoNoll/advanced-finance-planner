@@ -27,7 +27,7 @@ export const EditPlan = () => {
   const [isLoadingData, setIsLoadingData] = useState(true);
   const [formData, setFormData] = useState<InvestmentFormData>({
     initialAmount: "",
-    initialAge: "",
+    plan_initial_date: new Date().toISOString().split('T')[0],
     finalAge: "",
     monthlyDeposit: "",
     desiredIncome: "",
@@ -96,9 +96,15 @@ export const EditPlan = () => {
         return;
       }
 
+      if (error) throw error;
+
+      // Adjust the date to show the correct date when editing
+      const planDate = new Date(data.plan_initial_date);
+      planDate.setDate(planDate.getDate() - 1);
+
       setFormData({
         initialAmount: data.initial_amount.toString(),
-        initialAge: data.initial_age.toString(),
+        plan_initial_date: planDate.toISOString().split('T')[0],
         finalAge: data.final_age.toString(),
         monthlyDeposit: data.monthly_deposit.toString(),
         desiredIncome: data.desired_income.toString(),
@@ -152,11 +158,15 @@ export const EditPlan = () => {
     try {
       const calculations = calculateFutureValues(formData);
       
+      // Adjust the date to prevent UTC offset
+      const adjustedDate = new Date(formData.plan_initial_date);
+      adjustedDate.setDate(adjustedDate.getDate() + 1);
+      
       const { error } = await supabase
         .from("investment_plans")
         .update({
           initial_amount: parseFloat(formData.initialAmount.replace(',', '.')),
-          initial_age: parseInt(formData.initialAge),
+          plan_initial_date: adjustedDate.toISOString().split('T')[0],
           final_age: parseInt(formData.finalAge),
           monthly_deposit: parseFloat(formData.monthlyDeposit.replace(',', '.')),
           desired_income: parseFloat(formData.desiredIncome.replace(',', '.')),
@@ -241,15 +251,15 @@ export const EditPlan = () => {
 
                 <div className="space-y-2">
                   <label className="text-sm font-medium">
-                    {t('investmentPlan.form.initialAge')}
+                    {t('investmentPlan.form.planInitialDate')}
                   </label>
                   <Input
-                    type="number"
-                    name="initialAge"
-                    value={formData.initialAge}
+                    type="date"
+                    name="plan_initial_date"
+                    value={formData.plan_initial_date}
                     onChange={handleChange}
-                    placeholder="30"
                     required
+                    max={new Date().toISOString().split('T')[0]}
                   />
                 </div>
 

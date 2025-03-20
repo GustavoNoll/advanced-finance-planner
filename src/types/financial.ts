@@ -35,7 +35,6 @@ export interface InvestmentPlan {
   user_id: string;
   initial_amount: number;
   target_amount: number;
-  initial_age: number;
   final_age: number;
   future_value: number;
   limit_age: number;
@@ -47,6 +46,7 @@ export interface InvestmentPlan {
   desired_income: number;
   required_monthly_deposit: number;
   adjust_contribution_for_inflation: boolean;
+  plan_initial_date: string;
   created_at?: string;
   updated_at?: string;
 }

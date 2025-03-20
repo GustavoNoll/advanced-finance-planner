@@ -1,6 +1,6 @@
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend, ReferenceLine, Label } from 'recharts';
 import { useTranslation } from "react-i18next";
-import { ChartDataPoint, FinancialRecord, Goal, ProjectedEvent, MonthNumber } from '@/types/financial';
+import { ChartDataPoint, FinancialRecord, Goal, ProjectedEvent, MonthNumber, InvestmentPlan } from '@/types/financial';
 import { generateChartProjections, YearlyProjectionData } from '@/lib/chart-projections';
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
@@ -9,20 +9,6 @@ import { calculateCompoundedRates, yearlyReturnRateToMonthlyReturnRate } from '@
 
 interface Profile {
   birth_date: string;
-}
-
-interface InvestmentPlan {
-  created_at: string;
-  monthly_deposit: number;
-  expected_return: number;
-  inflation: number;
-  initial_amount: number;
-  initial_age: number;
-  final_age: number;
-  desired_income: number;
-  adjust_contribution_for_inflation: boolean;
-  plan_type: string;
-  limit_age?: number;
 }
 
 interface ExpenseChartProps {
