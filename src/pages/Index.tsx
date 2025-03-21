@@ -21,6 +21,7 @@ import {
 import { Calculator } from "@/components/Calculator";
 import { processPlanProgressData } from "@/lib/plan-progress";
 import { generateProjectionData } from '@/lib/chart-projections';
+import { useQueryClient } from "@tanstack/react-query";
 
 type TimePeriod = 'all' | '6m' | '12m' | '24m';
 
@@ -32,6 +33,7 @@ const Index = () => {
   const { t } = useTranslation();
   const [selectedPeriod, setSelectedPeriod] = useState<TimePeriod>('all');
   const [contributionPeriod, setContributionPeriod] = useState<TimePeriod>('all');
+  const queryClient = useQueryClient();
 
   const handleLogout = useCallback(async () => {
     try {
@@ -404,6 +406,12 @@ const Index = () => {
     );
   }, [investmentPlan, clientProfile, allFinancialRecords, goalsAndEvents?.goals, goalsAndEvents?.events]);
 
+  // Add function to reload projection data
+  const handleProjectionDataChange = useCallback(() => {
+    queryClient.invalidateQueries({ queryKey: ["financial-goals"] });
+    queryClient.invalidateQueries({ queryKey: ["goalsAndEvents"] });
+  }, [queryClient, clientId]);
+
   if (isInvestmentPlanLoading || isProfilesLoading || isFinancialRecordsLoading || isGoalsLoading || (!investmentPlan && !brokerProfile)) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -411,7 +419,6 @@ const Index = () => {
       </div>
     );
   }
-  console.log('projectionData', projectionData);
 
   const portfolioValue = processedRecords.latestRecord?.ending_balance || 0;
   const portfolioIncreaseRate = ((portfolioValue - processedRecords.latestRecord?.starting_balance) / processedRecords.latestRecord?.starting_balance) * 100 || null;
@@ -707,6 +714,7 @@ const Index = () => {
               clientId={clientId}
               allFinancialRecords={[...(allFinancialRecords || [])]}
               projectionData={projectionData}
+              onProjectionDataChange={handleProjectionDataChange}
             />
           ) : (
             <div className="flex items-center justify-center h-[300px]">

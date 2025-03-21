@@ -30,6 +30,7 @@ interface ExpenseChartProps {
   allFinancialRecords: FinancialRecord[];
   profile: Profile;
   projectionData?: YearlyProjectionData[];
+  onProjectionDataChange?: () => void;
 }
 
 // Update the zoom level type to include custom
@@ -56,7 +57,8 @@ export const ExpenseChart = ({
   investmentPlan, 
   clientId, 
   allFinancialRecords,
-  projectionData
+  projectionData,
+  onProjectionDataChange
 }: ExpenseChartProps) => {
   const { t } = useTranslation();
   const queryClient = useQueryClient();
@@ -121,6 +123,7 @@ export const ExpenseChart = ({
       queryClient.invalidateQueries({ queryKey: ["financial-goals"] });
       setShowDialog(false);
       setSelectedPoint(null);
+      onProjectionDataChange?.();
     },
   });
 
@@ -151,6 +154,7 @@ export const ExpenseChart = ({
       queryClient.invalidateQueries({ queryKey: ["events"] });
       setShowDialog(false);
       setSelectedPoint(null);
+      onProjectionDataChange?.();
     },
   });
 
