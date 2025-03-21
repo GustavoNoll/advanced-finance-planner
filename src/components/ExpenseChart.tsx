@@ -2,13 +2,26 @@ import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContai
 import { useTranslation } from "react-i18next";
 import { ChartDataPoint, FinancialRecord, Goal, ProjectedEvent, MonthNumber, InvestmentPlan } from '@/types/financial';
 import { generateChartProjections, YearlyProjectionData } from '@/lib/chart-projections';
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
 import { useState } from "react";
 import { calculateCompoundedRates, yearlyReturnRateToMonthlyReturnRate } from '@/lib/financial-math';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { GoalForm } from "@/components/financial-goals/GoalForm";
+import { EventForm } from "@/components/events/EventForm";
+import { ChartPointDialog } from "@/components/chart/ChartPointDialog";
 
 interface Profile {
   birth_date: string;
+}
+
+interface ChartPoint {
+  age: string;
+  year: number;
+  month: number;
+  actualValue: number;
+  projectedValue: number;
+  realDataPoint: boolean;
 }
 
 interface ExpenseChartProps {
@@ -22,6 +35,22 @@ interface ExpenseChartProps {
 // Update the zoom level type to include custom
 type ZoomLevel = '1y' | '5y' | '10y' | 'all' | 'custom';
 
+interface GoalFormValues {
+  icon: string;
+  asset_value: string;
+  goal_month: string;
+  goal_year: string;
+  installment_project: boolean;
+  installment_count?: string;
+}
+
+interface EventFormValues {
+  name: string;
+  amount: string;
+  month: string;
+  year: string;
+}
+
 export const ExpenseChart = ({ 
   profile, 
   investmentPlan, 
@@ -30,9 +59,13 @@ export const ExpenseChart = ({
   projectionData
 }: ExpenseChartProps) => {
   const { t } = useTranslation();
+  const queryClient = useQueryClient();
   const [zoomLevel, setZoomLevel] = useState<ZoomLevel>('all');
   const [showRealValues, setShowRealValues] = useState<boolean>(false);
   const [customRange, setCustomRange] = useState<{ past: number, future: number }>({ past: 1, future: 1 });
+  const [selectedPoint, setSelectedPoint] = useState<ChartPoint | null>(null);
+  const [showDialog, setShowDialog] = useState(false);
+  const [dialogType, setDialogType] = useState<'goal' | 'event' | null>(null);
   
   // Add query for financial goals
   const { data: goals } = useQuery<Goal[]>({
@@ -64,6 +97,73 @@ export const ExpenseChart = ({
       return data;
     },
   });
+
+  // Add mutations for creating goals and events
+  const createGoal = useMutation({
+    mutationFn: async (values: GoalFormValues) => {
+      const { data, error } = await supabase.from("financial_goals").insert([
+        {
+          profile_id: clientId,
+          icon: values.icon,
+          asset_value: parseFloat(values.asset_value.replace(/[^\d.,]/g, '').replace(',', '.')),
+          month: parseInt(values.goal_month),
+          year: parseInt(values.goal_year),
+          installment_project: values.installment_project,
+          installment_count: values.installment_project ? parseInt(values.installment_count || "0") : null,
+          status: 'pending',
+        },
+      ]);
+
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["financial-goals"] });
+      setShowDialog(false);
+      setSelectedPoint(null);
+    },
+  });
+
+  const createEvent = useMutation({
+    mutationFn: async (values: EventFormValues) => {
+      const cleanAmount = values.amount
+        .replace(/[R$\s]/g, '')
+        .replace(/\./g, '')
+        .replace(',', '.');
+
+      const amount = parseFloat(cleanAmount);
+
+      const { data, error } = await supabase.from("events").insert([
+        {
+          profile_id: clientId,
+          name: values.name,
+          amount: amount,
+          month: parseInt(values.month),
+          year: parseInt(values.year),
+          status: 'projected'
+        },
+      ]);
+
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["events"] });
+      setShowDialog(false);
+      setSelectedPoint(null);
+    },
+  });
+
+  const handleChartClick = (data: ChartPoint) => {
+    setSelectedPoint(data);
+    setShowDialog(true);
+  };
+
+  const handleDialogClose = () => {
+    setShowDialog(false);
+    setSelectedPoint(null);
+    setDialogType(null);
+  };
 
   if (!profile || !investmentPlan || !clientId || !allFinancialRecords) {
     return (
@@ -498,6 +598,7 @@ export const ExpenseChart = ({
         <LineChart 
           data={chartData}
           margin={{ top: 20, right: 30, left: 50, bottom: 25 }}
+          onClick={(data) => data && data.activePayload && handleChartClick(data.activePayload[0].payload)}
         >
           <defs>
             <linearGradient id="colorUv" x1="0" y1="0" x2="1" y2="0">
@@ -642,6 +743,17 @@ export const ExpenseChart = ({
           />
         </LineChart>
       </ResponsiveContainer>
+
+      <ChartPointDialog
+        open={showDialog}
+        onOpenChange={setShowDialog}
+        selectedPoint={selectedPoint}
+        dialogType={dialogType}
+        onDialogTypeChange={setDialogType}
+        onSubmitGoal={createGoal.mutate}
+        onSubmitEvent={createEvent.mutate}
+        onCancel={handleDialogClose}
+      />
     </div>
   );
 };

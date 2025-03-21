@@ -301,6 +301,7 @@ export const ptBR = {
     }
   },
   common: {
+    addNew: "Adicionar Novos",
     custom: "Personalizado",
     months: "Meses",
     last1YearS: "1A",
@@ -460,7 +461,13 @@ export const ptBR = {
     years: "anos",
     goalAchievement: "Meta atingida",
     realValues: "Valores Reais",
-    nominalValues: "Valores Nominais"
+    nominalValues: "Valores Nominais",
+    addNewGoal: "Adicionar Novo Objetivo",
+    addNewEvent: "Adicionar Novo Evento",
+    clickToAdd: "Clique em um ponto do gráfico para adicionar um objetivo ou evento",
+    selectedDate: "Data Selecionada",
+    selectedMonth: "Mês Selecionado",
+    selectedYear: "Ano Selecionado"
   },
   budgetCategories: {
     categories: {
