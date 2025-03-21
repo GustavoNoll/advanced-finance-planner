@@ -37,11 +37,9 @@ export const isCalculationReady = (data: FormData) => {
   );
 };
 
-export const calculateFutureValues = (data: FormData): Calculations => {
+export const calculateFutureValues = (data: FormData, birthDate: Date): Calculations => {
   const initialAmount = parseFloat(data.initialAmount.replace(',', '.')) || 0;
   const planInitialDate = new Date(data.plan_initial_date);
-  const today = new Date();
-  const initialAge = today.getFullYear() - planInitialDate.getFullYear();
   const finalAge = parseFloat(data.finalAge) || 0;
   const desiredIncome = parseFloat(data.desiredIncome.replace(',', '.')) || 0;
   const expectedReturn = parseFloat(data.expectedReturn.replace(',', '.')) / 100;
@@ -73,8 +71,11 @@ export const calculateFutureValues = (data: FormData): Calculations => {
   };
   
   // vars
-  const yearsDepositing = finalAge - initialAge;
-  const monthsToRetirement = yearsDepositing * 12;
+  const planStartDate = new Date(planInitialDate);
+  const yearDiff = planStartDate.getFullYear() - birthDate.getFullYear();
+  const monthDiff = planStartDate.getMonth() - birthDate.getMonth();
+  const initialAge = yearDiff + (monthDiff / 12);
+  const monthsToRetirement = parseInt(((finalAge - initialAge) * 12).toFixed(0));
   const endMoney = limitAge;
   const monthsToEndMoney = (endMoney - finalAge) * 12;
 
@@ -102,7 +103,7 @@ export const calculateFutureValues = (data: FormData): Calculations => {
       presentValue = vp(monthExpectedReturnRate, monthsToEndMoney, -desiredIncome, 0);
       // revisar
       necessaryFutureValue = formatDecimals(inflationAdjustedIncome / monthExpectedReturnRate);
-      necessaryDepositToNecessaryFutureValue = formatDecimals(pmt(monthlyTotalReturn, yearsDepositing * 12, -initialAmount, necessaryFutureValue), 2);
+      necessaryDepositToNecessaryFutureValue = formatDecimals(pmt(monthlyTotalReturn, monthsToRetirement, -initialAmount, necessaryFutureValue), 2);
       break;
       
     case "2":
@@ -121,7 +122,7 @@ export const calculateFutureValues = (data: FormData): Calculations => {
   }
 
   futureValue = Math.abs(-fv(monthInflationRate, monthsToRetirement, 0, presentValue));
-  requiredMonthlyDeposit = formatDecimals(pmt(monthlyTotalReturn, yearsDepositing * 12, -initialAmount, futureValue));
+  requiredMonthlyDeposit = formatDecimals(pmt(monthlyTotalReturn, monthsToRetirement, -initialAmount, futureValue));
   realReturn = formatDecimals(futureValue * monthExpectedReturnRate);
   inflationReturn = formatDecimals(futureValue * monthInflationRate);
   totalMonthlyReturn = formatDecimals(futureValue * monthlyTotalReturn);

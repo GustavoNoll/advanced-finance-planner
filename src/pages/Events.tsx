@@ -262,7 +262,7 @@ const Events = () => {
                     {...field}
                   >
                     <option value="">{t("common.select")}</option>
-                    {Array.from({ length: 10 }, (_, i) => {
+                    {Array.from({ length: 80 }, (_, i) => {
                       const year = (new Date().getFullYear() + i).toString();
                       return (
                         <option key={year} value={year}>

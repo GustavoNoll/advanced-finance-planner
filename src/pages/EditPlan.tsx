@@ -15,7 +15,6 @@ import {
   type Calculations as InvestmentCalculations
 } from '@/utils/investmentPlanCalculations';
 import { useTranslation } from "react-i18next";
-import { ChevronDown, ChevronRight } from "lucide-react";
 import CurrencyInput from 'react-currency-input-field';
 
 export const EditPlan = () => {
@@ -25,6 +24,7 @@ export const EditPlan = () => {
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
   const [isLoadingData, setIsLoadingData] = useState(true);
+  const [birthDate, setBirthDate] = useState<Date | null>(null);
   const [formData, setFormData] = useState<InvestmentFormData>({
     initialAmount: "",
     plan_initial_date: new Date().toISOString().split('T')[0],
@@ -42,7 +42,6 @@ export const EditPlan = () => {
   const [calculations, setCalculations] = useState<InvestmentCalculations | null>(null);
   const { t } = useTranslation();
   const [expandedRow, setExpandedRow] = useState<string | null>(null);
-  const location = useLocation();
 
   useEffect(() => {
     const fetchPlan = async () => {
@@ -67,9 +66,21 @@ export const EditPlan = () => {
 
       const { data: profile, error: profileError } = await supabase
         .from('profiles')
-        .select('broker_id, is_broker')
+        .select('broker_id, is_broker, birth_date')
         .eq('id', data.user_id)
         .single();
+
+      if (profileError) {
+        toast({
+          title: "Error",
+          description: "Failed to fetch user profile",
+          variant: "destructive",
+        });
+        navigate('/');
+        return;
+      }
+
+      setBirthDate(profile.birth_date ? new Date(profile.birth_date) : null);
 
       const { data: actualUser, error: actualUserError } = await supabase.auth.getUser();
 
@@ -124,10 +135,10 @@ export const EditPlan = () => {
     if (formData.initialAmount) {
       setIsLoadingData(false);
     }
-    if (isCalculationReady(formData)) {
-      setCalculations(calculateFutureValues(formData));
+    if (isCalculationReady(formData) && birthDate) {
+      setCalculations(calculateFutureValues(formData, birthDate));
     }
-  }, [formData]);
+  }, [formData, birthDate]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
@@ -153,10 +164,18 @@ export const EditPlan = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!birthDate) {
+      toast({
+        title: "Error",
+        description: "Birth date is required",
+        variant: "destructive",
+      });
+      return;
+    }
     setLoading(true);
 
     try {
-      const calculations = calculateFutureValues(formData);
+      const calculations = calculateFutureValues(formData, birthDate);
       
       // Adjust the date to prevent UTC offset
       const adjustedDate = new Date(formData.plan_initial_date);
@@ -466,7 +485,7 @@ export const EditPlan = () => {
                   <div className="flex items-center gap-2 w-3/4">
                     <span>{t('investmentPlan.create.calculations.inflationAdjustedIncome')}:</span>
                   </div>
-                  <span>R$ {calculations?.inflationAdjustedIncome.toLocaleString('pt-BR', { maximumFractionDigits: 2 }) || '---'}/ano</span>
+                  <span>R$ {calculations?.inflationAdjustedIncome.toLocaleString('pt-BR', { maximumFractionDigits: 2 }) || '---'}/mês</span>
                 </div>
                 
                 <div 

@@ -21,6 +21,7 @@ export const CreatePlan = () => {
   const clientId = searchParams.get('client_id') || user?.id;
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
+  const [birthDate, setBirthDate] = useState<Date | null>(null);
   const [formData, setFormData] = useState({
     initialAmount: "100000",
     plan_initial_date: new Date().toISOString().split('T')[0],
@@ -50,10 +51,10 @@ export const CreatePlan = () => {
 
   // Add useEffect to calculate values on mount
   useEffect(() => {
-    if (isCalculationReady(formData)) {
-      setCalculations(calculateFutureValues(formData));
+    if (isCalculationReady(formData) && birthDate) {
+      setCalculations(calculateFutureValues(formData, birthDate));
     }
-  }, []); // Empty dependency array means this runs once on mount
+  }, [formData, birthDate]); // Update dependencies to include birthDate
 
   useEffect(() => {
     const checkExistingPlan = async () => {
@@ -104,6 +105,8 @@ export const CreatePlan = () => {
 
         if (data?.birth_date) {
           const birthDate = new Date(data.birth_date);
+          setBirthDate(birthDate);
+          
           const today = new Date();
           let age = today.getFullYear() - birthDate.getFullYear();
           const monthDiff = today.getMonth() - birthDate.getMonth();
@@ -117,14 +120,8 @@ export const CreatePlan = () => {
               plan_initial_date: today.toISOString().split('T')[0],
               finalAge: (age + 30).toString()  // Set final age as current age + 30
             }
-
-            if (isCalculationReady(newFormData)) {
-              setCalculations(calculateFutureValues(newFormData));
-            } else {
-              setCalculations(null);
-            }
             
-            return newFormData
+            return newFormData;
           });
         }
       } catch (error) {
@@ -159,8 +156,8 @@ export const CreatePlan = () => {
         (newFormData[name as keyof typeof newFormData] as string) = value;
       }
       
-      if (isCalculationReady(newFormData)) {
-        setCalculations(calculateFutureValues(newFormData));
+      if (isCalculationReady(newFormData) && birthDate) {
+        setCalculations(calculateFutureValues(newFormData, birthDate));
       } else {
         setCalculations(null);
       }
@@ -171,10 +168,18 @@ export const CreatePlan = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!birthDate) {
+      toast({
+        title: "Error",
+        description: "Birth date is required",
+        variant: "destructive",
+      });
+      return;
+    }
     setLoading(true);
 
     try {
-      const calculations = calculateFutureValues(formData);
+      const calculations = calculateFutureValues(formData, birthDate);
       
       // Adjust the date to prevent UTC offset
       const adjustedDate = new Date(formData.plan_initial_date);
@@ -489,7 +494,7 @@ export const CreatePlan = () => {
                   <div className="flex items-center gap-2 w-3/4">
                     <span>{t('investmentPlan.create.calculations.inflationAdjustedIncome')}:</span>
                   </div>
-                  <span>R$ {calculations?.inflationAdjustedIncome.toLocaleString('pt-BR', { maximumFractionDigits: 2 }) || '---'}/ano</span>
+                  <span>R$ {calculations?.inflationAdjustedIncome.toLocaleString('pt-BR', { maximumFractionDigits: 2 }) || '---'}/mês</span>
                 </div>
                 
                 <div 
