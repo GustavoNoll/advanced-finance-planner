@@ -4,7 +4,6 @@ import { ArrowUpRight, Clock } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { FinancialRecord, InvestmentPlan } from "@/types/financial";
 import { useMemo } from "react";
-import { generateProjectionData } from "@/lib/generate-projection-data";
 import { PlanProgressData } from "@/lib/plan-progress";
 
 interface SavingsGoalProps {
@@ -151,13 +150,13 @@ export const SavingsGoal = ({ allFinancialRecords, investmentPlan, profile, plan
             </div>
             <div className="text-right">
               <span className="block text-lg font-semibold text-muted-foreground">
-                {t('savingsGoal.goal.label', { 
-                  value: formatCurrency(investmentGoal)
+                {t('savingsGoal.goal.presentFutureValue', { 
+                  value: formatCurrency(presentFutureValue)
                 })}
               </span>
               <span className="text-sm text-muted-foreground">
-                {t('savingsGoal.goal.presentFutureValue', { 
-                  value: formatCurrency(presentFutureValue)
+                {t('savingsGoal.goal.label', { 
+                  value: formatCurrency(investmentGoal)
                 })}
               </span>
               <p></p>
