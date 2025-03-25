@@ -69,6 +69,7 @@ export const SavingsGoal = ({ allFinancialRecords, investmentPlan, profile, plan
     }
     
     if (!birthDate || !investmentPlan) return 'ageNotAvailable';
+    return 'ageNotAvailable';
   };
 
   const projectedAge = calculateProjectedAge();

@@ -19,7 +19,7 @@ import {
   HoverCardTrigger,
 } from "@/components/ui/hover-card";
 import { Calculator } from "@/components/Calculator";
-import { processPlanProgressData } from "@/lib/plan-progress";
+import { processPlanProgressData, PlanProgressData } from "@/lib/plan-progress";
 import { generateProjectionData } from '@/lib/chart-projections';
 import { useQueryClient } from "@tanstack/react-query";
 
@@ -332,6 +332,33 @@ const Index = () => {
     })[0];
   }, [processedRecords.financialRecords]);
 
+  // Memoize plan progress data
+  const planProgressData = useMemo(() => {
+    try {
+      if (!allFinancialRecords?.length || !investmentPlan || !clientProfile?.birth_date) {
+        return null;
+      }
+
+      return processPlanProgressData(
+        allFinancialRecords,
+        investmentPlan,
+        {
+          birth_date: clientProfile.birth_date
+        },
+        goalsAndEvents?.goals || [],
+        goalsAndEvents?.events || []
+      );
+    } catch (error) {
+      return {
+        plannedMonths: 0,
+        projectedMonths: 0,
+        monthsDifference: 0,
+        plannedContribution: 0,
+        projectedContribution: 0,
+      };
+    }
+  }, [allFinancialRecords, investmentPlan, clientProfile?.birth_date, goalsAndEvents?.goals, goalsAndEvents?.events, t]);
+
   const calculateMonthlyContributions = useCallback((period: TimePeriod = 'all') => {
     if (!processedRecords.financialRecords?.length) return 0;
 
@@ -422,16 +449,6 @@ const Index = () => {
 
   const portfolioValue = processedRecords.latestRecord?.ending_balance || 0;
   const portfolioIncreaseRate = ((portfolioValue - processedRecords.latestRecord?.starting_balance) / processedRecords.latestRecord?.starting_balance) * 100 || null;
-
-  const planProgressData = processPlanProgressData(
-    allFinancialRecords,
-    investmentPlan,
-    {
-      birth_date: clientProfile?.birth_date
-    },
-    goalsAndEvents?.goals || [],
-    goalsAndEvents?.events || []
-  );
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-gray-50 to-gray-100">
@@ -725,7 +742,7 @@ const Index = () => {
         
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           {planProgressData && (
-            <Calculator data={planProgressData} />
+            <Calculator data={planProgressData as PlanProgressData} />
           )}
           
           <SavingsGoal 
@@ -734,7 +751,7 @@ const Index = () => {
             profile={{
               birth_date: clientProfile?.birth_date
             }}
-            planProgressData={planProgressData}
+            planProgressData={planProgressData as PlanProgressData}
           />
           
           <DashboardCard 
