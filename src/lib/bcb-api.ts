@@ -13,7 +13,12 @@ export const fetchCDIRates = async (startDate: string, endDate: string) => {
   const url = `https://api.bcb.gov.br/dados/serie/bcdata.sgs.4391/dados?formato=json&dataInicial=${startDate}&dataFinal=${endDate}`;
 
   try {
-    const response = await fetch(url);
+    const response = await fetch(url, {
+      mode: 'no-cors',
+      headers: {
+        'Accept': 'application/json',
+      }
+    });
     if (!response.ok) throw new Error('Failed to fetch CDI rates');
     
     const data: BCBResponse[] = await response.json();
@@ -36,7 +41,12 @@ export const fetchIPCARates = async (startDate: string, endDate: string) => {
   const url = `https://api.bcb.gov.br/dados/serie/bcdata.sgs.433/dados?formato=json&dataInicial=${startDate}&dataFinal=${endDate}`;
 
   try {
-    const response = await fetch(url);
+    const response = await fetch(url, {
+      mode: 'no-cors',
+      headers: {
+        'Accept': 'application/json',
+      }
+    });
     if (!response.ok) throw new Error('Failed to fetch IPCA rates');
     
     const data: BCBResponse[] = await response.json();
