@@ -745,14 +745,16 @@ const Index = () => {
             <Calculator data={planProgressData as PlanProgressData} />
           )}
           
-          <SavingsGoal 
-            allFinancialRecords={[...(allFinancialRecords || [])]}
-            investmentPlan={investmentPlan}
-            profile={{
-              birth_date: clientProfile?.birth_date
-            }}
-            planProgressData={planProgressData as PlanProgressData}
-          />
+          {investmentPlan?.present_future_value > 0 && (
+            <SavingsGoal 
+              allFinancialRecords={[...(allFinancialRecords || [])]}
+              investmentPlan={investmentPlan}
+              profile={{
+                birth_date: clientProfile?.birth_date
+              }}
+              planProgressData={planProgressData as PlanProgressData}
+            />
+          )}
           
           <DashboardCard 
             title={t('dashboard.highlights.title')}

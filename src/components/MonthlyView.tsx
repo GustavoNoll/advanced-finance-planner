@@ -196,17 +196,6 @@ export const MonthlyView = ({
     }
   };
 
-  // 5. Early returns after all hooks
-  if (paginatedRecords.length === 0) {
-    return (
-      <DashboardCard title={t('monthlyView.title')} className="col-span-full">
-        <div className="flex items-center justify-center p-8 text-muted-foreground">
-          {t('monthlyView.noData')}
-        </div>
-      </DashboardCard>
-    );
-  }
-
   const sortedRecords = paginatedRecords.sort((a, b) => {
     // Sort by year and month in descending order
     if (a.record_year !== b.record_year) {
@@ -327,67 +316,70 @@ export const MonthlyView = ({
 
   return (
     <DashboardCard title={t('monthlyView.title')} className="col-span-full">
-      <Tabs defaultValue="returnChart" className="w-full">
-        <TabsList className="grid w-full grid-cols-3 lg:w-[800px]">
-          <TabsTrigger value="returnChart">{t('monthlyView.tabs.returnChart')}</TabsTrigger>
+      <Tabs defaultValue={allFinancialRecords.length > 0 ? "returnChart" : "table"} className="w-full">
+        <TabsList className="grid w-full grid-cols-2 lg:w-[800px]">
+          {allFinancialRecords.length > 0 && (
+            <TabsTrigger value="returnChart">{t('monthlyView.tabs.returnChart')}</TabsTrigger>
+          )}
           <TabsTrigger value="table">{t('monthlyView.tabs.table')}</TabsTrigger>
           <TabsTrigger value="futureProjection">{t('monthlyView.tabs.futureProjection')}</TabsTrigger>
         </TabsList>
         
-        <TabsContent value="returnChart" className="space-y-4">
-          <div className="flex justify-end gap-2 mb-4">
-            <select
-              value={timeWindow}
-              onChange={(e) => setTimeWindow(Number(e.target.value) as typeof timeWindow)}
-              className="px-3 py-1 border rounded-md text-sm"
-            >
-              <option value={6}>{t('monthlyView.timeWindows.last6Months')}</option>
-              <option value={12}>{t('monthlyView.timeWindows.last12Months')}</option>
-              <option value={24}>{t('monthlyView.timeWindows.last24Months')}</option>
-              <option value={0}>{t('monthlyView.timeWindows.allTime')}</option>
-            </select>
-          </div>
-          <div className="h-[400px] w-full">
-            <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={getFilteredChartData(calculateAccumulatedReturns(chartDataToUse))}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="month" />
-                <YAxis unit="%" />
-                <Tooltip formatter={(value: number) => `${value.toFixed(2)}%`} />
-                <Line 
-                  type="monotone" 
-                  dataKey="accumulatedPercentage" 
-                  stroke="#22c55e" 
-                  name={t('monthlyView.chart.accumulatedReturn')}
-                  strokeWidth={2}
-                />
-                <Line 
-                  type="monotone" 
-                  dataKey="accumulatedTargetRentability" 
-                  stroke="#f43f5e" 
-                  name={t('monthlyView.chart.accumulatedTargetReturn')}
-                  strokeWidth={2}
-                />
-                <Line 
-                  type="monotone" 
-                  dataKey="accumulatedCDIReturn" 
-                  stroke="#3b82f6" 
-                  name={t('monthlyView.chart.accumulatedCDIReturn')}
-                  strokeWidth={2}
-                />
-                <Line 
-                  type="monotone" 
-                  dataKey="accumulatedIPCAReturn" 
-                  stroke="#eab308" 
-                  name={t('monthlyView.chart.accumulatedIPCAReturn')}
-                  strokeWidth={2}
-                />
-              </LineChart>
-            </ResponsiveContainer>
-          </div>
-        </TabsContent>
+        {allFinancialRecords.length > 0 && (
+          <TabsContent value="returnChart" className="space-y-4">
+            <div className="flex justify-end gap-2 mb-4">
+              <select
+                value={timeWindow}
+                onChange={(e) => setTimeWindow(Number(e.target.value) as typeof timeWindow)}
+                className="px-3 py-1 border rounded-md text-sm"
+              >
+                <option value={6}>{t('monthlyView.timeWindows.last6Months')}</option>
+                <option value={12}>{t('monthlyView.timeWindows.last12Months')}</option>
+                <option value={24}>{t('monthlyView.timeWindows.last24Months')}</option>
+                <option value={0}>{t('monthlyView.timeWindows.allTime')}</option>
+              </select>
+            </div>
+            <div className="h-[400px] w-full">
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart data={getFilteredChartData(calculateAccumulatedReturns(chartDataToUse))}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="month" />
+                  <YAxis unit="%" />
+                  <Tooltip formatter={(value: number) => `${value.toFixed(2)}%`} />
+                  <Line 
+                    type="monotone" 
+                    dataKey="accumulatedPercentage" 
+                    stroke="#22c55e" 
+                    name={t('monthlyView.chart.accumulatedReturn')}
+                    strokeWidth={2}
+                  />
+                  <Line 
+                    type="monotone" 
+                    dataKey="accumulatedTargetRentability" 
+                    stroke="#f43f5e" 
+                    name={t('monthlyView.chart.accumulatedTargetReturn')}
+                    strokeWidth={2}
+                  />
+                  <Line 
+                    type="monotone" 
+                    dataKey="accumulatedCDIReturn" 
+                    stroke="#3b82f6" 
+                    name={t('monthlyView.chart.accumulatedCDIReturn')}
+                    strokeWidth={2}
+                  />
+                  <Line 
+                    type="monotone" 
+                    dataKey="accumulatedIPCAReturn" 
+                    stroke="#eab308" 
+                    name={t('monthlyView.chart.accumulatedIPCAReturn')}
+                    strokeWidth={2}
+                  />
+                </LineChart>
+              </ResponsiveContainer>
+            </div>
+          </TabsContent>
+        )}
 
-        
         <TabsContent value="table">
           <div className="flex justify-end gap-2 mb-4">
             <button
@@ -397,38 +389,44 @@ export const MonthlyView = ({
               {t('monthlyView.downloadCSV')}
             </button>
           </div>
-          <div className="rounded-md border">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b bg-muted/50">
-                  <th className="p-2 text-left">{t('monthlyView.table.headers.month')}</th>
-                  <th className="p-2 text-right">{t('monthlyView.table.headers.initialBalance')}</th>
-                  <th className="p-2 text-right">{t('monthlyView.table.headers.contribution')}</th>
-                  <th className="p-2 text-right">{t('monthlyView.table.headers.returns')}</th>
-                  <th className="p-2 text-right">{t('monthlyView.table.headers.returnPercentage')}</th>
-                  <th className="p-2 text-right">{t('monthlyView.table.headers.endBalance')}</th>
-                  <th className="p-2 text-right">{t('monthlyView.table.headers.targetRentability')}</th>
-                </tr>
-              </thead>
-              <tbody>
-                {localizedData.map((data) => (
-                  <tr key={`${data.month}-${data.balance}-${data.contribution}-${data.return}-${data.endBalance}-${data.targetRentability}`} className="border-b">
-                    <td className="p-2">{data.month}</td>
-                    <td className="p-2 text-right">R$ {data.balance.toLocaleString()}</td>
-                    <td className="p-2 text-right">R$ {data.contribution.toLocaleString()}</td>
-                    <td className={`p-2 text-right ${data.return >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                      {data.return >= 0 ? '+' : ''}{`R$ ${data.return.toLocaleString()}`}
-                    </td>
-                    <td className={`p-2 text-right ${data.percentage >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                      {data.percentage >= 0 ? '+' : ''}{data.percentage.toFixed(2)}%
-                    </td>
-                    <td className="p-2 text-right font-medium">R$ {data.endBalance.toLocaleString()}</td>
-                    <td className="p-2 text-right font-medium">{data.targetRentability?.toFixed(2)}%</td>
+          {localizedData.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-8 text-muted-foreground">
+              <p>{t('monthlyView.noData')}</p>
+            </div>
+          ) : (
+            <div className="rounded-md border">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b bg-muted/50">
+                    <th className="p-2 text-left">{t('monthlyView.table.headers.month')}</th>
+                    <th className="p-2 text-right">{t('monthlyView.table.headers.initialBalance')}</th>
+                    <th className="p-2 text-right">{t('monthlyView.table.headers.contribution')}</th>
+                    <th className="p-2 text-right">{t('monthlyView.table.headers.returns')}</th>
+                    <th className="p-2 text-right">{t('monthlyView.table.headers.returnPercentage')}</th>
+                    <th className="p-2 text-right">{t('monthlyView.table.headers.endBalance')}</th>
+                    <th className="p-2 text-right">{t('monthlyView.table.headers.targetRentability')}</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                </thead>
+                <tbody>
+                  {localizedData.map((data) => (
+                    <tr key={`${data.month}-${data.balance}-${data.contribution}-${data.return}-${data.endBalance}-${data.targetRentability}`} className="border-b">
+                      <td className="p-2">{data.month}</td>
+                      <td className="p-2 text-right">R$ {data.balance.toLocaleString()}</td>
+                      <td className="p-2 text-right">R$ {data.contribution.toLocaleString()}</td>
+                      <td className={`p-2 text-right ${data.return >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                        {data.return >= 0 ? '+' : ''}{`R$ ${data.return.toLocaleString()}`}
+                      </td>
+                      <td className={`p-2 text-right ${data.percentage >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                        {data.percentage >= 0 ? '+' : ''}{data.percentage.toFixed(2)}%
+                      </td>
+                      <td className="p-2 text-right font-medium">R$ {data.endBalance.toLocaleString()}</td>
+                      <td className="p-2 text-right font-medium">{data.targetRentability?.toFixed(2)}%</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
           {allFinancialRecords.length > page * RECORDS_PER_PAGE && (
             <div className="mt-4 flex justify-center">
               <button
