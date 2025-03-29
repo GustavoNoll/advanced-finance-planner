@@ -317,7 +317,7 @@ export const MonthlyView = ({
   return (
     <DashboardCard title={t('monthlyView.title')} className="col-span-full">
       <Tabs defaultValue={allFinancialRecords.length > 0 ? "returnChart" : "table"} className="w-full">
-        <TabsList className="grid w-full grid-cols-2 lg:w-[800px]">
+        <TabsList className={`grid w-full ${allFinancialRecords.length > 0 ? 'grid-cols-3' : 'grid-cols-2'} lg:w-[800px]`}>
           {allFinancialRecords.length > 0 && (
             <TabsTrigger value="returnChart">{t('monthlyView.tabs.returnChart')}</TabsTrigger>
           )}

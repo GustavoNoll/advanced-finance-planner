@@ -559,7 +559,7 @@ const Index = () => {
             </Button>
           </Link>
 
-          {brokerProfile && (
+          {
             <Link to={`/client-profile/${clientId}`}>
               <Button 
                 variant="ghost"
@@ -571,7 +571,7 @@ const Index = () => {
                 </div>
               </Button>
             </Link>
-          )}
+          }
         </div>
       </div>
 

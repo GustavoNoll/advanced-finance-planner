@@ -279,7 +279,7 @@ export const ptBR = {
         }
       },
       actions: {
-        title: "Ações Necessárias",
+        title: "Ações Necesfsárias",
         needsPlanReview: "Revisão de Plano",
         belowRequiredContribution: "Aportes Abaixo do Necessário",
         nearRetirement: "Próximos da Aposentadoria",
@@ -621,6 +621,7 @@ export const ptBR = {
     newGoal: "Novo Objetivo Financeiro",
     projected: "Objetivos Projetados",
     showCompleted: "Mostrar Objetivos Concluídos",
+    hideCompleted: "Ocultar Objetivos Concluídos",
     messages: {
       createSuccess: "Objetivo criado com sucesso",
       createError: "Erro ao criar objetivo",

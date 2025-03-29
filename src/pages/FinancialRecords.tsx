@@ -9,7 +9,7 @@ import { Link, useNavigate, useParams, useLocation } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Papa from 'papaparse';
 import { Spinner } from "@/components/ui/spinner";
 import { AddRecordForm } from "@/components/financial-records/AddRecordForm";
@@ -89,6 +89,28 @@ const FinancialRecords = () => {
   const [showSuccessAnimation, setShowSuccessAnimation] = useState(false);
   const [animationPosition, setAnimationPosition] = useState<{ top: number; left: number } | null>(null);
   const [updatedRecordIds, setUpdatedRecordIds] = useState<string[]>([]);
+  const [brokerProfile, setBrokerProfile] = useState<{ is_broker: boolean } | null>(null);
+
+  useEffect(() => {
+    const fetchProfile = async () => {
+      if (!user?.id) return;
+      
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('is_broker')
+        .eq('id', user.id)
+        .single();
+
+      if (error) {
+        console.error('Error fetching profile:', error);
+        return;
+      }
+
+      setBrokerProfile(data);
+    };
+
+    fetchProfile();
+  }, [user?.id]);
 
   const { data: records, isLoading: recordsLoading } = useQuery({
     queryKey: ['financialRecords', clientId],
@@ -581,94 +603,98 @@ const FinancialRecords = () => {
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
-          <Button 
-            variant="ghost"
-            onClick={() => setShowAddForm(!showAddForm)}
-            className="w-full h-14 flex flex-col items-center justify-center gap-1 bg-gradient-to-br from-white to-gray-50 hover:from-blue-50 hover:to-blue-100 shadow-sm hover:shadow transition-all duration-200 border border-gray-100"
-          >
-            <div className="flex items-center gap-2">
-              <Plus className="h-4 w-4 text-blue-600" />
-              <span className="text-sm font-medium text-gray-700">{t('financialRecords.addNew')}</span>
-            </div>
-          </Button>
-
-          <Dialog open={isImportDialogOpen} onOpenChange={setIsImportDialogOpen}>
-            <DialogTrigger asChild>
+          {brokerProfile?.is_broker && (
+            <>
               <Button 
                 variant="ghost"
+                onClick={() => setShowAddForm(!showAddForm)}
                 className="w-full h-14 flex flex-col items-center justify-center gap-1 bg-gradient-to-br from-white to-gray-50 hover:from-blue-50 hover:to-blue-100 shadow-sm hover:shadow transition-all duration-200 border border-gray-100"
               >
                 <div className="flex items-center gap-2">
-                  <Upload className="h-4 w-4 text-blue-600" />
-                  <span className="text-sm font-medium text-gray-700">{t('financialRecords.importButton')}</span>
+                  <Plus className="h-4 w-4 text-blue-600" />
+                  <span className="text-sm font-medium text-gray-700">{t('financialRecords.addNew')}</span>
                 </div>
               </Button>
-            </DialogTrigger>
-            <DialogContent className="sm:max-w-[1000px]">
-              <DialogHeader>
-                <DialogTitle>{t('financialRecords.importTitle')}</DialogTitle>
-              </DialogHeader>
-              <div className="space-y-4">
-                <p className="text-sm text-gray-500">{t('financialRecords.importInstructions')}</p>
-                <div className="overflow-x-auto border rounded-lg">
-                  <table className="w-full text-xs">
-                    <thead>
-                      <tr className="bg-gray-50">
-                        <th className="whitespace-nowrap px-3 py-2 text-left font-medium text-gray-900 border-b">Data</th>
-                        <th className="whitespace-nowrap px-3 py-2 text-left font-medium text-gray-900 border-b">PatrimonioInicial</th>
-                        <th className="whitespace-nowrap px-3 py-2 text-left font-medium text-gray-900 border-b">Aporte</th>
-                        <th className="whitespace-nowrap px-3 py-2 text-left font-medium text-gray-900 border-b">PatrimonioFinal</th>
-                        <th className="whitespace-nowrap px-3 py-2 text-left font-medium text-gray-900 border-b">Retorno</th>
-                        <th className="whitespace-nowrap px-3 py-2 text-left font-medium text-gray-900 border-b">RetornoPercentual</th>
-                        <th className="whitespace-nowrap px-3 py-2 text-left font-medium text-gray-900 border-b">RentabilidadeMeta</th>
-                        <th className="whitespace-nowrap px-3 py-2 text-left font-medium text-gray-900 border-b">Eventos</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      <tr>
-                        <td className="whitespace-nowrap px-3 py-2 text-gray-700">01/08/2023</td>
-                        <td className="whitespace-nowrap px-3 py-2 text-gray-700">R$ 51.447,92</td>
-                        <td className="whitespace-nowrap px-3 py-2 text-gray-700">R$ 4.000,00</td>
-                        <td className="whitespace-nowrap px-3 py-2 text-gray-700">R$ 55.992,62</td>
-                        <td className="whitespace-nowrap px-3 py-2 text-gray-700">R$ 1.000,00</td>
-                        <td className="whitespace-nowrap px-3 py-2 text-gray-700">1,19%</td>
-                        <td className="whitespace-nowrap px-3 py-2 text-gray-700">0,64%</td>
-                        <td className="whitespace-nowrap px-3 py-2 text-gray-700">R$ 500,00</td>
-                      </tr>
-                    </tbody>
-                  </table>
+
+              <Dialog open={isImportDialogOpen} onOpenChange={setIsImportDialogOpen}>
+                <DialogTrigger asChild>
+                  <Button 
+                    variant="ghost"
+                    className="w-full h-14 flex flex-col items-center justify-center gap-1 bg-gradient-to-br from-white to-gray-50 hover:from-blue-50 hover:to-blue-100 shadow-sm hover:shadow transition-all duration-200 border border-gray-100"
+                  >
+                    <div className="flex items-center gap-2">
+                      <Upload className="h-4 w-4 text-blue-600" />
+                      <span className="text-sm font-medium text-gray-700">{t('financialRecords.importButton')}</span>
+                    </div>
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="sm:max-w-[1000px]">
+                  <DialogHeader>
+                    <DialogTitle>{t('financialRecords.importTitle')}</DialogTitle>
+                  </DialogHeader>
+                  <div className="space-y-4">
+                    <p className="text-sm text-gray-500">{t('financialRecords.importInstructions')}</p>
+                    <div className="overflow-x-auto border rounded-lg">
+                      <table className="w-full text-xs">
+                        <thead>
+                          <tr className="bg-gray-50">
+                            <th className="whitespace-nowrap px-3 py-2 text-left font-medium text-gray-900 border-b">Data</th>
+                            <th className="whitespace-nowrap px-3 py-2 text-left font-medium text-gray-900 border-b">PatrimonioInicial</th>
+                            <th className="whitespace-nowrap px-3 py-2 text-left font-medium text-gray-900 border-b">Aporte</th>
+                            <th className="whitespace-nowrap px-3 py-2 text-left font-medium text-gray-900 border-b">PatrimonioFinal</th>
+                            <th className="whitespace-nowrap px-3 py-2 text-left font-medium text-gray-900 border-b">Retorno</th>
+                            <th className="whitespace-nowrap px-3 py-2 text-left font-medium text-gray-900 border-b">RetornoPercentual</th>
+                            <th className="whitespace-nowrap px-3 py-2 text-left font-medium text-gray-900 border-b">RentabilidadeMeta</th>
+                            <th className="whitespace-nowrap px-3 py-2 text-left font-medium text-gray-900 border-b">Eventos</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          <tr>
+                            <td className="whitespace-nowrap px-3 py-2 text-gray-700">01/08/2023</td>
+                            <td className="whitespace-nowrap px-3 py-2 text-gray-700">R$ 51.447,92</td>
+                            <td className="whitespace-nowrap px-3 py-2 text-gray-700">R$ 4.000,00</td>
+                            <td className="whitespace-nowrap px-3 py-2 text-gray-700">R$ 55.992,62</td>
+                            <td className="whitespace-nowrap px-3 py-2 text-gray-700">R$ 1.000,00</td>
+                            <td className="whitespace-nowrap px-3 py-2 text-gray-700">1,19%</td>
+                            <td className="whitespace-nowrap px-3 py-2 text-gray-700">0,64%</td>
+                            <td className="whitespace-nowrap px-3 py-2 text-gray-700">R$ 500,00</td>
+                          </tr>
+                        </tbody>
+                      </table>
+                    </div>
+                    <Input
+                      type="file"
+                      accept=".csv,.txt"
+                      onChange={handleFileUpload}
+                      className="w-full"
+                    />
+                  </div>
+                </DialogContent>
+              </Dialog>
+
+              <Button 
+                variant="ghost"
+                onClick={handleReset}
+                className="w-full h-14 flex flex-col items-center justify-center gap-1 bg-gradient-to-br from-white to-gray-50 hover:from-red-50 hover:to-red-100 shadow-sm hover:shadow transition-all duration-200 border border-gray-100"
+              >
+                <div className="flex items-center gap-2">
+                  <RefreshCcw className="h-4 w-4 text-red-600" />
+                  <span className="text-sm font-medium text-gray-700">{t('financialRecords.resetRecords')}</span>
                 </div>
-                <Input
-                  type="file"
-                  accept=".csv,.txt"
-                  onChange={handleFileUpload}
-                  className="w-full"
-                />
-              </div>
-            </DialogContent>
-          </Dialog>
+              </Button>
 
-          <Button 
-            variant="ghost"
-            onClick={handleReset}
-            className="w-full h-14 flex flex-col items-center justify-center gap-1 bg-gradient-to-br from-white to-gray-50 hover:from-red-50 hover:to-red-100 shadow-sm hover:shadow transition-all duration-200 border border-gray-100"
-          >
-            <div className="flex items-center gap-2">
-              <RefreshCcw className="h-4 w-4 text-red-600" />
-              <span className="text-sm font-medium text-gray-700">{t('financialRecords.resetRecords')}</span>
-            </div>
-          </Button>
-
-          <Button 
-            variant="ghost"
-            onClick={handleSyncIPCA}
-            className="w-full h-14 flex flex-col items-center justify-center gap-1 bg-gradient-to-br from-white to-gray-50 hover:from-green-50 hover:to-green-100 shadow-sm hover:shadow transition-all duration-200 border border-gray-100"
-          >
-            <div className="flex items-center gap-2">
-              <ArrowLeft className="h-4 w-4 text-green-600" />
-              <span className="text-sm font-medium text-gray-700">{t('financialRecords.syncIPCA')}</span>
-            </div>
-          </Button>
+              <Button 
+                variant="ghost"
+                onClick={handleSyncIPCA}
+                className="w-full h-14 flex flex-col items-center justify-center gap-1 bg-gradient-to-br from-white to-gray-50 hover:from-green-50 hover:to-green-100 shadow-sm hover:shadow transition-all duration-200 border border-gray-100"
+              >
+                <div className="flex items-center gap-2">
+                  <ArrowLeft className="h-4 w-4 text-green-600" />
+                  <span className="text-sm font-medium text-gray-700">{t('financialRecords.syncIPCA')}</span>
+                </div>
+              </Button>
+            </>
+          )}
         </div>
 
         {showAddForm && (
@@ -759,24 +785,26 @@ const FinancialRecords = () => {
                       </p>
                     </div>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => handleEdit(record.id)}
-                      className="text-blue-600 hover:text-blue-700 hover:bg-blue-50"
-                    >
-                      <Pencil className="h-4 w-4" />
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => handleDelete(record.id)}
-                      className="text-red-600 hover:text-red-700 hover:bg-red-50"
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  </div>
+                  {brokerProfile?.is_broker && (
+                    <div className="flex items-center gap-2">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => handleEdit(record.id)}
+                        className="text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+                      >
+                        <Pencil className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => handleDelete(record.id)}
+                        className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  )}
                 </div>
                 
                 {editingRecordId === record.id && (

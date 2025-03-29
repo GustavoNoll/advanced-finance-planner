@@ -52,7 +52,8 @@ export const CreateClient = () => {
         user_metadata: { 
           name: formData.name,
           birth_date: formData.birth_date
-        }
+        },
+        email_confirm: true
       });
 
       if (authError) throw authError;
