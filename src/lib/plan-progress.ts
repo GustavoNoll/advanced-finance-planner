@@ -269,15 +269,16 @@ const financialCalculations = {
     const monthlyInflation = yearlyReturnRateToMonthlyReturnRate(investmentPlan.inflation/100);
     
     // Calculate reference date and months to retirement
-    let monthsToRetirement;
+    let monthsToRetirementSinceNow;
     let referenceDate;
     
     const planStartDate = new Date(investmentPlan.plan_initial_date);
     const yearDiff = planStartDate.getFullYear() - birthDate.getFullYear();
     const monthDiff = planStartDate.getMonth() - birthDate.getMonth();
     const initialAge = yearDiff + (monthDiff / 12);
-    monthsToRetirement = (investmentPlan.final_age - initialAge) * 12;
-    const plannedMonths = monthsToRetirement;
+    const monthsToRetirementSinceStart = (investmentPlan.final_age - initialAge) * 12;
+    monthsToRetirementSinceNow = monthsToRetirementSinceStart;
+    const plannedMonths = monthsToRetirementSinceStart;
     if (actualMonth === 0 && actualYear === 0) {
       referenceDate = new Date(investmentPlan.plan_initial_date);
     } else {
@@ -288,11 +289,11 @@ const financialCalculations = {
       // Calculate difference in months
       const yearDiff = finalAgeDate.getFullYear() - referenceDate.getFullYear();
       const monthDiff = finalAgeDate.getMonth() - referenceDate.getMonth();
-      monthsToRetirement = (yearDiff * 12) + monthDiff;
+      monthsToRetirementSinceNow = (yearDiff * 12) + monthDiff;
       
       // Adjust for partial days of month
       if (finalAgeDate.getDate() < referenceDate.getDate()) {
-        monthsToRetirement--;
+        monthsToRetirementSinceNow--;
       }
     }
 
@@ -301,7 +302,7 @@ const financialCalculations = {
       monthlyInflation,
       goals,
       events,
-      monthsToRetirement,
+      monthsToRetirementSinceNow,
       referenceDate
     );
 
@@ -323,8 +324,8 @@ const financialCalculations = {
     
     // Calculate adjusted present and future values
     const adjustedPresentValue = -(currentBalance + preRetirementGoals);
-    const adjustedFutureValue = (presentFutureValue - postRetirementGoals);
-
+    const inflationInRetirementYear = (1 + monthlyInflation) ** monthsToRetirementSinceStart;
+    const adjustedFutureValue = (presentFutureValue - postRetirementGoals * (adjustContributionForInflation ? 1 : inflationInRetirementYear));
     // Calculate projections
     const projectedMonthsToRetirement = nper(
       effectiveRate,
@@ -335,7 +336,7 @@ const financialCalculations = {
 
     const projectedContribution = -pmt(
       effectiveRate,
-      monthsToRetirement,
+      monthsToRetirementSinceNow,
       adjustedPresentValue,
       adjustedFutureValue
     );
