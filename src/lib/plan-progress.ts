@@ -341,6 +341,13 @@ const financialCalculations = {
       adjustedFutureValue
     );
 
+    // if por plano
+    // Deixar herança
+    // projectedMonthlyIncome = pgto(effectiveRate*(se resgate ajustado pela inflação ? 1 : inflação); monthsRetired; presentFutureValue*(se resgate ajustado pela inflação ? 1 : inflação); -valor final da vida setado pelo cliente)
+    // Encerrar Está 100%, só adicionaria o resgate ajustado pela inflação se deslgiado
+    // projectedMonthlyIncome = pgto(effectiveRate*(se resgate ajustado pela inflação ? 1 : inflação); monthsRetired; presentFutureValue*(se resgate ajustado pela inflação ? 1 : inflação))
+    // Encerrar Está 100%, só adicionaria o resgate ajustado pela inflação se deslgiado
+    // projectedMonthlyIncome = pgto(effectiveRate*(se resgate ajustado pela inflação ? 1 : inflação); monthsRetired; presentFutureValue*(se resgate ajustado pela inflação ? 1 : inflação))
     const projectedMonthlyIncome = -pmt(
       effectiveRate,
       monthsRetired,
