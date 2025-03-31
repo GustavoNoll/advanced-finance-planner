@@ -11,10 +11,9 @@ function parseBrazilianDate(dateStr: string): Date {
 export const fetchCDIRates = async (startDate: string, endDate: string) => {
   // BCB API code for CDI is 12456
   const url = `https://api.bcb.gov.br/dados/serie/bcdata.sgs.4391/dados?formato=json&dataInicial=${startDate}&dataFinal=${endDate}`;
-  const proxyUrl = `https://cors-anywhere.herokuapp.com/${url}`;
 
   try {
-    const response = await fetch(proxyUrl, {
+    const response = await fetch(url, {
       method: 'GET',
       headers: {
         'Accept': 'application/json',
@@ -41,10 +40,9 @@ export const fetchCDIRates = async (startDate: string, endDate: string) => {
 export const fetchIPCARates = async (startDate: string, endDate: string) => {
   // BCB API code for IPCA is 433
   const url = `https://api.bcb.gov.br/dados/serie/bcdata.sgs.433/dados?formato=json&dataInicial=${startDate}&dataFinal=${endDate}`;
-  const proxyUrl = `https://cors-anywhere.herokuapp.com/${url}`;
 
   try {
-    const response = await fetch(proxyUrl, {
+    const response = await fetch(url, {
       method: 'GET',
       headers: {
         'Accept': 'application/json',
