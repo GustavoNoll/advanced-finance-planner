@@ -26,6 +26,7 @@ create table public.investment_plans (
   inflation_adjusted_income numeric not null,
   required_monthly_deposit numeric not null,
   adjust_contribution_for_inflation boolean not null default false,
+  adjust_income_for_inflation boolean not null default false,
   plan_initial_date date not null,
   status character varying(20) null default 'active'::character varying,
   constraint investment_plans_pkey primary key (id),

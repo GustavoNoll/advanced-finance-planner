@@ -10,6 +10,7 @@ interface InvestmentPlan {
   final_age: number;
   desired_income: number;
   adjust_contribution_for_inflation: boolean;
+  adjust_income_for_inflation: boolean;
   plan_type: string;
   limit_age?: number;
 }
@@ -116,7 +117,9 @@ export function generateProjectionData(
       if (investmentPlan.adjust_contribution_for_inflation && !isRetirementAge) {
         currentMonthlyDeposit *= (1 + monthlyInflationRate);
       }
-      currentMonthlyWithdrawal *= (1 + monthlyInflationRate);
+      if (investmentPlan.adjust_income_for_inflation) {
+        currentMonthlyWithdrawal *= (1 + monthlyInflationRate);
+      }
       
       const historicalKey = `${year}-${currentMonthNumber}`;
       const historicalRecord = historicalRecordsMap.get(historicalKey);
