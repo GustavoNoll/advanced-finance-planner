@@ -14,9 +14,10 @@ export const fetchCDIRates = async (startDate: string, endDate: string) => {
 
   try {
     const response = await fetch(url, {
+      method: 'GET',
       headers: {
         'Accept': 'application/json',
-      }
+      },
     });
     if (!response.ok) throw new Error('Failed to fetch CDI rates');
     
@@ -41,9 +42,10 @@ export const fetchIPCARates = async (startDate: string, endDate: string) => {
 
   try {
     const response = await fetch(url, {
+      method: 'GET',
       headers: {
         'Accept': 'application/json',
-      }
+      },
     });
     console.log(response);
     if (!response.ok) throw new Error('Failed to fetch IPCA rates');
