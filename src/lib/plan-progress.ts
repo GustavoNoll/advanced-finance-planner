@@ -280,9 +280,6 @@ const financialCalculations = {
         );
       // legado
       case "3":
-        console.log(presentFutureValue)
-        console.log(inflation)
-        console.log(realReturnRate)
         return ((presentFutureValue * (incomeAdjustedByInflation ? 1 : inflation)) * (realReturnRate *  (incomeAdjustedByInflation ? 1 : inflation)))
     }
   },
