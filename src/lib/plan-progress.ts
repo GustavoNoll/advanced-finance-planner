@@ -257,6 +257,7 @@ const financialCalculations = {
     presentFutureValue: number,
     incomeAdjustedByInflation: boolean,
     inflation: number,
+    inflationInRetirementYear: number,
     finalMoney: number,
     realReturnRate: number
   ): number =>
@@ -280,7 +281,7 @@ const financialCalculations = {
         );
       // legado
       case "3":
-        return ((presentFutureValue * (incomeAdjustedByInflation ? 1 : inflation)) * (realReturnRate *  (incomeAdjustedByInflation ? 1 : inflation)))
+        return ((presentFutureValue * (incomeAdjustedByInflation ? 1 : inflationInRetirementYear)) * (((realReturnRate + 1) *  (incomeAdjustedByInflation ? 1 : inflation + 1 )) -1 ))
     }
   },
   /**
@@ -382,10 +383,10 @@ const financialCalculations = {
       presentFutureValue,
       investmentPlan.adjust_income_for_inflation,
       monthlyInflation,
+      inflationInRetirementYear,
       investmentPlan.legacy_amount,
       monthlyExpectedReturn
     )
-    
     // Calculate dates and differences
     const projectedRetirementDate = utils.addMonthsToDate(referenceDate, projectedMonthsToRetirement);
     const finalAgeDate = utils.createDateAtAge(birthDate, investmentPlan.final_age);

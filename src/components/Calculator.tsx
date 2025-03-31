@@ -50,7 +50,7 @@ const ComparisonRow = ({
   isHigherBetter = false,
   t
 }: ComparisonRowProps) => {
-  const difference = projected - planned;
+  const difference = Math.round(projected) - Math.round(planned);
   const isPositive = difference >= 0;
   const isGood = isHigherBetter ? isPositive : !isPositive;
   
