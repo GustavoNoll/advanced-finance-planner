@@ -35,6 +35,7 @@ export const EditPlan = () => {
     inflation: "6.0",
     planType: "3",
     adjustContributionForInflation: false,
+    adjustIncomeForInflation: false,
     limitAge: "100",
     legacyAmount: "1000000",
   });
@@ -123,6 +124,7 @@ export const EditPlan = () => {
         inflation: data.inflation.toString(),
         planType: data.plan_type,
         adjustContributionForInflation: data.adjust_contribution_for_inflation,
+        adjustIncomeForInflation: data.adjust_income_for_inflation,
         limitAge: data.limit_age?.toString() || "",
         legacyAmount: data.legacy_amount?.toString() || "1000000",
       });
@@ -152,8 +154,10 @@ export const EditPlan = () => {
         if (profile) {
           newFormData.expectedReturn = profile.return;
         }
-      } else if (e.target.type === 'checkbox') {
+      } else if (name === 'adjust_contribution_for_inflation') {
         newFormData.adjustContributionForInflation = checked;
+      } else if (name === 'adjust_income_for_inflation') {
+        newFormData.adjustIncomeForInflation = checked;
       } else {
         newFormData[name as keyof FormData] = value;
       }
@@ -197,6 +201,7 @@ export const EditPlan = () => {
           inflation_adjusted_income: calculations.inflationAdjustedIncome,
           required_monthly_deposit: calculations.requiredMonthlyDeposit,
           adjust_contribution_for_inflation: formData.adjustContributionForInflation,
+          adjust_income_for_inflation: formData.adjustIncomeForInflation,
           limit_age: formData.limitAge ? parseInt(formData.limitAge) : null,
           legacy_amount: formData.planType === "2" ? parseFloat(formData.legacyAmount.replace(',', '.')) : null,
         })
@@ -461,6 +466,20 @@ export const EditPlan = () => {
                       />
                       <label htmlFor="adjust_contribution_for_inflation" className="text-sm font-medium text-gray-700">
                         {t('investmentPlan.form.adjustContributionForInflation')}
+                      </label>
+                    </div>
+
+                    <div className="flex items-center space-x-2">
+                      <input
+                        type="checkbox"
+                        id="adjust_income_for_inflation"
+                        name="adjust_income_for_inflation"
+                        checked={formData.adjustIncomeForInflation}
+                        onChange={handleChange}
+                        className="h-4 w-4 rounded border-gray-300"
+                      />
+                      <label htmlFor="adjust_income_for_inflation" className="text-sm font-medium text-gray-700">
+                        {t('investmentPlan.form.adjustIncomeForInflation')}
                       </label>
                     </div>
                   </div>

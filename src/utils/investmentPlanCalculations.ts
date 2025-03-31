@@ -10,6 +10,7 @@ export type FormData = {
   inflation: string;
   planType: string;
   adjustContributionForInflation: boolean;
+  adjustIncomeForInflation: boolean;
   limitAge: string;
   legacyAmount: string;
 };

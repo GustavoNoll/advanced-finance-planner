@@ -250,6 +250,42 @@ const financialCalculations = {
     return { preRetirementHash, postRetirementHash };
   },
 
+  projectedMonthlyIncome: (
+    planType: string,
+    effectiveRate: number,
+    monthsRetired: number,
+    presentFutureValue: number,
+    incomeAdjustedByInflation: boolean,
+    inflation: number,
+    finalMoney: number,
+    realReturnRate: number
+  ): number =>
+  {
+    switch (planType) {
+      // encerrar
+      case "1":
+        return -pmt(
+          effectiveRate,
+          monthsRetired,
+          presentFutureValue * (incomeAdjustedByInflation ? 1 : inflation),
+          0
+        );
+      // herança
+      case "2":
+        return -pmt(
+          effectiveRate,
+          monthsRetired,
+          presentFutureValue * (incomeAdjustedByInflation ? 1 : inflation),
+          -finalMoney
+        );
+      // legado
+      case "3":
+        console.log(presentFutureValue)
+        console.log(inflation)
+        console.log(realReturnRate)
+        return ((presentFutureValue * (incomeAdjustedByInflation ? 1 : inflation)) * (realReturnRate *  (incomeAdjustedByInflation ? 1 : inflation)))
+    }
+  },
   /**
    * Calculates financial projections based on current state and plan
    */
@@ -340,20 +376,18 @@ const financialCalculations = {
       adjustedPresentValue,
       adjustedFutureValue
     );
+  
 
-    // if por plano
-    // Deixar herança
-    // projectedMonthlyIncome = pgto(effectiveRate*(se resgate ajustado pela inflação ? 1 : inflação); monthsRetired; presentFutureValue*(se resgate ajustado pela inflação ? 1 : inflação); -valor final da vida setado pelo cliente)
-    // Encerrar Está 100%, só adicionaria o resgate ajustado pela inflação se deslgiado
-    // projectedMonthlyIncome = pgto(effectiveRate*(se resgate ajustado pela inflação ? 1 : inflação); monthsRetired; presentFutureValue*(se resgate ajustado pela inflação ? 1 : inflação))
-    // Encerrar Está 100%, só adicionaria o resgate ajustado pela inflação se deslgiado
-    // projectedMonthlyIncome = pgto(effectiveRate*(se resgate ajustado pela inflação ? 1 : inflação); monthsRetired; presentFutureValue*(se resgate ajustado pela inflação ? 1 : inflação))
-    const projectedMonthlyIncome = -pmt(
+    const projectedMonthlyIncome = financialCalculations.projectedMonthlyIncome(
+      investmentPlan.plan_type,
       effectiveRate,
       monthsRetired,
       presentFutureValue,
-      0
-    );
+      investmentPlan.adjust_income_for_inflation,
+      monthlyInflation,
+      investmentPlan.legacy_amount,
+      monthlyExpectedReturn
+    )
     
     // Calculate dates and differences
     const projectedRetirementDate = utils.addMonthsToDate(referenceDate, projectedMonthsToRetirement);

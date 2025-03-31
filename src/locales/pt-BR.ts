@@ -30,6 +30,7 @@ export const ptBR = {
         monthlyDeposit: "Depósito Mensal",
         requiredMonthlyDeposit: "Depósito Mensal Necessário",
         adjustContributionForInflation: "Aporte ajustado pela inflação anualmente",
+        adjustIncomeForInflation: "Resgate ajustado pela inflação anualmente",
       },
       financialGoals: {
         title: "Objetivos Financeiros",
@@ -50,6 +51,7 @@ export const ptBR = {
           "3": "Não tocar no principal"
         },
         adjustContributionForInflation: "Ajuste do Aporte pela Inflação",
+        adjustIncomeForInflation: "Ajuste do Resgate pela Inflação",
         enabled: "Ativado",
         disabled: "Desativado"
       }
@@ -67,6 +69,7 @@ export const ptBR = {
       createButton: "Criar Plano",
       creating: "Criando...",
       adjustContributionForInflation: "Ajustar aporte pela inflação anualmente",
+      adjustIncomeForInflation: "Ajustar regaste pela inflação anualmente",
       advancedSettings: "Configurações Avançadas",
       endAge: "Idade de Encerramento",
       legacyAge: "Idade para Deixar Herança",
@@ -301,6 +304,7 @@ export const ptBR = {
     }
   },
   common: {
+    saving: "Salvando..",
     addNew: "Adicionar Novos",
     custom: "Personalizado",
     months: "Meses",

@@ -32,6 +32,7 @@ export const CreatePlan = () => {
     inflation: "6.0",
     planType: "3",
     adjustContributionForInflation: false,
+    adjustIncomeForInflation: false,
     limitAge: "100",
     legacyAmount: "1000000",
   });
@@ -150,8 +151,10 @@ export const CreatePlan = () => {
         if (profile) {
           newFormData.expectedReturn = profile.return;
         }
-      } else if (name === 'adjustContributionForInflation') {
+      } else if (name === 'adjust_contribution_for_inflation') {
         newFormData.adjustContributionForInflation = checked;
+      } else if (name === 'adjust_income_for_inflation') {
+        newFormData.adjustIncomeForInflation = checked;
       } else if (name in prev) {
         (newFormData[name as keyof typeof newFormData] as string) = value;
       }
@@ -202,6 +205,7 @@ export const CreatePlan = () => {
           present_future_value: calculations.presentFutureValue,
           status: "active",
           adjust_contribution_for_inflation: formData.adjustContributionForInflation,
+          adjust_income_for_inflation: formData.adjustIncomeForInflation,
           limit_age: formData.limitAge,
           legacy_amount: formData.planType === "2" ? parseFloat(formData.legacyAmount.replace(',', '.')) : null,
         },
@@ -471,6 +475,20 @@ export const CreatePlan = () => {
                     />
                     <label htmlFor="adjustContributionForInflation" className="text-sm font-medium text-gray-700">
                       {t('investmentPlan.form.adjustContributionForInflation')}
+                    </label>
+                  </div>
+                  
+                  <div className="flex items-center space-x-2">
+                    <input
+                      type="checkbox"
+                      id="adjust_income_for_inflation"
+                      name="adjust_income_for_inflation"
+                      checked={formData.adjustIncomeForInflation}
+                      onChange={handleChange}
+                      className="h-4 w-4 rounded border-gray-300"
+                    />
+                    <label htmlFor="adjust_income_for_inflation" className="text-sm font-medium text-gray-700">
+                      {t('investmentPlan.form.adjustIncomeForInflation')}
                     </label>
                   </div>
                 </div>
