@@ -1,6 +1,9 @@
-interface BCBResponse {
+import ipcaData from '../data/ipca-historical.json';
+import cdiData from '../data/cdi-historical.json';
+
+interface RateData {
   data: string;
-  valor: number;
+  valor: string;
 }
 
 function parseBrazilianDate(dateStr: string): Date {
@@ -8,29 +11,28 @@ function parseBrazilianDate(dateStr: string): Date {
   return new Date(year, month - 1, day);
 }
 
-export const fetchCDIRates = async (startDate: string, endDate: string) => {
-  // BCB API code for CDI is 12456
-  const url = `https://api.bcb.gov.br/dados/serie/bcdata.sgs.4391/dados?formato=json&dataInicial=${startDate}&dataFinal=${endDate}`;
+function filterDataByDateRange(
+  data: RateData[],
+  startDate: string,
+  endDate: string
+) {
+  const start = parseBrazilianDate(startDate);
+  const end = parseBrazilianDate(endDate);
 
-  try {
-    const response = await fetch(url, {
-      method: 'GET',
-      headers: {
-        'Accept': 'application/json',
-      }
-    });
-    
-    if (!response.ok) throw new Error('Failed to fetch CDI rates');
-    
-    const data: BCBResponse[] = await response.json();
-    
-    // Convert daily rates to monthly rates
-    // CDI is given as daily rate, we need to convert it to monthly
-    return data.map(item => ({
+  return data
+    .filter(item => {
+      const itemDate = parseBrazilianDate(item.data);
+      return itemDate >= start && itemDate <= end;
+    })
+    .map(item => ({
       date: parseBrazilianDate(item.data),
-      // Convert daily rate to monthly (approximately 21 business days)
-      monthlyRate: item.valor
+      monthlyRate: parseFloat(item.valor)
     }));
+}
+
+export const fetchCDIRates = async (startDate: string, endDate: string) => {
+  try {
+    return filterDataByDateRange(cdiData, startDate, endDate);
   } catch (error) {
     console.error('Error fetching CDI rates:', error);
     return [];
@@ -38,26 +40,8 @@ export const fetchCDIRates = async (startDate: string, endDate: string) => {
 };
 
 export const fetchIPCARates = async (startDate: string, endDate: string) => {
-  // BCB API code for IPCA is 433
-  const url = `https://api.bcb.gov.br/dados/serie/bcdata.sgs.433/dados?formato=json&dataInicial=${startDate}&dataFinal=${endDate}`;
-
   try {
-    const response = await fetch(url, {
-      method: 'GET',
-      headers: {
-        'Accept': 'application/json',
-      }
-    });
-    
-    if (!response.ok) throw new Error('Failed to fetch IPCA rates');
-    
-    const data: BCBResponse[] = await response.json();
-    
-    return data.map(item => ({
-      date: parseBrazilianDate(item.data),
-      // IPCA is already monthly, no conversion needed
-      monthlyRate: item.valor
-    }));
+    return filterDataByDateRange(ipcaData, startDate, endDate);
   } catch (error) {
     console.error('Error fetching IPCA rates:', error);
     return [];
