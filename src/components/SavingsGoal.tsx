@@ -4,7 +4,7 @@ import { ArrowUpRight, Clock } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { FinancialRecord, InvestmentPlan } from "@/types/financial";
 import { useMemo } from "react";
-import { PlanProgressData } from "@/lib/plan-progress";
+import { PlanProgressData, utils } from "@/lib/plan-progress";
 
 interface SavingsGoalProps {
   allFinancialRecords: FinancialRecord[];
@@ -57,7 +57,7 @@ export const SavingsGoal = ({ allFinancialRecords, investmentPlan, profile, plan
       
       if (!birthDateObj) return 'ageNotAvailable';
       
-      const monthsDifference = planProgressData.monthsDifference;
+      const monthsDifference = utils.calculateMonthsBetweenDates(planProgressData.projectedRetirementDate, planProgressData.finalAgeDate);
       const isAheadOfSchedule = planProgressData.monthsDifference > 0;
       
       return {
@@ -151,16 +151,20 @@ export const SavingsGoal = ({ allFinancialRecords, investmentPlan, profile, plan
             </div>
             <div className="text-right">
               <span className="block text-lg font-semibold text-muted-foreground">
-                {t('savingsGoal.goal.presentFutureValue', { 
+                {t('savingsGoal.goal.goalPresentValue', { 
                   value: formatCurrency(presentFutureValue)
                 })}
               </span>
               <span className="text-sm text-muted-foreground">
-                {t('savingsGoal.goal.label', { 
+                {t('savingsGoal.goal.goalFutureValue', { 
                   value: formatCurrency(investmentGoal)
                 })}
               </span>
-              <p></p>
+              <p className="text-sm text-muted-foreground">
+                {t('savingsGoal.goal.projectedValue', { 
+                  value: formatCurrency(planProgressData?.projectedFuturePresentValue ?? 0)
+                })}
+              </p>
               <span className="text-sm text-muted-foreground">
                 {t('savingsGoal.goal.targetAge', { age: finalAge })}
               </span>

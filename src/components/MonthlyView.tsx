@@ -500,15 +500,15 @@ export const MonthlyView = ({
                         R$ {projection.balance.toLocaleString('pt-BR', { maximumFractionDigits: 2 })}
                       </td>
                       <td className="p-2 text-right font-medium">
-                        R$ {projection.projected_balance.toLocaleString('pt-BR', { maximumFractionDigits: 2 })}
-                        {projection.balance !== projection.projected_balance && (
+                        R$ {projection.planned_balance.toLocaleString('pt-BR', { maximumFractionDigits: 2 })}
+                        {projection.balance !== projection.planned_balance && (
                           <span className={`ml-2 text-xs ${
-                            projection.balance > projection.projected_balance 
+                            projection.balance > projection.planned_balance 
                               ? 'text-green-600' 
                               : 'text-red-600'
                           }`}>
-                            ({projection.balance > projection.projected_balance ? '+' : ''}
-                            R$ {(projection.balance - projection.projected_balance).toLocaleString('pt-BR', { maximumFractionDigits: 2 })})
+                            ({projection.balance > projection.planned_balance ? '+' : ''}
+                            R$ {(projection.balance - projection.planned_balance).toLocaleString('pt-BR', { maximumFractionDigits: 2 })})
                           </span>
                         )}
                       </td>
@@ -570,15 +570,15 @@ export const MonthlyView = ({
                             R$ {month.balance.toLocaleString('pt-BR', { maximumFractionDigits: 2 })}
                           </td>
                           <td className="p-2 text-right">
-                            R$ {month.projected_balance.toLocaleString('pt-BR', { maximumFractionDigits: 2 })}
-                            {month.balance !== month.projected_balance && (
+                            R$ {month.planned_balance.toLocaleString('pt-BR', { maximumFractionDigits: 2 })}
+                            {month.balance !== month.planned_balance && (
                               <span className={`ml-2 text-xs ${
-                                month.balance > month.projected_balance 
+                                month.balance > month.planned_balance 
                                   ? 'text-green-600' 
                                   : 'text-red-600'
                               }`}>
-                                ({month.balance > month.projected_balance ? '+' : ''}
-                                R$ {(month.balance - month.projected_balance).toLocaleString('pt-BR', { maximumFractionDigits: 2 })})
+                                ({month.balance > month.planned_balance ? '+' : ''}
+                                R$ {(month.balance - month.planned_balance).toLocaleString('pt-BR', { maximumFractionDigits: 2 })})
                               </span>
                             )}
                           </td>

@@ -489,8 +489,11 @@ export const ptBR = {
     returnRate: "{{value}}% a.a.",
     goal: {
       label: "Meta: {{value}}",
+      goalFutureValue: "Meta Futura: {{value}}",
       targetAge: "Idade Alvo: {{age}}",
-      presentFutureValue: "Valor Real: {{value}}"
+      presentFutureValue: "Valor Real: {{value}}",
+      goalPresentValue: "Meta: {{value}}",
+      projectedValue: "Valor Futuro Projetado: {{value}}"
     },
     projectedAge:{
       label: "Idade Projetada:",

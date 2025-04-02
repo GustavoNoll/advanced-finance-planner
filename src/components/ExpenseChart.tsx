@@ -346,7 +346,7 @@ export const ExpenseChart = ({
       year: yearData.year,
       month: monthData.month as MonthNumber,
       actualValue: monthData.balance,
-      projectedValue: monthData.projected_balance,
+      projectedValue: monthData.planned_balance,
       realDataPoint: monthData.isHistorical
     })) || []
   ) || generateChartProjections(

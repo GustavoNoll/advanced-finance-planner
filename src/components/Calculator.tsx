@@ -77,7 +77,7 @@ const ComparisonRow = ({
             <span className="text-xs ml-1">
               ({isPositive ? '+' : '-'}
               {isCurrency 
-                ? Math.round(Math.abs(difference) * 100) / 100
+                ? formatCurrency(Math.abs(difference))
                 : Math.abs(difference)
               }
               {!isCurrency && ` ${t('common.months')}`})
@@ -135,7 +135,7 @@ export const Calculator = ({ data }: PlanProgressProps) => {
 
           <ComparisonRow
             title={t('dashboard.planProgress.monthlyWithdrawal')}
-            planned={data.plannedIncome}
+            planned={data.plannedMonthlyIncome}
             projected={data.projectedMonthlyIncome}
             isCurrency={true}
             isHigherBetter={true}

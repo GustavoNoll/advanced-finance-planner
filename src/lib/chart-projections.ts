@@ -35,10 +35,11 @@ interface MonthlyProjectionData {
   withdrawal: number;
   isHistorical: boolean;
   balance: number;
-  projected_balance: number;
+  retirement: boolean;
+  planned_balance: number;
   returns?: number;
   goalsEventsImpact?: number;
-  difference_from_projected_balance: number;
+  difference_from_planned_balance: number;
 }
 
 export interface YearlyProjectionData {
@@ -47,12 +48,12 @@ export interface YearlyProjectionData {
   contribution: number;
   withdrawal: number;
   balance: number;
-  projected_balance: number;
+  planned_balance: number;
   months?: MonthlyProjectionData[];
   isRetirementTransitionYear?: boolean;
   hasHistoricalData: boolean;
   returns: number;
-  difference_from_projected_balance: number;
+  difference_from_planned_balance: number;
   goalsEventsImpact?: number;
 }
 
@@ -133,9 +134,10 @@ export function generateProjectionData(
           contribution: historicalRecord.monthly_contribution,
           withdrawal: 0,
           balance: historicalRecord.ending_balance,
-          projected_balance: projectedBalance,
+          planned_balance: projectedBalance,
           isHistorical: true,
-          difference_from_projected_balance: historicalRecord.ending_balance - projectedBalance
+          retirement: isRetirementAge,
+          difference_from_planned_balance: historicalRecord.ending_balance - projectedBalance
         };
       }
 
@@ -146,9 +148,10 @@ export function generateProjectionData(
           contribution: 0,
           withdrawal: 0,
           balance: 0,
-          projected_balance: projectedBalance,
+          retirement: false,
+          planned_balance: projectedBalance,
           isHistorical: false,
-          difference_from_projected_balance: projectedBalance - currentBalance
+          difference_from_planned_balance: projectedBalance - currentBalance
         };
       }
 
@@ -175,11 +178,12 @@ export function generateProjectionData(
           contribution: 0,
           withdrawal,
           balance: currentBalance,
-          projected_balance: projectedBalance,
+          planned_balance: projectedBalance,
           returns: monthlyReturn,
           isHistorical: false,
-          difference_from_projected_balance: currentBalance - projectedBalance,
-          goalsEventsImpact
+          difference_from_planned_balance: currentBalance - projectedBalance,
+          goalsEventsImpact,
+          retirement: isRetirementAge
         };
       }
 
@@ -190,10 +194,11 @@ export function generateProjectionData(
         contribution: currentMonthlyDeposit,
         withdrawal: 0,
         balance: currentBalance,
-        projected_balance: projectedBalance,
+        planned_balance: projectedBalance,
         isHistorical: false,
-        difference_from_projected_balance: currentBalance - projectedBalance,
-        goalsEventsImpact
+        difference_from_planned_balance: currentBalance - projectedBalance,
+        goalsEventsImpact,
+        retirement: false
       };
     }).filter(Boolean) as MonthlyProjectionData[];
 
@@ -213,12 +218,12 @@ export function generateProjectionData(
         contribution: yearlyContribution,
         withdrawal: yearlyWithdrawal,
         balance: lastMonth.balance,
-        projected_balance: lastMonth.projected_balance,
+        planned_balance: lastMonth.planned_balance,
         months: monthlyData,
         isRetirementTransitionYear: age === investmentPlan.final_age,
         hasHistoricalData: monthlyData.some(month => month.isHistorical),
         returns: yearlyReturns,
-        difference_from_projected_balance: lastMonth.difference_from_projected_balance,
+        difference_from_planned_balance: lastMonth.difference_from_planned_balance,
         goalsEventsImpact: yearlyGoalsEventsImpact
       });
     }
@@ -248,7 +253,7 @@ export function generateChartProjections(
       year: yearData.year,
       month: monthData.month as MonthNumber,
       actualValue: monthData.balance,
-      projectedValue: monthData.projected_balance,
+      projectedValue: monthData.planned_balance,
       realDataPoint: monthData.isHistorical
     })) || []
   );

@@ -332,21 +332,49 @@ const Index = () => {
     })[0];
   }, [processedRecords.financialRecords]);
 
+  // Add this before the return statement, after other useMemo hooks
+  const projectionData = useMemo(() => {
+    if (!investmentPlan || !clientProfile || !allFinancialRecords) return null;
+
+    return generateProjectionData(
+      investmentPlan,
+      clientProfile,
+      allFinancialRecords,
+      goalsAndEvents?.goals,
+      goalsAndEvents?.events
+    );
+  }, [investmentPlan, clientProfile, allFinancialRecords, goalsAndEvents?.goals, goalsAndEvents?.events]);
   // Memoize plan progress data
   const planProgressData = useMemo(() => {
     try {
-      if (!allFinancialRecords?.length || !investmentPlan || !clientProfile?.birth_date) {
+      if (!allFinancialRecords?.length || !investmentPlan || !clientProfile?.birth_date || !projectionData) {
         return null;
+      }
+
+      // Find the retirement month and get the previous month's data
+      const retirementYear = projectionData.find(year => year.age === investmentPlan.final_age);
+      const retirementMonthIndex = retirementYear?.months?.findIndex(month => month.retirement);
+      
+      let plannedFuturePresentValue = 0;
+      let projectedFuturePresentValue = 0;
+
+      if (retirementYear && retirementMonthIndex !== undefined && retirementMonthIndex > 0) {
+        // Get the month before retirement
+        const monthBeforeRetirement = retirementYear.months[retirementMonthIndex - 1];
+        plannedFuturePresentValue = monthBeforeRetirement?.planned_balance || 0;
+        projectedFuturePresentValue = monthBeforeRetirement?.balance || 0;
       }
 
       return processPlanProgressData(
         allFinancialRecords,
         investmentPlan,
-        {
+        { 
           birth_date: clientProfile.birth_date
         },
         goalsAndEvents?.goals || [],
-        goalsAndEvents?.events || []
+        goalsAndEvents?.events || [],
+        plannedFuturePresentValue,
+        projectedFuturePresentValue
       );
     } catch (error) {
       return {
@@ -357,7 +385,7 @@ const Index = () => {
         projectedContribution: 0,
       };
     }
-  }, [allFinancialRecords, investmentPlan, clientProfile?.birth_date, goalsAndEvents?.goals, goalsAndEvents?.events, t]);
+  }, [allFinancialRecords, investmentPlan, clientProfile?.birth_date, goalsAndEvents?.goals, goalsAndEvents?.events, projectionData]);
 
   const calculateMonthlyContributions = useCallback((period: TimePeriod = 'all') => {
     if (!processedRecords.financialRecords?.length) return 0;
@@ -419,19 +447,6 @@ const Index = () => {
       }
     }
   }, [investmentPlan, brokerProfile, isInvestmentPlanLoading, isProfilesLoading, navigate, params.id]);
-
-  // Add this before the return statement, after other useMemo hooks
-  const projectionData = useMemo(() => {
-    if (!investmentPlan || !clientProfile || !allFinancialRecords) return null;
-
-    return generateProjectionData(
-      investmentPlan,
-      clientProfile,
-      allFinancialRecords,
-      goalsAndEvents?.goals,
-      goalsAndEvents?.events
-    );
-  }, [investmentPlan, clientProfile, allFinancialRecords, goalsAndEvents?.goals, goalsAndEvents?.events]);
 
   // Add function to reload projection data
   const handleProjectionDataChange = useCallback(() => {

@@ -1,5 +1,6 @@
 import { FinancialRecord, InvestmentPlan, Goal, ProjectedEvent } from "@/types/financial";
 import { calculateCompoundedRates, nper, yearlyReturnRateToMonthlyReturnRate, pmt } from "@/lib/financial-math";
+import { YearlyProjectionData } from "./chart-projections";
 
 /**
  * Constants for date calculations
@@ -10,7 +11,7 @@ const MS_PER_DAY = 24 * 60 * 60 * 1000;
 /**
  * Utility functions
  */
-const utils = {
+export const utils = {
   /**
    * Calculates the number of months between two dates
    */
@@ -62,9 +63,14 @@ type MonthlyValues = {
 };
 
 interface ProjectionResult {
+  projectedFuturePresentValue: number;
+  plannedFuturePresentValue: number;
   projectedMonthsToRetirement: number;
   projectedContribution: number;
   projectedMonthlyIncome: number;
+  plannedMonthsToRetirement: number;
+  plannedContribution: number;
+  plannedMonthlyIncome: number;
   monthsDifference: number;
   plannedMonths: number;
   referenceDate: Date;
@@ -73,13 +79,15 @@ interface ProjectionResult {
 }
 
 export interface PlanProgressData {
+  projectedFuturePresentValue: number;
+  plannedFuturePresentValue: number;
   plannedMonths: number;
   projectedMonths: number;
   monthsDifference: number;
   plannedContribution: number;
   projectedContribution: number;
-  plannedIncome: number;
   projectedMonthlyIncome: number;
+  plannedMonthlyIncome: number;
   projectedRetirementDate: Date;
   finalAgeDate: Date;
   currentProgress: number;
@@ -293,7 +301,9 @@ const financialCalculations = {
     investmentPlan: InvestmentPlan,
     birthDate: Date,
     goals: Goal[],
-    events: ProjectedEvent[]
+    events: ProjectedEvent[],
+    plannedFuturePresentValue: number,
+    projectedFuturePresentValue: number
   ): ProjectionResult => {
     const lastRecord = allFinancialRecords[0];
     const actualMonth = lastRecord?.record_month || 0;
@@ -350,52 +360,90 @@ const financialCalculations = {
     // Get plan parameters
     const adjustContributionForInflation = investmentPlan.adjust_contribution_for_inflation;
     const contribution = investmentPlan.monthly_deposit;
-    const presentFutureValue = investmentPlan.present_future_value;
     const monthsRetired = (investmentPlan.limit_age - investmentPlan.final_age) * 12;
     
     // Calculate effective rate based on inflation adjustment setting
     const effectiveRate = monthlyExpectedReturn * (adjustContributionForInflation ? 1 : monthlyInflation);
     
     // Calculate adjusted present and future values
-    const adjustedPresentValue = -(currentBalance + preRetirementGoals);
+    const balanceWithGoals = -(currentBalance + preRetirementGoals);
+    const initialWithGoals = -(investmentPlan.initial_amount + preRetirementGoals);
     const inflationInRetirementYear = (1 + monthlyInflation) ** monthsToRetirementSinceStart;
-    const adjustedFutureValue = (presentFutureValue - postRetirementGoals * (adjustContributionForInflation ? 1 : inflationInRetirementYear));
+    const projectedPresentValue = projectedFuturePresentValue / inflationInRetirementYear;
+    const adjustedProjectedFutureValue = (projectedPresentValue - postRetirementGoals * (adjustContributionForInflation ? 1 : inflationInRetirementYear));
+    const plannedPresentValue = plannedFuturePresentValue / inflationInRetirementYear;
+    const adjustedPlannedFutureValue = (plannedPresentValue - postRetirementGoals * (adjustContributionForInflation ? 1 : inflationInRetirementYear));
     // Calculate projections
+
+
+    // PROJECTIONS 
     const projectedMonthsToRetirement = nper(
       effectiveRate,
       -contribution,
-      adjustedPresentValue,
-      adjustedFutureValue
+      balanceWithGoals,
+      adjustedProjectedFutureValue
     );
 
     const projectedContribution = -pmt(
       effectiveRate,
       monthsToRetirementSinceNow,
-      adjustedPresentValue,
-      adjustedFutureValue
+      balanceWithGoals,
+      adjustedProjectedFutureValue
     );
-  
 
     const projectedMonthlyIncome = financialCalculations.projectedMonthlyIncome(
       investmentPlan.plan_type,
       effectiveRate,
       monthsRetired,
-      presentFutureValue,
+      projectedPresentValue,
       investmentPlan.adjust_income_for_inflation,
       monthlyInflation,
       inflationInRetirementYear,
       investmentPlan.legacy_amount,
       monthlyExpectedReturn
     )
+
+    // PLANNED DATA
+    const plannedMonthsToRetirement = nper(
+      effectiveRate,
+      -contribution,
+      initialWithGoals,
+      adjustedPlannedFutureValue
+    ) - (monthsToRetirementSinceStart - monthsToRetirementSinceNow);
+
+    const plannedContribution = -pmt(
+      effectiveRate,
+      monthsToRetirementSinceStart,
+      initialWithGoals,
+      adjustedPlannedFutureValue
+    );
+
+    const plannedMonthlyIncome = financialCalculations.projectedMonthlyIncome(
+      investmentPlan.plan_type,
+      effectiveRate,
+      monthsRetired,
+      plannedPresentValue,
+      investmentPlan.adjust_income_for_inflation,
+      monthlyInflation,
+      inflationInRetirementYear,
+      investmentPlan.legacy_amount,
+      monthlyExpectedReturn
+    )
+    
     // Calculate dates and differences
     const projectedRetirementDate = utils.addMonthsToDate(referenceDate, projectedMonthsToRetirement);
+    const plannedRetirementDate = utils.addMonthsToDate(referenceDate, plannedMonthsToRetirement);
     const finalAgeDate = utils.createDateAtAge(birthDate, investmentPlan.final_age);
-    const monthsDifference = utils.calculateMonthsBetweenDates(projectedRetirementDate, finalAgeDate);
-
+    const monthsDifference = utils.calculateMonthsBetweenDates(projectedRetirementDate, plannedRetirementDate);
     return {
+      projectedFuturePresentValue,
+      plannedFuturePresentValue,
       projectedMonthsToRetirement,
       projectedContribution,
       projectedMonthlyIncome,
+      plannedMonthsToRetirement,
+      plannedContribution,
+      plannedMonthlyIncome,
       monthsDifference,
       plannedMonths,
       referenceDate,
@@ -419,7 +467,9 @@ export function processPlanProgressData(
   investmentPlan: InvestmentPlan,
   profile: { birth_date?: string },
   goals: Goal[],
-  events: ProjectedEvent[]
+  events: ProjectedEvent[],
+  plannedFuturePresentValue: number,
+  projectedFuturePresentValue: number
 ): PlanProgressData | null {
   if (!investmentPlan || !profile.birth_date) return null;
 
@@ -437,7 +487,9 @@ export function processPlanProgressData(
     investmentPlan, 
     birthDate, 
     goals, 
-    events
+    events,
+    plannedFuturePresentValue,
+    projectedFuturePresentValue
   );
 
   // Calcular a idade projetada em anos e meses
@@ -452,13 +504,15 @@ export function processPlanProgressData(
   }
 
   return {
-    plannedMonths: projections.plannedMonths,
-    projectedMonths: projections.plannedMonths - projections.monthsDifference,
+    plannedFuturePresentValue: projections.plannedFuturePresentValue,
+    projectedFuturePresentValue: projections.projectedFuturePresentValue,
+    plannedMonths: projections.plannedMonthsToRetirement,
+    projectedMonths: projections.projectedMonthsToRetirement,
     monthsDifference: projections.monthsDifference,
-    plannedContribution: investmentPlan.monthly_deposit,
+    plannedContribution: projections.plannedContribution,
     projectedContribution: projections.projectedContribution,
-    plannedIncome: investmentPlan.desired_income,
     projectedMonthlyIncome: projections.projectedMonthlyIncome,
+    plannedMonthlyIncome: projections.plannedMonthlyIncome,
     projectedRetirementDate: projections.projectedRetirementDate,
     finalAgeDate: projections.finalAgeDate,
     currentProgress,
