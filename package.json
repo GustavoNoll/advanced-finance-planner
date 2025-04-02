@@ -9,7 +9,8 @@
     "build:dev": "vite build --mode development",
     "lint": "eslint .",
     "preview": "vite preview",
-    "server": "tsx server/src/index.ts"
+    "server": "tsx server/src/index.ts",
+    "vercel-build": "vite build"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",
