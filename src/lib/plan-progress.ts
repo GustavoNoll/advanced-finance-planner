@@ -377,6 +377,13 @@ const financialCalculations = {
 
 
     // PROJECTIONS 
+    console.log('Debug projectedMonthsToRetirement:', {
+      effectiveRate,
+      contribution,
+      balanceWithGoals,
+      adjustedProjectedFutureValue
+    });
+
     const projectedMonthsToRetirement = nper(
       effectiveRate,
       -contribution,
@@ -384,6 +391,12 @@ const financialCalculations = {
       adjustedProjectedFutureValue
     );
 
+    console.log('Debug projectedContribution:', {
+      effectiveRate,
+      monthsToRetirementSinceNow,
+      balanceWithGoals,
+      adjustedProjectedFutureValue
+    });
     const projectedContribution = -pmt(
       effectiveRate,
       monthsToRetirementSinceNow,
@@ -491,6 +504,8 @@ export function processPlanProgressData(
     plannedFuturePresentValue,
     projectedFuturePresentValue
   );
+
+  console.log('Debug projections:', projections);
 
   // Calcular a idade projetada em anos e meses
   const projectedDate = projections.projectedRetirementDate;
