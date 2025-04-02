@@ -112,7 +112,7 @@ export function generateProjectionData(
       }
 
       const isRetirementAge = age > investmentPlan.final_age || 
-        (age === investmentPlan.final_age && currentMonthNumber >= birthMonth);
+        (age === investmentPlan.final_age && currentMonthNumber >= birthMonth + 1);
 
       if (investmentPlan.adjust_contribution_for_inflation && !isRetirementAge) {
         currentMonthlyDeposit *= (1 + monthlyInflationRate);
@@ -127,7 +127,7 @@ export function generateProjectionData(
         
       if (historicalRecord) {
         lastHistoricalRecord = new Date(year, month + 1);
-        projectedBalance = (projectedBalance + currentMonthlyDeposit) * (1 + monthlyReturnRate);
+        projectedBalance = (projectedBalance) * (1 + monthlyReturnRate) + (currentMonthlyDeposit);
         return {
           month: currentMonthNumber,
           contribution: historicalRecord.monthly_contribution,
@@ -140,7 +140,7 @@ export function generateProjectionData(
       }
 
       if (isInPast) {
-        projectedBalance = (projectedBalance + currentMonthlyDeposit) * (1 + monthlyReturnRate);
+        projectedBalance = (projectedBalance) * (1 + monthlyReturnRate) + (currentMonthlyDeposit);
         return {
           month: currentMonthNumber,
           contribution: 0,
@@ -183,8 +183,8 @@ export function generateProjectionData(
         };
       }
 
-      currentBalance = (currentBalance + currentMonthlyDeposit) * (1 + monthlyReturnRate);
-      projectedBalance = (projectedBalance + currentMonthlyDeposit) * (1 + monthlyReturnRate);
+      currentBalance = (currentBalance) * (1 + monthlyReturnRate) + (currentMonthlyDeposit);
+      projectedBalance = (projectedBalance) * (1 + monthlyReturnRate) + (currentMonthlyDeposit);
       return {
         month: currentMonthNumber,
         contribution: currentMonthlyDeposit,
