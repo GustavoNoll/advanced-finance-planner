@@ -207,6 +207,7 @@ export const ptBR = {
     },
   },
   brokerDashboard: {
+    myProfile: "Meu Perfil",
     title: "Painel do Corretor",
     search: {
       title: "Buscar Clientes",

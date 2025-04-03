@@ -55,32 +55,32 @@ const ComparisonRow = ({
   const isGood = isHigherBetter ? isPositive : !isPositive;
   
   return (
-    <div>
-      <h3 className="text-sm font-medium text-gray-700 mb-2">{title}</h3>
+    <div className="bg-white/50 rounded-lg p-4 transition-all duration-200 hover:bg-white/80 hover:shadow-md">
+      <h3 className="text-sm font-medium text-gray-800 mb-3">{title}</h3>
       <div className="flex justify-between items-baseline">
-        <div>
-          <p className="text-sm text-gray-600">{t('dashboard.planProgress.planned')}:</p>
-          <p className="text-lg font-semibold text-blue-600">
+        <div className="space-y-1">
+          <p className="text-sm text-gray-500">{t('dashboard.planProgress.planned')}:</p>
+          <p className="text-lg font-semibold text-blue-700">
             {isCurrency 
               ? formatCurrency(planned)
               : `${planned.toFixed(0)} ${t('common.months')}`
             }
           </p>
         </div>
-        <div className="text-right">
-          <p className="text-sm text-gray-600">{t('dashboard.planProgress.projected')}:</p>
-          <p className={`text-lg font-semibold ${isGood ? 'text-green-600' : 'text-red-600'}`}>
+        <div className="text-right space-y-1">
+          <p className="text-sm text-gray-500">{t('dashboard.planProgress.projected')}:</p>
+          <p className={`text-lg font-semibold ${isGood ? 'text-emerald-600' : 'text-rose-600'}`}>
             {isCurrency 
               ? formatCurrency(projected)
               : `${Math.round(projected)} ${t('common.months')}`
             }
-            <span className="text-xs ml-1">
-              ({isPositive ? '+' : '-'}
+            <span className={`text-xs ml-1.5 px-1.5 py-0.5 rounded-full ${isGood ? 'bg-emerald-50' : 'bg-rose-50'}`}>
+              {isPositive ? '+' : '-'}
               {isCurrency 
                 ? formatCurrency(Math.abs(difference))
                 : Math.abs(difference)
               }
-              {!isCurrency && ` ${t('common.months')}`})
+              {!isCurrency && ` ${t('common.months')}`}
             </span>
           </p>
         </div>
@@ -96,17 +96,17 @@ export const Calculator = ({ data }: PlanProgressProps) => {
   const { t } = useTranslation();
 
   return (
-    <div className="bg-white rounded-xl shadow-sm p-6">
-      <div className="flex items-center justify-between mb-4">
-        <h2 className="text-lg font-semibold text-gray-900">
+    <div className="transform transition-all duration-300 hover:scale-[1.01] hover:shadow-xl bg-gradient-to-br from-white via-slate-50 to-blue-50/80 backdrop-blur-sm rounded-2xl shadow-lg p-8 border border-gray-100/50 hover:border-blue-100/50">
+      <div className="flex items-center justify-between mb-6">
+        <h2 className="text-xl font-semibold text-gray-900 tracking-tight">
           {t('dashboard.planProgress.title')}
         </h2>
         <HoverCard>
           <HoverCardTrigger>
-            <Info className="h-4 w-4 text-gray-400 cursor-help" />
+            <Info className="h-5 w-5 text-gray-400 cursor-help hover:text-blue-600 transition-colors" />
           </HoverCardTrigger>
-          <HoverCardContent>
-            <p className="text-sm text-gray-600">
+          <HoverCardContent className="w-80">
+            <p className="text-sm text-gray-600 leading-relaxed">
               {t('dashboard.planProgress.tooltip')}
             </p>
           </HoverCardContent>

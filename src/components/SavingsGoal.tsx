@@ -78,100 +78,106 @@ export const SavingsGoal = ({ allFinancialRecords, investmentPlan, profile, plan
     : (currentInvestment / investmentGoal) * 100;
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="text-lg">{t('savingsGoal.title')}</CardTitle>
-      </CardHeader>
-      <CardContent>
-        <div className="space-y-4">
-          <div className="relative">
-            <Progress 
-              value={percentage} 
-              className="w-full"
-            />
-            <span className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-sm font-medium">
-              {Math.round(percentage)}%
-            </span>
-          </div>
-          <div className="flex justify-between text-sm">
+    <div className="transform transition-all duration-300 hover:scale-[1.01] hover:shadow-xl bg-gradient-to-br from-white via-slate-50 to-blue-50/80 backdrop-blur-sm rounded-2xl shadow-lg p-8 border border-gray-100/50 hover:border-blue-100/50">
+      <div className="flex items-center justify-between mb-6">
+        <h2 className="text-xl font-semibold text-gray-900 tracking-tight">
+          {t('savingsGoal.title')}
+        </h2>
+      </div>
+      <div className="space-y-6">
+        <div className="relative">
+          <Progress 
+            value={percentage} 
+            className="w-full h-2.5 bg-gray-100/50 rounded-full overflow-hidden"
+          />
+          <span className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-sm font-medium bg-white/90 px-3 py-1.5 rounded-full shadow-sm backdrop-blur-sm border border-gray-100/50">
+            {Math.round(percentage)}%
+          </span>
+        </div>
+        <div className="flex justify-between text-sm">
+          <div className="space-y-3">
             <div>
-              <span className="block text-lg font-semibold">
+              <span className="block text-xl font-semibold bg-gradient-to-r from-blue-600 via-indigo-600 to-slate-700 bg-clip-text text-transparent drop-shadow-sm">
                 {t('savingsGoal.currentValue', { 
                   value: formatCurrency(currentInvestment)
                 })}
               </span>
-              <span className="text-600 flex items-center gap-1">
+              <span className="text-gray-500 flex items-center gap-1.5 mt-1">
                 <ArrowUpRight className="h-4 w-4" />
                 {t('savingsGoal.returnRate', { value: returnRate })}
               </span>
-              <span className={`flex items-center gap-2 mt-1 ${
-                typeof projectedAge !== 'string' && projectedAge.isAheadOfSchedule ? 'text-green-600' : 'text-red-600'
-              }`}>
-                <Clock className="h-4 w-4" />
-                <div className="flex flex-col">
-                  <span className="font-medium">
-                    {typeof projectedAge !== 'string' ? (
-                      <>
-                        {t('savingsGoal.projectedAge.label')}
-                        <span className="ml-1 font-semibold">
-                          {projectedAge.years}{t('savingsGoal.projectedAge.years')}
-                          {projectedAge.months > 0 && (
-                            <span className="ml-1">
-                              {projectedAge.months}{t('savingsGoal.projectedAge.months')}
-                            </span>
-                          )}
-                        </span>
-                        <span className="block text-sm">
-                          {typeof projectedAge !== 'string' && (
-                            <>
-                              {projectedAge.isAheadOfSchedule
-                                ? (
-                                  projectedAge.monthsDifference >= 12
-                                    ? t('savingsGoal.projectedAge.aheadOfSchedule', { years: Math.floor(projectedAge.monthsDifference / 12), months: projectedAge.monthsDifference % 12 })
-                                    : t('savingsGoal.projectedAge.aheadOfScheduleMonths', { months: Math.abs(projectedAge.monthsDifference) })
-                                )
-                                : (
-                                  projectedAge.monthsDifference >= 12
-                                    ? t('savingsGoal.projectedAge.behindSchedule', { years: Math.floor(projectedAge.monthsDifference / 12), months: projectedAge.monthsDifference % 12 })
-                                    : t('savingsGoal.projectedAge.behindScheduleMonths', { months: Math.abs(projectedAge.monthsDifference) })
-                                )
-                              }
-                            </>
-                          )}
-                        </span>
-                      </>
-                    ) : (
-                      <span className="text-muted-foreground italic">
-                        {t(`savingsGoal.${projectedAge}`)}
-                      </span>
-                    )}
-                  </span>
-                </div>
-              </span>
             </div>
-            <div className="text-right">
-              <span className="block text-lg font-semibold text-muted-foreground">
+            <div className={`flex items-start gap-2 ${
+              typeof projectedAge !== 'string' && projectedAge.isAheadOfSchedule ? 'text-emerald-600' : 'text-rose-600'
+            }`}>
+              <Clock className="h-4 w-4 mt-0.5" />
+              <div className="flex flex-col">
+                <span className="font-medium">
+                  {typeof projectedAge !== 'string' ? (
+                    <>
+                      {t('savingsGoal.projectedAge.label')}
+                      <span className="ml-1.5 font-semibold">
+                        {projectedAge.years}{t('savingsGoal.projectedAge.years')}
+                        {projectedAge.months > 0 && (
+                          <span className="ml-1">
+                            {projectedAge.months}{t('savingsGoal.projectedAge.months')}
+                          </span>
+                        )}
+                      </span>
+                      <span className="block text-sm mt-1">
+                        {typeof projectedAge !== 'string' && (
+                          <>
+                            {projectedAge.isAheadOfSchedule
+                              ? (
+                                projectedAge.monthsDifference >= 12
+                                  ? t('savingsGoal.projectedAge.aheadOfSchedule', { years: Math.floor(projectedAge.monthsDifference / 12), months: projectedAge.monthsDifference % 12 })
+                                  : t('savingsGoal.projectedAge.aheadOfScheduleMonths', { months: Math.abs(projectedAge.monthsDifference) })
+                              )
+                              : (
+                                projectedAge.monthsDifference >= 12
+                                  ? t('savingsGoal.projectedAge.behindSchedule', { years: Math.floor(projectedAge.monthsDifference / 12), months: projectedAge.monthsDifference % 12 })
+                                  : t('savingsGoal.projectedAge.behindScheduleMonths', { months: Math.abs(projectedAge.monthsDifference) })
+                              )
+                            }
+                          </>
+                        )}
+                      </span>
+                    </>
+                  ) : (
+                    <span className="text-muted-foreground italic">
+                      {t(`savingsGoal.${projectedAge}`)}
+                    </span>
+                  )}
+                </span>
+              </div>
+            </div>
+          </div>
+          <div className="text-right space-y-2">
+            <div>
+              <span className="block text-xl font-semibold text-gray-800">
                 {t('savingsGoal.goal.goalPresentValue', { 
                   value: formatCurrency(presentFutureValue)
                 })}
               </span>
-              <span className="text-sm text-muted-foreground">
+              <span className="text-sm text-gray-500">
                 {t('savingsGoal.goal.goalFutureValue', { 
                   value: formatCurrency(investmentGoal)
                 })}
               </span>
-              <p className="text-sm text-muted-foreground">
+            </div>
+            <div className="bg-gray-50/50 rounded-lg p-2">
+              <p className="text-sm font-medium text-gray-700">
                 {t('savingsGoal.goal.projectedValue', { 
                   value: formatCurrency(planProgressData?.projectedFuturePresentValue ?? 0)
                 })}
               </p>
-              <span className="text-sm text-muted-foreground">
+              <span className="text-sm text-gray-500">
                 {t('savingsGoal.goal.targetAge', { age: finalAge })}
               </span>
             </div>
           </div>
         </div>
-      </CardContent>
-    </Card>
+      </div>
+    </div>
   );
 };

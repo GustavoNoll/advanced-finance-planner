@@ -58,9 +58,6 @@ export const SummaryMetrics = ({ metrics }: SummaryMetricsProps) => {
                 <div className="h-2 w-2 rounded-full bg-green-500"></div>
                 <p className="text-sm text-gray-600">{t('brokerDashboard.metrics.totalPatrimony')}</p>
               </div>
-              <p className="text-lg font-semibold text-green-600">
-                {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(metrics.totalBalance)}
-              </p>
             </div>
           </div>
         </CardContent>

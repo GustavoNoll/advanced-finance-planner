@@ -466,14 +466,14 @@ const Index = () => {
   const portfolioIncreaseRate = ((portfolioValue - processedRecords.latestRecord?.starting_balance) / processedRecords.latestRecord?.starting_balance) * 100 || null;
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-gray-50 to-gray-100">
-      <header className="bg-white border-b sticky top-0 z-50 shadow-sm">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-blue-50/50">
+      <header className="bg-white/95 backdrop-blur-md border-b sticky top-0 z-50 shadow-lg">
         <div className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8 py-4">
           <div className="flex items-center justify-between">
             <div className="w-1/3">
               {brokerProfile && (
                 <Link to="/broker-dashboard">
-                  <Button variant="ghost" className="text-gray-600 hover:text-gray-900">
+                  <Button variant="ghost" className="text-gray-600 hover:text-blue-600 transition-colors">
                     <Search className="h-4 w-4" />
                   </Button>
                 </Link>
@@ -483,10 +483,12 @@ const Index = () => {
             <div className="flex flex-col items-center w-1/3">
               <div className="flex items-center gap-2">
                 <Briefcase className="h-5 w-5 text-blue-600" />
-                <h1 className="text-xl font-semibold text-gray-900">{t('dashboard.title')}</h1>
+                <h1 className="text-xl font-semibold bg-gradient-to-r from-blue-600 via-indigo-600 to-slate-700 bg-clip-text text-transparent">
+                  {t('dashboard.title')}
+                </h1>
               </div>
               {clientProfile && (
-                <p className="text-sm text-gray-500">{clientProfile.name}</p>
+                <p className="text-sm text-gray-500 font-medium">{clientProfile.name}</p>
               )}
             </div>
 
@@ -494,7 +496,7 @@ const Index = () => {
               <Button 
                 variant="ghost" 
                 onClick={handleLogout}
-                className="text-gray-600 hover:text-gray-900"
+                className="text-gray-600 hover:text-red-600 transition-colors"
               >
                 <LogOut className="h-4 w-4" />
               </Button>
@@ -511,7 +513,7 @@ const Index = () => {
           >
             <Button 
               variant="ghost"
-              className="w-full h-14 flex flex-col items-center justify-center gap-1 bg-gradient-to-br from-white to-gray-50 hover:from-blue-50 hover:to-blue-100 shadow-sm hover:shadow transition-all duration-200 border border-gray-100"
+              className="w-full h-14 flex flex-col items-center justify-center gap-1 bg-gradient-to-br from-white/95 via-slate-50/90 to-blue-50/80 backdrop-blur-sm hover:from-blue-50/95 hover:via-blue-100/90 hover:to-blue-200/80 shadow-md hover:shadow-xl transition-all duration-200 border border-gray-100/50 rounded-xl"
             >
               <div className="flex items-center gap-2">
                 <History className="h-4 w-4 text-blue-600" />
@@ -523,7 +525,7 @@ const Index = () => {
           <Link to={`/investment-plan/${investmentPlan?.id}`}>
             <Button 
               variant="ghost"
-              className="w-full h-14 flex flex-col items-center justify-center gap-1 bg-gradient-to-br from-white to-gray-50 hover:from-blue-50 hover:to-blue-100 shadow-sm hover:shadow transition-all duration-200 border border-gray-100"
+              className="w-full h-14 flex flex-col items-center justify-center gap-1 bg-gradient-to-br from-white/95 via-slate-50/90 to-blue-50/80 backdrop-blur-sm hover:from-blue-50/95 hover:via-blue-100/90 hover:to-blue-200/80 shadow-md hover:shadow-xl transition-all duration-200 border border-gray-100/50 rounded-xl"
             >
               <div className="flex items-center gap-2">
                 <TrendingUp className="h-4 w-4 text-blue-600" />
@@ -537,13 +539,13 @@ const Index = () => {
           >
             <Button 
               variant="ghost"
-              className="w-full h-14 flex flex-col items-center justify-center gap-1 bg-gradient-to-br from-white to-gray-50 hover:from-blue-50 hover:to-blue-100 shadow-sm hover:shadow transition-all duration-200 border border-gray-100"
+              className="w-full h-14 flex flex-col items-center justify-center gap-1 bg-gradient-to-br from-white/95 via-slate-50/90 to-blue-50/80 backdrop-blur-sm hover:from-blue-50/95 hover:via-blue-100/90 hover:to-blue-200/80 shadow-md hover:shadow-xl transition-all duration-200 border border-gray-100/50 rounded-xl"
             >
               <div className="flex items-center gap-2">
                 <div className="relative">
                   <Target className="h-4 w-4 text-blue-600" />
                   {counters?.goals > 0 && (
-                    <div className="absolute -top-2 -right-2 bg-blue-600 text-white text-xs rounded-full min-w-[16px] h-4 flex items-center justify-center px-1">
+                    <div className="absolute -top-2 -right-2 bg-gradient-to-r from-blue-600 via-blue-700 to-indigo-700 text-white text-xs rounded-full min-w-[16px] h-4 flex items-center justify-center px-1 shadow-sm">
                       {counters.goals}
                     </div>
                   )}
@@ -558,13 +560,13 @@ const Index = () => {
           >
             <Button 
               variant="ghost"
-              className="w-full h-14 flex flex-col items-center justify-center gap-1 bg-gradient-to-br from-white to-gray-50 hover:from-blue-50 hover:to-blue-100 shadow-sm hover:shadow transition-all duration-200 border border-gray-100"
+              className="w-full h-14 flex flex-col items-center justify-center gap-1 bg-gradient-to-br from-white/95 via-slate-50/90 to-blue-50/80 backdrop-blur-sm hover:from-blue-50/95 hover:via-blue-100/90 hover:to-blue-200/80 shadow-md hover:shadow-xl transition-all duration-200 border border-gray-100/50 rounded-xl"
             >
               <div className="flex items-center gap-2">
                 <div className="relative">
                   <Calendar className="h-4 w-4 text-blue-600" />
                   {counters?.events > 0 && (
-                    <div className="absolute -top-2 -right-2 bg-blue-600 text-white text-xs rounded-full min-w-[16px] h-4 flex items-center justify-center px-1">
+                    <div className="absolute -top-2 -right-2 bg-gradient-to-r from-blue-600 via-blue-700 to-indigo-700 text-white text-xs rounded-full min-w-[16px] h-4 flex items-center justify-center px-1 shadow-sm">
                       {counters.events}
                     </div>
                   )}
@@ -578,7 +580,7 @@ const Index = () => {
             <Link to={`/client-profile/${clientId}`}>
               <Button 
                 variant="ghost"
-                className="w-full h-14 flex flex-col items-center justify-center gap-1 bg-gradient-to-br from-white to-gray-50 hover:from-blue-50 hover:to-blue-100 shadow-sm hover:shadow transition-all duration-200 border border-gray-100"
+                className="w-full h-14 flex flex-col items-center justify-center gap-1 bg-gradient-to-br from-white/95 via-slate-50/90 to-blue-50/80 backdrop-blur-sm hover:from-blue-50/95 hover:via-blue-100/90 hover:to-blue-200/80 shadow-md hover:shadow-xl transition-all duration-200 border border-gray-100/50 rounded-xl"
               >
                 <div className="flex items-center gap-2">
                   <User className="h-4 w-4 text-blue-600" />
@@ -593,13 +595,15 @@ const Index = () => {
       <main className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <DashboardCard 
-            className="transform transition-all hover:scale-102 hover:shadow-lg bg-gradient-to-br from-white to-gray-50"
+            className="transform transition-all duration-300 hover:scale-[1.02] hover:shadow-2xl bg-gradient-to-br from-white/95 via-slate-50/90 to-blue-50/80 backdrop-blur-sm border border-gray-100/50 rounded-xl shadow-lg hover:border-blue-100/50"
             title={
               <div className="flex items-center gap-2">
-                {t('dashboard.cards.portfolioValue.title')}
+                <span className="text-gray-900 font-medium">
+                  {t('dashboard.cards.portfolioValue.title')}
+                </span>
                 <HoverCard>
                   <HoverCardTrigger>
-                    <Info className="h-4 w-4 text-gray-400 cursor-help" />
+                    <Info className="h-4 w-4 text-gray-400 cursor-help hover:text-blue-600 transition-colors" />
                   </HoverCardTrigger>
                   <HoverCardContent className="w-80">
                     <p className="text-sm text-gray-600">
@@ -611,7 +615,7 @@ const Index = () => {
             }
           >
             <div className="space-y-3">
-              <p className="text-3xl font-bold text-gray-900 bg-gradient-to-r from-blue-600 to-violet-600 bg-clip-text text-transparent">
+              <p className="text-3xl font-bold bg-gradient-to-r from-blue-600 via-indigo-600 to-slate-700 bg-clip-text text-transparent drop-shadow-sm">
                 {new Intl.NumberFormat('pt-BR', {
                   style: 'currency',
                   currency: 'BRL'
@@ -619,8 +623,8 @@ const Index = () => {
               </p>
               {portfolioIncreaseRate && (
                 <div className={`flex items-center gap-2 ${
-                  portfolioIncreaseRate >= 0 ? 'bg-green-50' : 'bg-red-50'
-                } rounded-full px-3 py-1 w-fit`}>
+                  portfolioIncreaseRate >= 0 ? 'bg-gradient-to-r from-emerald-50 via-green-50 to-emerald-100/50' : 'bg-gradient-to-r from-rose-50 via-red-50 to-rose-100/50'
+                } rounded-full px-3 py-1 w-fit shadow-sm backdrop-blur-sm border border-white/50`}>
                   <TrendingUp className={`h-4 w-4 ${
                     portfolioIncreaseRate >= 0 ? 'text-green-600' : 'text-red-600'
                   }`} />
@@ -635,14 +639,16 @@ const Index = () => {
           </DashboardCard>
           
           <DashboardCard 
-            className="bg-gradient-to-br from-white to-gray-50"
+            className="transform transition-all duration-300 hover:scale-[1.02] hover:shadow-2xl bg-gradient-to-br from-white/95 via-slate-50/90 to-blue-50/80 backdrop-blur-sm border border-gray-100/50 rounded-xl shadow-lg hover:border-blue-100/50"
             title={
               <div className="flex items-center justify-between w-full">
                 <div className="flex items-center gap-2">
-                  <span>{t('dashboard.cards.contributions.title')}</span>
+                  <span className="text-gray-900 font-medium">
+                    {t('dashboard.cards.contributions.title')}
+                  </span>
                   <HoverCard>
                     <HoverCardTrigger>
-                      <Info className="h-4 w-4 text-gray-400 cursor-help" />
+                      <Info className="h-4 w-4 text-gray-400 cursor-help hover:text-blue-600 transition-colors" />
                     </HoverCardTrigger>
                     <HoverCardContent className="w-80">
                       <p className="text-sm text-gray-600">
@@ -654,7 +660,7 @@ const Index = () => {
                 <select
                   value={contributionPeriod}
                   onChange={(e) => setContributionPeriod(e.target.value as TimePeriod)}
-                  className="text-sm border border-gray-200 rounded-md px-2 py-1 bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="text-sm border border-gray-200 rounded-lg px-2 py-1 bg-white/90 text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent shadow-sm hover:border-blue-200 transition-colors"
                 >
                   <option value="all">{t('common.allTime')}</option>
                   <option value="6m">{t('common.last6Months')}</option>
@@ -665,7 +671,7 @@ const Index = () => {
             }
           >
             <div className="space-y-2">
-              <p className={`text-2xl font-bold ${
+              <p className={`text-2xl font-bold drop-shadow-sm ${
                 investmentPlan?.required_monthly_deposit && 
                 totalContribution >= investmentPlan.required_monthly_deposit 
                   ? 'text-green-600' 
@@ -683,14 +689,16 @@ const Index = () => {
           </DashboardCard>
           
           <DashboardCard 
-            className="bg-gradient-to-br from-white to-gray-50"
+            className="transform transition-all duration-300 hover:scale-[1.02] hover:shadow-2xl bg-gradient-to-br from-white/95 via-slate-50/90 to-blue-50/80 backdrop-blur-sm border border-gray-100/50 rounded-xl shadow-lg hover:border-blue-100/50"
             title={
               <div className="flex items-center justify-between w-full">
                 <div className="flex items-center gap-2">
-                  <span>{t('dashboard.cards.totalReturns.title')}</span>
+                  <span className="text-gray-900 font-medium">
+                    {t('dashboard.cards.totalReturns.title')}
+                  </span>
                   <HoverCard>
                     <HoverCardTrigger>
-                      <Info className="h-4 w-4 text-gray-400 cursor-help" />
+                      <Info className="h-4 w-4 text-gray-400 cursor-help hover:text-blue-600 transition-colors" />
                     </HoverCardTrigger>
                     <HoverCardContent className="w-80">
                       <p className="text-sm text-gray-600">
@@ -702,7 +710,7 @@ const Index = () => {
                 <select
                   value={selectedPeriod}
                   onChange={(e) => setSelectedPeriod(e.target.value as TimePeriod)}
-                  className="text-sm border border-gray-200 rounded-md px-2 py-1 bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="text-sm border border-gray-200 rounded-lg px-2 py-1 bg-white/90 text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent shadow-sm hover:border-blue-200 transition-colors"
                 >
                   <option value="all">{t('common.allTime')}</option>
                   <option value="6m">{t('common.last6Months')}</option>
@@ -713,7 +721,7 @@ const Index = () => {
             }
           >
             <div className="space-y-2">
-              <p className={`text-2xl font-bold ${
+              <p className={`text-2xl font-bold drop-shadow-sm ${
                 totalAmount >= 0 ? 'text-green-600' : 'text-red-600'
               }`}>
                 {new Intl.NumberFormat('pt-BR', {
@@ -723,8 +731,8 @@ const Index = () => {
               </p>
               
               <div className={`flex items-center gap-2 ${
-                Number(percentageReturn) >= 0 ? 'bg-green-50' : 'bg-red-50'
-              } rounded-full px-3 py-1 w-fit`}>
+                Number(percentageReturn) >= 0 ? 'bg-gradient-to-r from-emerald-50 via-green-50 to-emerald-100/50' : 'bg-gradient-to-r from-rose-50 via-red-50 to-rose-100/50'
+              } rounded-full px-3 py-1 w-fit shadow-sm backdrop-blur-sm border border-white/50`}>
                 <TrendingUp className={`h-4 w-4 ${
                   Number(percentageReturn) >= 0 ? 'text-green-600' : 'text-red-600'
                 }`} />
@@ -738,7 +746,7 @@ const Index = () => {
           </DashboardCard>
         </div>
 
-        <div className="bg-white rounded-xl shadow-sm p-6">
+        <div className="transform transition-all duration-300 hover:scale-[1.01] hover:shadow-2xl bg-gradient-to-br from-white/95 via-slate-50/90 to-blue-50/80 backdrop-blur-sm rounded-xl shadow-lg p-6 border border-gray-100/50 hover:border-blue-100/50">
           {projectionData ? (
             <ExpenseChart 
               profile={clientProfile}
@@ -772,16 +780,20 @@ const Index = () => {
           )}
           
           <DashboardCard 
-            title={t('dashboard.highlights.title')}
-            className="bg-gradient-to-br from-blue-50 to-indigo-50"
+            title={
+              <span className="text-gray-900 font-medium">
+                {t('dashboard.highlights.title')}
+              </span>
+            }
+            className="transform transition-all duration-300 hover:scale-[1.02] hover:shadow-2xl bg-gradient-to-br from-blue-50/95 via-indigo-50/90 to-slate-50/80 backdrop-blur-sm border border-gray-100/50 rounded-xl shadow-lg hover:border-blue-100/50"
           >
             <div className="space-y-4">
               {calculateHighlights().map((highlight, index) => (
                 <div key={index} className="flex items-center gap-3">
-                  <div className={`p-2 rounded-lg ${
-                    index === 0 ? 'bg-green-100 text-green-600' :
-                    index === 1 ? 'bg-blue-100 text-blue-600' :
-                    'bg-purple-100 text-purple-600'
+                  <div className={`p-2 rounded-lg shadow-sm backdrop-blur-sm border border-white/50 ${
+                    index === 0 ? 'bg-gradient-to-br from-emerald-50 via-green-50 to-emerald-100/50 text-green-600' :
+                    index === 1 ? 'bg-gradient-to-br from-blue-50 via-indigo-50 to-blue-100/50 text-blue-600' :
+                    'bg-gradient-to-br from-violet-50 via-purple-50 to-violet-100/50 text-purple-600'
                   }`}>
                     {highlight.icon}
                   </div>
@@ -794,7 +806,7 @@ const Index = () => {
           </DashboardCard>
         </div>
 
-        <section className="bg-white rounded-xl shadow-sm">
+        <section className="transform transition-all duration-300 hover:scale-[1.01] hover:shadow-2xl bg-gradient-to-br from-white/95 via-slate-50/90 to-blue-50/80 backdrop-blur-sm rounded-xl shadow-lg border border-gray-100/50 hover:border-blue-100/50">
           {projectionData ? (
             <MonthlyView 
               userId={clientId} 

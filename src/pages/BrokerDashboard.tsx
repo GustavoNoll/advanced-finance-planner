@@ -359,42 +359,56 @@ export const BrokerDashboard = () => {
   return (
     <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 tracking-tight">{t('brokerDashboard.title')}</h1>
-          <div className="flex flex-wrap gap-3">
-            {brokerProfile && (
-              <>
-                <Button 
-                  variant="outline" 
-                  onClick={() => navigate(`/client-profile/${brokerProfile.id}`)}
-                  className="flex items-center gap-2 hover:bg-primary/5 transition-all duration-200 shadow-sm border-gray-200"
-                >
-                  <div className="flex items-center">
-                    <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center mr-2 ring-2 ring-primary/20">
-                      <span className="text-primary text-sm font-semibold">
-                        {brokerProfile.name ? brokerProfile.name[0].toUpperCase() : ''}
-                      </span>
-                    </div>
-                    <span className="text-sm font-medium text-gray-700">{brokerProfile.name || ''}</span>
+        {/* Enhanced Header Section */}
+        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 mb-8">
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-6">
+            <div className="flex items-center gap-4">
+              <div className="h-12 w-12 rounded-xl bg-primary/10 flex items-center justify-center">
+                <span className="text-primary text-xl font-bold">
+                  {brokerProfile?.name?.[0]?.toUpperCase() || 'B'}
+                </span>
+              </div>
+              <div>
+                <h1 className="text-2xl font-bold text-gray-900 tracking-tight">{t('brokerDashboard.title')}</h1>
+                <p className="text-sm text-gray-500 mt-1">
+                  {brokerProfile?.name || 'Welcome back'}
+                </p>
+              </div>
+            </div>
+            
+            <div className="flex flex-wrap items-center gap-3">
+              <Button 
+                variant="outline" 
+                onClick={() => navigate(`/client-profile/${brokerProfile?.id}`)}
+                className="flex items-center gap-2 hover:bg-primary/5 transition-all duration-200 shadow-sm border-gray-200"
+              >
+                <div className="flex items-center gap-2">
+                  <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center ring-2 ring-primary/20">
+                    <span className="text-primary text-sm font-semibold">
+                      {brokerProfile?.name?.[0]?.toUpperCase() || ''}
+                    </span>
                   </div>
-                </Button>
-              </>
-            )}
-            <Button 
-              variant="outline" 
-              onClick={handleLogout}
-              className="flex items-center gap-2 hover:bg-red-50 hover:text-red-600 hover:border-red-200 transition-all duration-200 shadow-sm border-gray-200"
-            >
-              <LogOut className="h-4 w-4" />
-              {t('common.logout', { defaultValue: 'Logout' })}
-            </Button>
-            <Button 
-              onClick={() => navigate('/create-client')} 
-              className="flex items-center gap-2 bg-primary hover:bg-primary/90 text-white shadow-md hover:shadow-lg transition-all duration-200 px-6"
-            >
-              <Plus className="h-4 w-4" />
-              {t('brokerDashboard.buttons.newClient')}
-            </Button>
+                  <span className="text-sm font-medium text-gray-700">{t('brokerDashboard.myProfile')}</span>
+                </div>
+              </Button>
+              
+              <Button 
+                variant="outline" 
+                onClick={handleLogout}
+                className="flex items-center gap-2 hover:bg-red-50 hover:text-red-600 hover:border-red-200 transition-all duration-200 shadow-sm border-gray-200"
+              >
+                <LogOut className="h-4 w-4" />
+                {t('common.logout', { defaultValue: 'Logout' })}
+              </Button>
+              
+              <Button 
+                onClick={() => navigate('/create-client')} 
+                className="flex items-center gap-2 bg-primary hover:bg-primary/90 text-white shadow-md hover:shadow-lg transition-all duration-200 px-6"
+              >
+                <Plus className="h-4 w-4" />
+                {t('brokerDashboard.buttons.newClient')}
+              </Button>
+            </div>
           </div>
         </div>
 
