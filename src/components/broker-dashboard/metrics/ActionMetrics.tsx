@@ -21,22 +21,27 @@ export const ActionMetrics = ({ metrics }: ActionMetricsProps) => {
   const { t } = useTranslation();
 
   return (
-    <Card className="hover:shadow-lg transition-shadow duration-200">
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <AlertTriangle className="h-5 w-5 text-primary" />
+    <Card className="hover:shadow-lg transition-all duration-200 border-gray-100">
+      <CardHeader className="pb-2">
+        <CardTitle className="flex items-center gap-2 text-lg">
+          <div className="h-8 w-8 rounded-xl bg-yellow-50 flex items-center justify-center ring-2 ring-yellow-100">
+            <AlertTriangle className="h-5 w-5 text-yellow-600" />
+          </div>
           {t('brokerDashboard.metrics.actions.title')}
         </CardTitle>
       </CardHeader>
       <CardContent>
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-2 gap-6">
           <TooltipProvider>
-            <div className="space-y-2">
+            <div className="space-y-3">
               <Tooltip>
                 <TooltipTrigger asChild>
-                  <div className="cursor-help">
-                    <p className="text-sm text-gray-500">{t('brokerDashboard.metrics.actions.needsPlanReview')}</p>
-                    <p className="text-2xl font-bold text-yellow-600">{metrics.actions.needsPlanReview}</p>
+                  <div className="cursor-help group">
+                    <p className="text-sm font-medium text-gray-500 mb-1">{t('brokerDashboard.metrics.actions.needsPlanReview')}</p>
+                    <div className="flex items-baseline gap-2">
+                      <p className="text-2xl font-bold text-yellow-600">{metrics.actions.needsPlanReview}</p>
+                      <div className="h-2 w-2 rounded-full bg-yellow-500 group-hover:bg-yellow-400 transition-colors"></div>
+                    </div>
                   </div>
                 </TooltipTrigger>
                 <TooltipContent className="max-w-[250px]">
@@ -47,12 +52,15 @@ export const ActionMetrics = ({ metrics }: ActionMetricsProps) => {
           </TooltipProvider>
 
           <TooltipProvider>
-            <div className="space-y-2">
+            <div className="space-y-3">
               <Tooltip>
                 <TooltipTrigger asChild>
-                  <div className="cursor-help">
-                    <p className="text-sm text-gray-500">{t('brokerDashboard.metrics.actions.belowRequiredContribution')}</p>
-                    <p className="text-2xl font-bold text-red-600">{metrics.actions.belowRequiredContribution}</p>
+                  <div className="cursor-help group">
+                    <p className="text-sm font-medium text-gray-500 mb-1">{t('brokerDashboard.metrics.actions.belowRequiredContribution')}</p>
+                    <div className="flex items-baseline gap-2">
+                      <p className="text-2xl font-bold text-red-600">{metrics.actions.belowRequiredContribution}</p>
+                      <div className="h-2 w-2 rounded-full bg-red-500 group-hover:bg-red-400 transition-colors"></div>
+                    </div>
                   </div>
                 </TooltipTrigger>
                 <TooltipContent className="max-w-[250px]">
@@ -63,12 +71,15 @@ export const ActionMetrics = ({ metrics }: ActionMetricsProps) => {
           </TooltipProvider>
 
           <TooltipProvider>
-            <div className="space-y-2">
+            <div className="space-y-3">
               <Tooltip>
                 <TooltipTrigger asChild>
-                  <div className="cursor-help">
-                    <p className="text-sm text-gray-500">{t('brokerDashboard.metrics.actions.nearRetirement')}</p>
-                    <p className="text-2xl font-bold text-blue-600">{metrics.actions.nearRetirement}</p>
+                  <div className="cursor-help group">
+                    <p className="text-sm font-medium text-gray-500 mb-1">{t('brokerDashboard.metrics.actions.nearRetirement')}</p>
+                    <div className="flex items-baseline gap-2">
+                      <p className="text-2xl font-bold text-blue-600">{metrics.actions.nearRetirement}</p>
+                      <div className="h-2 w-2 rounded-full bg-blue-500 group-hover:bg-blue-400 transition-colors"></div>
+                    </div>
                   </div>
                 </TooltipTrigger>
                 <TooltipContent className="max-w-[250px]">
@@ -79,12 +90,15 @@ export const ActionMetrics = ({ metrics }: ActionMetricsProps) => {
           </TooltipProvider>
 
           <TooltipProvider>
-            <div className="space-y-2">
+            <div className="space-y-3">
               <Tooltip>
                 <TooltipTrigger asChild>
-                  <div className="cursor-help">
-                    <p className="text-sm text-gray-500">{t('brokerDashboard.metrics.actions.lowReturns')}</p>
-                    <p className="text-2xl font-bold text-orange-600">{metrics.actions.lowReturns}</p>
+                  <div className="cursor-help group">
+                    <p className="text-sm font-medium text-gray-500 mb-1">{t('brokerDashboard.metrics.actions.lowReturns')}</p>
+                    <div className="flex items-baseline gap-2">
+                      <p className="text-2xl font-bold text-orange-600">{metrics.actions.lowReturns}</p>
+                      <div className="h-2 w-2 rounded-full bg-orange-500 group-hover:bg-orange-400 transition-colors"></div>
+                    </div>
                   </div>
                 </TooltipTrigger>
                 <TooltipContent className="max-w-[250px]">

@@ -357,25 +357,25 @@ export const BrokerDashboard = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 p-8">
-      <div className="max-w-7xl mx-auto">
-        <div className="flex justify-between items-center mb-8">
-          <h1 className="text-2xl font-bold">{t('brokerDashboard.title')}</h1>
-          <div className="flex gap-4">
+    <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
+          <h1 className="text-3xl font-bold text-gray-900 tracking-tight">{t('brokerDashboard.title')}</h1>
+          <div className="flex flex-wrap gap-3">
             {brokerProfile && (
               <>
                 <Button 
                   variant="outline" 
                   onClick={() => navigate(`/client-profile/${brokerProfile.id}`)}
-                  className="flex items-center gap-2 hover:bg-primary/5 transition-colors duration-200 shadow-sm"
+                  className="flex items-center gap-2 hover:bg-primary/5 transition-all duration-200 shadow-sm border-gray-200"
                 >
                   <div className="flex items-center">
-                    <div className="h-7 w-7 rounded-full bg-primary/10 flex items-center justify-center mr-2 ring-2 ring-primary/20">
+                    <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center mr-2 ring-2 ring-primary/20">
                       <span className="text-primary text-sm font-semibold">
                         {brokerProfile.name ? brokerProfile.name[0].toUpperCase() : ''}
                       </span>
                     </div>
-                    <span className="text-sm font-medium">{brokerProfile.name || ''}</span>
+                    <span className="text-sm font-medium text-gray-700">{brokerProfile.name || ''}</span>
                   </div>
                 </Button>
               </>
@@ -383,14 +383,14 @@ export const BrokerDashboard = () => {
             <Button 
               variant="outline" 
               onClick={handleLogout}
-              className="flex items-center gap-2 hover:bg-red-50 hover:text-red-600 hover:border-red-200 transition-colors duration-200 shadow-sm"
+              className="flex items-center gap-2 hover:bg-red-50 hover:text-red-600 hover:border-red-200 transition-all duration-200 shadow-sm border-gray-200"
             >
               <LogOut className="h-4 w-4" />
               {t('common.logout', { defaultValue: 'Logout' })}
             </Button>
             <Button 
               onClick={() => navigate('/create-client')} 
-              className="flex items-center gap-2 bg-primary hover:bg-primary/90 text-white shadow-md hover:shadow-lg transition-all duration-200"
+              className="flex items-center gap-2 bg-primary hover:bg-primary/90 text-white shadow-md hover:shadow-lg transition-all duration-200 px-6"
             >
               <Plus className="h-4 w-4" />
               {t('brokerDashboard.buttons.newClient')}
@@ -398,28 +398,35 @@ export const BrokerDashboard = () => {
           </div>
         </div>
 
-        <SummaryMetrics metrics={metrics} />
-
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-          <WealthDistributionChart metrics={metrics} />
-          <PlanningMetrics metrics={metrics} />
-          <TrendMetrics metrics={metrics} />
-          <ActionMetrics metrics={metrics} />
+        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 mb-8">
+          <SummaryMetrics metrics={metrics} />
         </div>
 
-        <SearchBar
-          searchQuery={searchQuery}
-          onSearchChange={setSearchQuery}
-          onClearSearch={() => setSearchQuery('')}
-          isSearching={isSearching}
-        />
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+          <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+            <WealthDistributionChart metrics={metrics} />
+          </div>
+          <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+            <PlanningMetrics metrics={metrics} />
+          </div>
+          <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+            <TrendMetrics metrics={metrics} />
+          </div>
+          <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+            <ActionMetrics metrics={metrics} />
+          </div>
+        </div>
 
-        {searchResults.length > 0 && (
+        <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
           <ClientList
             clients={searchResults}
             onClientSelect={handleUserSelect}
+            searchQuery={searchQuery}
+            onSearchChange={setSearchQuery}
+            onClearSearch={() => setSearchQuery('')}
+            isSearching={isSearching}
           />
-        )}
+        </div>
       </div>
     </div>
   );

@@ -24,10 +24,12 @@ export const WealthDistributionChart = ({ metrics }: WealthDistributionChartProp
   const { t } = useTranslation();
 
   return (
-    <Card className="hover:shadow-lg transition-shadow duration-200">
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <Wallet className="h-5 w-5 text-primary" />
+    <Card className="hover:shadow-lg transition-all duration-200 border-gray-100">
+      <CardHeader className="pb-2">
+        <CardTitle className="flex items-center gap-2 text-lg">
+          <div className="h-8 w-8 rounded-xl bg-primary/10 flex items-center justify-center ring-2 ring-primary/20">
+            <Wallet className="h-5 w-5 text-primary" />
+          </div>
           {t('brokerDashboard.metrics.wealthDistribution.title')}
         </CardTitle>
       </CardHeader>
@@ -82,15 +84,24 @@ export const WealthDistributionChart = ({ metrics }: WealthDistributionChartProp
                 contentStyle={{
                   backgroundColor: 'white',
                   border: '1px solid #E5E7EB',
-                  borderRadius: '6px',
-                  padding: '8px'
+                  borderRadius: '8px',
+                  padding: '12px',
+                  boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1)'
                 }}
-                labelStyle={{ color: '#6B7280' }}
+                labelStyle={{ 
+                  color: '#374151',
+                  fontWeight: 500,
+                  fontSize: '14px'
+                }}
+                itemStyle={{
+                  color: '#6B7280',
+                  fontSize: '13px'
+                }}
               />
               <Bar 
                 dataKey="count" 
                 fill="#3B82F6"
-                radius={[4, 4, 0, 0]}
+                radius={[6, 6, 0, 0]}
                 name="Quantidade de Clientes"
               />
             </BarChart>
