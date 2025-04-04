@@ -1,0 +1,27 @@
+name: Fetch Economic Indicators
+
+on:
+  schedule:
+    - cron: '0 6 * * *' # Runs daily at 6 AM UTC
+  workflow_dispatch: # Allows manual triggering from GitHub Actions
+
+jobs:
+  fetch_data:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Run fetch script
+        run: ./fetch.sh
+
+      - name: Commit changes (if any)
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          git add src/data/*.json
+          git commit -m "Updating economic indicators" || echo "No changes"
+          git push 
