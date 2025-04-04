@@ -1,69 +1,97 @@
-# Welcome to your Lovable project
+# Advanced Finance Planner
 
-## Project info
+A modern financial planning application built with React, TypeScript, and Vite.
 
-**URL**: https://lovable.dev/projects/cfdf154c-a5dc-4321-84bf-fcfcd3a5e4ee
+## Technologies Used
 
-## How can I edit this code?
+This project is built with:
 
-There are several ways of editing your application.
+- **Frontend Framework**: React 18 with TypeScript
+- **Build Tool**: Vite
+- **Styling**: Tailwind CSS
+- **UI Components**: shadcn/ui (based on Radix UI)
+- **State Management**: React Query
+- **Database**: Supabase
+- **Backend**: Express.js
+- **Additional Features**:
+  - Drag and Drop (dnd-kit)
+  - Charts (Recharts)
+  - Form Handling (React Hook Form + Zod)
+  - Internationalization (i18next)
+  - Date Handling (date-fns)
+  - Currency Input (react-currency-input-field)
 
-**Use Lovable**
+## Getting Started
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/cfdf154c-a5dc-4321-84bf-fcfcd3a5e4ee) and start prompting.
+### Prerequisites
 
-Changes made via Lovable will be committed automatically to this repo.
+- Node.js (Latest LTS version recommended)
+- npm or bun
 
-**Use your preferred IDE**
+### Installation
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
-
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
-
-Follow these steps:
-
+1. Clone the repository:
 ```sh
-# Step 1: Clone the repository using the project's Git URL.
 git clone <YOUR_GIT_URL>
+cd advanced-finance-planner
+```
 
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
+2. Install dependencies:
+```sh
+npm install
+# or
+bun install
+```
 
-# Step 3: Install the necessary dependencies.
-npm i
-
-# Step 4: Start the development server with auto-reloading and an instant preview.
+3. Start the development server:
+```sh
 npm run dev
 ```
 
-**Edit a file directly in GitHub**
+4. Start the backend server (in a separate terminal):
+```sh
+npm run server
+```
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+## Available Scripts
 
-**Use GitHub Codespaces**
+- `npm run dev` - Start the development server
+- `npm run build` - Build for production
+- `npm run build:dev` - Build for development
+- `npm run lint` - Run ESLint
+- `npm run preview` - Preview the production build
+- `npm run server` - Start the backend server
+- `npm run vercel-build` - Build for Vercel deployment
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+## Project Structure
 
-## What technologies are used for this project?
+- `/src` - Frontend source code
+- `/server` - Backend Express.js server
+- `/public` - Static assets
+- `/dist` - Production build output
 
-This project is built with .
+## Development
 
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
+The project uses:
+- TypeScript for type safety
+- ESLint for code linting
+- Tailwind CSS for styling
+- shadcn/ui for UI components
+- React Query for server state management
+- React Router for navigation
 
-## How can I deploy this project?
+## Deployment
 
-Simply open [Lovable](https://lovable.dev/projects/cfdf154c-a5dc-4321-84bf-fcfcd3a5e4ee) and click on Share -> Publish.
+The project is configured for deployment on Vercel with the `vercel.json` configuration file.
 
-## I want to use a custom domain - is that possible?
+## Contributing
 
-We don't support custom domains (yet). If you want to deploy your project under your own domain then we recommend using Netlify. Visit our docs for more details: [Custom domains](https://docs.lovable.dev/tips-tricks/custom-domain/)
+1. Fork the repository
+2. Create your feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit your changes (`git commit -m 'Add some amazing feature'`)
+4. Push to the branch (`git push origin feature/amazing-feature`)
+5. Open a Pull Request
+
+## License
+
+This project is licensed under the MIT License.
