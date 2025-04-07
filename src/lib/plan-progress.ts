@@ -370,38 +370,28 @@ const financialCalculations = {
     const initialWithGoals = -(investmentPlan.initial_amount + preRetirementGoals);
     const inflationInRetirementYear = (1 + monthlyInflation) ** monthsToRetirementSinceStart;
     const projectedPresentValue = projectedFuturePresentValue / inflationInRetirementYear;
-    const adjustedProjectedFutureValue = (projectedPresentValue - postRetirementGoals * (adjustContributionForInflation ? 1 : inflationInRetirementYear));
+    const goalProjectedPresentValue = investmentPlan.present_future_value;
+    const adjustedGoalProjectedFutureValue = (goalProjectedPresentValue - postRetirementGoals * (adjustContributionForInflation ? 1 : inflationInRetirementYear));
     const plannedPresentValue = plannedFuturePresentValue / inflationInRetirementYear;
-    const adjustedPlannedFutureValue = (plannedPresentValue - postRetirementGoals * (adjustContributionForInflation ? 1 : inflationInRetirementYear));
+    const goalPlannedPresentValue = investmentPlan.present_future_value;
+    const adjustedGoalPlannedFutureValue = (goalPlannedPresentValue - postRetirementGoals * (adjustContributionForInflation ? 1 : inflationInRetirementYear));
+
     // Calculate projections
 
 
     // PROJECTIONS 
-    console.log('Debug projectedMonthsToRetirement:', {
-      effectiveRate,
-      contribution,
-      balanceWithGoals,
-      adjustedProjectedFutureValue
-    });
-
     const projectedMonthsToRetirement = nper(
       effectiveRate,
       -contribution,
       balanceWithGoals,
-      adjustedProjectedFutureValue
+      adjustedGoalProjectedFutureValue
     );
 
-    console.log('Debug projectedContribution:', {
-      effectiveRate,
-      monthsToRetirementSinceNow,
-      balanceWithGoals,
-      adjustedProjectedFutureValue
-    });
     const projectedContribution = -pmt(
       effectiveRate,
       monthsToRetirementSinceNow,
       balanceWithGoals,
-      adjustedProjectedFutureValue
+      adjustedGoalProjectedFutureValue
     );
 
     const projectedMonthlyIncome = financialCalculations.projectedMonthlyIncome(
@@ -421,14 +411,14 @@ const financialCalculations = {
       effectiveRate,
       -contribution,
       initialWithGoals,
-      adjustedPlannedFutureValue
+      adjustedGoalPlannedFutureValue
     ) - (monthsToRetirementSinceStart - monthsToRetirementSinceNow);
 
     const plannedContribution = -pmt(
       effectiveRate,
       monthsToRetirementSinceStart,
       initialWithGoals,
-      adjustedPlannedFutureValue
+      adjustedGoalPlannedFutureValue
     );
 
     const plannedMonthlyIncome = financialCalculations.projectedMonthlyIncome(
