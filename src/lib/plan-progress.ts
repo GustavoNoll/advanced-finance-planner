@@ -363,7 +363,7 @@ const financialCalculations = {
     const monthsRetired = (investmentPlan.limit_age - investmentPlan.final_age) * 12;
     
     // Calculate effective rate based on inflation adjustment setting
-    const effectiveRate = monthlyExpectedReturn * (adjustContributionForInflation ? 1 : monthlyInflation);
+    const effectiveRate = adjustContributionForInflation ? monthlyExpectedReturn : calculateCompoundedRates([monthlyExpectedReturn, monthlyInflation]);
     
     // Calculate adjusted present and future values
     const balanceWithGoals = -(currentBalance + preRetirementGoals);
@@ -380,6 +380,12 @@ const financialCalculations = {
 
 
     // PROJECTIONS 
+    console.log('Debug projectedMonthsToRetirement: nper', {
+      effectiveRate,
+      contribution,
+      balanceWithGoals,
+      adjustedGoalProjectedFutureValue
+    });
     const projectedMonthsToRetirement = nper(
       effectiveRate,
       -contribution,
@@ -407,6 +413,12 @@ const financialCalculations = {
     )
 
     // PLANNED DATA
+    console.log('Debug plannedMonthsToRetirement: nper', {
+      effectiveRate,
+      contribution,
+      initialWithGoals,
+      adjustedGoalPlannedFutureValue
+    });
     const plannedMonthsToRetirement = nper(
       effectiveRate,
       -contribution,

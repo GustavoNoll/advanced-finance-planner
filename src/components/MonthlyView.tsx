@@ -79,7 +79,7 @@ export const MonthlyView = ({
       const lastRecord = sortedRecords[sortedRecords.length - 1];
       const endDate = `01/${lastRecord.record_month.toString().padStart(2, '0')}/${lastRecord.record_year}`;
       
-      return await fetchCDIRates(startDate, endDate);
+      return fetchCDIRates(startDate, endDate);
     },
     enabled: Boolean(allFinancialRecords?.length),
   });
@@ -96,7 +96,7 @@ export const MonthlyView = ({
       const lastRecord = sortedRecords[sortedRecords.length - 1];
       const endDate = `01/${lastRecord.record_month.toString().padStart(2, '0')}/${lastRecord.record_year}`;
       
-      return await fetchIPCARates(startDate, endDate);
+      return fetchIPCARates(startDate, endDate);
     },
     enabled: Boolean(allFinancialRecords?.length),
   });
@@ -450,6 +450,7 @@ export const MonthlyView = ({
                   <th className="p-2 text-right whitespace-nowrap">{t('monthlyView.futureProjection.goalsEventsImpact')}</th>
                   <th className="p-2 text-right whitespace-nowrap">{t('monthlyView.futureProjection.balance')}</th>
                   <th className="p-2 text-right whitespace-nowrap">{t('monthlyView.futureProjection.projectedBalance')}</th>
+                  <th className="p-2 text-right whitespace-nowrap">{t('monthlyView.futureProjection.ipcaRate')}</th>
                   <th className="p-2 text-center w-10"></th>
                 </tr>
               </thead>
@@ -511,6 +512,9 @@ export const MonthlyView = ({
                             R$ {(projection.balance - projection.planned_balance).toLocaleString('pt-BR', { maximumFractionDigits: 2 })})
                           </span>
                         )}
+                      </td>
+                      <td className="p-2 text-right font-medium">
+                        {projection.ipcaRate?.toFixed(2) || '-'}%
                       </td>
                       <td className="p-2 text-center">
                         <button
@@ -582,7 +586,9 @@ export const MonthlyView = ({
                               </span>
                             )}
                           </td>
-                          <td className="p-2"></td>
+                          <td className="p-2 text-right font-medium">
+                            {month.ipcaRate?.toFixed(2) || '-'}%
+                          </td>
                         </tr>
                       );
                     })}

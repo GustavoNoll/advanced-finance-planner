@@ -436,6 +436,7 @@ export const ptBR = {
       age: "Idade",
       year: "Ano",
       contribution: "Aporte",
+      ipcaRate: "IPCA",
       withdrawal: "Retirada",
       balance: "Evolução Real",
       expandYear: "Expandir detalhes mensais",

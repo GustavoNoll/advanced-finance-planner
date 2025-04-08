@@ -386,7 +386,7 @@ const FinancialRecords = () => {
         const startDate = `01/${oldestRecord.record_month.toString().padStart(2, '0')}/${oldestRecord.record_year}`;
         
         // Fetch IPCA rates from the oldest record to current date
-        const response = await fetchIPCARates(startDate, new Date().toLocaleDateString('pt-BR', {
+        const response = fetchIPCARates(startDate, new Date().toLocaleDateString('pt-BR', {
           day: '2-digit',
           month: '2-digit',
           year: 'numeric'

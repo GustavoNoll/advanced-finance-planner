@@ -30,7 +30,7 @@ function filterDataByDateRange(
     }));
 }
 
-export const fetchCDIRates = async (startDate: string, endDate: string) => {
+export const fetchCDIRates = (startDate: string, endDate: string) => {
   try {
     return filterDataByDateRange(cdiData, startDate, endDate);
   } catch (error) {
@@ -39,7 +39,7 @@ export const fetchCDIRates = async (startDate: string, endDate: string) => {
   }
 };
 
-export const fetchIPCARates = async (startDate: string, endDate: string) => {
+export const fetchIPCARates = (startDate: string, endDate: string) => {
   try {
     return filterDataByDateRange(ipcaData, startDate, endDate);
   } catch (error) {

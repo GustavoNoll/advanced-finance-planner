@@ -1,5 +1,6 @@
 import { yearlyReturnRateToMonthlyReturnRate, calculateCompoundedRates } from './financial-math';
 import { ChartDataPoint, FinancialRecord, Goal, MonthNumber, ProjectedEvent } from '@/types/financial';
+import { fetchIPCARates } from './bcb-api';
 
 interface InvestmentPlan {
   initial_amount: number;
@@ -40,6 +41,7 @@ interface MonthlyProjectionData {
   returns?: number;
   goalsEventsImpact?: number;
   difference_from_planned_balance: number;
+  ipcaRate?: number;
 }
 
 export interface YearlyProjectionData {
@@ -55,6 +57,12 @@ export interface YearlyProjectionData {
   returns: number;
   difference_from_planned_balance: number;
   goalsEventsImpact?: number;
+  ipcaRate?: number;
+}
+
+interface IPCARate {
+  date: Date;
+  monthlyRate: number;
 }
 
 export function generateProjectionData(
@@ -89,9 +97,35 @@ export function generateProjectionData(
   let projectedBalance = investmentPlan.initial_amount;
   let currentMonthlyDeposit = investmentPlan.monthly_deposit;
   let currentMonthlyWithdrawal = investmentPlan.desired_income;
-  const monthlyInflationRate = yearlyReturnRateToMonthlyReturnRate(investmentPlan.inflation/100);
+  
+  // Default to the estimated inflation rate if no IPCA data is available
+  const defaultMonthlyInflationRate = yearlyReturnRateToMonthlyReturnRate(investmentPlan.inflation/100);
   const monthlyExpectedReturnRate = yearlyReturnRateToMonthlyReturnRate(investmentPlan.expected_return/100);
-  const monthlyReturnRate = calculateCompoundedRates([monthlyExpectedReturnRate, monthlyInflationRate]);
+  
+  // Create a map of IPCA rates by year and month for easy lookup
+  const ipcaRatesMap = new Map<string, number>();
+  
+  // Fetch IPCA rates from BCB API if not provided
+  let ipcaData;
+  if (!ipcaData || ipcaData.length === 0) {
+    try {
+      // Format dates for BCB API (DD/MM/YYYY)
+      const startDate = `01/${startMonth.toString().padStart(2, '0')}/${startYear}`;
+      const endDate = `31/12/${startYear + yearsUntilEnd}`;
+      
+      ipcaData = fetchIPCARates(startDate, endDate);
+    } catch (error) {
+      console.error('Error fetching IPCA rates from BCB API:', error);
+    }
+  }
+  
+  if (ipcaData && ipcaData.length > 0) {
+    ipcaData.forEach(rate => {
+      const key = `${rate.date.getFullYear()}-${rate.date.getMonth() + 1}`;
+      ipcaRatesMap.set(key, rate.monthlyRate / 100); // Convert percentage to decimal
+    });
+  }
+  
   let lastHistoricalRecord = null;
 
   const historicalRecordsMap = new Map(
@@ -115,6 +149,15 @@ export function generateProjectionData(
       const isRetirementAge = age > investmentPlan.final_age || 
         (age === investmentPlan.final_age && currentMonthNumber >= birthMonth + 1);
 
+      // Get the IPCA rate for this month if available, otherwise use the default
+      const ipcaKey = `${year}-${currentMonthNumber}`;
+      const monthlyInflationRate = ipcaRatesMap.has(ipcaKey) 
+        ? ipcaRatesMap.get(ipcaKey)! 
+        : defaultMonthlyInflationRate;
+      
+      // Calculate the monthly return rate based on the expected return and inflation
+      const monthlyReturnRate = calculateCompoundedRates([monthlyExpectedReturnRate, monthlyInflationRate]);
+
       if (investmentPlan.adjust_contribution_for_inflation && !isRetirementAge) {
         currentMonthlyDeposit *= (1 + monthlyInflationRate);
       }
@@ -137,7 +180,8 @@ export function generateProjectionData(
           planned_balance: projectedBalance,
           isHistorical: true,
           retirement: isRetirementAge,
-          difference_from_planned_balance: historicalRecord.ending_balance - projectedBalance
+          difference_from_planned_balance: historicalRecord.ending_balance - projectedBalance,
+          ipcaRate: monthlyInflationRate * 100 // Convert back to percentage for display
         };
       }
 
@@ -151,7 +195,8 @@ export function generateProjectionData(
           retirement: false,
           planned_balance: projectedBalance,
           isHistorical: false,
-          difference_from_planned_balance: projectedBalance - currentBalance
+          difference_from_planned_balance: projectedBalance - currentBalance,
+          ipcaRate: monthlyInflationRate * 100 // Convert back to percentage for display
         };
       }
 
@@ -183,7 +228,8 @@ export function generateProjectionData(
           isHistorical: false,
           difference_from_planned_balance: currentBalance - projectedBalance,
           goalsEventsImpact,
-          retirement: isRetirementAge
+          retirement: isRetirementAge,
+          ipcaRate: monthlyInflationRate * 100 // Convert back to percentage for display
         };
       }
 
@@ -198,7 +244,8 @@ export function generateProjectionData(
         isHistorical: false,
         difference_from_planned_balance: currentBalance - projectedBalance,
         goalsEventsImpact,
-        retirement: false
+        retirement: false,
+        ipcaRate: monthlyInflationRate * 100 // Convert back to percentage for display
       };
     }).filter(Boolean) as MonthlyProjectionData[];
 
@@ -207,7 +254,7 @@ export function generateProjectionData(
       const yearlyWithdrawal = monthlyData.reduce((sum, month) => sum + month.withdrawal, 0);
       const lastMonth = monthlyData[monthlyData.length - 1];
       const yearlyReturns = monthlyData.reduce((sum, month) => {
-        const monthReturn = month.balance - (month.balance / (1 + monthlyReturnRate)) - month.contribution + month.withdrawal;
+        const monthReturn = month.balance - (month.balance / (1 + monthlyExpectedReturnRate)) - month.contribution + month.withdrawal;
         return sum + monthReturn;
       }, 0);
       const yearlyGoalsEventsImpact = monthlyData.reduce((sum, month) => sum + (month.goalsEventsImpact || 0), 0);
@@ -224,7 +271,8 @@ export function generateProjectionData(
         hasHistoricalData: monthlyData.some(month => month.isHistorical),
         returns: yearlyReturns,
         difference_from_planned_balance: lastMonth.difference_from_planned_balance,
-        goalsEventsImpact: yearlyGoalsEventsImpact
+        goalsEventsImpact: yearlyGoalsEventsImpact,
+        ipcaRate: monthlyData.reduce((sum, month) => sum + (month.ipcaRate || 0), 0) / monthlyData.length
       });
     }
   }

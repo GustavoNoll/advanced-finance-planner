@@ -11,7 +11,7 @@
  */
 export function calculateCompoundedRates(rates: number[]): number {
   const finalRate = rates.reduce((acc, rate) => acc * (1 + rate), 1);
-  return parseFloat((finalRate - 1).toFixed(4));
+  return parseFloat((finalRate - 1).toFixed(5));
 }
 
 /**
@@ -114,7 +114,7 @@ export function calculateFutureValue(
 /**
  * Calcula o número de períodos necessários para atingir um valor futuro com base na taxa de juros e pagamentos
  * Funciona como a função NPER do Excel
- * Fórmula: NPER = ln((PMT * (1 + taxa * tipo) - VF * taxa) / (VP * taxa + PMT * (1 + taxa * tipo))) / ln(1 + taxa)
+ * Fórmula: NPER = ln((PMT * (1 + taxa * tipo) - FV * taxa) / (PV * taxa + PMT * (1 + taxa * tipo))) / ln(1 + taxa)
  * 
  * @param taxa - Taxa de juros por período em decimal
  * @param valor_do_pagamento - Pagamento feito em cada período (negativo se você estiver pagando)
@@ -144,6 +144,7 @@ export function nper(
   const PV = valor_atual;
   const FV = valor_futuro;
   
+  // Fórmula correta do Excel NPER
   const numerador = PMT * (1 + taxa * tipo) - FV * taxa;
   const denominador = PV * taxa + PMT * (1 + taxa * tipo);
   
