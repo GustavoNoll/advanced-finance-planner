@@ -379,6 +379,7 @@ const financialCalculations = {
     // Calculate projections
 
     // PROJECTIONS 
+    console.log('Debug balanceWithGoals:', balanceWithGoals);
     const projectedMonthsToRetirement = nper(
       effectiveRate,
       contribution,
@@ -481,10 +482,11 @@ export function processPlanProgressData(
   const currentBalance = lastRecord?.ending_balance || investmentPlan.initial_amount;
   const investmentGoal = investmentPlan.future_value || 0;
   const currentProgress = (currentBalance / investmentGoal) * 100;
-  
+  const accumulatedInflationInBalance = lastRecord?.ending_balance ? (calculateCompoundedRates(allFinancialRecords.map(record => record.target_rentability /100))) : 1;
+
   // Calculate projections
   const projections = financialCalculations.calculateProjections(
-    currentBalance, 
+    currentBalance / (1 + accumulatedInflationInBalance), 
     allFinancialRecords, 
     investmentPlan, 
     birthDate, 

@@ -412,7 +412,7 @@ const FinancialRecords = () => {
             const ipcaRate = ipcaRateMap.get(recordKey);
             // Apenas incluímos o ID e o valor a ser atualizado
             const parsedIpcaRate = ipcaRate;
-            const ipcaRateConverted = parseFloat((calculateCompoundedRates([parsedIpcaRate/100, yearlyReturnRateToMonthlyReturnRate(investmentPlan?.expected_return/100)]) * 100).toFixed(4));
+            const ipcaRateConverted = parseFloat((calculateCompoundedRates([parsedIpcaRate/100, yearlyReturnRateToMonthlyReturnRate(investmentPlan?.expected_return/100)]) * 100).toFixed(2));
             const parsedTargetRentability = parseFloat(record.target_rentability.toFixed(2));
             if (parsedTargetRentability !== ipcaRateConverted) {
               updates.push({
