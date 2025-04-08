@@ -272,7 +272,7 @@ export function generateProjectionData(
         returns: yearlyReturns,
         difference_from_planned_balance: lastMonth.difference_from_planned_balance,
         goalsEventsImpact: yearlyGoalsEventsImpact,
-        ipcaRate: monthlyData.reduce((sum, month) => sum + (month.ipcaRate || 0), 0) / monthlyData.length
+        ipcaRate: calculateCompoundedRates(monthlyData.map(month => month.ipcaRate || 0))
       });
     }
   }
