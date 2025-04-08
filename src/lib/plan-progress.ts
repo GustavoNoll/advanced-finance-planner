@@ -359,7 +359,7 @@ const financialCalculations = {
     
     // Get plan parameters
     const adjustContributionForInflation = investmentPlan.adjust_contribution_for_inflation;
-    const contribution = investmentPlan.monthly_deposit;
+    const contribution = -investmentPlan.monthly_deposit;
     const monthsRetired = (investmentPlan.limit_age - investmentPlan.final_age) * 12;
     
     // Calculate effective rate based on inflation adjustment setting
@@ -370,28 +370,21 @@ const financialCalculations = {
     const initialWithGoals = -(investmentPlan.initial_amount + preRetirementGoals);
     const inflationInRetirementYear = (1 + monthlyInflation) ** monthsToRetirementSinceStart;
     const projectedPresentValue = projectedFuturePresentValue / inflationInRetirementYear;
-    const goalProjectedPresentValue = investmentPlan.present_future_value;
+    const goalProjectedPresentValue = investmentPlan.present_future_value * (adjustContributionForInflation ? 1 : inflationInRetirementYear);
     const adjustedGoalProjectedFutureValue = (goalProjectedPresentValue - postRetirementGoals * (adjustContributionForInflation ? 1 : inflationInRetirementYear));
     const plannedPresentValue = plannedFuturePresentValue / inflationInRetirementYear;
-    const goalPlannedPresentValue = investmentPlan.present_future_value;
+    const goalPlannedPresentValue = investmentPlan.present_future_value * (adjustContributionForInflation ? 1 : inflationInRetirementYear);
     const adjustedGoalPlannedFutureValue = (goalPlannedPresentValue - postRetirementGoals * (adjustContributionForInflation ? 1 : inflationInRetirementYear));
 
     // Calculate projections
 
-
     // PROJECTIONS 
-    console.log('Debug projectedMonthsToRetirement: nper', {
+    const projectedMonthsToRetirement = nper(
       effectiveRate,
       contribution,
       balanceWithGoals,
       adjustedGoalProjectedFutureValue
-    });
-    const projectedMonthsToRetirement = nper(
-      effectiveRate,
-      -contribution,
-      balanceWithGoals,
-      adjustedGoalProjectedFutureValue
-    );
+    ) + (monthsToRetirementSinceStart - monthsToRetirementSinceNow);
 
     const projectedContribution = -pmt(
       effectiveRate,
@@ -413,18 +406,12 @@ const financialCalculations = {
     )
 
     // PLANNED DATA
-    console.log('Debug plannedMonthsToRetirement: nper', {
+    const plannedMonthsToRetirement = nper(
       effectiveRate,
       contribution,
       initialWithGoals,
       adjustedGoalPlannedFutureValue
-    });
-    const plannedMonthsToRetirement = nper(
-      effectiveRate,
-      -contribution,
-      initialWithGoals,
-      adjustedGoalPlannedFutureValue
-    ) - (monthsToRetirementSinceStart - monthsToRetirementSinceNow);
+    );
 
     const plannedContribution = -pmt(
       effectiveRate,
