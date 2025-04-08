@@ -379,7 +379,6 @@ const financialCalculations = {
     // Calculate projections
 
     // PROJECTIONS 
-    console.log('Debug balanceWithGoals:', balanceWithGoals);
     const projectedMonthsToRetirement = nper(
       effectiveRate,
       contribution,
