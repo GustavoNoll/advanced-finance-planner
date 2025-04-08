@@ -42,7 +42,8 @@ interface MonthlyProjectionData {
   returns?: number;
   goalsEventsImpact?: number;
   difference_from_planned_balance: number;
-  ipcaRate?: number;
+  ipcaRate: number;
+  effectiveRate: number;
 }
 
 export interface YearlyProjectionData {
@@ -58,7 +59,8 @@ export interface YearlyProjectionData {
   returns: number;
   difference_from_planned_balance: number;
   goalsEventsImpact?: number;
-  ipcaRate?: number;
+  ipcaRate: number;
+  effectiveRate: number;
 }
 
 interface IPCARate {
@@ -105,7 +107,9 @@ export function generateProjectionData(
   
   // Create a map of IPCA rates by year and month for easy lookup
   const endDate = new Date(startYear + yearsUntilEnd, 11, 31); // December 31st of the last year
-  const ipcaRatesMap = createIPCARatesMap(planStartDate, endDate);
+  const adjustedPlanStartDate = new Date(planStartDate);
+  adjustedPlanStartDate.setMonth(adjustedPlanStartDate.getMonth() - 1);
+  const ipcaRatesMap = createIPCARatesMap(adjustedPlanStartDate, endDate);
   
   let lastHistoricalRecord = null;
 
@@ -162,7 +166,8 @@ export function generateProjectionData(
           isHistorical: true,
           retirement: isRetirementAge,
           difference_from_planned_balance: historicalRecord.ending_balance - projectedBalance,
-          ipcaRate: monthlyInflationRate * 100 // Convert back to percentage for display
+          effectiveRate: monthlyReturnRate,
+          ipcaRate: monthlyInflationRate
         };
       }
 
@@ -176,8 +181,9 @@ export function generateProjectionData(
           retirement: false,
           planned_balance: projectedBalance,
           isHistorical: false,
+          effectiveRate: monthlyReturnRate,
           difference_from_planned_balance: projectedBalance - currentBalance,
-          ipcaRate: monthlyInflationRate * 100 // Convert back to percentage for display
+          ipcaRate: monthlyInflationRate
         };
       }
 
@@ -210,7 +216,8 @@ export function generateProjectionData(
           difference_from_planned_balance: currentBalance - projectedBalance,
           goalsEventsImpact,
           retirement: isRetirementAge,
-          ipcaRate: monthlyInflationRate * 100 // Convert back to percentage for display
+          effectiveRate: monthlyReturnRate,
+          ipcaRate: monthlyInflationRate
         };
       }
 
@@ -226,7 +233,9 @@ export function generateProjectionData(
         difference_from_planned_balance: currentBalance - projectedBalance,
         goalsEventsImpact,
         retirement: false,
-        ipcaRate: monthlyInflationRate * 100 // Convert back to percentage for display
+        monthlyReturnRate,
+        ipcaRate: monthlyInflationRate,
+        effectiveRate: monthlyReturnRate
       };
     }).filter(Boolean) as MonthlyProjectionData[];
 
@@ -240,6 +249,9 @@ export function generateProjectionData(
       }, 0);
       const yearlyGoalsEventsImpact = monthlyData.reduce((sum, month) => sum + (month.goalsEventsImpact || 0), 0);
 
+      console.log(monthlyData)
+      console.log(calculateCompoundedRates(monthlyData.map(month => month.ipcaRate || 0)))
+      console.log(calculateCompoundedRates(monthlyData.map(month => month.effectiveRate)))
       projectionData.push({
         age,
         year,
@@ -253,7 +265,8 @@ export function generateProjectionData(
         returns: yearlyReturns,
         difference_from_planned_balance: lastMonth.difference_from_planned_balance,
         goalsEventsImpact: yearlyGoalsEventsImpact,
-        ipcaRate: calculateCompoundedRates(monthlyData.map(month => month.ipcaRate/100 || 0)) * 100
+        ipcaRate: calculateCompoundedRates(monthlyData.map(month => month.ipcaRate || 0)),
+        effectiveRate: calculateCompoundedRates(monthlyData.map(month => month.effectiveRate))
       });
     }
   }

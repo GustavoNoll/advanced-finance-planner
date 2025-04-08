@@ -70,7 +70,7 @@ const EditFinancialRecord = () => {
   const calculateMonthlyReturnRate = (starting: number, ending: number, contribution: number) => {
     if (starting <= 0) return 0;
     const rate = ((ending - contribution) / starting - 1) * 100;
-    return Number(rate.toFixed(2));
+    return Number(rate.toFixed(10));
   };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {

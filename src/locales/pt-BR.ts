@@ -437,6 +437,7 @@ export const ptBR = {
       year: "Ano",
       contribution: "Aporte",
       ipcaRate: "IPCA",
+      effectiveRate: "Meta Retorno",
       withdrawal: "Retirada",
       balance: "Evolução Real",
       expandYear: "Expandir detalhes mensais",

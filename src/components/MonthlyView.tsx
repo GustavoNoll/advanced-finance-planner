@@ -451,6 +451,7 @@ export const MonthlyView = ({
                   <th className="p-2 text-right whitespace-nowrap">{t('monthlyView.futureProjection.balance')}</th>
                   <th className="p-2 text-right whitespace-nowrap">{t('monthlyView.futureProjection.projectedBalance')}</th>
                   <th className="p-2 text-right whitespace-nowrap">{t('monthlyView.futureProjection.ipcaRate')}</th>
+                  <th className="p-2 text-right whitespace-nowrap">{t('monthlyView.futureProjection.effectiveRate')}</th>
                   <th className="p-2 text-center w-10"></th>
                 </tr>
               </thead>
@@ -514,7 +515,10 @@ export const MonthlyView = ({
                         )}
                       </td>
                       <td className="p-2 text-right font-medium">
-                        {projection.ipcaRate?.toFixed(2) || '-'}%
+                        {(projection.ipcaRate * 100).toFixed(2) || '-'}%
+                      </td>
+                      <td className="p-2 text-right font-medium">
+                        {(projection.effectiveRate * 100).toFixed(2) || '-'}%
                       </td>
                       <td className="p-2 text-center">
                         <button
@@ -587,7 +591,12 @@ export const MonthlyView = ({
                             )}
                           </td>
                           <td className="p-2 text-right font-medium">
-                            {month.ipcaRate?.toFixed(2) || '-'}%
+                            {(month.ipcaRate * 100).toFixed(4) || '-'}%
+                          </td>
+                          <td className="p-2 text-right font-medium">
+                            {(month.effectiveRate * 100).toFixed(4) || '-'}%
+                          </td>
+                          <td className="p-2 text-right font-medium">
                           </td>
                         </tr>
                       );
