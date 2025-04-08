@@ -1,6 +1,6 @@
 import { FinancialRecord, InvestmentPlan, Goal, ProjectedEvent } from "@/types/financial";
-import { calculateCompoundedRates, nper, yearlyReturnRateToMonthlyReturnRate, pmt } from "@/lib/financial-math";
-import { YearlyProjectionData } from "./chart-projections";
+import { calculateCompoundedRates, nper, yearlyReturnRateToMonthlyReturnRate, pmt, calculateFutureValue, vp } from "@/lib/financial-math";
+import { calculateAccumulatedInflation, calculatePlanAccumulatedInflation } from "./inflation-utils";
 
 /**
  * Constants for date calculations
@@ -303,7 +303,8 @@ const financialCalculations = {
     goals: Goal[],
     events: ProjectedEvent[],
     plannedFuturePresentValue: number,
-    projectedFuturePresentValue: number
+    projectedFuturePresentValue: number,
+    realMonthlyInflation: number
   ): ProjectionResult => {
     const lastRecord = allFinancialRecords[0];
     const actualMonth = lastRecord?.record_month || 0;
@@ -343,7 +344,7 @@ const financialCalculations = {
 
     const { preRetirementHash, postRetirementHash } = financialCalculations.generatePreCalculationHash(
       monthlyExpectedReturn,
-      monthlyInflation,
+      realMonthlyInflation,
       goals,
       events,
       monthsToRetirementSinceNow,
@@ -363,12 +364,12 @@ const financialCalculations = {
     const monthsRetired = (investmentPlan.limit_age - investmentPlan.final_age) * 12;
     
     // Calculate effective rate based on inflation adjustment setting
-    const effectiveRate = adjustContributionForInflation ? monthlyExpectedReturn : calculateCompoundedRates([monthlyExpectedReturn, monthlyInflation]);
+    const effectiveRate = adjustContributionForInflation ? monthlyExpectedReturn : calculateCompoundedRates([monthlyExpectedReturn, realMonthlyInflation]);
     
     // Calculate adjusted present and future values
     const balanceWithGoals = -(currentBalance + preRetirementGoals);
     const initialWithGoals = -(investmentPlan.initial_amount + preRetirementGoals);
-    const inflationInRetirementYear = (1 + monthlyInflation) ** monthsToRetirementSinceStart;
+    const inflationInRetirementYear = (1 + realMonthlyInflation) ** monthsToRetirementSinceStart;
     const projectedPresentValue = projectedFuturePresentValue / inflationInRetirementYear;
     const goalProjectedPresentValue = investmentPlan.present_future_value * (adjustContributionForInflation ? 1 : inflationInRetirementYear);
     const adjustedGoalProjectedFutureValue = (goalProjectedPresentValue - postRetirementGoals * (adjustContributionForInflation ? 1 : inflationInRetirementYear));
@@ -379,12 +380,13 @@ const financialCalculations = {
     // Calculate projections
 
     // PROJECTIONS 
+    const balanceVPAdjusted = vp(monthlyExpectedReturn, monthsToRetirementSinceStart - monthsToRetirementSinceNow, contribution, balanceWithGoals);
     const projectedMonthsToRetirement = nper(
       effectiveRate,
       contribution,
-      balanceWithGoals,
+      balanceVPAdjusted,
       adjustedGoalProjectedFutureValue
-    ) + (monthsToRetirementSinceStart - monthsToRetirementSinceNow);
+    );
 
     const projectedContribution = -pmt(
       effectiveRate,
@@ -399,7 +401,7 @@ const financialCalculations = {
       monthsRetired,
       projectedPresentValue,
       investmentPlan.adjust_income_for_inflation,
-      monthlyInflation,
+      realMonthlyInflation,
       inflationInRetirementYear,
       investmentPlan.legacy_amount,
       monthlyExpectedReturn
@@ -426,7 +428,7 @@ const financialCalculations = {
       monthsRetired,
       plannedPresentValue,
       investmentPlan.adjust_income_for_inflation,
-      monthlyInflation,
+      realMonthlyInflation,
       inflationInRetirementYear,
       investmentPlan.legacy_amount,
       monthlyExpectedReturn
@@ -481,18 +483,32 @@ export function processPlanProgressData(
   const currentBalance = lastRecord?.ending_balance || investmentPlan.initial_amount;
   const investmentGoal = investmentPlan.future_value || 0;
   const currentProgress = (currentBalance / investmentGoal) * 100;
-  const accumulatedInflationInBalance = lastRecord?.ending_balance ? (calculateCompoundedRates(allFinancialRecords.map(record => record.target_rentability /100))) : 1;
+  
+  // Calculate accumulated inflation from plan start to last record
+  const planStartDate = new Date(investmentPlan.plan_initial_date);
+  const yearDiff = planStartDate.getFullYear() - birthDate.getFullYear();
+  const monthDiff = planStartDate.getMonth() - birthDate.getMonth();
+  const initialAge = yearDiff + (monthDiff / 12);
+  const monthsToEnd = ((investmentPlan.limit_age || 100) - initialAge) * 12;
+  const planEndDate = utils.createDateAtAge(birthDate, investmentPlan.limit_age || 100);
+  const lastRecordDate = lastRecord ? new Date(lastRecord.record_year, lastRecord.record_month - 1) : new Date();
+  const accumulatedInflationInBalance = lastRecord?.ending_balance 
+    ? calculateAccumulatedInflation(planStartDate, lastRecordDate) 
+    : 1;
 
+  const accumulatedPlanInflationInContribution = calculatePlanAccumulatedInflation(planStartDate, planEndDate, investmentPlan.inflation) 
+  const realMonthlyInflation = accumulatedPlanInflationInContribution ** (1/monthsToEnd) - 1
   // Calculate projections
   const projections = financialCalculations.calculateProjections(
-    currentBalance / (1 + accumulatedInflationInBalance), 
+    currentBalance / accumulatedInflationInBalance,
     allFinancialRecords, 
     investmentPlan, 
     birthDate, 
     goals, 
     events,
     plannedFuturePresentValue,
-    projectedFuturePresentValue
+    projectedFuturePresentValue,
+    realMonthlyInflation
   );
 
   console.log('Debug projections:', projections);

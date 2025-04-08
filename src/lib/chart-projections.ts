@@ -1,6 +1,7 @@
 import { yearlyReturnRateToMonthlyReturnRate, calculateCompoundedRates } from './financial-math';
 import { ChartDataPoint, FinancialRecord, Goal, MonthNumber, ProjectedEvent } from '@/types/financial';
 import { fetchIPCARates } from './bcb-api';
+import { createIPCARatesMap } from './inflation-utils';
 
 interface InvestmentPlan {
   initial_amount: number;
@@ -103,28 +104,8 @@ export function generateProjectionData(
   const monthlyExpectedReturnRate = yearlyReturnRateToMonthlyReturnRate(investmentPlan.expected_return/100);
   
   // Create a map of IPCA rates by year and month for easy lookup
-  const ipcaRatesMap = new Map<string, number>();
-  
-  // Fetch IPCA rates from BCB API if not provided
-  let ipcaData;
-  if (!ipcaData || ipcaData.length === 0) {
-    try {
-      // Format dates for BCB API (DD/MM/YYYY)
-      const startDate = `01/${startMonth.toString().padStart(2, '0')}/${startYear}`;
-      const endDate = `31/12/${startYear + yearsUntilEnd}`;
-      
-      ipcaData = fetchIPCARates(startDate, endDate);
-    } catch (error) {
-      console.error('Error fetching IPCA rates from BCB API:', error);
-    }
-  }
-  
-  if (ipcaData && ipcaData.length > 0) {
-    ipcaData.forEach(rate => {
-      const key = `${rate.date.getFullYear()}-${rate.date.getMonth() + 1}`;
-      ipcaRatesMap.set(key, rate.monthlyRate / 100); // Convert percentage to decimal
-    });
-  }
+  const endDate = new Date(startYear + yearsUntilEnd, 11, 31); // December 31st of the last year
+  const ipcaRatesMap = createIPCARatesMap(planStartDate, endDate);
   
   let lastHistoricalRecord = null;
 

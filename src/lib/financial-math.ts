@@ -193,3 +193,41 @@ export function pmt(
 
   return parseFloat((-pagamento).toFixed(4)); // Negative because payment is outflow
 }
+
+/**
+ * Calculates the present value needed to reach a future goal
+ * Similar to Excel's PV function
+ * Formula: PV = FV / (1 + r)^n - PMT * ((1 - (1 + r)^-n) / r)
+ * 
+ * @param realRate - The real interest rate per period as a decimal (e.g., 0.05 for 5%)
+ * @param numberOfPeriods - Total number of periods
+ * @param payment - Regular payment amount (negative if you're paying)
+ * @param futureValue - The future value or goal to reach
+ * @returns The present value needed to reach the future goal
+ * 
+ * @example
+ * // Calculate present value needed to reach R$100000 in 18 periods
+ * // with 5% real interest rate and R$1000 monthly payments
+ * vp(0.05, 18, -1000, 100000)
+ */
+export function vp(
+  realRate: number,
+  numberOfPeriods: number,
+  payment: number,
+  futureValue: number
+): number {
+  // Handle special case for zero rate
+  if (realRate === 0) {
+    return parseFloat((futureValue - payment * numberOfPeriods).toFixed(4));
+  }
+
+  const rate = realRate;
+  const n = numberOfPeriods;
+  const pmt = payment;
+  const fv = futureValue;
+
+  // PV = FV / (1 + r)^n - PMT * ((1 - (1 + r)^-n) / r)
+  const pv = fv / Math.pow(1 + rate, n) - pmt * ((1 - Math.pow(1 + rate, -n)) / rate);
+
+  return parseFloat(pv.toFixed(4));
+}
