@@ -18,6 +18,8 @@ import EditFinancialRecord from "@/pages/EditFinancialRecord";
 import FinancialGoals from "@/pages/FinancialGoals";
 import Events from "@/pages/Events";
 import { LoadingScreen } from "@/components/ui/loading-screen";
+import { SpeedInsights } from "@vercel/speed-insights/react"
+import { Analytics } from "@vercel/analytics/react"
 const queryClient = new QueryClient();
 
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
@@ -158,6 +160,8 @@ const App = () => (
             <Route path="*" element={<NotFound />} />
           </Routes>
         </TooltipProvider>
+        <Analytics />
+        <SpeedInsights />
       </AuthProvider>
     </BrowserRouter>
   </QueryClientProvider>
