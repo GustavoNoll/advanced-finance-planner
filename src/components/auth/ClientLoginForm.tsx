@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import React, { useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -7,7 +7,7 @@ import { useToast } from '@/components/ui/use-toast';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 
-export const ClientLoginForm = () => {
+export const ClientLoginForm: React.FC = () => {
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
@@ -15,7 +15,7 @@ export const ClientLoginForm = () => {
   const { clientId } = useParams();
   const { t } = useTranslation();
 
-  const handleLogin = async (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setLoading(true);
 
@@ -51,13 +51,13 @@ export const ClientLoginForm = () => {
 
       // Redirect to client dashboard
       navigate(`/client/${clientId}`);
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Login error:', error);
       toast({
         title: t('common.error'),
-        description: error.message === 'Invalid login credentials' 
+        description: error instanceof Error && error.message === 'Invalid login credentials' 
           ? t('auth.invalidPassword') 
-          : error.message,
+          : error instanceof Error ? error.message : 'An unknown error occurred',
         variant: "destructive",
       });
     } finally {
@@ -81,7 +81,7 @@ export const ClientLoginForm = () => {
                 id="password"
                 type="password"
                 value={password}
-                onChange={(e) => setPassword(e.target.value)}
+                onChange={(e: React.ChangeEvent<HTMLInputElement>) => setPassword(e.target.value)}
                 required
                 placeholder={t('auth.enterPassword')}
               />
