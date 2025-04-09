@@ -1,5 +1,5 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { TrendingUp, User, Calendar, Clock, Search, X } from 'lucide-react';
+import { TrendingUp, User, Calendar, Clock, Search, X, Share2, ChevronRight } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import {
   Tooltip,
@@ -10,6 +10,7 @@ import {
 import { UserProfileInvestment } from '@/types/broker-dashboard';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
+import { useToast } from '@/components/ui/use-toast';
 
 interface ClientListProps {
   clients: UserProfileInvestment[];
@@ -37,7 +38,17 @@ export const ClientList = ({
   onClearSearch,
   isSearching 
 }: ClientListProps) => {
+  const { toast } = useToast();
   const { t } = useTranslation();
+
+  const handleShareClient = (clientId: string) => {
+    const clientLoginUrl = `${window.location.origin}/client-login/${clientId}`;
+    navigator.clipboard.writeText(clientLoginUrl);
+    toast({
+      title: t('common.success'),
+      description: t('brokerDashboard.linkCopied'),
+    });
+  };
 
   return (
     <Card className="border-gray-100">
@@ -56,7 +67,7 @@ export const ClientList = ({
                 <Search className="h-4 w-4 text-gray-400 group-hover:text-primary transition-colors duration-200" />
               </div>
               <Input
-                placeholder={t('brokerDashboard.search.placeholder', { defaultValue: 'Buscar por nome ou email...' })}
+                placeholder={t('brokerDashboard.search.placeholder')}
                 value={searchQuery}
                 onChange={(e) => onSearchChange(e.target.value)}
                 className="pl-10 pr-10 h-11 bg-white/50 backdrop-blur-sm border-gray-200/50 focus:border-primary/50 focus:ring-primary/20 transition-all duration-200 group-hover:bg-white/80"
@@ -104,7 +115,7 @@ export const ClientList = ({
                                 </span>
                               </TooltipTrigger>
                               <TooltipContent>
-                                <p>{t('brokerDashboard.client.pendingPlanTooltip', { defaultValue: 'Cliente sem plano de investimento cadastrado' })}</p>
+                                <p>{t('brokerDashboard.client.pendingPlanTooltip')}</p>
                               </TooltipContent>
                             </Tooltip>
                           </TooltipProvider>
@@ -120,14 +131,8 @@ export const ClientList = ({
                               <TooltipContent>
                                 <p>
                                   {client.months_without_records
-                                    ? t('brokerDashboard.client.outdatedRecordTooltip', {
-                                        defaultValue: 'Sem registros há {{months}} meses',
-                                        months: client.months_without_records
-                                      })
-                                    : t('brokerDashboard.client.neverRecordedTooltip', {
-                                        defaultValue: 'Nunca registrado'
-                                      })
-                                  }
+                                    ? t('brokerDashboard.client.outdatedRecordTooltip', { months: client.months_without_records })
+                                    : t('brokerDashboard.client.neverRecordedTooltip')}
                                 </p>
                               </TooltipContent>
                             </Tooltip>
@@ -142,7 +147,7 @@ export const ClientList = ({
                                 </span>
                               </TooltipTrigger>
                               <TooltipContent>
-                                <p>{t('brokerDashboard.client.lowReturnsTooltip', { defaultValue: 'Retornos abaixo de 0.5%' })}</p>
+                                <p>{t('brokerDashboard.client.lowReturnsTooltip')}</p>
                               </TooltipContent>
                             </Tooltip>
                           </TooltipProvider>
@@ -156,7 +161,7 @@ export const ClientList = ({
                                 </span>
                               </TooltipTrigger>
                               <TooltipContent>
-                                <p>{t('brokerDashboard.client.belowRequiredContributionTooltip', { defaultValue: 'Aportes abaixo do necessário' })}</p>
+                                <p>{t('brokerDashboard.client.belowRequiredContributionTooltip')}</p>
                               </TooltipContent>
                             </Tooltip>
                           </TooltipProvider>
@@ -174,7 +179,7 @@ export const ClientList = ({
                     </div>
                   </div>
                 </div>
-                <div className="flex items-center gap-6">
+                <div className="flex items-center gap-8" style={{marginRight: '10px'}}>
                   {client.monthly_return_rate !== undefined && client.monthly_return_rate !== null && (
                     <TooltipProvider>
                       <Tooltip>
@@ -187,7 +192,7 @@ export const ClientList = ({
                           </div>
                         </TooltipTrigger>
                         <TooltipContent>
-                          <p>{t('brokerDashboard.client.monthlyReturnTooltip', { defaultValue: 'Porcentagem de retorno no último mês' })}</p>
+                          <p>{t('brokerDashboard.client.monthlyReturnTooltip')}</p>
                         </TooltipContent>
                       </Tooltip>
                     </TooltipProvider>
@@ -202,11 +207,37 @@ export const ClientList = ({
                           </div>
                         </TooltipTrigger>
                         <TooltipContent>
-                          <p>{t('brokerDashboard.client.needsPlanReviewTooltip', { defaultValue: 'Cliente precisa revisar o plano de investimentos' })}</p>
+                          <p>{t('brokerDashboard.client.needsPlanReviewTooltip')}</p>
                         </TooltipContent>
                       </Tooltip>
                     </TooltipProvider>
                   )}
+                </div>
+                <div className="flex items-center gap-8 ml-auto">
+                  <div className="flex items-center gap-4">
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleShareClient(client.id);
+                            }}
+                            className="h-8 w-8 border border-gray-200 hover:border-gray-300"
+                          >
+                            <Share2 className="h-4 w-4" />
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent side="left" className="flex flex-col gap-1">
+                          <p className="font-medium">{t('brokerDashboard.client.shareTooltip')}</p>
+                          <p className="text-xs text-gray-500">Clique para copiar o link</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+                    <ChevronRight className="h-4 w-4 text-gray-400 group-hover:text-primary transition-colors duration-200" />
+                  </div>
                 </div>
               </div>
             ))
@@ -216,12 +247,10 @@ export const ClientList = ({
                 <Search className="h-6 w-6 text-gray-400" />
               </div>
               <h3 className="text-lg font-medium text-gray-900 mb-2">
-                {t('brokerDashboard.search.noResults', { defaultValue: 'Nenhum resultado encontrado' })}
+                {t('brokerDashboard.search.noResults')}
               </h3>
               <p className="text-sm text-gray-500 max-w-sm">
-                {t('brokerDashboard.search.noResultsDescription', { 
-                  defaultValue: 'Tente ajustar sua busca ou limpar os filtros para ver mais resultados.' 
-                })}
+                {t('brokerDashboard.search.noResultsDescription')}
               </p>
             </div>
           )}

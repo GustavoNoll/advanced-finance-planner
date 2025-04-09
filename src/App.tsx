@@ -7,6 +7,7 @@ import { AuthProvider, useAuth } from "./components/auth/AuthProvider";
 import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
 import { LoginForm } from "./components/auth/LoginForm";
+import { ClientLoginForm } from "./components/auth/ClientLoginForm";
 import { CreatePlan } from "./pages/CreatePlan";
 import { EditPlan } from "./pages/EditPlan";
 import { BrokerDashboard } from "./pages/BrokerDashboard";
@@ -45,6 +46,7 @@ const App = () => (
           <Sonner />
           <Routes>
             <Route path="/login" element={<LoginForm />} />
+            <Route path="/client-login/:clientId" element={<ClientLoginForm />} />
             <Route
               path="/"
               element={

@@ -173,13 +173,6 @@ const ClientProfile = () => {
               <div className="space-y-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    {t('clientProfile.email')}
-                  </label>
-                  <Input value={profile.email} disabled className="bg-gray-50" />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
                     {t('clientProfile.fullName')}
                   </label>
                   <Input

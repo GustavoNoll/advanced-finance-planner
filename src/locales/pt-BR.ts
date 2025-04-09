@@ -237,7 +237,8 @@ export const ptBR = {
       lowReturnsTooltip: "Retornos abaixo de 0.5%",
       belowRequiredContribution: "Aportes Insuficientes",
       belowRequiredContributionTooltip: "Aportes abaixo do necessário",
-      lastActivity: "Última Atividade"
+      lastActivity: "Última Atividade",
+      shareTooltip: "Compartilhar link de acesso do cliente",
     },
     metrics: {
       totalClients: "Total de Clientes",
@@ -302,9 +303,13 @@ export const ptBR = {
         fetchClients: "Erro ao buscar clientes",
         search: "Erro ao realizar busca"
       }
-    }
+    },
+    share: "Compartilhar",
+    shareWithClient: "Compartilhar com Cliente",
+    linkCopied: "Link copiado com sucesso!",
   },
   common: {
+    success: "Sucesso",
     saving: "Salvando..",
     addNew: "Adicionar Novos",
     custom: "Personalizado",
@@ -682,5 +687,13 @@ export const ptBR = {
       deleteSuccess: 'Evento excluído com sucesso',
       deleteError: 'Erro ao excluir evento',
     },
+  },
+  auth: {
+    clientLogin: "Acesso do Cliente",
+    password: "Senha",
+    enterPassword: "Digite sua senha",
+    login: "Entrar",
+    loginSuccess: "Login realizado com sucesso",
+    invalidPassword: "Senha inválida",
   },
 };

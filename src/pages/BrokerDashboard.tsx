@@ -3,7 +3,7 @@ import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/lib/supabase';
 import { useToast } from '@/components/ui/use-toast';
-import { Plus, LogOut } from 'lucide-react';
+import { Plus, LogOut, Share2 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { SummaryMetrics } from '@/components/broker-dashboard/metrics/SummaryMetrics';
 import { WealthDistributionChart } from '@/components/broker-dashboard/charts/WealthDistributionChart';
@@ -354,6 +354,15 @@ export const BrokerDashboard = () => {
         variant: "destructive",
       });
     }
+  };
+
+  const handleShareClient = (clientId: string) => {
+    const clientLoginUrl = `${window.location.origin}/client-login/${clientId}`;
+    navigator.clipboard.writeText(clientLoginUrl);
+    toast({
+      title: t('common.success'),
+      description: t('brokerDashboard.linkCopied'),
+    });
   };
 
   return (

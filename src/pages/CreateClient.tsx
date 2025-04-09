@@ -6,6 +6,22 @@ import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/lib/supabase';
 import { useToast } from '@/components/ui/use-toast';
 import { useTranslation } from 'react-i18next';
+import { v4 as uuidv4 } from 'uuid';
+
+const generateRandomEmail = () => {
+  const uuid = uuidv4().replace(/-/g, '').substring(0, 12);
+  return `${uuid}@nextwealth.com`;
+};
+
+const checkEmailExists = async (email: string) => {
+  const { data, error } = await supabase
+    .from('users')
+    .select('email')
+    .eq('email', email)
+    .single();
+  
+  return !error && data !== null;
+};
 
 export const CreateClient = () => {
   const [loading, setLoading] = useState(false);
@@ -13,7 +29,6 @@ export const CreateClient = () => {
   const { toast } = useToast();
   const { t } = useTranslation();
   const [formData, setFormData] = useState({
-    email: '',
     password: '',
     name: '',
     birth_date: '',
@@ -45,9 +60,19 @@ export const CreateClient = () => {
     setLoading(true);
 
     try {
+      // Generate a unique random email
+      let email = generateRandomEmail();
+      let emailExists = await checkEmailExists(email);
+      
+      // Keep generating new emails until we find one that doesn't exist
+      while (emailExists) {
+        email = generateRandomEmail();
+        emailExists = await checkEmailExists(email);
+      }
+
       // Create user in auth
       const { data: authData, error: authError } = await supabase.auth.admin.createUser({
-        email: formData.email,
+        email: email,
         password: formData.password,
         user_metadata: { 
           name: formData.name,
@@ -120,20 +145,6 @@ export const CreateClient = () => {
                   value={formData.name}
                   onChange={handleChange}
                   placeholder={t('createClient.form.name.placeholder')}
-                  required
-                />
-              </div>
-
-              <div className="space-y-2">
-                <label className="text-sm font-medium">
-                  {t('createClient.form.email.label')}
-                </label>
-                <Input
-                  type="email"
-                  name="email"
-                  value={formData.email}
-                  onChange={handleChange}
-                  placeholder={t('createClient.form.email.placeholder')}
                   required
                 />
               </div>

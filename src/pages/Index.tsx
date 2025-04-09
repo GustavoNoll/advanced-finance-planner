@@ -2,7 +2,7 @@ import { DashboardCard } from "@/components/DashboardCard";
 import { ExpenseChart } from "@/components/ExpenseChart";
 import { SavingsGoal } from "@/components/SavingsGoal";
 import { MonthlyView } from "@/components/MonthlyView";
-import { Briefcase, TrendingUp, PiggyBank, LogOut, History, Search, User, Info, Target, Trophy, Calendar } from "lucide-react";
+import { Briefcase, TrendingUp, PiggyBank, LogOut, History, Search, User, Info, Target, Trophy, Calendar, Share2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { useAuth } from "@/components/auth/AuthProvider";
@@ -454,6 +454,15 @@ const Index = () => {
     queryClient.invalidateQueries({ queryKey: ["goalsAndEvents"] });
   }, [queryClient, clientId]);
 
+  const handleShareClient = () => {
+    const clientLoginUrl = `${window.location.origin}/client-login/${clientId}`;
+    navigator.clipboard.writeText(clientLoginUrl);
+    toast({
+      title: t('common.success'),
+      description: t('brokerDashboard.linkCopied'),
+    });
+  };
+
   if (isInvestmentPlanLoading || isProfilesLoading || isFinancialRecordsLoading || isGoalsLoading || (!investmentPlan && !brokerProfile)) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -493,6 +502,16 @@ const Index = () => {
             </div>
 
             <div className="flex justify-end w-1/3 gap-2">
+              {brokerProfile && (
+                <Button 
+                  variant="ghost" 
+                  onClick={handleShareClient}
+                  className="text-gray-600 hover:text-blue-600 transition-colors flex items-center gap-1"
+                >
+                  <Share2 className="h-4 w-4" />
+                  <span>{t('brokerDashboard.shareWithClient')}</span>
+                </Button>
+              )}
               <Button 
                 variant="ghost" 
                 onClick={handleLogout}
