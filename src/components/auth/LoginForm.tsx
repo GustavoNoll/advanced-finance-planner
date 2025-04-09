@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import { Button } from '@/components/ui/button';
@@ -6,6 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/components/ui/use-toast';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 
 export const LoginForm = () => {
   const [email, setEmail] = useState('');
@@ -13,6 +13,7 @@ export const LoginForm = () => {
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
   const navigate = useNavigate();
+  const { t } = useTranslation();
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -36,8 +37,8 @@ export const LoginForm = () => {
       if (profileError) throw profileError;
 
       toast({
-        title: "Success",
-        description: "Logged in successfully",
+        title: t('common.success'),
+        description: t('auth.loginSuccess'),
       });
       
       console.log("Profile data:", profile); // Debug log
@@ -48,13 +49,13 @@ export const LoginForm = () => {
       } else {
         navigate('/');
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Login error:', error);
       toast({
-        title: "Error",
-        description: error.message === 'Invalid login credentials' 
-          ? 'Invalid email or password' 
-          : error.message,
+        title: t('common.error'),
+        description: error instanceof Error && error.message === 'Invalid login credentials' 
+          ? t('auth.invalidPassword') 
+          : error instanceof Error ? error.message : t('common.errors.tryAgain'),
         variant: "destructive",
       });
     } finally {
@@ -65,7 +66,7 @@ export const LoginForm = () => {
   return (
     <Card className="w-[400px] mx-auto mt-8">
       <CardHeader>
-        <CardTitle>Login</CardTitle>
+        <CardTitle>{t('auth.login')}</CardTitle>
       </CardHeader>
       <CardContent>
         <form onSubmit={handleLogin} className="space-y-4">
@@ -76,21 +77,23 @@ export const LoginForm = () => {
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
+              placeholder={t('auth.enterEmail')}
               required
             />
           </div>
           <div className="space-y-2">
-            <label htmlFor="password" className="text-sm font-medium">Password</label>
+            <label htmlFor="password" className="text-sm font-medium">{t('auth.password')}</label>
             <Input
               id="password"
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
+              placeholder={t('auth.enterPassword')}
             />
           </div>
           <Button type="submit" className="w-full" disabled={loading}>
-            {loading ? 'Loading...' : 'Login'}
+            {loading ? t('common.loading') : t('auth.login')}
           </Button>
         </form>
       </CardContent>

@@ -695,5 +695,98 @@ export const ptBR = {
     login: "Entrar",
     loginSuccess: "Login realizado com sucesso",
     invalidPassword: "Senha inválida",
+    enterEmail: "Digite seu e-mail",
+    errors: {
+      invalidCredentials: "Credenciais inválidas",
+      sessionExpired: "Sessão expirada",
+      networkError: "Erro de conexão",
+      unknownError: "Erro desconhecido"
+    }
   },
+  notFound: {
+    title: "404",
+    description: "Ops! Página não encontrada",
+    returnHome: "Voltar para a Página Inicial"
+  },
+  error: {
+    title: "Erro",
+    description: "Ocorreu um erro inesperado",
+    tryAgain: "Tente novamente",
+    contactSupport: "Entre em contato com o suporte"
+  },
+  loading: {
+    title: "Carregando",
+    description: "Por favor, aguarde enquanto carregamos os dados"
+  },
+  validation: {
+    required: "Este campo é obrigatório",
+    invalidEmail: "Email inválido",
+    invalidPassword: "Senha inválida",
+    passwordsDontMatch: "As senhas não coincidem",
+    minLength: "Mínimo de {{min}} caracteres",
+    maxLength: "Máximo de {{max}} caracteres"
+  },
+  console: {
+    error: {
+      routeNotFound: "Erro 404: Usuário tentou acessar rota inexistente:"
+    }
+  },
+  api: {
+    errors: {
+      fetchFailed: "Falha ao buscar dados",
+      updateFailed: "Falha ao atualizar dados",
+      createFailed: "Falha ao criar registro",
+      deleteFailed: "Falha ao excluir registro",
+      validationFailed: "Falha na validação dos dados"
+    }
+  },
+  query: {
+    errors: {
+      notFound: "Registro não encontrado",
+      unauthorized: "Acesso não autorizado",
+      forbidden: "Acesso proibido",
+      serverError: "Erro no servidor"
+    }
+  },
+  navigation: {
+    back: "Voltar",
+    next: "Próximo",
+    previous: "Anterior",
+    first: "Primeiro",
+    last: "Último",
+    page: "Página",
+    of: "de",
+    items: "itens"
+  },
+  date: {
+    formats: {
+      short: "DD/MM/YYYY",
+      long: "DD de MMMM de YYYY",
+      time: "HH:mm",
+      datetime: "DD/MM/YYYY HH:mm"
+    },
+    months: {
+      january: "Janeiro",
+      february: "Fevereiro",
+      march: "Março",
+      april: "Abril",
+      may: "Maio",
+      june: "Junho",
+      july: "Julho",
+      august: "Agosto",
+      september: "Setembro",
+      october: "Outubro",
+      november: "Novembro",
+      december: "Dezembro"
+    },
+    days: {
+      monday: "Segunda-feira",
+      tuesday: "Terça-feira",
+      wednesday: "Quarta-feira",
+      thursday: "Quinta-feira",
+      friday: "Sexta-feira",
+      saturday: "Sábado",
+      sunday: "Domingo"
+    }
+  }
 };
