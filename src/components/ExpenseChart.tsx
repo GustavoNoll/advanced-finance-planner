@@ -667,10 +667,18 @@ export const ExpenseChart = ({
           {/* Update reference lines for goals */}
           {goals?.sort((a, b) => a.year - b.year)
             .reduce((acc: React.ReactNode[], goal) => {
+              // Find the closest point in the chart data for this goal
               const achievementPoint = chartData.find(point => {
                 if (zoomLevel === 'all' || zoomLevel === '10y') {
+                  // Calculate the year range based on consecutive years in the chart
+                  if (chartData.length > 1) { 
+                    const yearDiff = chartData[1].year - chartData[0].year;
+                    const halfYearDiff = yearDiff / 2;
+                    return Math.abs(point.year - goal.year) <= halfYearDiff;
+                  }
                   return point.year === goal.year;
                 }
+                // For monthly view, find the exact month and year
                 return point.year === goal.year && point.month === goal.month;
               });
               
@@ -694,10 +702,18 @@ export const ExpenseChart = ({
 
           {events?.sort((a, b) => a.year - b.year)
             .reduce((acc: React.ReactNode[], event, index, sortedEvents) => {
+              // Find the closest point in the chart data for this event
               const achievementPoint = chartData.find(point => {
                 if (zoomLevel === 'all' || zoomLevel === '10y') {
+                  // Calculate the year range based on consecutive years in the chart
+                  if (chartData.length > 1) {
+                    const yearDiff = chartData[1].year - chartData[0].year;
+                    const halfYearDiff = yearDiff / 2;
+                    return Math.abs(point.year - event.year) <= halfYearDiff;
+                  }
                   return point.year === event.year;
                 }
+                // For monthly view, find the exact month and year
                 return point.year === event.year && point.month === event.month;
               });
 
