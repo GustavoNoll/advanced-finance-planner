@@ -10,12 +10,9 @@ import { generateProjectionData, YearlyProjectionData } from '@/lib/chart-projec
 import React from "react";
 import { FinancialRecord, InvestmentPlan, Goal, ProjectedEvent } from '@/types/financial';
 import { supabase } from "@/lib/supabase";
-import { LineChart, Card, Title, Select, SelectItem, Button } from "@tremor/react";
-import { chartColors } from "@/lib/chartColors";
-import {
-  SelectContent,
-  SelectValue,
-} from "@/components/ui/select"
+import { CartesianGrid, Line, Tooltip, LineChart, XAxis, YAxis } from "recharts";
+import { ResponsiveContainer } from "recharts";
+import { Button } from "@tremor/react";
 
 
 export const MonthlyView = ({ 
@@ -354,62 +351,54 @@ export const MonthlyView = ({
           <TabsContent value="returnChart" className="space-y-4">
             <div className="flex justify-end gap-2 mb-4">
               <select
-                value={timeWindow.toString()}
+                value={timeWindow}
                 onChange={(e) => setTimeWindow(Number(e.target.value) as typeof timeWindow)}
-                  className="text-sm border border-gray-200 rounded-lg px-2 py-1 bg-white/90 text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent shadow-sm hover:border-blue-200 transition-colors"
-                >
-                  <option value="6">{t('monthlyView.timeWindows.last6Months')}</option>
-                  <option value="12">{t('monthlyView.timeWindows.last12Months')}</option>
-                  <option value="24">{t('monthlyView.timeWindows.last24Months')}</option>
-                  <option value="0">{t('monthlyView.timeWindows.allTime')}</option>
-                </select>
+                className="px-3 py-1 border rounded-md text-sm"
+              >
+                <option value={6}>{t('monthlyView.timeWindows.last6Months')}</option>
+                <option value={12}>{t('monthlyView.timeWindows.last12Months')}</option>
+                <option value={24}>{t('monthlyView.timeWindows.last24Months')}</option>
+                <option value={0}>{t('monthlyView.timeWindows.allTime')}</option>
+              </select>
             </div>
-            <Card className="ring-0">
-              <Title>{t('monthlyView.chart.accumulatedReturn')}</Title>
-              <LineChart
-                className="h-60 mt-4"
-                data={getFilteredChartData(calculateAccumulatedReturns(chartDataToUse)).map(item => ({
-                  month: item.month,
-                  [t('monthlyView.chart.accumulatedReturn')]: item.accumulatedPercentage,
-                  [t('monthlyView.chart.accumulatedTargetReturn')]: item.accumulatedTargetRentability,
-                  [t('monthlyView.chart.accumulatedCDIReturn')]: item.accumulatedCDIReturn,
-                  [t('monthlyView.chart.accumulatedIPCAReturn')]: item.accumulatedIPCAReturn
-                }))}
-                index="month"
-                categories={[
-                  t('monthlyView.chart.accumulatedReturn'),
-                  t('monthlyView.chart.accumulatedTargetReturn'),
-                  t('monthlyView.chart.accumulatedCDIReturn'),
-                  t('monthlyView.chart.accumulatedIPCAReturn')
-                ]}
-                colors={["emerald", "fuchsia", "blue", "amber"]}
-                valueFormatter={(value) => `${Math.round(value)}%`}
-                showLegend
-                showGridLines
-                showTooltip
-                connectNulls
-                customTooltip={({ payload, active }) => {
-                  if (!active || !payload || !payload.length) return null;
-
-                  const firstPayload = payload[0];
-                  if (!firstPayload || !firstPayload.payload) return null;
-
-                  const dataPoint = chartDataToUse.find(p => p.month === firstPayload.payload.month);
-                  if (!dataPoint) return null;
-
-                  return (
-                    <div className="bg-white p-2 shadow-md rounded-md">
-                      <p className="font-semibold">{dataPoint.month}</p>
-                      {payload.map((entry, index) => (
-                        <p key={`item-${index}`} className={`text-sm ${chartColors[entry.color as keyof typeof chartColors].text}`}>
-                          {entry.name}: {Number(entry.value).toFixed(2)}%
-                        </p>
-                      ))}
-                    </div>
-                  );
-                }}
-              />
-            </Card>
+            <div className="h-[400px] w-full">
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart data={getFilteredChartData(calculateAccumulatedReturns(chartDataToUse))}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="month" />
+                  <YAxis unit="%" />
+                  <Tooltip formatter={(value: number) => `${value.toFixed(2)}%`} />
+                  <Line 
+                    type="monotone" 
+                    dataKey="accumulatedPercentage" 
+                    stroke="#22c55e" 
+                    name={t('monthlyView.chart.accumulatedReturn')}
+                    strokeWidth={2}
+                  />
+                  <Line 
+                    type="monotone" 
+                    dataKey="accumulatedTargetRentability" 
+                    stroke="#f43f5e" 
+                    name={t('monthlyView.chart.accumulatedTargetReturn')}
+                    strokeWidth={2}
+                  />
+                  <Line 
+                    type="monotone" 
+                    dataKey="accumulatedCDIReturn" 
+                    stroke="#3b82f6" 
+                    name={t('monthlyView.chart.accumulatedCDIReturn')}
+                    strokeWidth={2}
+                  />
+                  <Line 
+                    type="monotone" 
+                    dataKey="accumulatedIPCAReturn" 
+                    stroke="#eab308" 
+                    name={t('monthlyView.chart.accumulatedIPCAReturn')}
+                    strokeWidth={2}
+                  />
+                </LineChart>
+              </ResponsiveContainer>
+            </div>
           </TabsContent>
         )}
 

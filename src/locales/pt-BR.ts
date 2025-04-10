@@ -118,6 +118,7 @@ export const ptBR = {
       patrimonyGrowth: "Seu patrimônio cresceu {{growth}}% desde o início",
       planAge: "Seu plano completa {{months}} meses de jornada!"
     },
+    brokerName: "Corretor: {{name}}",
     cards: {
       portfolioValue: {
         title: "Valor Total do Portfólio",
@@ -696,6 +697,9 @@ export const ptBR = {
     login: "Entrar",
     loginSuccess: "Login realizado com sucesso",
     invalidPassword: "Senha inválida",
+    errorFetchingInfo: "Erro ao carregar informações do cliente",
+    clientName: "Cliente: {{name}}",
+    brokerName: "Corretor: {{name}}",
     enterEmail: "Digite seu e-mail",
     errors: {
       invalidCredentials: "Credenciais inválidas",

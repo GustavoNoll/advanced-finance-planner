@@ -12,6 +12,7 @@ import { TrendMetrics } from '@/components/broker-dashboard/metrics/TrendMetrics
 import { ActionMetrics } from '@/components/broker-dashboard/metrics/ActionMetrics';
 import { ClientList } from '@/components/broker-dashboard/client-list/ClientList';
 import { UserProfileInvestment, BrokerProfile } from '@/types/broker-dashboard';
+import { Logo } from '@/components/ui/logo';
 
 interface WealthDistribution {
   range: string;
@@ -360,11 +361,7 @@ export const BrokerDashboard = () => {
         <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 mb-8">
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-6">
             <div className="flex items-center gap-4">
-              <div className="h-12 w-12 rounded-xl bg-primary/10 flex items-center justify-center">
-                <span className="text-primary text-xl font-bold">
-                  {brokerProfile?.name?.[0]?.toUpperCase() || 'B'}
-                </span>
-              </div>
+              <Logo variant="minimal" />
               <div>
                 <h1 className="text-2xl font-bold text-gray-900 tracking-tight">{t('brokerDashboard.title')}</h1>
                 <p className="text-sm text-gray-500 mt-1">

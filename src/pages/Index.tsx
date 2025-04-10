@@ -22,6 +22,7 @@ import { Calculator } from "@/components/Calculator";
 import { processPlanProgressData, PlanProgressData } from "@/lib/plan-progress";
 import { generateProjectionData } from '@/lib/chart-projections';
 import { useQueryClient } from "@tanstack/react-query";
+import { Logo } from '@/components/ui/logo';
 
 type TimePeriod = 'all' | '6m' | '12m' | '24m';
 
@@ -491,14 +492,11 @@ const Index = () => {
             </div>
 
             <div className="flex flex-col items-center w-1/3">
-              <div className="flex items-center gap-2">
-                <Briefcase className="h-5 w-5 text-blue-600" />
-                <h1 className="text-xl font-semibold bg-gradient-to-r from-blue-600 via-indigo-600 to-slate-700 bg-clip-text text-transparent">
-                  {t('dashboard.title')}
-                </h1>
-              </div>
+              <Logo variant="minimal" className="mb-2" />
               {clientProfile && (
-                <p className="text-sm text-gray-500 font-medium">{clientProfile.name}</p>
+                <div className="flex flex-col items-center">
+                  <p className="text-sm text-gray-500 font-medium">{clientProfile.name}</p>
+                </div>
               )}
             </div>
 
