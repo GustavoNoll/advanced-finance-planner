@@ -2,23 +2,39 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { LineChart, TrendingUp, Users, AlertCircle } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { DashboardMetrics } from '@/types/broker-dashboard';
+import { Metric, Text, AreaChart, CustomTooltipProps } from '@tremor/react';
+import { chartColors, AvailableChartColorsKeys, getColorClassName } from '@/lib/chartColors';
 
 interface TrendMetricsProps {
   metrics: DashboardMetrics;
 }
 
 /**
- * Displays trend metrics including new clients, growth, and inactive clients
+ * Displays trend metrics including new clients, growth, and inactive clients using Tremor
  * @param metrics - The dashboard metrics data
  */
 export const TrendMetrics = ({ metrics }: TrendMetricsProps) => {
   const { t } = useTranslation();
 
+  // Mock data for the area chart - in a real app, this would come from your API
+  const trendData = [
+    {
+      date: 'Jan',
+      'Novos Clientes': metrics.trends.newClientsThisMonth,
+      'Crescimento Total': metrics.trends.totalGrowthThisMonth,
+      'Crescimento Médio': metrics.trends.averageMonthlyGrowth,
+      'Clientes Inativos': metrics.trends.inactiveClients
+    }
+  ];
+
+  const trendCategories = ['Novos Clientes', 'Crescimento Total', 'Crescimento Médio', 'Clientes Inativos'];
+  const trendColors: AvailableChartColorsKeys[] = ['emerald', 'blue', 'lime', 'orange'];
+
   return (
     <Card className="hover:shadow-lg transition-all duration-200 border-gray-100">
       <CardHeader className="pb-2">
         <CardTitle className="flex items-center gap-2 text-lg">
-          <div className="h-8 w-8 rounded-xl bg-blue-50 flex items-center justify-center ring-2 ring-blue-100">
+        <div className="h-8 w-8 rounded-xl bg-blue-50 flex items-center justify-center ring-2 ring-blue-100">
             <LineChart className="h-5 w-5 text-blue-600" />
           </div>
           {t('brokerDashboard.metrics.trends.title')}
@@ -28,49 +44,49 @@ export const TrendMetrics = ({ metrics }: TrendMetricsProps) => {
         <div className="grid grid-cols-2 gap-6">
           <div className="space-y-3">
             <div className="flex items-center gap-2">
-              <div className="h-8 w-8 rounded-lg bg-green-50 flex items-center justify-center">
-                <Users className="h-4 w-4 text-green-600" />
+              <div className={`h-8 w-8 rounded-lg ${getColorClassName('emerald', 'bg')} bg-opacity-10 flex items-center justify-center`}>
+                <Users className={`h-4 w-4 ${getColorClassName('emerald', 'text')}`} />
               </div>
               <div>
-                <p className="text-sm font-medium text-gray-500">{t('brokerDashboard.metrics.trends.newClientsThisMonth')}</p>
-                <p className="text-2xl font-bold text-gray-900 tracking-tight">{metrics.trends.newClientsThisMonth}</p>
+                <Text className="text-sm font-medium text-gray-500">{t('brokerDashboard.metrics.trends.newClientsThisMonth')}</Text>
+                <Metric className="text-2xl font-bold text-gray-900 tracking-tight">{metrics.trends.newClientsThisMonth}</Metric>
               </div>
             </div>
           </div>
           <div className="space-y-3">
             <div className="flex items-center gap-2">
-              <div className="h-8 w-8 rounded-lg bg-blue-50 flex items-center justify-center">
-                <TrendingUp className="h-4 w-4 text-blue-600" />
+              <div className={`h-8 w-8 rounded-lg ${getColorClassName('blue', 'bg')} bg-opacity-10 flex items-center justify-center`}>
+                <TrendingUp className={`h-4 w-4 ${getColorClassName('blue', 'text')}`} />
               </div>
               <div>
-                <p className="text-sm font-medium text-gray-500">{t('brokerDashboard.metrics.trends.totalGrowthThisMonth')}</p>
-                <p className="text-2xl font-bold text-blue-600 tracking-tight">
+                <Text className="text-sm font-medium text-gray-500">{t('brokerDashboard.metrics.trends.totalGrowthThisMonth')}</Text>
+                <Metric className={`text-2xl font-bold ${getColorClassName('blue', 'text')} tracking-tight`}>
                   {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(metrics.trends.totalGrowthThisMonth)}
-                </p>
+                </Metric>
               </div>
             </div>
           </div>
           <div className="space-y-3">
             <div className="flex items-center gap-2">
-              <div className="h-8 w-8 rounded-lg bg-green-50 flex items-center justify-center">
-                <TrendingUp className="h-4 w-4 text-green-600" />
+              <div className={`h-8 w-8 rounded-lg ${getColorClassName('lime', 'bg')} bg-opacity-10 flex items-center justify-center`}>
+                <TrendingUp className={`h-4 w-4 ${getColorClassName('lime', 'text')}`} />
               </div>
               <div>
-                <p className="text-sm font-medium text-gray-500">{t('brokerDashboard.metrics.trends.averageMonthlyGrowth')}</p>
-                <p className="text-2xl font-bold text-green-600 tracking-tight">
+                <Text className="text-sm font-medium text-gray-500">{t('brokerDashboard.metrics.trends.averageMonthlyGrowth')}</Text>
+                <Metric className={`text-2xl font-bold ${getColorClassName('lime', 'text')} tracking-tight`}>
                   {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(metrics.trends.averageMonthlyGrowth)}
-                </p>
+                </Metric>
               </div>
             </div>
           </div>
           <div className="space-y-3">
             <div className="flex items-center gap-2">
-              <div className="h-8 w-8 rounded-lg bg-red-50 flex items-center justify-center">
-                <AlertCircle className="h-4 w-4 text-red-600" />
+              <div className={`h-8 w-8 rounded-lg ${getColorClassName('orange', 'bg')} bg-opacity-10 flex items-center justify-center`}>
+                <AlertCircle className={`h-4 w-4 ${getColorClassName('orange', 'text')}`} />
               </div>
               <div>
-                <p className="text-sm font-medium text-gray-500">{t('brokerDashboard.metrics.trends.inactiveClients')}</p>
-                <p className="text-2xl font-bold text-red-600 tracking-tight">{metrics.trends.inactiveClients}</p>
+                <Text className="text-sm font-medium text-gray-500">{t('brokerDashboard.metrics.trends.inactiveClients')}</Text>
+                <Metric className={`text-2xl font-bold ${getColorClassName('orange', 'text')} tracking-tight`}>{metrics.trends.inactiveClients}</Metric>
               </div>
             </div>
           </div>

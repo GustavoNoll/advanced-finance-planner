@@ -284,6 +284,7 @@ export const ptBR = {
         }
       },
       actions: {
+        clients: "Clientes",
         title: "Ações Necesfsárias",
         needsPlanReview: "Revisão de Plano",
         belowRequiredContribution: "Aportes Abaixo do Necessário",

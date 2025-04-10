@@ -1,4 +1,3 @@
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend, ReferenceLine, Label } from 'recharts';
 import { useTranslation } from "react-i18next";
 import { ChartDataPoint, FinancialRecord, Goal, ProjectedEvent, MonthNumber, InvestmentPlan } from '@/types/financial';
 import { generateChartProjections, YearlyProjectionData } from '@/lib/chart-projections';
@@ -6,10 +5,10 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
 import { useState } from "react";
 import { calculateCompoundedRates, yearlyReturnRateToMonthlyReturnRate } from '@/lib/financial-math';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { GoalForm } from "@/components/financial-goals/GoalForm";
-import { EventForm } from "@/components/events/EventForm";
 import { ChartPointDialog } from "@/components/chart/ChartPointDialog";
+import { Title, Text, Flex, NumberInput, AreaChart } from "@tremor/react";
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
+import { chartColors } from "@/lib/chartColors";
 
 interface Profile {
   birth_date: string;
@@ -224,8 +223,8 @@ export const ExpenseChart = ({
       return Math.floor(Number(point.age)).toString();
     }
     
-    const monthName = new Date(0, point.month - 1).toLocaleString('default', { month: 'short' });
-    return `${Math.floor(Number(point.age))}/${monthName}`;
+    const monthName = new Date(0, point.month - 1).toLocaleString('default', { month: 'long' });
+    return `${Math.floor(Number(point.age))}/${t(`monthlyView.table.months.${monthName}`)}`;
   };
 
   // Adicione esta função auxiliar
@@ -390,6 +389,12 @@ export const ExpenseChart = ({
     xAxisLabel: formatXAxisLabel(point)
   }));
 
+  // Define category names dynamically to ensure uniqueness
+  const projectedName = showRealValues ? t('expenseChart.projectedValueReal') : t('expenseChart.projectedValue');
+  const actualRealBaseName = showRealValues ? t('expenseChart.actualValueReal') : t('expenseChart.actualValue');
+  const actualProjectedName = actualRealBaseName + ' (Projetado)';
+  const actualRealName = actualRealBaseName;
+
   const colorOffset = () => {
     // Encontrar o ponto mais antigo com dados reais
     const oldestRealDataPoint = chartData.find(point => point.realDataPoint);
@@ -470,283 +475,238 @@ export const ExpenseChart = ({
 
   return (
     <div className="space-y-4">
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-4">
-        <h2 className="text-lg font-semibold">{t('dashboard.charts.portfolioPerformance')}</h2>
-        
-        <div className="flex flex-wrap items-center gap-4">
-          {/* Inflation adjustment toggle */}
-          <div className="inline-flex items-center">
-            <button
-              onClick={() => setShowRealValues(!showRealValues)}
-              className={`flex items-center gap-2 px-3 py-1.5 text-sm font-medium rounded-md border transition-colors ${
-                showRealValues 
-                  ? 'bg-blue-50 border-blue-200 text-blue-700' 
-                  : 'bg-gray-50 border-gray-200 text-gray-700 hover:bg-gray-100'
-              }`}
-            >
-              {showRealValues ? (
-                <>
-                  <span>{t('expenseChart.realValues')}</span>
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                  </svg>
-                </>
-              ) : (
-                <span>{t('expenseChart.nominalValues')}</span>
-              )}
-            </button>
+      <div className="overflow-visible p-4">
+        <Flex justifyContent="between" alignItems="center" className="mb-4">
+          <div>
+            <Title>{t('dashboard.charts.portfolioPerformance')}</Title>
+            <Text>{showRealValues ? t('expenseChart.realValues') : t('expenseChart.nominalValues')}</Text>
           </div>
           
-          <div className="inline-flex items-center rounded-md border border-gray-200 p-1 bg-gray-50">
-            <button
-              onClick={() => setZoomLevel('1y')}
-              className={`px-3 py-1.5 text-sm font-medium rounded-md transition-colors ${
-                zoomLevel === '1y' 
-                  ? 'bg-white text-blue-600 shadow-sm' 
-                  : 'text-gray-600 hover:text-gray-900'
-              }`}
+          <Flex className="gap-4">
+            <ToggleGroup
+              type="single"
+              value={showRealValues ? "real" : "nominal"}
+              onValueChange={(value) => setShowRealValues(value === "real")}
+              className="inline-flex rounded-md border border-gray-200 bg-gray-50 p-1"
             >
-              {t('common.last1YearS')}
-            </button>
-            <button
-              onClick={() => setZoomLevel('5y')}
-              className={`px-3 py-1.5 text-sm font-medium rounded-md transition-colors ${
-                zoomLevel === '5y' 
-                  ? 'bg-white text-blue-600 shadow-sm' 
-                  : 'text-gray-600 hover:text-gray-900'
-              }`}
-            >
-              {t('common.last5YearsS')}
-            </button>
-            <button
-              onClick={() => setZoomLevel('10y')}
-              className={`px-3 py-1.5 text-sm font-medium rounded-md transition-colors ${
-                zoomLevel === '10y' 
-                  ? 'bg-white text-blue-600 shadow-sm' 
-                  : 'text-gray-600 hover:text-gray-900'
-              }`}
-            >
-              {t('common.last10YearsS')}
-            </button>
-            <button
-              onClick={() => setZoomLevel('all')}
-              className={`px-3 py-1.5 text-sm font-medium rounded-md transition-colors ${
-                zoomLevel === 'all' 
-                  ? 'bg-white text-blue-600 shadow-sm' 
-                  : 'text-gray-600 hover:text-gray-900'
-              }`}
-            >
-              {t('common.all')}
-            </button>
-            <button
-              onClick={() => setZoomLevel('custom')}
-              className={`px-3 py-1.5 text-sm font-medium rounded-md transition-colors ${
-                zoomLevel === 'custom' 
-                  ? 'bg-white text-blue-600 shadow-sm' 
-                  : 'text-gray-600 hover:text-gray-900'
-              }`}
-            >
-              {t('common.custom')}
-            </button>
-          </div>
+              <ToggleGroupItem 
+                value="nominal" 
+                aria-label={t('expenseChart.nominalValues')}
+                className="px-3 py-1.5 text-sm font-medium data-[state=on]:bg-white data-[state=on]:text-blue-600 data-[state=on]:shadow-sm data-[state=off]:text-gray-600 data-[state=off]:hover:text-gray-900 rounded-md transition-colors"
+              >
+                {t('expenseChart.nominalValues')}
+              </ToggleGroupItem>
+              <ToggleGroupItem 
+                value="real" 
+                aria-label={t('expenseChart.realValues')}
+                className="px-3 py-1.5 text-sm font-medium data-[state=on]:bg-white data-[state=on]:text-blue-600 data-[state=on]:shadow-sm data-[state=off]:text-gray-600 data-[state=off]:hover:text-gray-900 rounded-md transition-colors"
+              >
+                {t('expenseChart.realValues')}
+              </ToggleGroupItem>
+            </ToggleGroup>
 
-          {/* Custom range inputs */}
-          {zoomLevel === 'custom' && (
-            <div className="flex items-center gap-2">
-              <div className="flex items-center gap-2">
-                <label className="text-sm text-gray-600">{t('expenseChart.pastYears')}:</label>
-                <input
-                  type="number"
-                  min="0"
-                  max="100"
-                  value={customRange.past.toString()}
-                  onChange={(e) => {
-                    const value = e.target.value === '' ? 0 : parseFloat(e.target.value);
-                    setCustomRange(prev => ({ 
-                      ...prev, 
-                      past: value 
-                    }));
-                  }}
-                  step="any"
-                  className="w-20 px-2 py-1 text-sm border rounded-md"
-                />
-              </div>
-              <div className="flex items-center gap-2">
-                <label className="text-sm text-gray-600">{t('expenseChart.futureYears')}:</label>
-                <input
-                  type="number"
-                  min="0"
-                  max="100"
-                  value={customRange.future.toString()}
-                  onChange={(e) => {
-                    const value = e.target.value === '' ? 0 : parseFloat(e.target.value);
-                    setCustomRange(prev => ({ 
-                      ...prev, 
-                      future: value 
-                    }));
-                  }}
-                  step="any"
-                  className="w-20 px-2 py-1 text-sm border rounded-md"
-                />
-              </div>
-            </div>
-          )}
+            <ToggleGroup
+              type="single"
+              value={zoomLevel}
+              onValueChange={(value) => {
+                // Only update if the value is valid and different from the current state
+                if (value && value !== zoomLevel) {
+                  setZoomLevel(value as ZoomLevel);
+                }
+              }}
+              className="inline-flex rounded-md border border-gray-200 bg-gray-50 p-1"
+            >
+              <ToggleGroupItem 
+                value="1y" 
+                aria-label={t('common.last1YearS')}
+                className="px-3 py-1.5 text-sm font-medium data-[state=on]:bg-white data-[state=on]:text-blue-600 data-[state=on]:shadow-sm data-[state=off]:text-gray-600 data-[state=off]:hover:text-gray-900 rounded-md transition-colors"
+              >
+                {t('common.last1YearS')}
+              </ToggleGroupItem>
+              <ToggleGroupItem 
+                value="5y" 
+                aria-label={t('common.last5YearsS')}
+                className="px-3 py-1.5 text-sm font-medium data-[state=on]:bg-white data-[state=on]:text-blue-600 data-[state=on]:shadow-sm data-[state=off]:text-gray-600 data-[state=off]:hover:text-gray-900 rounded-md transition-colors"
+              >
+                {t('common.last5YearsS')}
+              </ToggleGroupItem>
+              <ToggleGroupItem 
+                value="10y" 
+                aria-label={t('common.last10YearsS')}
+                className="px-3 py-1.5 text-sm font-medium data-[state=on]:bg-white data-[state=on]:text-blue-600 data-[state=on]:shadow-sm data-[state=off]:text-gray-600 data-[state=off]:hover:text-gray-900 rounded-md transition-colors"
+              >
+                {t('common.last10YearsS')}
+              </ToggleGroupItem>
+              <ToggleGroupItem 
+                value="all" 
+                aria-label={t('common.all')}
+                className="px-3 py-1.5 text-sm font-medium data-[state=on]:bg-white data-[state=on]:text-blue-600 data-[state=on]:shadow-sm data-[state=off]:text-gray-600 data-[state=off]:hover:text-gray-900 rounded-md transition-colors"
+              >
+                {t('common.all')}
+              </ToggleGroupItem>
+              <ToggleGroupItem 
+                value="custom" 
+                aria-label={t('common.custom')}
+                className="px-3 py-1.5 text-sm font-medium data-[state=on]:bg-white data-[state=on]:text-blue-600 data-[state=on]:shadow-sm data-[state=off]:text-gray-600 data-[state=off]:hover:text-gray-900 rounded-md transition-colors"
+              >
+                {t('common.custom')}
+              </ToggleGroupItem>
+            </ToggleGroup>
+
+            {zoomLevel === 'custom' && (
+              <Flex className="items-center w-50 space-x-4">
+                <div className="flex items-center">
+                  <Text className="text-sm text-gray-600 shrink-0">{t('expenseChart.pastYears')}:</Text>
+                  <NumberInput
+                    className="w-20"
+                    value={customRange.past}
+                    onValueChange={(value) => {
+                      const numValue = value ?? 0;
+                      setCustomRange(prev => ({ ...prev, past: Math.max(0, numValue) }));
+                    }}
+                    min={0}
+                    max={100}
+                    step={0.5}
+                    enableStepper={false}
+                  />
+                </div>
+                <div className="flex items-center">
+                  <Text className="text-sm text-gray-600 shrink-0">{t('expenseChart.futureYears')}:</Text>
+                  <NumberInput
+                    className="w-20"
+                    value={customRange.future}
+                    onValueChange={(value) => {
+                      const numValue = value ?? 0;
+                      setCustomRange(prev => ({ ...prev, future: Math.max(0, numValue) }));
+                    }}
+                    min={0}
+                    max={100}
+                    step={0.5}
+                    enableStepper={false}
+                  />
+                </div>
+              </Flex>
+            )}
+          </Flex>
+        </Flex>
+
+        <div className="relative">
+          <AreaChart
+            className="h-52"
+            data={chartData.map((point, index, array) => {
+              const nextPoint = index < array.length - 1 ? array[index + 1] : null;
+              // Check if this point has goals or events
+              const hasGoals = goals?.some(goal => 
+                goal.year === point.year && (zoomLevel === 'all' || zoomLevel === '10y' ? true : goal.month === point.month)
+              );
+              const hasEvents = events?.some(event => 
+                event.year === point.year && (zoomLevel === 'all' || zoomLevel === '10y' ? true : event.month === point.month)
+              );
+              
+              return {
+                xAxisLabel: point.xAxisLabel,
+                [actualRealName]: point.realDataPoint ? Math.max(point.actualValue,0) : null, // Blue
+                [projectedName]: Math.max(point.projectedValue,0), // Orange
+                [actualProjectedName]: !nextPoint?.realDataPoint ? (Math.max(point?.actualValue,0)) : null, // sky
+                hasGoals,
+                hasEvents
+              };
+            })}
+            index="xAxisLabel"
+            categories={[
+              actualRealName, // Blue
+              projectedName, // Orange
+              actualProjectedName, // Sky
+            ]}
+            minValue={0}
+            colors={["blue", "orange", "sky"]}
+            allowDecimals={true}
+            valueFormatter={(value) => {
+              if(value === 0) return '0 R$';
+              if (value >= 1000000) return `${(value / 1000000).toFixed(0)}M`;
+              if (value >= 1000) return `${(value / 1000).toFixed(0)}m`;
+              return value.toString();
+            }}
+            showLegend
+            showGridLines
+            showTooltip
+            connectNulls
+            onValueChange={(value) => {
+              if (value && value.xAxisLabel) {
+                const point = chartData.find(p => p.xAxisLabel === value.xAxisLabel);
+                if (point) {
+                  handleChartClick(point as ChartPoint);
+                }
+              }
+            }}
+            customTooltip={({ payload, active }) => {
+              if (!active || !payload || !payload.length) return null;
+              
+              const firstPayload = payload[0];
+              if (!firstPayload || !firstPayload.payload) return null;
+              
+              const dataPoint = chartData.find(p => p.xAxisLabel === firstPayload.payload.xAxisLabel);
+              if (!dataPoint) return null;
+
+              // Find goals and events for this point
+              const pointGoals = goals?.filter(goal => 
+                goal.year === dataPoint.year && (zoomLevel === 'all' || zoomLevel === '10y' ? true : goal.month === dataPoint.month)
+              );
+              const pointEvents = events?.filter(event => 
+                event.year === dataPoint.year && (zoomLevel === 'all' || zoomLevel === '10y' ? true : event.month === dataPoint.month)
+              );
+
+              return (
+                <div className="bg-white p-2 border rounded shadow">
+                  <p className="text-sm font-medium">
+                    {zoomLevel === 'all' 
+                      ? `${Math.floor(Number(dataPoint.age))} ${t('expenseChart.years')} (${dataPoint.year})`
+                      : `${Math.floor(Number(dataPoint.age))} ${t('expenseChart.years')} (${t('monthlyView.table.months.' + new Date(0, dataPoint.month - 1).toLocaleString('default', { month: 'long' }))} ${dataPoint.year})`
+                    }
+                  </p>
+                  {payload.map((entry, idx) => {
+                    if (!entry || entry.value === undefined) return null;
+                    return (
+                      <p key={idx} className={`text-sm ${chartColors[entry.color as keyof typeof chartColors].text}`}>
+                        {entry.name}: {new Intl.NumberFormat('pt-BR', {
+                          style: 'currency',
+                          currency: 'BRL'
+                        }).format(entry.value as number)}
+                      </p>
+                    );
+                  })}
+                  {pointGoals && pointGoals.length > 0 && (
+                    <div className="mt-2 pt-2 border-t">
+                      <p className="text-sm font-medium text-gray-700">{t('financialGoals.title')}:</p>
+                      {pointGoals.map((goal, idx) => (
+                        <p key={idx} className="text-sm text-gray-600">
+                          {t('financialGoals.icons.' + goal.icon)}: {new Intl.NumberFormat('pt-BR', {
+                            style: 'currency',
+                            currency: 'BRL'
+                          }).format(goal.asset_value)}
+                        </p>
+                      ))}
+                    </div>
+                  )}
+                  {pointEvents && pointEvents.length > 0 && (
+                    <div className="mt-2 pt-2 border-t">
+                      <p className="text-sm font-medium text-gray-700">{t('events.title')}:</p>
+                      {pointEvents.map((event, idx) => (
+                        <p key={idx} className="text-sm text-gray-600">
+                          {event.name}: {new Intl.NumberFormat('pt-BR', {
+                            style: 'currency',
+                            currency: 'BRL'
+                          }).format(event.amount)}
+                        </p>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              );
+            }}
+          />
         </div>
       </div>
-
-      <ResponsiveContainer 
-        width="100%" 
-        height={300}
-        key={`${JSON.stringify(chartData)}-${showRealValues}`}
-      >
-        <LineChart 
-          data={chartData}
-          margin={{ top: 20, right: 30, left: 50, bottom: 25 }}
-          onClick={(data) => data && data.activePayload && handleChartClick(data.activePayload[0].payload)}
-        >
-          <defs>
-            <linearGradient id="colorUv" x1="0" y1="0" x2="1" y2="0">
-              <stop offset={offset} stopColor="#2563eb" /> {/* blue-600 */}
-              <stop offset={offset} stopColor="#93c5fd" /> {/* blue-300 */}
-            </linearGradient>
-          </defs>
-          <CartesianGrid strokeDasharray="3 3" />
-          <XAxis 
-            dataKey="xAxisLabel"
-            interval={zoomLevel === 'all' || zoomLevel === '10y' ? 'preserveStartEnd' : 3}
-            label={{ 
-              value: t('expenseChart.years'), 
-              position: 'bottom', 
-              offset: 0 
-            }}
-          />
-          <YAxis 
-            tickFormatter={(value) => 
-              new Intl.NumberFormat('pt-BR', {
-                style: 'currency',
-                currency: 'BRL',
-                notation: 'compact',
-                maximumFractionDigits: 1
-              }).format(value)
-            }
-          />
-          <Tooltip 
-            formatter={(value: number) => 
-              new Intl.NumberFormat('pt-BR', {
-                style: 'currency',
-                currency: 'BRL'
-              }).format(value)
-            }
-            labelFormatter={(label) => {
-              const dataPoint = chartData.find(point => point.xAxisLabel === label);
-              if (!dataPoint) return '';
-
-              if (zoomLevel === 'all') {
-                return `${Math.floor(Number(dataPoint.age))} ${t('expenseChart.years')} (${dataPoint.year})${
-                  showRealValues ? ` - ${t('expenseChart.realValues')}` : ''
-                }`;
-              }
-
-              const monthName = new Date(0, dataPoint.month - 1).toLocaleString('default', { month: 'long' });
-              const wholeAge = Math.floor(Number(dataPoint.age));
-              
-              return `${wholeAge} ${t('expenseChart.years')} (${t('monthlyView.table.months.' + monthName)} ${dataPoint.year})${
-                showRealValues ? ` - ${t('expenseChart.realValues')}` : ''
-              }`;
-            }}
-          />
-          <Legend 
-            verticalAlign="bottom" 
-            align="center"
-            wrapperStyle={{ 
-              paddingTop: '20px',
-              bottom: 0
-            }}
-          />
-
-          {/* Update reference lines for goals */}
-          {goals?.sort((a, b) => a.year - b.year)
-            .reduce((acc: React.ReactNode[], goal) => {
-              const achievementPoint = chartData.find(point => {
-                if (zoomLevel === 'all' || zoomLevel === '10y') {
-                  return point.year === goal.year;
-                }
-                return point.year === goal.year && point.month === goal.month;
-              });
-              
-              if (achievementPoint && goal.status === 'pending') {
-                acc.push(
-                  <ReferenceLine
-                    key={`${goal.id}-actual`}
-                    x={achievementPoint.xAxisLabel}
-                    stroke="black"
-                    strokeDasharray="3 3"
-                    ifOverflow="extendDomain"
-                    label={{
-                      position: 'top',
-                      content: (props) => renderContent(props, goal)
-                    }}
-                  />
-                );
-              }
-              return acc;
-            }, [])}
-
-          {events?.sort((a, b) => a.year - b.year)
-            .reduce((acc: React.ReactNode[], event, index, sortedEvents) => {
-              const achievementPoint = chartData.find(point => {
-                if (zoomLevel === 'all' || zoomLevel === '10y') {
-                  return point.year === event.year;
-                }
-                return point.year === event.year && point.month === event.month;
-              });
-
-              if (
-                achievementPoint && 
-                event.status === 'projected'
-              ) {
-                acc.push(
-                  <ReferenceLine
-                    key={event.id}
-                    x={achievementPoint.xAxisLabel}
-                    stroke="black"
-                    strokeDasharray="3 3"
-                    ifOverflow="extendDomain"
-                    label={{
-                      position: 'top',
-                      content: (props) => renderContent(props, null, event)
-                    }}
-                  />
-                );
-              }
-              return acc;
-            }, [])}
-
-          {/* Line for actual values (solid) */}
-          <Line 
-            type="natural"
-            dataKey="actualValue"
-            stroke="url(#colorUv)"
-            name={showRealValues ? t('expenseChart.actualValueReal') : t('expenseChart.actualValue')}
-            strokeWidth={2.5}
-            connectNulls
-            dot={false}
-            activeDot={{ r: 6, strokeWidth: 0 }}
-          />
-        
-          <Line 
-            type="natural"
-            dataKey="projectedValue" 
-            stroke="#f97316"
-            name={showRealValues ? t('expenseChart.projectedValueReal') : t('expenseChart.projectedValue')}
-            strokeWidth={2.5}
-            strokeDasharray="8 8"
-            connectNulls
-            dot={false}
-            activeDot={{ r: 6, strokeWidth: 0 }}
-          />
-        </LineChart>
-      </ResponsiveContainer>
 
       <ChartPointDialog
         open={showDialog}

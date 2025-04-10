@@ -377,6 +377,7 @@ const Index = () => {
         projectedFuturePresentValue
       );
     } catch (error) {
+      console.error('Error calculating plan progress data:', error);
       return {
         plannedMonths: 0,
         projectedMonths: 0,

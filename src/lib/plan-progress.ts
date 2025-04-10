@@ -16,6 +16,9 @@ export const utils = {
    * Calculates the number of months between two dates
    */
   calculateMonthsBetweenDates: (date1: Date, date2: Date): number => {
+    if (date1 == undefined || date2 == undefined) {
+      return null;
+    }
     return Math.floor((date2.getTime() - date1.getTime()) / (DAYS_PER_MONTH * MS_PER_DAY));
   },
 
@@ -107,7 +110,6 @@ const financialCalculations = {
     return goals.flatMap(goal => {
       const goalDate = new Date(goal.year, goal.month - 1);
       const monthsSinceReference = utils.calculateMonthsBetweenDates(referenceDate, goalDate);
-      
       if (goal.installment_project && goal.installment_count) {
         const monthlyAmount = goal.asset_value / goal.installment_count;
         return Array.from({ length: goal.installment_count }, (_, index) => ({

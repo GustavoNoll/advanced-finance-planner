@@ -249,9 +249,6 @@ export function generateProjectionData(
       }, 0);
       const yearlyGoalsEventsImpact = monthlyData.reduce((sum, month) => sum + (month.goalsEventsImpact || 0), 0);
 
-      console.log(monthlyData)
-      console.log(calculateCompoundedRates(monthlyData.map(month => month.ipcaRate || 0)))
-      console.log(calculateCompoundedRates(monthlyData.map(month => month.effectiveRate)))
       projectionData.push({
         age,
         year,

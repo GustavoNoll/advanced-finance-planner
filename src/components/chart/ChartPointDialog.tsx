@@ -54,7 +54,7 @@ export const ChartPointDialog = ({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent>
+      <DialogContent className="bg-white shadow-lg">
         <DialogHeader>
           <DialogTitle>
             {t("common.addNew")} {dialogType === 'goal' ? t("financialGoals.title") : t("events.title")}

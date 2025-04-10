@@ -1,16 +1,22 @@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { DashboardCard } from "./DashboardCard";
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { useTranslation } from "react-i18next";
 import { useQuery } from "@tanstack/react-query";
 import { useState, useCallback, useMemo } from "react";
 import { toast } from "@/components/ui/use-toast";
 import { fetchCDIRates, fetchIPCARates } from '@/lib/bcb-api';
-import { ChevronDown, ChevronRight } from "lucide-react";
+import { ChevronDown, ChevronRight, Download } from "lucide-react";
 import { generateProjectionData, YearlyProjectionData } from '@/lib/chart-projections';
 import React from "react";
 import { FinancialRecord, InvestmentPlan, Goal, ProjectedEvent } from '@/types/financial';
 import { supabase } from "@/lib/supabase";
+import { LineChart, Card, Title, Select, SelectItem, Button } from "@tremor/react";
+import { chartColors } from "@/lib/chartColors";
+import {
+  SelectContent,
+  SelectValue,
+} from "@/components/ui/select"
+
 
 export const MonthlyView = ({ 
   userId, 
@@ -136,10 +142,10 @@ export const MonthlyView = ({
     setPage(prev => prev + 1);
   }, []);
 
-  const downloadCSV = async () => {
+  const downloadCSV = async (data: typeof localizedData | typeof projectionData, filename: string) => {
     try {
-      // Create CSV headers
-      const headers = [
+      // Create CSV headers based on the data type
+      const headers = data === localizedData ? [
         t('monthlyView.table.headers.month'),
         t('monthlyView.table.headers.initialBalance'),
         t('monthlyView.table.headers.contribution'),
@@ -147,42 +153,46 @@ export const MonthlyView = ({
         t('monthlyView.table.headers.returnPercentage'),
         t('monthlyView.table.headers.endBalance'),
         t('monthlyView.table.headers.targetRentability')
+      ] : [
+        t('monthlyView.futureProjection.age'),
+        t('monthlyView.futureProjection.year'),
+        t('monthlyView.futureProjection.cashFlow'),
+        t('monthlyView.futureProjection.goalsEventsImpact'),
+        t('monthlyView.futureProjection.balance'),
+        t('monthlyView.futureProjection.projectedBalance'),
+        t('monthlyView.futureProjection.ipcaRate'),
+        t('monthlyView.futureProjection.effectiveRate')
       ].join(',');
 
-      // Process records for CSV using allFinancialRecords
-      const processedData = allFinancialRecords
-        .sort((a, b) => {
-          if (b.record_year !== a.record_year) {
-            return b.record_year - a.record_year;
-          }
-          return b.record_month - a.record_month;
-        })
-        .map(record => {
-          const monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 
-            'July', 'August', 'September', 'October', 'November', 'December'];
-          
-          const month = `${t(`monthlyView.table.months.${monthNames[record.record_month - 1]}`)}/${record.record_year}`;
-          
-          return [
-            month,
-            record.starting_balance.toString(),
-            record.monthly_contribution.toString(),
-            record.monthly_return.toString(),
-            `${record.monthly_return_rate.toFixed(2)}%`,
-            record.ending_balance.toString(),
-            `${record.target_rentability.toFixed(2)}%`
-          ].join(',');
-        });
+      // Process records for CSV
+      const processedData = data === localizedData ? data.map(record => [
+        record.month,
+        record.balance.toString(),
+        record.contribution.toString(),
+        record.return.toString(),
+        `${record.percentage.toFixed(2)}%`,
+        record.endBalance.toString(),
+        `${record.targetRentability.toFixed(2)}%`
+      ]) : data.map(record => [
+        record.age,
+        record.year,
+        record.contribution > 0 ? `+${record.contribution}` : record.withdrawal > 0 ? `-${record.withdrawal}` : '-',
+        record.goalsEventsImpact,
+        record.balance,
+        record.planned_balance,
+        `${(record.ipcaRate * 100).toFixed(2)}%`,
+        `${(record.effectiveRate * 100).toFixed(2)}%`
+      ]);
 
       // Combine headers and rows
-      const csvContent = [headers, ...processedData].join('\n');
+      const csvContent = [headers, ...processedData.map(row => row.join(','))].join('\n');
       
       // Create and trigger download
       const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
       const link = document.createElement('a');
       const url = URL.createObjectURL(blob);
       link.setAttribute('href', url);
-      link.setAttribute('download', `financial_records_${new Date().toISOString().split('T')[0]}.csv`);
+      link.setAttribute('download', `${filename}_${new Date().toISOString().split('T')[0]}.csv`);
       link.style.visibility = 'hidden';
       document.body.appendChild(link);
       link.click();
@@ -317,77 +327,102 @@ export const MonthlyView = ({
   return (
     <DashboardCard title={t('monthlyView.title')} className="col-span-full">
       <Tabs defaultValue={allFinancialRecords.length > 0 ? "returnChart" : "table"} className="w-full">
-        <TabsList className={`grid w-full ${allFinancialRecords.length > 0 ? 'grid-cols-3' : 'grid-cols-2'} lg:w-[800px]`}>
+        <TabsList className={`grid w-full ${allFinancialRecords.length > 0 ? 'grid-cols-3' : 'grid-cols-2'} lg:w-[800px] gap-2`}>
           {allFinancialRecords.length > 0 && (
-            <TabsTrigger value="returnChart">{t('monthlyView.tabs.returnChart')}</TabsTrigger>
+            <TabsTrigger 
+              value="returnChart"
+              className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm transition-colors relative data-[state=active]:after:absolute data-[state=active]:after:bottom-0 data-[state=active]:after:left-0 data-[state=active]:after:w-full data-[state=active]:after:h-0.5 data-[state=active]:after:bg-blue-500"
+            >
+              {t('monthlyView.tabs.returnChart')}
+            </TabsTrigger>
           )}
-          <TabsTrigger value="table">{t('monthlyView.tabs.table')}</TabsTrigger>
-          <TabsTrigger value="futureProjection">{t('monthlyView.tabs.futureProjection')}</TabsTrigger>
+          <TabsTrigger 
+            value="table"
+            className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm transition-colors relative data-[state=active]:after:absolute data-[state=active]:after:bottom-0 data-[state=active]:after:left-0 data-[state=active]:after:w-full data-[state=active]:after:h-0.5 data-[state=active]:after:bg-blue-500"
+          >
+            {t('monthlyView.tabs.table')}
+          </TabsTrigger>
+          <TabsTrigger 
+            value="futureProjection"
+            className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm transition-colors relative data-[state=active]:after:absolute data-[state=active]:after:bottom-0 data-[state=active]:after:left-0 data-[state=active]:after:w-full data-[state=active]:after:h-0.5 data-[state=active]:after:bg-blue-500"
+          >
+            {t('monthlyView.tabs.futureProjection')}
+          </TabsTrigger>
         </TabsList>
         
         {allFinancialRecords.length > 0 && (
           <TabsContent value="returnChart" className="space-y-4">
             <div className="flex justify-end gap-2 mb-4">
               <select
-                value={timeWindow}
+                value={timeWindow.toString()}
                 onChange={(e) => setTimeWindow(Number(e.target.value) as typeof timeWindow)}
-                className="px-3 py-1 border rounded-md text-sm"
-              >
-                <option value={6}>{t('monthlyView.timeWindows.last6Months')}</option>
-                <option value={12}>{t('monthlyView.timeWindows.last12Months')}</option>
-                <option value={24}>{t('monthlyView.timeWindows.last24Months')}</option>
-                <option value={0}>{t('monthlyView.timeWindows.allTime')}</option>
-              </select>
+                  className="text-sm border border-gray-200 rounded-lg px-2 py-1 bg-white/90 text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent shadow-sm hover:border-blue-200 transition-colors"
+                >
+                  <option value="6">{t('monthlyView.timeWindows.last6Months')}</option>
+                  <option value="12">{t('monthlyView.timeWindows.last12Months')}</option>
+                  <option value="24">{t('monthlyView.timeWindows.last24Months')}</option>
+                  <option value="0">{t('monthlyView.timeWindows.allTime')}</option>
+                </select>
             </div>
-            <div className="h-[400px] w-full">
-              <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={getFilteredChartData(calculateAccumulatedReturns(chartDataToUse))}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="month" />
-                  <YAxis unit="%" />
-                  <Tooltip formatter={(value: number) => `${value.toFixed(2)}%`} />
-                  <Line 
-                    type="monotone" 
-                    dataKey="accumulatedPercentage" 
-                    stroke="#22c55e" 
-                    name={t('monthlyView.chart.accumulatedReturn')}
-                    strokeWidth={2}
-                  />
-                  <Line 
-                    type="monotone" 
-                    dataKey="accumulatedTargetRentability" 
-                    stroke="#f43f5e" 
-                    name={t('monthlyView.chart.accumulatedTargetReturn')}
-                    strokeWidth={2}
-                  />
-                  <Line 
-                    type="monotone" 
-                    dataKey="accumulatedCDIReturn" 
-                    stroke="#3b82f6" 
-                    name={t('monthlyView.chart.accumulatedCDIReturn')}
-                    strokeWidth={2}
-                  />
-                  <Line 
-                    type="monotone" 
-                    dataKey="accumulatedIPCAReturn" 
-                    stroke="#eab308" 
-                    name={t('monthlyView.chart.accumulatedIPCAReturn')}
-                    strokeWidth={2}
-                  />
-                </LineChart>
-              </ResponsiveContainer>
-            </div>
+            <Card className="ring-0">
+              <Title>{t('monthlyView.chart.accumulatedReturn')}</Title>
+              <LineChart
+                className="h-60 mt-4"
+                data={getFilteredChartData(calculateAccumulatedReturns(chartDataToUse)).map(item => ({
+                  month: item.month,
+                  [t('monthlyView.chart.accumulatedReturn')]: item.accumulatedPercentage,
+                  [t('monthlyView.chart.accumulatedTargetReturn')]: item.accumulatedTargetRentability,
+                  [t('monthlyView.chart.accumulatedCDIReturn')]: item.accumulatedCDIReturn,
+                  [t('monthlyView.chart.accumulatedIPCAReturn')]: item.accumulatedIPCAReturn
+                }))}
+                index="month"
+                categories={[
+                  t('monthlyView.chart.accumulatedReturn'),
+                  t('monthlyView.chart.accumulatedTargetReturn'),
+                  t('monthlyView.chart.accumulatedCDIReturn'),
+                  t('monthlyView.chart.accumulatedIPCAReturn')
+                ]}
+                colors={["emerald", "fuchsia", "blue", "amber"]}
+                valueFormatter={(value) => `${Math.round(value)}%`}
+                showLegend
+                showGridLines
+                showTooltip
+                connectNulls
+                customTooltip={({ payload, active }) => {
+                  if (!active || !payload || !payload.length) return null;
+
+                  const firstPayload = payload[0];
+                  if (!firstPayload || !firstPayload.payload) return null;
+
+                  const dataPoint = chartDataToUse.find(p => p.month === firstPayload.payload.month);
+                  if (!dataPoint) return null;
+
+                  return (
+                    <div className="bg-white p-2 shadow-md rounded-md">
+                      <p className="font-semibold">{dataPoint.month}</p>
+                      {payload.map((entry, index) => (
+                        <p key={`item-${index}`} className={`text-sm ${chartColors[entry.color as keyof typeof chartColors].text}`}>
+                          {entry.name}: {Number(entry.value).toFixed(2)}%
+                        </p>
+                      ))}
+                    </div>
+                  );
+                }}
+              />
+            </Card>
           </TabsContent>
         )}
 
         <TabsContent value="table">
           <div className="flex justify-end gap-2 mb-4">
-            <button
-              onClick={downloadCSV}
-              className="px-4 py-2 text-sm font-medium text-white bg-primary rounded-md hover:bg-primary/90"
+            <Button
+              onClick={() => downloadCSV(localizedData, 'financial_records')}
+              icon={Download}
+              variant="primary"
+              size="xs"
             >
               {t('monthlyView.downloadCSV')}
-            </button>
+            </Button>
           </div>
           {localizedData.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-8 text-muted-foreground">
@@ -440,6 +475,22 @@ export const MonthlyView = ({
         </TabsContent>
 
         <TabsContent value="futureProjection">
+          <div className="flex justify-end gap-2 mb-4">
+            <Button
+              onClick={() => downloadCSV(projectionData || generateProjectionData(
+                investmentPlan,
+                profile,
+                allFinancialRecords,
+                goals,
+                events
+              ), 'future_projection')}
+              icon={Download}
+              variant="primary"
+              size="xs"
+            >
+              {t('monthlyView.downloadCSV')}
+            </Button>
+          </div>
           <div className="rounded-md border overflow-x-auto">
             <table className="w-full text-sm">
               <thead>

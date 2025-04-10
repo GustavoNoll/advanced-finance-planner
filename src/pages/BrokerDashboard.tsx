@@ -10,7 +10,6 @@ import { WealthDistributionChart } from '@/components/broker-dashboard/charts/We
 import { PlanningMetrics } from '@/components/broker-dashboard/metrics/PlanningMetrics';
 import { TrendMetrics } from '@/components/broker-dashboard/metrics/TrendMetrics';
 import { ActionMetrics } from '@/components/broker-dashboard/metrics/ActionMetrics';
-import { SearchBar } from '@/components/broker-dashboard/search/SearchBar';
 import { ClientList } from '@/components/broker-dashboard/client-list/ClientList';
 import { UserProfileInvestment, BrokerProfile } from '@/types/broker-dashboard';
 
@@ -331,17 +330,6 @@ export const BrokerDashboard = () => {
     navigate(`/client/${userId}`);
   };
 
-  const isRecordOutdated = (recordMonth: number | undefined, recordYear: number | undefined): boolean => {
-    if (!recordMonth || !recordYear) return true;
-    
-    const currentDate = new Date();
-    const lastRecordDate = new Date(recordYear, recordMonth - 1);
-    const diffMonths = (currentDate.getFullYear() - lastRecordDate.getFullYear()) * 12 + 
-                      (currentDate.getMonth() - lastRecordDate.getMonth());
-    
-    return diffMonths > 1;
-  };
-
   const handleLogout = async () => {
     try {
       const { error } = await supabase.auth.signOut();
@@ -389,7 +377,7 @@ export const BrokerDashboard = () => {
               <Button 
                 variant="outline" 
                 onClick={() => navigate(`/client-profile/${brokerProfile?.id}`)}
-                className="flex items-center gap-2 hover:bg-primary/5 transition-all duration-200 shadow-sm border-gray-200"
+                className="flex items-center gap-2 hover:bg-primary/5 transition-all duration-200 shadow-sm border-gray-200 hover:shadow-lg transition-all duration-200 px-6"
               >
                 <div className="flex items-center gap-2">
                   <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center ring-2 ring-primary/20">
@@ -410,9 +398,9 @@ export const BrokerDashboard = () => {
                 {t('common.logout', { defaultValue: 'Logout' })}
               </Button>
               
-              <Button 
-                onClick={() => navigate('/create-client')} 
-                className="flex items-center gap-2 bg-primary hover:bg-primary/90 text-white shadow-md hover:shadow-lg transition-all duration-200 px-6"
+              <Button
+                onClick={() => navigate('/create-client')}
+                className="flex items-center gap-2 bg-blue-500 hover:bg-blue-600 text-white shadow-md hover:shadow-lg transition-all duration-200 px-6"
               >
                 <Plus className="h-4 w-4" />
                 {t('brokerDashboard.buttons.newClient')}
