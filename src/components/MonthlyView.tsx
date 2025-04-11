@@ -565,33 +565,42 @@ export const MonthlyView = ({
               <p>{t('monthlyView.noData')}</p>
             </div>
           ) : (
-            <div className="rounded-md border">
+            <div className="rounded-md border overflow-hidden shadow-sm">
               <table className="w-full text-sm">
                 <thead>
-                  <tr className="border-b bg-muted/50">
-                    <th className="p-2 text-left">{t('monthlyView.table.headers.month')}</th>
-                    <th className="p-2 text-right">{t('monthlyView.table.headers.initialBalance')}</th>
-                    <th className="p-2 text-right">{t('monthlyView.table.headers.contribution')}</th>
-                    <th className="p-2 text-right">{t('monthlyView.table.headers.returns')}</th>
-                    <th className="p-2 text-right">{t('monthlyView.table.headers.returnPercentage')}</th>
-                    <th className="p-2 text-right">{t('monthlyView.table.headers.endBalance')}</th>
-                    <th className="p-2 text-right">{t('monthlyView.table.headers.targetRentability')}</th>
+                  <tr className="bg-muted/50 border-b">
+                    <th className="p-3 text-left font-medium text-muted-foreground">{t('monthlyView.table.headers.month')}</th>
+                    <th className="p-3 text-right font-medium text-muted-foreground">{t('monthlyView.table.headers.initialBalance')}</th>
+                    <th className="p-3 text-right font-medium text-muted-foreground">{t('monthlyView.table.headers.contribution')}</th>
+                    <th className="p-3 text-right font-medium text-muted-foreground">{t('monthlyView.table.headers.returns')}</th>
+                    <th className="p-3 text-right font-medium text-muted-foreground">{t('monthlyView.table.headers.returnPercentage')}</th>
+                    <th className="p-3 text-right font-medium text-muted-foreground">{t('monthlyView.table.headers.endBalance')}</th>
+                    <th className="p-3 text-right font-medium text-muted-foreground">{t('monthlyView.table.headers.targetRentability')}</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {localizedData.map((data) => (
-                    <tr key={`${data.month}-${data.balance}-${data.contribution}-${data.return}-${data.endBalance}-${data.targetRentability}`} className="border-b">
-                      <td className="p-2">{data.month}</td>
-                      <td className="p-2 text-right">R$ {data.balance.toLocaleString()}</td>
-                      <td className="p-2 text-right">R$ {data.contribution.toLocaleString()}</td>
-                      <td className={`p-2 text-right ${data.return >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                  {localizedData.map((data, index) => (
+                    <tr 
+                      key={`${data.month}-${data.balance}-${data.contribution}-${data.return}-${data.endBalance}-${data.targetRentability}`} 
+                      className={`border-b transition-colors hover:bg-muted/50 ${
+                        index % 2 === 0 ? 'bg-white' : 'bg-muted/10'
+                      }`}
+                    >
+                      <td className="p-3 font-medium">{data.month}</td>
+                      <td className="p-3 text-right">R$ {data.balance.toLocaleString()}</td>
+                      <td className="p-3 text-right">R$ {data.contribution.toLocaleString()}</td>
+                      <td className={`p-3 text-right font-medium ${
+                        data.return >= 0 ? 'text-green-600' : 'text-red-600'
+                      }`}>
                         {data.return >= 0 ? '+' : ''}{`R$ ${data.return.toLocaleString()}`}
                       </td>
-                      <td className={`p-2 text-right ${data.percentage >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                      <td className={`p-3 text-right font-medium ${
+                        data.percentage >= 0 ? 'text-green-600' : 'text-red-600'
+                      }`}>
                         {data.percentage >= 0 ? '+' : ''}{data.percentage.toFixed(2)}%
                       </td>
-                      <td className="p-2 text-right font-medium">R$ {data.endBalance.toLocaleString()}</td>
-                      <td className="p-2 text-right font-medium">{data.targetRentability?.toFixed(2)}%</td>
+                      <td className="p-3 text-right font-semibold">R$ {data.endBalance.toLocaleString()}</td>
+                      <td className="p-3 text-right font-medium">{data.targetRentability?.toFixed(2)}%</td>
                     </tr>
                   ))}
                 </tbody>
@@ -627,19 +636,19 @@ export const MonthlyView = ({
               {t('monthlyView.downloadCSV')}
             </Button>
           </div>
-          <div className="rounded-md border overflow-x-auto">
+          <div className="rounded-md border overflow-hidden shadow-sm">
             <table className="w-full text-sm">
               <thead>
-                <tr className="border-b bg-muted/50">
-                  <th className="p-2 text-left whitespace-nowrap">{t('monthlyView.futureProjection.age')}</th>
-                  <th className="p-2 text-left whitespace-nowrap">{t('monthlyView.futureProjection.year')}</th>
-                  <th className="p-2 text-right whitespace-nowrap">{t('monthlyView.futureProjection.cashFlow')}</th>
-                  <th className="p-2 text-right whitespace-nowrap">{t('monthlyView.futureProjection.goalsEventsImpact')}</th>
-                  <th className="p-2 text-right whitespace-nowrap">{t('monthlyView.futureProjection.balance')}</th>
-                  <th className="p-2 text-right whitespace-nowrap">{t('monthlyView.futureProjection.projectedBalance')}</th>
-                  <th className="p-2 text-right whitespace-nowrap">{t('monthlyView.futureProjection.ipcaRate')}</th>
-                  <th className="p-2 text-right whitespace-nowrap">{t('monthlyView.futureProjection.effectiveRate')}</th>
-                  <th className="p-2 text-center w-10"></th>
+                <tr className="bg-muted/50 border-b">
+                  <th className="p-3 text-left font-medium text-muted-foreground whitespace-nowrap">{t('monthlyView.futureProjection.age')}</th>
+                  <th className="p-3 text-left font-medium text-muted-foreground whitespace-nowrap">{t('monthlyView.futureProjection.year')}</th>
+                  <th className="p-3 text-right font-medium text-muted-foreground whitespace-nowrap">{t('monthlyView.futureProjection.cashFlow')}</th>
+                  <th className="p-3 text-right font-medium text-muted-foreground whitespace-nowrap">{t('monthlyView.futureProjection.goalsEventsImpact')}</th>
+                  <th className="p-3 text-right font-medium text-muted-foreground whitespace-nowrap">{t('monthlyView.futureProjection.balance')}</th>
+                  <th className="p-3 text-right font-medium text-muted-foreground whitespace-nowrap">{t('monthlyView.futureProjection.projectedBalance')}</th>
+                  <th className="p-3 text-right font-medium text-muted-foreground whitespace-nowrap">{t('monthlyView.futureProjection.ipcaRate')}</th>
+                  <th className="p-3 text-right font-medium text-muted-foreground whitespace-nowrap">{t('monthlyView.futureProjection.effectiveRate')}</th>
+                  <th className="p-3 text-center font-medium text-muted-foreground w-10"></th>
                 </tr>
               </thead>
               <tbody>
@@ -651,10 +660,12 @@ export const MonthlyView = ({
                   events
                 )).map((projection, index) => (
                   <React.Fragment key={`${projection.year}-${index}-group`}>
-                    <tr key={`${projection.year}-${index}`} className={`border-b hover:bg-muted/50 transition-colors ${
-                      projection.hasHistoricalData ? 'bg-blue-50/50' : ''
-                    }`}>
-                      <td className="p-2">
+                    <tr 
+                      className={`border-b transition-colors hover:bg-muted/50 ${
+                        projection.hasHistoricalData ? 'bg-blue-50/50' : index % 2 === 0 ? 'bg-white' : 'bg-muted/10'
+                      }`}
+                    >
+                      <td className="p-3">
                         {projection.hasHistoricalData && (
                           <span className="mr-2 text-xs text-blue-600 font-medium">
                             {t('monthlyView.futureProjection.historical')}
@@ -662,33 +673,33 @@ export const MonthlyView = ({
                         )}
                         {projection.age}
                       </td>
-                      <td className="p-2">{projection.year}</td>
-                      <td className="p-2 text-right">
+                      <td className="p-3 font-medium">{projection.year}</td>
+                      <td className="p-3 text-right">
                         {projection.contribution > 0 ? (
-                          <span className="text-green-600">
+                          <span className="text-green-600 font-medium">
                             +R$ {projection.contribution.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                           </span>
                         ) : projection.withdrawal > 0 ? (
-                          <span className="text-red-600">
+                          <span className="text-red-600 font-medium">
                             -R$ {projection.withdrawal.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                           </span>
                         ) : '-'}
                       </td>
-                      <td className="p-2 text-right">
-                        <span className={`${
+                      <td className="p-3 text-right">
+                        <span className={`font-medium ${
                           projection.goalsEventsImpact > 0 
                             ? 'text-green-600' 
                             : projection.goalsEventsImpact < 0 
                               ? 'text-red-600' 
-                              : 'text-black'
+                              : 'text-foreground'
                         }`}>
                           R$ {projection.goalsEventsImpact?.toLocaleString('pt-BR', { maximumFractionDigits: 2 })}
                         </span>
                       </td>
-                      <td className="p-2 text-right font-medium">
+                      <td className="p-3 text-right font-semibold">
                         R$ {projection.balance.toLocaleString('pt-BR', { maximumFractionDigits: 2 })}
                       </td>
-                      <td className="p-2 text-right font-medium">
+                      <td className="p-3 text-right font-semibold">
                         R$ {projection.planned_balance.toLocaleString('pt-BR', { maximumFractionDigits: 2 })}
                         {projection.balance !== projection.planned_balance && (
                           <span className={`ml-2 text-xs ${
@@ -701,16 +712,16 @@ export const MonthlyView = ({
                           </span>
                         )}
                       </td>
-                      <td className="p-2 text-right font-medium">
+                      <td className="p-3 text-right font-medium">
                         {(projection.ipcaRate * 100).toFixed(2) || '-'}%
                       </td>
-                      <td className="p-2 text-right font-medium">
+                      <td className="p-3 text-right font-medium">
                         {(projection.effectiveRate * 100).toFixed(2) || '-'}%
                       </td>
-                      <td className="p-2 text-center">
+                      <td className="p-3 text-center">
                         <button
                           onClick={() => toggleYearExpansion(projection.year)}
-                          className="p-1 hover:bg-muted rounded-full"
+                          className="p-1.5 hover:bg-muted rounded-full transition-colors"
                           title={expandedYears.includes(projection.year) 
                             ? t('monthlyView.futureProjection.collapseYear')
                             : t('monthlyView.futureProjection.expandYear')}
@@ -725,46 +736,48 @@ export const MonthlyView = ({
                       const monthNames = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 
                         'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
                       return (
-                        <tr key={`${projection.year}-${monthIndex}`} 
-                            className={`border-b text-xs ${
-                              month.isHistorical 
-                                ? 'bg-blue-50/50' 
-                                : 'bg-muted/20'
-                            }`}>
-                           <td className="p-2">
+                        <tr 
+                          key={`${projection.year}-${monthIndex}`} 
+                          className={`border-b text-xs transition-colors hover:bg-muted/50 ${
+                            month.isHistorical 
+                              ? 'bg-blue-50/50' 
+                              : 'bg-muted/20'
+                          }`}
+                        >
+                          <td className="p-2">
                             {month.isHistorical && (
                               <span className="mr-2 text-xs text-blue-600 font-medium">
                                 {'H'}
                               </span>
                             )}
                           </td>
-                          <td className="p-2">{monthNames[month.month - 1]}</td>
+                          <td className="p-2 font-medium">{monthNames[month.month - 1]}</td>
                           <td className="p-2 text-right">
                             {month.contribution > 0 ? (
-                              <span className="text-green-600">
+                              <span className="text-green-600 font-medium">
                                 +R$ {month.contribution.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                               </span>
                             ) : month.withdrawal > 0 ? (
-                              <span className="text-red-600">
+                              <span className="text-red-600 font-medium">
                                 -R$ {month.withdrawal.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                               </span>
                             ) : '-'}
                           </td>
                           <td className="p-2 text-right">
-                            <span className={`${
+                            <span className={`font-medium ${
                               month.goalsEventsImpact > 0 
                                 ? 'text-green-600' 
                                 : month.goalsEventsImpact < 0 
                                   ? 'text-red-600' 
-                                  : 'text-black'
+                                  : 'text-foreground'
                             }`}>
                               R$ {month.goalsEventsImpact?.toLocaleString('pt-BR', { maximumFractionDigits: 2 })}
                             </span>
                           </td>
-                          <td className="p-2 text-right">
+                          <td className="p-2 text-right font-medium">
                             R$ {month.balance.toLocaleString('pt-BR', { maximumFractionDigits: 2 })}
                           </td>
-                          <td className="p-2 text-right">
+                          <td className="p-2 text-right font-medium">
                             R$ {month.planned_balance.toLocaleString('pt-BR', { maximumFractionDigits: 2 })}
                             {month.balance !== month.planned_balance && (
                               <span className={`ml-2 text-xs ${
@@ -783,8 +796,7 @@ export const MonthlyView = ({
                           <td className="p-2 text-right font-medium">
                             {(month.effectiveRate * 100).toFixed(4) || '-'}%
                           </td>
-                          <td className="p-2 text-right font-medium">
-                          </td>
+                          <td className="p-2"></td>
                         </tr>
                       );
                     })}
