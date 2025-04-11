@@ -347,45 +347,11 @@ export const BrokerDashboard = () => {
 
   const handleDeleteClient = async (clientId: string) => {
     try {
-      // Delete user's investment plan if exists
-      const { error: planError } = await supabase
-        .from('investment_plans')
-        .delete()
-        .eq('user_id', clientId);
+      const { error } = await supabase.rpc('delete_client', {
+        p_client_id: clientId
+      });
 
-      if (planError) throw planError;
-
-      // Delete user's financial records if exist
-      const { error: recordsError } = await supabase
-        .from('user_financial_records')
-        .delete()
-        .eq('user_id', clientId);
-
-      if (recordsError) throw recordsError;
-
-      // Delete user's events if exist
-      const { error: eventsError } = await supabase
-        .from('events')
-        .delete()
-        .eq('profile_id', clientId);
-
-      if (eventsError) throw eventsError;
-
-      // Delete user's financial goals if exist
-      const { error: goalsError } = await supabase
-        .from('financial_goals')
-        .delete()
-        .eq('profile_id', clientId);
-
-      if (goalsError) throw goalsError;
-
-      // Delete user's profile
-      const { error: profileError } = await supabase
-        .from('profiles')
-        .delete()
-        .eq('id', clientId);
-
-      if (profileError) throw profileError;
+      if (error) throw error;
 
       // Update the UI
       setSearchResults(prev => prev.filter(client => client.id !== clientId));
