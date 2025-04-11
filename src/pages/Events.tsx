@@ -180,113 +180,119 @@ const Events = () => {
     <Form {...form}>
       <form
         onSubmit={form.handleSubmit((values) => createEvent.mutate(values))}
-        className="space-y-4"
+        className="space-y-6 p-6 bg-white rounded-lg shadow-sm border border-gray-100"
       >
-        <FormField
-          control={form.control}
-          name="name"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>{t("events.form.name")}</FormLabel>
-              <FormControl>
-                <input
-                  {...field}
-                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
-                />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-
-        <FormField
-          control={form.control}
-          name="amount"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>{t("events.form.amount")}</FormLabel>
-              <FormControl>
-                <CurrencyInput
-                  id="amount"
-                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
-                  value={field.value}
-                  onValueChange={(value) => field.onChange(value)}
-                  prefix="R$ "
-                  groupSeparator="."
-                  decimalSeparator=","
-                  decimalsLimit={2}
-                />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-
-        <div className="grid grid-cols-2 gap-4">
+        <div className="space-y-4">
           <FormField
             control={form.control}
-            name="month"
+            name="name"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>{t("events.form.month")}</FormLabel>
+                <FormLabel className="text-sm font-medium text-gray-700">{t("events.form.name")}</FormLabel>
                 <FormControl>
-                  <select
-                    className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                  <input
                     {...field}
-                  >
-                    <option value="">{t("common.select")}</option>
-                    {Array.from({ length: 12 }, (_, i) => {
-                      const month = (i + 1).toString().padStart(2, '0');
-                      return (
-                        <option key={month} value={month}>
-                          {new Date(2000, i).toLocaleDateString('pt-BR', { month: 'long' })}
-                        </option>
-                      );
-                    })}
-                  </select>
+                    className="flex h-12 w-full rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                  />
                 </FormControl>
-                <FormMessage />
+                <FormMessage className="text-red-500 text-sm mt-1" />
               </FormItem>
             )}
           />
 
           <FormField
             control={form.control}
-            name="year"
+            name="amount"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>{t("events.form.year")}</FormLabel>
+                <FormLabel className="text-sm font-medium text-gray-700">{t("events.form.amount")}</FormLabel>
                 <FormControl>
-                  <select
-                    className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
-                    {...field}
-                  >
-                    <option value="">{t("common.select")}</option>
-                    {Array.from({ length: 80 }, (_, i) => {
-                      const year = (new Date().getFullYear() + i).toString();
-                      return (
-                        <option key={year} value={year}>
-                          {year}
-                        </option>
-                      );
-                    })}
-                  </select>
+                  <CurrencyInput
+                    id="amount"
+                    className="flex h-12 w-full rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                    value={field.value}
+                    onValueChange={(value) => field.onChange(value)}
+                    prefix="R$ "
+                    groupSeparator="."
+                    decimalSeparator=","
+                    decimalsLimit={2}
+                  />
                 </FormControl>
-                <FormMessage />
+                <FormMessage className="text-red-500 text-sm mt-1" />
               </FormItem>
             )}
           />
+
+          <div className="grid grid-cols-2 gap-4">
+            <FormField
+              control={form.control}
+              name="month"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel className="text-sm font-medium text-gray-700">{t("events.form.month")}</FormLabel>
+                  <FormControl>
+                    <select
+                      className="flex h-12 w-full rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                      {...field}
+                    >
+                      <option value="">{t("common.select")}</option>
+                      {Array.from({ length: 12 }, (_, i) => {
+                        const month = (i + 1).toString().padStart(2, '0');
+                        return (
+                          <option key={month} value={month}>
+                            {new Date(2000, i).toLocaleDateString('pt-BR', { month: 'long' })}
+                          </option>
+                        );
+                      })}
+                    </select>
+                  </FormControl>
+                  <FormMessage className="text-red-500 text-sm mt-1" />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="year"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel className="text-sm font-medium text-gray-700">{t("events.form.year")}</FormLabel>
+                  <FormControl>
+                    <select
+                      className="flex h-12 w-full rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                      {...field}
+                    >
+                      <option value="">{t("common.select")}</option>
+                      {Array.from({ length: 80 }, (_, i) => {
+                        const year = (new Date().getFullYear() + i).toString();
+                        return (
+                          <option key={year} value={year}>
+                            {year}
+                          </option>
+                        );
+                      })}
+                    </select>
+                  </FormControl>
+                  <FormMessage className="text-red-500 text-sm mt-1" />
+                </FormItem>
+              )}
+            />
+          </div>
         </div>
 
-        <div className="flex gap-2 justify-end">
+        <div className="flex gap-3 justify-end pt-4 border-t border-gray-100">
           <Button 
             type="button" 
             variant="outline"
             onClick={() => setShowAddForm(false)}
+            className="px-6 py-2 text-gray-700 hover:bg-gray-50"
           >
             {t("common.cancel")}
           </Button>
-          <Button type="submit">
+          <Button 
+            type="submit"
+            className="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white"
+          >
             {t("common.save")}
           </Button>
         </div>

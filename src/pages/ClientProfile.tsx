@@ -17,10 +17,26 @@ const ClientProfile = () => {
   const clientId = params.id || user?.id;
   
   const [isEditing, setIsEditing] = useState(false);
+  const [showPasswordForm, setShowPasswordForm] = useState(false);
   const [fullName, setFullName] = useState('');
   const [birthDate, setBirthDate] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+
+  const isPasswordValid = newPassword.length >= 6 && confirmPassword.length >= 6 && newPassword === confirmPassword;
+
+  const getPasswordErrorMessage = () => {
+    if (newPassword.length === 0 && confirmPassword.length === 0) {
+      return t('clientProfile.messages.fillPasswords');
+    }
+    if (newPassword.length < 6 || confirmPassword.length < 6) {
+      return t('clientProfile.messages.passwordTooShort');
+    }
+    if (newPassword !== confirmPassword) {
+      return t('clientProfile.messages.passwordMismatch');
+    }
+    return '';
+  };
 
   const { data: profile, refetch: refetchProfile } = useQuery({
     queryKey: ['profile', clientId],
@@ -196,16 +212,35 @@ const ClientProfile = () => {
 
                 {canEdit && (
                   !isEditing ? (
-                    <Button onClick={() => setIsEditing(true)}>
-                      {t('clientProfile.buttons.edit')}
-                    </Button>
-                  ) : (
-                    <div className="flex gap-2">
-                      <Button onClick={handleUpdateProfile}>
-                        {t('clientProfile.buttons.save')}
+                    <div className="flex justify-center gap-4">
+                      <Button 
+                        onClick={() => setIsEditing(true)}
+                        className="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white"
+                      >
+                        {t('clientProfile.buttons.editPersonalData')}
                       </Button>
-                      <Button variant="outline" onClick={() => setIsEditing(false)}>
+                      <Button 
+                        onClick={() => setShowPasswordForm(!showPasswordForm)}
+                        variant="outline"
+                        className="px-6 py-2 text-gray-700 hover:bg-gray-50"
+                      >
+                        {t('clientProfile.buttons.changePassword')}
+                      </Button>
+                    </div>
+                  ) : (
+                    <div className="flex gap-3 justify-end pt-4 border-t border-gray-100">
+                      <Button 
+                        variant="outline" 
+                        onClick={() => setIsEditing(false)}
+                        className="px-6 py-2 text-gray-700 hover:bg-gray-50"
+                      >
                         {t('clientProfile.buttons.cancel')}
+                      </Button>
+                      <Button 
+                        onClick={handleUpdateProfile}
+                        className="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white"
+                      >
+                        {t('clientProfile.buttons.save')}
                       </Button>
                     </div>
                   )
@@ -213,35 +248,49 @@ const ClientProfile = () => {
               </div>
             </div>
 
-            {canEdit && (
-              <div className="border-t pt-6">
-                <h2 className="text-lg font-medium mb-4">{t('clientProfile.passwordSection')}</h2>
-                <div className="space-y-4">
+            {showPasswordForm && canEdit && (
+              <div className="bg-white rounded-lg shadow-sm border border-gray-100 p-6">
+                <h2 className="text-lg font-medium text-gray-900 mb-6">{t('clientProfile.passwordSection')}</h2>
+                <div className="space-y-6">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
                       {t('clientProfile.newPassword')}
                     </label>
                     <Input
                       type="password"
                       value={newPassword}
                       onChange={(e) => setNewPassword(e.target.value)}
+                      className="h-12 rounded-lg border-gray-200 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
                     />
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
                       {t('clientProfile.confirmPassword')}
                     </label>
                     <Input
                       type="password"
                       value={confirmPassword}
                       onChange={(e) => setConfirmPassword(e.target.value)}
+                      className="h-12 rounded-lg border-gray-200 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
                     />
                   </div>
 
-                  <Button onClick={handlePasswordChange}>
-                    {t('clientProfile.buttons.changePassword')}
-                  </Button>
+                  {!isPasswordValid && (
+                    <div className="text-sm text-red-500 text-center">
+                      {getPasswordErrorMessage()}
+                    </div>
+                  )}
+
+                  <div className="flex justify-center pt-4 border-t border-gray-100">
+                    <Button 
+                      onClick={handlePasswordChange}
+                      className="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white disabled:opacity-50 disabled:cursor-not-allowed"
+                      disabled={!isPasswordValid}
+                    >
+                      {t('clientProfile.buttons.changePassword')}
+                    </Button>
+                  </div>
                 </div>
               </div>
             )}

@@ -536,6 +536,10 @@ export const ptBR = {
     },
     form: {
       year: "Ano",
+      basicInfo: "Informações Básicas",
+      balances: "Saldo",
+      contributions: "Contribuições",
+      returns: "Rendimentos",
       month: "Mês",
       startingBalance: "Saldo Inicial",
       monthlyContribution: "Contribuição Mensal",
@@ -594,6 +598,7 @@ export const ptBR = {
     confirmPassword: 'Confirmar Nova Senha',
     buttons: {
       edit: 'Editar',
+      editPersonalData: 'Editar Dados Pessoais',
       save: 'Salvar',
       cancel: 'Cancelar',
       changePassword: 'Alterar Senha'
@@ -603,7 +608,9 @@ export const ptBR = {
       profileUpdateError: 'Erro ao atualizar dados',
       passwordUpdateSuccess: 'Senha alterada com sucesso',
       passwordUpdateError: 'Erro ao alterar senha',
-      passwordMismatch: 'As senhas não coincidem'
+      passwordMismatch: 'As senhas não coincidem',
+      fillPasswords: 'Por favor, preencha ambos os campos de senha',
+      passwordTooShort: 'A senha deve ter pelo menos 6 caracteres'
     }
   },
   settings: {

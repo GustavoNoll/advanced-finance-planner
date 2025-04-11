@@ -305,211 +305,235 @@ export const AddRecordForm = ({ clientId, onSuccess, editingRecord }: AddRecordF
   };
 
   const renderFormFields = () => (
-    <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-      <div className="grid grid-cols-2 gap-4">
-        <FormField
-          control={form.control}
-          name="record_month"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>{t('financialRecords.form.month')}</FormLabel>
-              <Select 
-                onValueChange={(value) => field.onChange(parseInt(value))} 
-                defaultValue={field.value.toString()}
-              >
-                <FormControl>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                </FormControl>
-                <SelectContent>
-                  {Array.from({ length: 12 }, (_, i) => (
-                    <SelectItem key={i + 1} value={(i + 1).toString()}>
-                      {new Date(2000, i).toLocaleString('pt-BR', { month: 'long' })}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </FormItem>
-          )}
-        />
-
-        <FormField
-          control={form.control}
-          name="record_year"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>{t('financialRecords.form.year')}</FormLabel>
-              <FormControl>
-                <Input type="number" {...field} onChange={e => field.onChange(parseInt(e.target.value))} />
-              </FormControl>
-            </FormItem>
-          )}
-        />
-      </div>
-
-      <div className="grid grid-cols-2 gap-4">
-        <FormField
-            key={'starting_balance'}
-            control={form.control}
-            name={'starting_balance'}
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel className="text-sm">{t(`financialRecords.form.startingBalance`)}</FormLabel>
-                <FormControl>
-                  <CurrencyInput
-                    id={'starting_balance'}
-                    className="flex h-8 w-full rounded-md border border-input bg-background px-3 py-1 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                    prefix="R$ "
-                    groupSeparator="."
-                    decimalSeparator=","
-                    decimalsLimit={2}
-                    value={field.value}
-                    onValueChange={(value) => {
-                      field.onChange(value ? parseFloat(value.replace(/\./g, '').replace(',', '.')) : 0);
-                    }}
-                  />
-                </FormControl>
-              </FormItem>
-            )}
-          />
-          <FormField
-            key={'ending_balance'}
-            control={form.control}
-            name={'ending_balance'}
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel className="text-sm">{t(`financialRecords.form.endingBalance`)}</FormLabel>
-                <FormControl>
-                  <CurrencyInput
-                    id={'ending_balance'}
-                    className="flex h-8 w-full rounded-md border border-input bg-background px-3 py-1 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                    prefix="R$ "
-                    groupSeparator="."
-                    decimalSeparator=","
-                    decimalsLimit={2}
-                    value={field.value}
-                    onValueChange={(value) => {
-                      field.onChange(value ? parseFloat(value.replace(/\./g, '').replace(',', '.')) : 0);
-                    }}
-                  />
-                </FormControl>
-              </FormItem>
-            )}
-          />
-      </div>
-
-      <div className="grid grid-cols-2 gap-4">
-        <FormField
-          control={form.control}
-          name="monthly_contribution"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel className="text-sm">{t('financialRecords.form.monthlyContribution')}</FormLabel>
-              <FormControl>
-                <CurrencyInput
-                  id="monthly_contribution"
-                  className="flex h-8 w-full rounded-md border border-input bg-background px-3 py-1 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                  prefix="R$ "
-                  groupSeparator="."
-                  decimalSeparator=","
-                  decimalsLimit={2}
-                  defaultValue={field.value}
-                  onValueChange={(value) => {
-                    field.onChange(value ? parseFloat(value.replace(/\./g, '').replace(',', '.')) : 0);
-                  }}
-                />
-              </FormControl>
-            </FormItem>
-          )}
-        />
-
-        <FormField
-          control={form.control}
-          name="target_rentability"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel className="text-sm">{t('financialRecords.form.targetRentability')}</FormLabel>
-              <FormControl>
-                <Input 
-                  type="number" 
-                  step="0.01" 
-                  {...field} 
-                  onChange={e => field.onChange(parseFloat(e.target.value))} 
-                  className="h-8"
-                />
-              </FormControl>
-              {ipcaDate && (
-                <p className="text-xs text-muted-foreground mt-1">
-                  IPCA referente a {ipcaDate}
-                </p>
+    <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="space-y-4">
+          <h3 className="text-lg font-medium text-gray-900">{t('financialRecords.form.basicInfo')}</h3>
+          
+          <div className="grid grid-cols-2 gap-4">
+            <FormField
+              control={form.control}
+              name="record_month"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel className="text-sm font-medium text-gray-700">{t('financialRecords.form.month')}</FormLabel>
+                  <select className="w-full h-12 px-4 py-2 text-sm rounded-lg border border-gray-200 bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors appearance-none bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjQiIGhlaWdodD0iMjQiIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cGF0aCBkPSJNNiA5TDEyIDE1TDE4IDkiIHN0cm9rZT0iIzYxNjE2MSIgc3Ryb2tlLXdpZHRoPSIyIiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiLz48L3N2Zz4=')] bg-no-repeat bg-[right_1rem_center]">
+                    <option value="">{t('common.select')}</option>
+                    <option value="1">{t('date.months.january')}</option>
+                    <option value="2">{t('date.months.february')}</option>
+                    <option value="3">{t('date.months.march')}</option>
+                    <option value="4">{t('date.months.april')}</option>
+                    <option value="5">{t('date.months.may')}</option>
+                    <option value="6">{t('date.months.june')}</option>
+                    <option value="7">{t('date.months.july')}</option>
+                    <option value="8">{t('date.months.august')}</option>
+                    <option value="9">{t('date.months.september')}</option>
+                    <option value="10">{t('date.months.october')}</option>
+                    <option value="11">{t('date.months.november')}</option>
+                    <option value="12">{t('date.months.december')}</option>
+                  </select>
+                </FormItem>
               )}
-            </FormItem>
-          )}
-        />
+            />
+
+            <FormField
+              control={form.control}
+              name="record_year"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel className="text-sm font-medium text-gray-700">{t('financialRecords.form.year')}</FormLabel>
+                  <FormControl>
+                    <Input 
+                      type="number" 
+                      {...field} 
+                      onChange={e => field.onChange(parseInt(e.target.value))}
+                      className="h-12"
+                    />
+                  </FormControl>
+                </FormItem>
+              )}
+            />
+          </div>
+        </div>
+
+        <div className="space-y-4">
+          <h3 className="text-lg font-medium text-gray-900">{t('financialRecords.form.balances')}</h3>
+          
+          <div className="grid grid-cols-2 gap-4">
+            <FormField
+              key={'starting_balance'}
+              control={form.control}
+              name={'starting_balance'}
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel className="text-sm font-medium text-gray-700">{t(`financialRecords.form.startingBalance`)}</FormLabel>
+                  <FormControl>
+                    <CurrencyInput
+                      id={'starting_balance'}
+                      className="flex h-12 w-full rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                      prefix="R$ "
+                      groupSeparator="."
+                      decimalSeparator=","
+                      decimalsLimit={2}
+                      value={field.value}
+                      onValueChange={(value) => {
+                        field.onChange(value ? parseFloat(value.replace(/\./g, '').replace(',', '.')) : 0);
+                      }}
+                    />
+                  </FormControl>
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              key={'ending_balance'}
+              control={form.control}
+              name={'ending_balance'}
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel className="text-sm font-medium text-gray-700">{t(`financialRecords.form.endingBalance`)}</FormLabel>
+                  <FormControl>
+                    <CurrencyInput
+                      id={'ending_balance'}
+                      className="flex h-12 w-full rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                      prefix="R$ "
+                      groupSeparator="."
+                      decimalSeparator=","
+                      decimalsLimit={2}
+                      value={field.value}
+                      onValueChange={(value) => {
+                        field.onChange(value ? parseFloat(value.replace(/\./g, '').replace(',', '.')) : 0);
+                      }}
+                    />
+                  </FormControl>
+                </FormItem>
+              )}
+            />
+          </div>
+        </div>
       </div>
 
-      <div className="grid grid-cols-2 gap-4">
-        <FormField
-          control={form.control}
-          name="monthly_return"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel className="text-sm">{t('financialRecords.form.monthlyReturn')}</FormLabel>
-              <FormControl>
-                <CurrencyInput
-                  id="monthly_return"
-                  className="flex h-8 w-full rounded-md border border-input bg-background px-3 py-1 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                  prefix="R$ "
-                  groupSeparator="."
-                  decimalSeparator=","
-                  decimalsLimit={2}
-                  defaultValue={field.value}
-                  onValueChange={(value) => {
-                    field.onChange(value ? parseFloat(value.replace(/\./g, '').replace(',', '.')) : 0);
-                  }}
-                />
-              </FormControl>
-            </FormItem>
-          )}
-        />
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="space-y-4">
+          <h3 className="text-lg font-medium text-gray-900">{t('financialRecords.form.contributions')}</h3>
+          
+          <div className="grid grid-cols-2 gap-4">
+            <FormField
+              control={form.control}
+              name="monthly_contribution"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel className="text-sm font-medium text-gray-700">{t('financialRecords.form.monthlyContribution')}</FormLabel>
+                  <FormControl>
+                    <CurrencyInput
+                      id="monthly_contribution"
+                      className="flex h-12 w-full rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                      prefix="R$ "
+                      groupSeparator="."
+                      decimalSeparator=","
+                      decimalsLimit={2}
+                      defaultValue={field.value}
+                      onValueChange={(value) => {
+                        field.onChange(value ? parseFloat(value.replace(/\./g, '').replace(',', '.')) : 0);
+                      }}
+                    />
+                  </FormControl>
+                </FormItem>
+              )}
+            />
 
-        <FormField
-          control={form.control}
-          name="monthly_return_rate"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel className="text-sm">{t('financialRecords.form.monthlyReturnRate')}</FormLabel>
-              <FormControl>
-                <Input 
-                  type="number" 
-                  step="0.01" 
-                  {...field} 
-                  onChange={e => field.onChange(parseFloat(e.target.value))} 
-                  className="h-8"
-                />
-              </FormControl>
-            </FormItem>
-          )}
-        />
+            <FormField
+              control={form.control}
+              name="target_rentability"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel className="text-sm font-medium text-gray-700">{t('financialRecords.form.targetRentability')}</FormLabel>
+                  <FormControl>
+                    <Input 
+                      type="number" 
+                      step="0.01" 
+                      {...field} 
+                      onChange={e => field.onChange(parseFloat(e.target.value))} 
+                      className="h-12"
+                    />
+                  </FormControl>
+                  {ipcaDate && (
+                    <p className="text-xs text-gray-500 mt-1">
+                      IPCA referente a {ipcaDate}
+                    </p>
+                  )}
+                </FormItem>
+              )}
+            />
+          </div>
+        </div>
+
+        <div className="space-y-4">
+          <h3 className="text-lg font-medium text-gray-900">{t('financialRecords.form.returns')}</h3>
+          
+          <div className="grid grid-cols-2 gap-4">
+            <FormField
+              control={form.control}
+              name="monthly_return"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel className="text-sm font-medium text-gray-700">{t('financialRecords.form.monthlyReturn')}</FormLabel>
+                  <FormControl>
+                    <CurrencyInput
+                      id="monthly_return"
+                      className="flex h-12 w-full rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                      prefix="R$ "
+                      groupSeparator="."
+                      decimalSeparator=","
+                      decimalsLimit={2}
+                      defaultValue={field.value}
+                      onValueChange={(value) => {
+                        field.onChange(value ? parseFloat(value.replace(/\./g, '').replace(',', '.')) : 0);
+                      }}
+                    />
+                  </FormControl>
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="monthly_return_rate"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel className="text-sm font-medium text-gray-700">{t('financialRecords.form.monthlyReturnRate')}</FormLabel>
+                  <FormControl>
+                    <Input 
+                      type="number" 
+                      step="0.01" 
+                      {...field} 
+                      onChange={e => field.onChange(parseFloat(e.target.value))} 
+                      className="h-12"
+                    />
+                  </FormControl>
+                </FormItem>
+              )}
+            />
+          </div>
+        </div>
       </div>
 
       {!editingRecord ? (
         <div className="space-y-4">
-          <h3 className="font-medium text-sm">
+          <h3 className="text-lg font-medium text-gray-900">
             {t('financialRecords.form.goalsAndEvents')}
           </h3>
           
-          <ScrollArea className="h-[200px] rounded-md border p-4">
+          <ScrollArea className="h-[200px] rounded-lg border border-gray-200 p-4">
             {pendingGoals.length === 0 && projectedEvents.length === 0 ? (
-              <p className="text-sm text-muted-foreground">
+              <p className="text-sm text-gray-500">
                 {t('financialRecords.form.noGoalsOrEvents')}
               </p>
             ) : (
               <div className="space-y-4">
                 {pendingGoals.length > 0 && (
                   <div className="space-y-2">
-                    <h4 className="text-sm font-medium">{t('financialRecords.form.goals')}</h4>
+                    <h4 className="text-sm font-medium text-gray-700">{t('financialRecords.form.goals')}</h4>
                     {pendingGoals.map(goal => (
                       <div key={goal.id} className="flex items-center space-x-2">
                         <Checkbox
@@ -536,7 +560,7 @@ export const AddRecordForm = ({ clientId, onSuccess, editingRecord }: AddRecordF
 
                 {projectedEvents.length > 0 && (
                   <div className="space-y-2">
-                    <h4 className="text-sm font-medium">{t('financialRecords.form.events')}</h4>
+                    <h4 className="text-sm font-medium text-gray-700">{t('financialRecords.form.events')}</h4>
                     {projectedEvents.map(event => (
                       <div key={event.id} className="flex items-center space-x-2">
                         <Checkbox
@@ -561,51 +585,54 @@ export const AddRecordForm = ({ clientId, onSuccess, editingRecord }: AddRecordF
           </ScrollArea>
 
           {selectedItems.totalValue > 0 && (
-            <p className="text-sm font-medium">
+            <p className="text-sm font-medium text-gray-900">
               {t('financialRecords.form.selectedTotal')}: {formatCurrency(selectedItems.totalValue)}
             </p>
           )}
         </div>
       ) : (
-        <FormField
-          control={form.control}
-          name="events_balance"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel className="text-sm">{t('financialRecords.form.eventsBalance')}</FormLabel>
-              <FormControl>
-                <CurrencyInput
-                  id="events_balance"
-                  className="flex h-8 w-full rounded-md border border-input bg-background px-3 py-1 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                  prefix="R$ "
-                  groupSeparator="."
-                  decimalSeparator=","
-                  decimalsLimit={2}
-                  allowNegativeValue={true}
-                  defaultValue={field.value}
-                  onValueChange={(value) => {
-                    const numericValue = value ? parseFloat(value.replace(/\./g, '').replace(',', '.')) : 0;
-                    field.onChange(numericValue);
-                  }}
-                />
-              </FormControl>
-            </FormItem>
-          )}
-        />
+        <div className="space-y-4">
+          <h3 className="text-lg font-medium text-gray-900">{t('financialRecords.form.eventsBalance')}</h3>
+          <FormField
+            control={form.control}
+            name="events_balance"
+            render={({ field }) => (
+              <FormItem>
+                <FormControl>
+                  <CurrencyInput
+                    id="events_balance"
+                    className="flex h-12 w-full rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                    prefix="R$ "
+                    groupSeparator="."
+                    decimalSeparator=","
+                    decimalsLimit={2}
+                    allowNegativeValue={true}
+                    defaultValue={field.value}
+                    onValueChange={(value) => {
+                      const numericValue = value ? parseFloat(value.replace(/\./g, '').replace(',', '.')) : 0;
+                      field.onChange(numericValue);
+                    }}
+                  />
+                </FormControl>
+              </FormItem>
+            )}
+          />
+        </div>
       )}
 
-      <div className="flex gap-2 justify-end">
+      <div className="flex gap-3 justify-end pt-4 border-t border-gray-100">
         <Button 
           type="button" 
           variant="outline"
           onClick={onSuccess}
           disabled={isSaving}
+          className="px-6 py-2 text-gray-700 hover:bg-gray-50"
         >
           {t('common.cancel')}
         </Button>
         <Button 
           type="submit" 
-          className={`transition-all duration-200 ${isSaving ? 'opacity-70 scale-95' : ''}`}
+          className={`px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white transition-all duration-200 ${isSaving ? 'opacity-70 scale-95' : ''}`}
           disabled={isSaving}
         >
           {isSaving ? t('common.saving') : editingRecord ? t('common.update') : t('common.save')}
@@ -618,7 +645,7 @@ export const AddRecordForm = ({ clientId, onSuccess, editingRecord }: AddRecordF
     <div className={editingRecord ? "mt-4 border-t pt-4" : ""}>
       <Form {...form}>
         {!editingRecord ? (
-          <Card className="p-4">
+          <Card className="p-6 bg-white rounded-lg shadow-sm border border-gray-100">
             {renderFormFields()}
           </Card>
         ) : (

@@ -169,162 +169,170 @@ const FinancialGoals = () => {
     <Form {...form}>
       <form
         onSubmit={form.handleSubmit((values) => createGoal.mutate(values))}
-        className="space-y-4"
+        className="space-y-6 p-6 bg-white rounded-lg shadow-sm border border-gray-100"
       >
-        <FormField
-          control={form.control}
-          name="icon"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>{t("financialGoals.form.icon")}</FormLabel>
-              <FormControl>
-                <select
-                  {...field}
-                  className="w-full p-2 border rounded-md"
-                >
-                  {Object.entries(goalIcons).map(([key, value]) => (
-                    <option key={key} value={key}>
-                      {value} {t(`financialGoals.icons.${key}`)}
-                    </option>
-                  ))}
-                </select>
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-
-        <div className="grid grid-cols-2 gap-4">
+        <div className="space-y-4">
           <FormField
             control={form.control}
-            name="asset_value"
+            name="icon"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>{t("financialGoals.form.assetValue")}</FormLabel>
+                <FormLabel className="text-sm font-medium text-gray-700">{t("financialGoals.form.icon")}</FormLabel>
                 <FormControl>
-                  <CurrencyInput
-                    id="asset_value"
-                    className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
-                    value={field.value}
-                    onValueChange={(value) => field.onChange(value)}
-                    prefix="R$ "
-                    groupSeparator="."
-                    decimalSeparator=","
-                    decimalsLimit={2}
-                  />
+                  <select
+                    {...field}
+                    className="w-full p-3 border border-gray-200 rounded-lg bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                  >
+                    {Object.entries(goalIcons).map(([key, value]) => (
+                      <option key={key} value={key} className="p-2">
+                        {value} {t(`financialGoals.icons.${key}`)}
+                      </option>
+                    ))}
+                  </select>
                 </FormControl>
-                <FormMessage />
+                <FormMessage className="text-red-500 text-sm mt-1" />
               </FormItem>
             )}
           />
 
-          <div className="grid grid-cols-2 gap-2">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <FormField
               control={form.control}
-              name="goal_month"
+              name="asset_value"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>{t("financialGoals.form.goalMonth")}</FormLabel>
+                  <FormLabel className="text-sm font-medium text-gray-700">{t("financialGoals.form.assetValue")}</FormLabel>
                   <FormControl>
-                    <select
-                      className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
-                      {...field}
-                    >
-                      <option value="">{t("common.select")}</option>
-                      {Array.from({ length: 12 }, (_, i) => {
-                        const month = (i + 1).toString().padStart(2, '0');
-                        return (
-                          <option key={month} value={month}>
-                            {new Date(2000, i).toLocaleDateString('pt-BR', { month: 'long' })}
-                          </option>
-                        );
-                      })}
-                    </select>
+                    <CurrencyInput
+                      id="asset_value"
+                      className="flex h-12 w-full rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                      value={field.value}
+                      onValueChange={(value) => field.onChange(value)}
+                      prefix="R$ "
+                      groupSeparator="."
+                      decimalSeparator=","
+                      decimalsLimit={2}
+                    />
                   </FormControl>
-                  <FormMessage />
+                  <FormMessage className="text-red-500 text-sm mt-1" />
                 </FormItem>
               )}
             />
 
+            <div className="grid grid-cols-2 gap-4">
+              <FormField
+                control={form.control}
+                name="goal_month"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="text-sm font-medium text-gray-700">{t("financialGoals.form.goalMonth")}</FormLabel>
+                    <FormControl>
+                      <select
+                        className="flex h-12 w-full rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                        {...field}
+                      >
+                        <option value="">{t("common.select")}</option>
+                        {Array.from({ length: 12 }, (_, i) => {
+                          const month = (i + 1).toString().padStart(2, '0');
+                          return (
+                            <option key={month} value={month}>
+                              {new Date(2000, i).toLocaleDateString('pt-BR', { month: 'long' })}
+                            </option>
+                          );
+                        })}
+                      </select>
+                    </FormControl>
+                    <FormMessage className="text-red-500 text-sm mt-1" />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="goal_year"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="text-sm font-medium text-gray-700">{t("financialGoals.form.goalYear")}</FormLabel>
+                    <FormControl>
+                      <select
+                        className="flex h-12 w-full rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                        {...field}
+                      >
+                        <option value="">{t("common.select")}</option>
+                        {Array.from({ length: 2300 - new Date().getFullYear() + 1 }, (_, i) => {
+                          const year = (new Date().getFullYear() + i).toString();
+                          return (
+                            <option key={year} value={year}>
+                              {year}
+                            </option>
+                          );
+                        })}
+                      </select>
+                    </FormControl>
+                    <FormMessage className="text-red-500 text-sm mt-1" />
+                  </FormItem>
+                )}
+              />
+            </div>
+          </div>
+
+          <div className="space-y-4">
             <FormField
               control={form.control}
-              name="goal_year"
+              name="installment_project"
               render={({ field }) => (
-                <FormItem>
-                  <FormLabel>{t("financialGoals.form.goalYear")}</FormLabel>
+                <FormItem className="flex items-center space-x-3 p-4 bg-gray-50 rounded-lg">
                   <FormControl>
-                    <select
-                      className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
-                      {...field}
-                    >
-                      <option value="">{t("common.select")}</option>
-                      {Array.from({ length: 2300 - new Date().getFullYear() + 1 }, (_, i) => {
-                        const year = (new Date().getFullYear() + i).toString();
-                        return (
-                          <option key={year} value={year}>
-                            {year}
-                          </option>
-                        );
-                      })}
-                    </select>
+                    <input
+                      type="checkbox"
+                      checked={field.value}
+                      onChange={field.onChange}
+                      className="h-5 w-5 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                    />
                   </FormControl>
-                  <FormMessage />
+                  <FormLabel className="font-medium text-gray-700">
+                    {t("financialGoals.form.isInstallment")}
+                  </FormLabel>
                 </FormItem>
               )}
             />
+
+            {form.watch("installment_project") && (
+              <FormField
+                control={form.control}
+                name="installment_count"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="text-sm font-medium text-gray-700">{t("financialGoals.form.installmentCount")}</FormLabel>
+                    <FormControl>
+                      <input
+                        type="number"
+                        min="1"
+                        className="flex h-12 w-full rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormMessage className="text-red-500 text-sm mt-1" />
+                  </FormItem>
+                )}
+              />
+            )}
           </div>
         </div>
 
-        <FormField
-          control={form.control}
-          name="installment_project"
-          render={({ field }) => (
-            <FormItem className="flex items-center space-x-2">
-              <FormControl>
-                <input
-                  type="checkbox"
-                  checked={field.value}
-                  onChange={field.onChange}
-                  className="h-4 w-4"
-                />
-              </FormControl>
-              <FormLabel className="font-normal">
-                {t("financialGoals.form.isInstallment")}
-              </FormLabel>
-            </FormItem>
-          )}
-        />
-
-        {form.watch("installment_project") && (
-          <FormField
-            control={form.control}
-            name="installment_count"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>{t("financialGoals.form.installmentCount")}</FormLabel>
-                <FormControl>
-                  <input
-                    type="number"
-                    min="1"
-                    className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
-                    {...field}
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-        )}
-
-        <div className="flex gap-2 justify-end">
+        <div className="flex gap-3 justify-end pt-4 border-t border-gray-100">
           <Button 
             type="button" 
             variant="outline"
             onClick={() => setShowAddForm(false)}
+            className="px-6 py-2 text-gray-700 hover:bg-gray-50"
           >
             {t("common.cancel")}
           </Button>
-          <Button type="submit">
+          <Button 
+            type="submit"
+            className="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white"
+          >
             {t("common.save")}
           </Button>
         </div>

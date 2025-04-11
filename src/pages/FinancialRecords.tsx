@@ -628,7 +628,7 @@ const FinancialRecords = () => {
                     </div>
                   </Button>
                 </DialogTrigger>
-                <DialogContent className="sm:max-w-[1000px]">
+                <DialogContent className="sm:max-w-[1000px] bg-white">
                   <DialogHeader>
                     <DialogTitle>{t('financialRecords.importTitle')}</DialogTitle>
                   </DialogHeader>
