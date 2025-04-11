@@ -6,9 +6,6 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
 import { useState } from "react";
 import { calculateCompoundedRates, yearlyReturnRateToMonthlyReturnRate } from '@/lib/financial-math';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { GoalForm } from "@/components/financial-goals/GoalForm";
-import { EventForm } from "@/components/events/EventForm";
 import { ChartPointDialog } from "@/components/chart/ChartPointDialog";
 import { TrendingUp } from "lucide-react";
 
@@ -695,8 +692,8 @@ export const ExpenseChart = ({
                 />
                 <div className="flex flex-col">
                   <span className="text-gray-600 text-sm font-medium">{name}</span>
-                  <span className="text-gray-900 font-semibold">
-                    {value >= 0 ? '↑' : '↓'} {new Intl.NumberFormat('pt-BR', {
+                  <span className={`text-gray-900 font-semibold ${value >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                    {value < 0 && '-'}{new Intl.NumberFormat('pt-BR', {
                       style: 'currency',
                       currency: 'BRL'
                     }).format(Math.abs(value))}
@@ -872,8 +869,8 @@ export const ExpenseChart = ({
         selectedPoint={selectedPoint}
         dialogType={dialogType}
         onDialogTypeChange={setDialogType}
-        onSubmitGoal={createGoal.mutate}
-        onSubmitEvent={createEvent.mutate}
+        onSubmitGoal={createGoal.mutateAsync}
+        onSubmitEvent={createEvent.mutateAsync}
         onCancel={handleDialogClose}
       />
     </div>

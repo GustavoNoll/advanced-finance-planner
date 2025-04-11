@@ -446,7 +446,7 @@ export const MonthlyView = ({
                         />
                         <div className="flex flex-col">
                           <span className="text-gray-600 text-sm font-medium">{name}</span>
-                          <span className="text-gray-900 font-semibold">
+                          <span className={`text-gray-900 font-semibold ${value >= 0 ? 'text-green-600' : 'text-red-600'}`}>
                             {value >= 0 ? '↑' : '↓'} {Math.abs(value).toFixed(2)}%
                           </span>
                         </div>
