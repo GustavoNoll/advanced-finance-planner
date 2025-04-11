@@ -40,9 +40,10 @@ interface EventFormProps {
   onSubmit: (values: z.infer<typeof formSchema>) => void;
   onCancel: () => void;
   initialValues?: Partial<z.infer<typeof formSchema>>;
+  isSubmitting?: boolean;
 }
 
-export const EventForm = ({ onSubmit, onCancel, initialValues }: EventFormProps) => {
+export const EventForm = ({ onSubmit, onCancel, initialValues, isSubmitting = false }: EventFormProps) => {
   const { t } = useTranslation();
   
   const form = useForm<z.infer<typeof formSchema>>({
@@ -69,6 +70,7 @@ export const EventForm = ({ onSubmit, onCancel, initialValues }: EventFormProps)
                 <input
                   {...field}
                   className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                  disabled={isSubmitting}
                 />
               </FormControl>
               <FormMessage />
@@ -92,6 +94,7 @@ export const EventForm = ({ onSubmit, onCancel, initialValues }: EventFormProps)
                   groupSeparator="."
                   decimalSeparator=","
                   decimalsLimit={2}
+                  disabled={isSubmitting}
                 />
               </FormControl>
               <FormMessage />
@@ -110,6 +113,7 @@ export const EventForm = ({ onSubmit, onCancel, initialValues }: EventFormProps)
                   <select
                     className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
                     {...field}
+                    disabled={isSubmitting}
                   >
                     <option value="">{t("common.select")}</option>
                     {Array.from({ length: 12 }, (_, i) => {
@@ -137,6 +141,7 @@ export const EventForm = ({ onSubmit, onCancel, initialValues }: EventFormProps)
                   <select
                     className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
                     {...field}
+                    disabled={isSubmitting}
                   >
                     <option value="">{t("common.select")}</option>
                     {Array.from({ length: 80 }, (_, i) => {
@@ -160,11 +165,17 @@ export const EventForm = ({ onSubmit, onCancel, initialValues }: EventFormProps)
             type="button" 
             variant="outline"
             onClick={onCancel}
+            disabled={isSubmitting}
+            className="px-6 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {t("common.cancel")}
           </Button>
-          <Button type="submit">
-            {t("common.save")}
+          <Button 
+            type="submit" 
+            disabled={isSubmitting}
+            className="px-6 py-2 text-sm font-medium text-white bg-indigo-600 border border-transparent rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {isSubmitting ? t("common.saving") : t("common.save")}
           </Button>
         </div>
       </form>

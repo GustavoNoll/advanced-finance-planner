@@ -3,6 +3,8 @@ import { Button } from "@/components/ui/button";
 import { GoalForm } from "@/components/financial-goals/GoalForm";
 import { EventForm } from "@/components/events/EventForm";
 import { useTranslation } from "react-i18next";
+import { useState } from "react";
+import { toast } from "@/components/ui/use-toast";
 
 interface ChartPoint {
   age: string;
@@ -35,8 +37,8 @@ interface ChartPointDialogProps {
   selectedPoint: ChartPoint | null;
   dialogType: 'goal' | 'event' | null;
   onDialogTypeChange: (type: 'goal' | 'event' | null) => void;
-  onSubmitGoal: (values: GoalFormValues) => void;
-  onSubmitEvent: (values: EventFormValues) => void;
+  onSubmitGoal: (values: GoalFormValues) => Promise<void>;
+  onSubmitEvent: (values: EventFormValues) => Promise<void>;
   onCancel: () => void;
 }
 
@@ -51,9 +53,54 @@ export const ChartPointDialog = ({
   onCancel,
 }: ChartPointDialogProps) => {
   const { t } = useTranslation();
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const handleSubmitGoal = async (values: GoalFormValues) => {
+    try {
+      setIsSubmitting(true);
+      await onSubmitGoal(values);
+      toast({
+        title: t("common.success"),
+        description: t("financialGoals.success"),
+      });
+    } catch (error) {
+      toast({
+        title: t("common.error"),
+        description: t("financialGoals.error"),
+        variant: "destructive",
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleSubmitEvent = async (values: EventFormValues) => {
+    try {
+      setIsSubmitting(true);
+      await onSubmitEvent(values);
+      toast({
+        title: t("common.success"),
+        description: t("events.success"),
+      });
+    } catch (error) {
+      toast({
+        title: t("common.error"),
+        description: t("events.error"),
+        variant: "destructive",
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleCancel = () => {
+    if (isSubmitting) return;
+    onCancel();
+  };
 
   return (
     <Dialog open={open} onOpenChange={(newOpen) => {
+      if (isSubmitting) return;
       onOpenChange(newOpen);
       if (!newOpen) {
         onDialogTypeChange(null);
@@ -76,33 +123,37 @@ export const ChartPointDialog = ({
             
             {dialogType === 'goal' ? (
               <GoalForm
-                onSubmit={onSubmitGoal}
-                onCancel={onCancel}
+                onSubmit={handleSubmitGoal}
+                onCancel={handleCancel}
                 initialValues={{
                   goal_month: selectedPoint.month.toString().padStart(2, '0'),
                   goal_year: selectedPoint.year.toString(),
                 }}
+                isSubmitting={isSubmitting}
               />
             ) : dialogType === 'event' ? (
               <EventForm
-                onSubmit={onSubmitEvent}
-                onCancel={onCancel}
+                onSubmit={handleSubmitEvent}
+                onCancel={handleCancel}
                 initialValues={{
                   month: selectedPoint.month.toString().padStart(2, '0'),
                   year: selectedPoint.year.toString(),
                 }}
+                isSubmitting={isSubmitting}
               />
             ) : (
               <div className="flex flex-col gap-4">
                 <Button
                   onClick={() => onDialogTypeChange('goal')}
                   className="w-full"
+                  disabled={isSubmitting}
                 >
                   {t("expenseChart.addNewGoal")}
                 </Button>
                 <Button
                   onClick={() => onDialogTypeChange('event')}
                   className="w-full"
+                  disabled={isSubmitting}
                 >
                   {t("expenseChart.addNewEvent")}
                 </Button>

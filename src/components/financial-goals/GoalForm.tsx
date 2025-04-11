@@ -43,9 +43,10 @@ interface GoalFormProps {
   onSubmit: (values: z.infer<typeof formSchema>) => void;
   onCancel: () => void;
   initialValues?: Partial<z.infer<typeof formSchema>>;
+  isSubmitting?: boolean;
 }
 
-export const GoalForm = ({ onSubmit, onCancel, initialValues }: GoalFormProps) => {
+export const GoalForm = ({ onSubmit, onCancel, initialValues, isSubmitting = false }: GoalFormProps) => {
   const { t } = useTranslation();
   
   const form = useForm<z.infer<typeof formSchema>>({
@@ -74,6 +75,7 @@ export const GoalForm = ({ onSubmit, onCancel, initialValues }: GoalFormProps) =
                 <select
                   {...field}
                   className="w-full p-2 border rounded-md"
+                  disabled={isSubmitting}
                 >
                   {Object.entries(goalIcons).map(([key, value]) => (
                     <option key={key} value={key}>
@@ -104,6 +106,7 @@ export const GoalForm = ({ onSubmit, onCancel, initialValues }: GoalFormProps) =
                     groupSeparator="."
                     decimalSeparator=","
                     decimalsLimit={2}
+                    disabled={isSubmitting}
                   />
                 </FormControl>
                 <FormMessage />
@@ -122,6 +125,7 @@ export const GoalForm = ({ onSubmit, onCancel, initialValues }: GoalFormProps) =
                     <select
                       className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
                       {...field}
+                      disabled={isSubmitting}
                     >
                       <option value="">{t("common.select")}</option>
                       {Array.from({ length: 12 }, (_, i) => {
@@ -149,6 +153,7 @@ export const GoalForm = ({ onSubmit, onCancel, initialValues }: GoalFormProps) =
                     <select
                       className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
                       {...field}
+                      disabled={isSubmitting}
                     >
                       <option value="">{t("common.select")}</option>
                       {Array.from({ length: 2300 - new Date().getFullYear() + 1 }, (_, i) => {
@@ -179,6 +184,7 @@ export const GoalForm = ({ onSubmit, onCancel, initialValues }: GoalFormProps) =
                   checked={field.value}
                   onChange={field.onChange}
                   className="h-4 w-4"
+                  disabled={isSubmitting}
                 />
               </FormControl>
               <FormLabel className="font-normal">
@@ -201,6 +207,7 @@ export const GoalForm = ({ onSubmit, onCancel, initialValues }: GoalFormProps) =
                     min="1"
                     className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
                     {...field}
+                    disabled={isSubmitting}
                   />
                 </FormControl>
                 <FormMessage />
@@ -214,11 +221,17 @@ export const GoalForm = ({ onSubmit, onCancel, initialValues }: GoalFormProps) =
             type="button" 
             variant="outline"
             onClick={onCancel}
+            disabled={isSubmitting}
+            className="px-6 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {t("common.cancel")}
           </Button>
-          <Button type="submit">
-            {t("common.save")}
+          <Button 
+            type="submit" 
+            disabled={isSubmitting}
+            className="px-6 py-2 text-sm font-medium text-white bg-indigo-600 border border-transparent rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {isSubmitting ? t("common.saving") : t("common.save")}
           </Button>
         </div>
       </form>
