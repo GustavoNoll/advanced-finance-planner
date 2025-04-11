@@ -448,7 +448,7 @@ export const ExpenseChart = ({
           {goal 
             ? `${t('financialGoals.icons.' + goal.icon)}\n` +
               `${t('financialGoals.labels.assetValue')}: ${formattedAmount}\n` +
-              `${t('financialGoals.form.goalMonth')}: ${t('monthlyView.table.months.' + new Date(0, goal.month - 1).toLocaleString('default', { month: 'long' }))}\n` +
+              `${t('financialGoals.form.goalMonth')}: ${t('monthlyView.table.months.' + new Date(0, goal.month - 1).toLocaleString('en-US', { month: 'long' }).toLowerCase())}\n` +
               `${t('financialGoals.form.goalYear')}: ${goal.year}\n` +
               (goal.description ? `${t('financialGoals.description')}: ${goal.description}\n` : '') +
               (goal.installment_project ? `${t('financialGoals.form.isInstallment')}: ${t('common.yes')}\n` : '') +
@@ -456,7 +456,7 @@ export const ExpenseChart = ({
             : event
               ? `${t('events.form.name')}: ${event.name}\n` +
                 `${t('events.form.amount')}: ${formattedAmount}\n` +
-                `${t('events.form.month')}: ${t('monthlyView.table.months.' + new Date(0, event.month - 1).toLocaleString('default', { month: 'long' }))}\n` +
+                `${t('events.form.month')}: ${t('monthlyView.table.months.' + new Date(0, event.month - 1).toLocaleString('en-US', { month: 'long' }).toLowerCase())}\n` +
                 `${t('events.form.year')}: ${event.year}`
               : ''
           }
@@ -743,7 +743,7 @@ export const ExpenseChart = ({
                 }`;
               }
 
-              const monthName = new Date(0, dataPoint.month - 1).toLocaleString('default', { month: 'long' });
+              const monthName = new Date(0, dataPoint.month - 1).toLocaleString('en-US', { month: 'long' }).toLowerCase();
               const wholeAge = Math.floor(Number(dataPoint.age));
               
               return `${wholeAge} ${t('expenseChart.years')} (${t('monthlyView.table.months.' + monthName)} ${dataPoint.year})${

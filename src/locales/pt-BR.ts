@@ -432,18 +432,18 @@ export const ptBR = {
         targetRentability: "Rentabilidade Alvo"
       },
       months: {
-        January: "Janeiro",
-        February: "Fevereiro",
-        March: "Março",
-        April: "Abril",
-        May: "Maio",
-        June: "Junho",
-        July: "Julho",
-        August: "Agosto",
-        September: "Setembro",
-        October: "Outubro",
-        November: "Novembro",
-        December: "Dezembro"
+        january: "Janeiro",
+        february: "Fevereiro",
+        march: "Março",
+        april: "Abril",
+        may: "Maio",
+        june: "Junho",
+        july: "Julho",
+        august: "Agosto",
+        september: "Setembro",
+        october: "Outubro",
+        november: "Novembro",
+        december: "Dezembro"
       }
     },
     futureProjection: {

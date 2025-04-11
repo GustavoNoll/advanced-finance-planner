@@ -132,7 +132,7 @@ export const GoalForm = ({ onSubmit, onCancel, initialValues, isSubmitting = fal
                         const month = (i + 1).toString().padStart(2, '0');
                         return (
                           <option key={month} value={month}>
-                            {new Date(2000, i).toLocaleDateString('pt-BR', { month: 'long' })}
+                            {new Date(2000, i).toLocaleDateString('en-US', { month: 'long' })}
                           </option>
                         );
                       })}
