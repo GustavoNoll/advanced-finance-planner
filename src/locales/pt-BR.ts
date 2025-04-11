@@ -210,6 +210,7 @@ export const ptBR = {
   brokerDashboard: {
     myProfile: "Meu Perfil",
     title: "Painel do Corretor",
+    clientDeleted: "Cliente excluído com sucesso",
     search: {
       title: "Buscar Clientes",
       placeholder: "Buscar por nome ou email...",
@@ -240,6 +241,12 @@ export const ptBR = {
       belowRequiredContributionTooltip: "Aportes abaixo do necessário",
       lastActivity: "Última Atividade",
       shareTooltip: "Compartilhar link de acesso do cliente",
+      deleteTooltip: "Excluir cliente",
+      deleteWarning: "Esta ação não pode ser desfeita",
+      deleteClient: {
+        title: "Excluir cliente",
+        description: "Tem certeza que deseja excluir este cliente? Esta ação irá remover permanentemente todos os dados do cliente, incluindo planos de investimento, registros financeiros e objetivos."
+      }
     },
     metrics: {
       totalClients: "Total de Clientes",

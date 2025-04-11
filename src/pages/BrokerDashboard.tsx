@@ -3,7 +3,7 @@ import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/lib/supabase';
 import { useToast } from '@/components/ui/use-toast';
-import { Plus, LogOut, Share2 } from 'lucide-react';
+import { Plus, LogOut, Share2, Trash2 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { SummaryMetrics } from '@/components/broker-dashboard/metrics/SummaryMetrics';
 import { WealthDistributionChart } from '@/components/broker-dashboard/charts/WealthDistributionChart';
@@ -345,13 +345,64 @@ export const BrokerDashboard = () => {
     }
   };
 
-  const handleShareClient = (clientId: string) => {
-    const clientLoginUrl = `${window.location.origin}/client-login/${clientId}`;
-    navigator.clipboard.writeText(clientLoginUrl);
-    toast({
-      title: t('common.success'),
-      description: t('brokerDashboard.linkCopied'),
-    });
+  const handleDeleteClient = async (clientId: string) => {
+    try {
+      // Delete user's investment plan if exists
+      const { error: planError } = await supabase
+        .from('investment_plans')
+        .delete()
+        .eq('user_id', clientId);
+
+      if (planError) throw planError;
+
+      // Delete user's financial records if exist
+      const { error: recordsError } = await supabase
+        .from('user_financial_records')
+        .delete()
+        .eq('user_id', clientId);
+
+      if (recordsError) throw recordsError;
+
+      // Delete user's events if exist
+      const { error: eventsError } = await supabase
+        .from('events')
+        .delete()
+        .eq('profile_id', clientId);
+
+      if (eventsError) throw eventsError;
+
+      // Delete user's financial goals if exist
+      const { error: goalsError } = await supabase
+        .from('financial_goals')
+        .delete()
+        .eq('profile_id', clientId);
+
+      if (goalsError) throw goalsError;
+
+      // Delete user's profile
+      const { error: profileError } = await supabase
+        .from('profiles')
+        .delete()
+        .eq('id', clientId);
+
+      if (profileError) throw profileError;
+
+      // Update the UI
+      setSearchResults(prev => prev.filter(client => client.id !== clientId));
+      calculateMetrics(searchResults.filter(client => client.id !== clientId));
+
+      toast({
+        title: t('common.success'),
+        description: t('brokerDashboard.clientDeleted'),
+      });
+    } catch (error: unknown) {
+      console.error('Error deleting client:', error);
+      toast({
+        title: t('common.error'),
+        description: error instanceof Error ? error.message : String(error),
+        variant: "destructive",
+      });
+    }
   };
 
   return (
@@ -433,6 +484,7 @@ export const BrokerDashboard = () => {
             onSearchChange={setSearchQuery}
             onClearSearch={() => setSearchQuery('')}
             isSearching={isSearching}
+            onDeleteClient={handleDeleteClient}
           />
         </div>
       </div>
