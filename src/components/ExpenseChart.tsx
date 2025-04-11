@@ -606,19 +606,30 @@ export const ExpenseChart = ({
         >
           <defs>
             <linearGradient id="colorUv" x1="0" y1="0" x2="1" y2="0">
-              <stop offset={offset} stopColor="#2563eb" /> {/* blue-600 */}
-              <stop offset={offset} stopColor="#93c5fd" /> {/* blue-300 */}
+              <stop offset={offset} stopColor="#3b82f6" /> {/* blue-500 */}
+              <stop offset={offset} stopColor="#60a5fa" /> {/* blue-400 */}
+            </linearGradient>
+            <linearGradient id="colorProjected" x1="0" y1="0" x2="1" y2="0">
+              <stop offset="0%" stopColor="#f97316" stopOpacity={0.8} /> {/* orange-500 */}
+              <stop offset="100%" stopColor="#fb923c" stopOpacity={0.8} /> {/* orange-400 */}
             </linearGradient>
           </defs>
-          <CartesianGrid strokeDasharray="3 3" />
+          <CartesianGrid 
+            strokeDasharray="3 3" 
+            stroke="#e5e7eb" 
+            vertical={false}
+          />
           <XAxis 
             dataKey="xAxisLabel"
             interval={zoomLevel === 'all' || zoomLevel === '10y' ? 'preserveStartEnd' : 3}
             label={{ 
               value: t('expenseChart.years'), 
               position: 'bottom', 
-              offset: 0 
+              offset: 0,
+              style: { fill: '#6b7280' }
             }}
+            tick={{ fill: '#6b7280' }}
+            axisLine={{ stroke: '#e5e7eb' }}
           />
           <YAxis 
             tickFormatter={(value) => 
@@ -629,8 +640,16 @@ export const ExpenseChart = ({
                 maximumFractionDigits: 1
               }).format(value)
             }
+            tick={{ fill: '#6b7280' }}
+            axisLine={{ stroke: '#e5e7eb' }}
           />
           <Tooltip 
+            contentStyle={{
+              backgroundColor: 'white',
+              border: '1px solid #e5e7eb',
+              borderRadius: '0.5rem',
+              boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)',
+            }}
             formatter={(value: number) => 
               new Intl.NumberFormat('pt-BR', {
                 style: 'currency',
@@ -662,24 +681,30 @@ export const ExpenseChart = ({
               paddingTop: '20px',
               bottom: 0
             }}
+            formatter={(value) => (
+              <span className="text-sm text-gray-600">{value}</span>
+            )}
           />
 
           {/* Update reference lines for goals */}
           {goals?.sort((a, b) => a.year - b.year)
             .reduce((acc: React.ReactNode[], goal) => {
-              // Find the closest point in the chart data for this goal
               const achievementPoint = chartData.find(point => {
                 if (zoomLevel === 'all' || zoomLevel === '10y') {
-                  // Calculate the year range based on consecutive years in the chart
                   if (chartData.length > 1) { 
                     const yearDiff = chartData[1].year - chartData[0].year;
                     const halfYearDiff = yearDiff / 2;
                     return Math.abs(point.year - goal.year) <= halfYearDiff;
                   }
                   return point.year === goal.year;
+                }else{
+                  if (chartData.length > 1) {
+                    const monthDiff = chartData[1].month - chartData[0].month;
+                    const halfMonthDiff = monthDiff / 2;
+                    return point.year === goal.year && Math.abs(point.month - goal.month) <= halfMonthDiff;
+                  }
+                  return point.year === goal.year && point.month === goal.month;
                 }
-                // For monthly view, find the exact month and year
-                return point.year === goal.year && point.month === goal.month;
               });
               
               if (achievementPoint && goal.status === 'pending') {
@@ -687,8 +712,9 @@ export const ExpenseChart = ({
                   <ReferenceLine
                     key={`${goal.id}-actual`}
                     x={achievementPoint.xAxisLabel}
-                    stroke="black"
+                    stroke="#6b7280"
                     strokeDasharray="3 3"
+                    strokeOpacity={0.5}
                     ifOverflow="extendDomain"
                     label={{
                       position: 'top',
@@ -701,11 +727,9 @@ export const ExpenseChart = ({
             }, [])}
 
           {events?.sort((a, b) => a.year - b.year)
-            .reduce((acc: React.ReactNode[], event, index, sortedEvents) => {
-              // Find the closest point in the chart data for this event
+            .reduce((acc: React.ReactNode[], event) => {
               const achievementPoint = chartData.find(point => {
                 if (zoomLevel === 'all' || zoomLevel === '10y') {
-                  // Calculate the year range based on consecutive years in the chart
                   if (chartData.length > 1) {
                     const yearDiff = chartData[1].year - chartData[0].year;
                     const halfYearDiff = yearDiff / 2;
@@ -713,20 +737,17 @@ export const ExpenseChart = ({
                   }
                   return point.year === event.year;
                 }
-                // For monthly view, find the exact month and year
                 return point.year === event.year && point.month === event.month;
               });
 
-              if (
-                achievementPoint && 
-                event.status === 'projected'
-              ) {
+              if (achievementPoint && event.status === 'projected') {
                 acc.push(
                   <ReferenceLine
                     key={event.id}
                     x={achievementPoint.xAxisLabel}
-                    stroke="black"
+                    stroke="#6b7280"
                     strokeDasharray="3 3"
+                    strokeOpacity={0.5}
                     ifOverflow="extendDomain"
                     label={{
                       position: 'top',
@@ -744,22 +765,32 @@ export const ExpenseChart = ({
             dataKey="actualValue"
             stroke="url(#colorUv)"
             name={showRealValues ? t('expenseChart.actualValueReal') : t('expenseChart.actualValue')}
-            strokeWidth={2.5}
+            strokeWidth={3}
             connectNulls
             dot={false}
-            activeDot={{ r: 6, strokeWidth: 0 }}
+            activeDot={{ 
+              r: 8, 
+              strokeWidth: 2,
+              stroke: '#3b82f6',
+              fill: 'white'
+            }}
           />
         
           <Line 
             type="natural"
             dataKey="projectedValue" 
-            stroke="#f97316"
+            stroke="url(#colorProjected)"
             name={showRealValues ? t('expenseChart.projectedValueReal') : t('expenseChart.projectedValue')}
-            strokeWidth={2.5}
+            strokeWidth={3}
             strokeDasharray="8 8"
             connectNulls
             dot={false}
-            activeDot={{ r: 6, strokeWidth: 0 }}
+            activeDot={{ 
+              r: 8, 
+              strokeWidth: 2,
+              stroke: '#f97316',
+              fill: 'white'
+            }}
           />
         </LineChart>
       </ResponsiveContainer>
