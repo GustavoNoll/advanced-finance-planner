@@ -53,7 +53,12 @@ export const ChartPointDialog = ({
   const { t } = useTranslation();
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={open} onOpenChange={(newOpen) => {
+      onOpenChange(newOpen);
+      if (!newOpen) {
+        onDialogTypeChange(null);
+      }
+    }}>
       <DialogContent className="bg-white shadow-lg">
         <DialogHeader>
           <DialogTitle>

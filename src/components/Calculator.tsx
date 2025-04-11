@@ -1,11 +1,12 @@
 import { useTranslation } from "react-i18next";
-import { Info } from "lucide-react";
+import { Info, Calculator as CalculatorIcon } from "lucide-react";
 import {
   HoverCard,
   HoverCardContent,
   HoverCardTrigger,
 } from "@/components/ui/hover-card";
 import { PlanProgressData } from "@/lib/plan-progress";
+import { DashboardCard } from "./DashboardCard";
 
 /**
  * Props for the PlanProgress component
@@ -96,23 +97,10 @@ export const Calculator = ({ data }: PlanProgressProps) => {
   const { t } = useTranslation();
 
   return (
-    <div className="transform transition-all duration-300 hover:scale-[1.01] hover:shadow-xl bg-gradient-to-br from-white via-slate-50 to-blue-50/80 backdrop-blur-sm rounded-2xl shadow-lg p-8 border border-gray-100/50 hover:border-blue-100/50">
-      <div className="flex items-center justify-between mb-6">
-        <h2 className="text-xl font-semibold text-gray-900 tracking-tight">
-          {t('dashboard.planProgress.title')}
-        </h2>
-        <HoverCard>
-          <HoverCardTrigger>
-            <Info className="h-5 w-5 text-gray-400 cursor-help hover:text-blue-600 transition-colors" />
-          </HoverCardTrigger>
-          <HoverCardContent className="w-80">
-            <p className="text-sm text-gray-600 leading-relaxed">
-              {t('dashboard.planProgress.tooltip')}
-            </p>
-          </HoverCardContent>
-        </HoverCard>
-      </div>
-
+    <DashboardCard
+      title={t('dashboard.planProgress.title')}
+      icon={CalculatorIcon}
+    >
       <div className="space-y-6">
         <ComparisonRow
           title={t('dashboard.planProgress.timeToRetirement')}
@@ -143,6 +131,6 @@ export const Calculator = ({ data }: PlanProgressProps) => {
           />
         </div>
       </div>
-    </div>
+    </DashboardCard>
   );
 };

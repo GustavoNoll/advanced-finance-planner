@@ -1,6 +1,6 @@
 import { Progress } from "@/components/ui/progress";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { ArrowUpRight, Clock } from "lucide-react";
+import { DashboardCard } from "./DashboardCard";
+import { ArrowUpRight, Clock, Target } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { FinancialRecord, InvestmentPlan } from "@/types/financial";
 import { useMemo } from "react";
@@ -78,12 +78,10 @@ export const SavingsGoal = ({ allFinancialRecords, investmentPlan, profile, plan
     : (currentInvestment / investmentGoal) * 100;
 
   return (
-    <div className="transform transition-all duration-300 hover:scale-[1.01] hover:shadow-xl bg-gradient-to-br from-white via-slate-50 to-blue-50/80 backdrop-blur-sm rounded-2xl shadow-lg p-8 border border-gray-100/50 hover:border-blue-100/50">
-      <div className="flex items-center justify-between mb-6">
-        <h2 className="text-xl font-semibold text-gray-900 tracking-tight">
-          {t('savingsGoal.title')}
-        </h2>
-      </div>
+    <DashboardCard
+      title={t('savingsGoal.title')}
+      icon={Target}
+    >
       <div className="space-y-6">
         <div className="relative">
           <Progress 
@@ -178,6 +176,6 @@ export const SavingsGoal = ({ allFinancialRecords, investmentPlan, profile, plan
           </div>
         </div>
       </div>
-    </div>
+    </DashboardCard>
   );
 };

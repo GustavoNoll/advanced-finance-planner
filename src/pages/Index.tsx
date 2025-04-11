@@ -2,7 +2,7 @@ import { DashboardCard } from "@/components/DashboardCard";
 import { ExpenseChart } from "@/components/ExpenseChart";
 import { SavingsGoal } from "@/components/SavingsGoal";
 import { MonthlyView } from "@/components/MonthlyView";
-import { Briefcase, TrendingUp, PiggyBank, LogOut, History, Search, User, Info, Target, Trophy, Calendar, Share2 } from "lucide-react";
+import { Briefcase, LineChart, PiggyBank, LogOut, History, Search, User, Info, Target, Trophy, Calendar, Share2, TrendingUp } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { useAuth } from "@/components/auth/AuthProvider";
@@ -631,6 +631,7 @@ const Index = () => {
                 </HoverCard>
               </div>
             }
+            icon={Briefcase}
           >
             <div className="space-y-3">
               <p className="text-3xl font-bold bg-gradient-to-r from-blue-600 via-indigo-600 to-slate-700 bg-clip-text text-transparent drop-shadow-sm">
@@ -643,7 +644,7 @@ const Index = () => {
                 <div className={`flex items-center gap-2 ${
                   portfolioIncreaseRate >= 0 ? 'bg-gradient-to-r from-emerald-50 via-green-50 to-emerald-100/50' : 'bg-gradient-to-r from-rose-50 via-red-50 to-rose-100/50'
                 } rounded-full px-3 py-1 w-fit shadow-sm backdrop-blur-sm border border-white/50`}>
-                  <TrendingUp className={`h-4 w-4 ${
+                  <LineChart className={`h-4 w-4 ${
                     portfolioIncreaseRate >= 0 ? 'text-green-600' : 'text-red-600'
                   }`} />
                   <p className={`text-sm font-medium ${
@@ -687,6 +688,7 @@ const Index = () => {
                 </select>
               </div>
             }
+            icon={PiggyBank}
           >
             <div className="space-y-2">
               <p className={`text-2xl font-bold drop-shadow-sm ${
@@ -737,6 +739,7 @@ const Index = () => {
                 </select>
               </div>
             }
+            icon={LineChart}
           >
             <div className="space-y-2">
               <p className={`text-2xl font-bold drop-shadow-sm ${
@@ -751,7 +754,7 @@ const Index = () => {
               <div className={`flex items-center gap-2 ${
                 Number(percentageReturn) >= 0 ? 'bg-gradient-to-r from-emerald-50 via-green-50 to-emerald-100/50' : 'bg-gradient-to-r from-rose-50 via-red-50 to-rose-100/50'
               } rounded-full px-3 py-1 w-fit shadow-sm backdrop-blur-sm border border-white/50`}>
-                <TrendingUp className={`h-4 w-4 ${
+                <LineChart className={`h-4 w-4 ${
                   Number(percentageReturn) >= 0 ? 'text-green-600' : 'text-red-600'
                 }`} />
                 <p className={`text-sm flex items-center gap-1 ${
@@ -804,6 +807,7 @@ const Index = () => {
               </span>
             }
             className="transform transition-all duration-300 hover:scale-[1.02] hover:shadow-2xl bg-gradient-to-br from-blue-50/95 via-indigo-50/90 to-slate-50/80 backdrop-blur-sm border border-gray-100/50 rounded-xl shadow-lg hover:border-blue-100/50"
+            icon={Trophy}
           >
             <div className="space-y-4">
               {calculateHighlights().map((highlight, index) => (

@@ -5,12 +5,12 @@ import { useQuery } from "@tanstack/react-query";
 import { useState, useCallback, useMemo } from "react";
 import { toast } from "@/components/ui/use-toast";
 import { fetchCDIRates, fetchIPCARates } from '@/lib/bcb-api';
-import { ChevronDown, ChevronRight, Download } from "lucide-react";
+import { ChevronDown, ChevronRight, Download, BarChart } from "lucide-react";
 import { generateProjectionData, YearlyProjectionData } from '@/lib/chart-projections';
 import React from "react";
 import { FinancialRecord, InvestmentPlan, Goal, ProjectedEvent } from '@/types/financial';
 import { supabase } from "@/lib/supabase";
-import { CartesianGrid, Line, Tooltip, LineChart, XAxis, YAxis } from "recharts";
+import { CartesianGrid, Line, Tooltip, LineChart as RechartsLineChart, XAxis, YAxis, Legend } from "recharts";
 import { ResponsiveContainer } from "recharts";
 import { Button } from "@tremor/react";
 
@@ -322,7 +322,11 @@ export const MonthlyView = ({
   };
 
   return (
-    <DashboardCard title={t('monthlyView.title')} className="col-span-full">
+    <DashboardCard 
+      title={t('monthlyView.title')}
+      className="col-span-full"
+      icon={BarChart}
+    >
       <Tabs defaultValue={allFinancialRecords.length > 0 ? "returnChart" : "table"} className="w-full">
         <TabsList className={`grid w-full ${allFinancialRecords.length > 0 ? 'grid-cols-3' : 'grid-cols-2'} lg:w-[800px] gap-2`}>
           {allFinancialRecords.length > 0 && (
@@ -353,7 +357,7 @@ export const MonthlyView = ({
               <select
                 value={timeWindow}
                 onChange={(e) => setTimeWindow(Number(e.target.value) as typeof timeWindow)}
-                className="px-3 py-1 border rounded-md text-sm"
+                className="px-4 py-2 text-sm border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 bg-white"
               >
                 <option value={6}>{t('monthlyView.timeWindows.last6Months')}</option>
                 <option value={12}>{t('monthlyView.timeWindows.last12Months')}</option>
@@ -361,42 +365,185 @@ export const MonthlyView = ({
                 <option value={0}>{t('monthlyView.timeWindows.allTime')}</option>
               </select>
             </div>
-            <div className="h-[400px] w-full">
-              <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={getFilteredChartData(calculateAccumulatedReturns(chartDataToUse))}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="month" />
-                  <YAxis unit="%" />
-                  <Tooltip formatter={(value: number) => `${value.toFixed(2)}%`} />
+            <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-4">
+              <ResponsiveContainer width="100%" height={400}>
+                <RechartsLineChart data={getFilteredChartData(calculateAccumulatedReturns(chartDataToUse))}>
+                  <defs>
+                    <linearGradient id="colorAccumulated" x1="0" y1="0" x2="1" y2="0">
+                      <stop offset="0%" stopColor="#22c55e" /> {/* green-500 */}
+                      <stop offset="100%" stopColor="#4ade80" /> {/* green-400 */}
+                    </linearGradient>
+                    <linearGradient id="colorTarget" x1="0" y1="0" x2="1" y2="0">
+                      <stop offset="0%" stopColor="#f43f5e" /> {/* rose-500 */}
+                      <stop offset="100%" stopColor="#fb7185" /> {/* rose-400 */}
+                    </linearGradient>
+                    <linearGradient id="colorCDI" x1="0" y1="0" x2="1" y2="0">
+                      <stop offset="0%" stopColor="#3b82f6" /> {/* blue-500 */}
+                      <stop offset="100%" stopColor="#60a5fa" /> {/* blue-400 */}
+                    </linearGradient>
+                    <linearGradient id="colorIPCA" x1="0" y1="0" x2="1" y2="0">
+                      <stop offset="0%" stopColor="#eab308" /> {/* yellow-500 */}
+                      <stop offset="100%" stopColor="#facc15" /> {/* yellow-400 */}
+                    </linearGradient>
+                    <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
+                      <feGaussianBlur in="SourceAlpha" stdDeviation="3" />
+                      <feOffset dx="2" dy="2" result="offsetblur" />
+                      <feComponentTransfer>
+                        <feFuncA type="linear" slope="0.2" />
+                      </feComponentTransfer>
+                      <feMerge>
+                        <feMergeNode />
+                        <feMergeNode in="SourceGraphic" />
+                      </feMerge>
+                    </filter>
+                  </defs>
+                  <CartesianGrid 
+                    strokeDasharray="3 3" 
+                    stroke="#e5e7eb" 
+                    vertical={false}
+                    strokeOpacity={0.3}
+                  />
+                  <XAxis 
+                    dataKey="month"
+                    tick={{ 
+                      fill: '#6b7280',
+                      fontSize: '0.75rem'
+                    }}
+                    axisLine={{ 
+                      stroke: '#e5e7eb',
+                      strokeWidth: 1
+                    }}
+                  />
+                  <YAxis 
+                    unit="%"
+                    tick={{ 
+                      fill: '#6b7280',
+                      fontSize: '0.75rem'
+                    }}
+                    axisLine={{ 
+                      stroke: '#e5e7eb',
+                      strokeWidth: 1
+                    }}
+                  />
+                  <Tooltip 
+                    contentStyle={{
+                      backgroundColor: 'white',
+                      border: '1px solid #e5e7eb',
+                      borderRadius: '0.75rem',
+                      boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1)',
+                      padding: '0.75rem',
+                    }}
+                    formatter={(value: number, name: string, props: { color?: string }) => [
+                      <div className="flex items-center gap-2">
+                        <div 
+                          className="w-3 h-3 rounded-full" 
+                          style={{ 
+                            background: name === t('monthlyView.chart.accumulatedReturn') ? 'linear-gradient(to right, #22c55e, #4ade80)' :
+                                      name === t('monthlyView.chart.accumulatedTargetReturn') ? 'linear-gradient(to right, #f43f5e, #fb7185)' :
+                                      name === t('monthlyView.chart.accumulatedCDIReturn') ? 'linear-gradient(to right, #3b82f6, #60a5fa)' :
+                                      'linear-gradient(to right, #eab308, #facc15)'
+                          }}
+                        />
+                        <div className="flex flex-col">
+                          <span className="text-gray-600 text-sm font-medium">{name}</span>
+                          <span className="text-gray-900 font-semibold">
+                            {value >= 0 ? '↑' : '↓'} {Math.abs(value).toFixed(2)}%
+                          </span>
+                        </div>
+                      </div>
+                    ]}
+                    labelStyle={{
+                      color: '#1f2937',
+                      fontWeight: '600',
+                      fontSize: '0.875rem',
+                      marginBottom: '0.5rem',
+                    }}
+                    itemStyle={{
+                      color: '#374151',
+                      fontSize: '0.875rem',
+                      padding: '0.25rem 0',
+                    }}
+                  />
                   <Line 
                     type="monotone" 
                     dataKey="accumulatedPercentage" 
-                    stroke="#22c55e" 
+                    stroke="url(#colorAccumulated)"
                     name={t('monthlyView.chart.accumulatedReturn')}
-                    strokeWidth={2}
+                    strokeWidth={3}
+                    dot={false}
+                    activeDot={{ 
+                      r: 8, 
+                      strokeWidth: 2,
+                      stroke: '#22c55e',
+                      fill: 'white',
+                      filter: 'url(#shadow)'
+                    }}
+                    animationDuration={1000}
+                    animationEasing="ease-in-out"
                   />
                   <Line 
                     type="monotone" 
                     dataKey="accumulatedTargetRentability" 
-                    stroke="#f43f5e" 
+                    stroke="url(#colorTarget)"
                     name={t('monthlyView.chart.accumulatedTargetReturn')}
-                    strokeWidth={2}
+                    strokeWidth={3}
+                    dot={false}
+                    activeDot={{ 
+                      r: 8, 
+                      strokeWidth: 2,
+                      stroke: '#f43f5e',
+                      fill: 'white',
+                      filter: 'url(#shadow)'
+                    }}
+                    animationDuration={1000}
+                    animationEasing="ease-in-out"
                   />
                   <Line 
                     type="monotone" 
                     dataKey="accumulatedCDIReturn" 
-                    stroke="#3b82f6" 
+                    stroke="url(#colorCDI)"
                     name={t('monthlyView.chart.accumulatedCDIReturn')}
-                    strokeWidth={2}
+                    strokeWidth={3}
+                    dot={false}
+                    activeDot={{ 
+                      r: 8, 
+                      strokeWidth: 2,
+                      stroke: '#3b82f6',
+                      fill: 'white',
+                      filter: 'url(#shadow)'
+                    }}
+                    animationDuration={1000}
+                    animationEasing="ease-in-out"
                   />
                   <Line 
                     type="monotone" 
                     dataKey="accumulatedIPCAReturn" 
-                    stroke="#eab308" 
+                    stroke="url(#colorIPCA)"
                     name={t('monthlyView.chart.accumulatedIPCAReturn')}
-                    strokeWidth={2}
+                    strokeWidth={3}
+                    dot={false}
+                    activeDot={{ 
+                      r: 8, 
+                      strokeWidth: 2,
+                      stroke: '#eab308',
+                      fill: 'white',
+                      filter: 'url(#shadow)'
+                    }}
+                    animationDuration={1000}
+                    animationEasing="ease-in-out"
                   />
-                </LineChart>
+                  <Legend 
+                    verticalAlign="bottom" 
+                    align="center"
+                    wrapperStyle={{ 
+                      paddingTop: '20px',
+                      bottom: 0
+                    }}
+                    formatter={(value) => (
+                      <span className="text-sm font-medium text-gray-600">{value}</span>
+                    )}
+                  />
+                </RechartsLineChart>
               </ResponsiveContainer>
             </div>
           </TabsContent>

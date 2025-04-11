@@ -10,6 +10,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { GoalForm } from "@/components/financial-goals/GoalForm";
 import { EventForm } from "@/components/events/EventForm";
 import { ChartPointDialog } from "@/components/chart/ChartPointDialog";
+import { TrendingUp } from "lucide-react";
 
 interface Profile {
   birth_date: string;
@@ -471,7 +472,10 @@ export const ExpenseChart = ({
   return (
     <div className="space-y-4">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-4">
-        <h2 className="text-lg font-semibold">{t('dashboard.charts.portfolioPerformance')}</h2>
+        <h2 className="text-lg font-semibold flex items-center gap-2">
+          <TrendingUp className="w-5 h-5 text-blue-500" />
+          {t('dashboard.charts.portfolioPerformance')}
+        </h2>
         
         <div className="flex flex-wrap items-center gap-4">
           {/* Inflation adjustment toggle */}
@@ -596,7 +600,7 @@ export const ExpenseChart = ({
 
       <ResponsiveContainer 
         width="100%" 
-        height={300}
+        height={400}
         key={`${JSON.stringify(chartData)}-${showRealValues}`}
       >
         <LineChart 
@@ -613,11 +617,23 @@ export const ExpenseChart = ({
               <stop offset="0%" stopColor="#f97316" stopOpacity={0.8} /> {/* orange-500 */}
               <stop offset="100%" stopColor="#fb923c" stopOpacity={0.8} /> {/* orange-400 */}
             </linearGradient>
+            <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
+              <feGaussianBlur in="SourceAlpha" stdDeviation="3" />
+              <feOffset dx="2" dy="2" result="offsetblur" />
+              <feComponentTransfer>
+                <feFuncA type="linear" slope="0.2" />
+              </feComponentTransfer>
+              <feMerge>
+                <feMergeNode />
+                <feMergeNode in="SourceGraphic" />
+              </feMerge>
+            </filter>
           </defs>
           <CartesianGrid 
             strokeDasharray="3 3" 
             stroke="#e5e7eb" 
             vertical={false}
+            strokeOpacity={0.3}
           />
           <XAxis 
             dataKey="xAxisLabel"
@@ -626,10 +642,20 @@ export const ExpenseChart = ({
               value: t('expenseChart.years'), 
               position: 'bottom', 
               offset: 0,
-              style: { fill: '#6b7280' }
+              style: { 
+                fill: '#6b7280',
+                fontSize: '0.875rem',
+                fontWeight: '500'
+              }
             }}
-            tick={{ fill: '#6b7280' }}
-            axisLine={{ stroke: '#e5e7eb' }}
+            tick={{ 
+              fill: '#6b7280',
+              fontSize: '0.75rem'
+            }}
+            axisLine={{ 
+              stroke: '#e5e7eb',
+              strokeWidth: 2
+            }}
           />
           <YAxis 
             tickFormatter={(value) => 
@@ -640,22 +666,44 @@ export const ExpenseChart = ({
                 maximumFractionDigits: 1
               }).format(value)
             }
-            tick={{ fill: '#6b7280' }}
-            axisLine={{ stroke: '#e5e7eb' }}
+            tick={{ 
+              fill: '#6b7280',
+              fontSize: '0.75rem'
+            }}
+            axisLine={{ 
+              stroke: '#e5e7eb',
+              strokeWidth: 2
+            }}
           />
           <Tooltip 
             contentStyle={{
               backgroundColor: 'white',
               border: '1px solid #e5e7eb',
-              borderRadius: '0.5rem',
-              boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)',
+              borderRadius: '0.75rem',
+              boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1)',
+              padding: '0.75rem',
             }}
-            formatter={(value: number) => 
-              new Intl.NumberFormat('pt-BR', {
-                style: 'currency',
-                currency: 'BRL'
-              }).format(value)
-            }
+            formatter={(value: number, name: string, props: { color?: string }) => [
+              <div className="flex items-center gap-2">
+                <div 
+                  className="w-3 h-3 rounded-full" 
+                  style={{ 
+                    background: name === t('expenseChart.actualValue') || name === t('expenseChart.actualValueReal') ? 
+                              'linear-gradient(to right, #3b82f6, #60a5fa)' :
+                              'linear-gradient(to right, #f97316, #fb923c)'
+                  }}
+                />
+                <div className="flex flex-col">
+                  <span className="text-gray-600 text-sm font-medium">{name}</span>
+                  <span className="text-gray-900 font-semibold">
+                    {value >= 0 ? '↑' : '↓'} {new Intl.NumberFormat('pt-BR', {
+                      style: 'currency',
+                      currency: 'BRL'
+                    }).format(Math.abs(value))}
+                  </span>
+                </div>
+              </div>
+            ]}
             labelFormatter={(label) => {
               const dataPoint = chartData.find(point => point.xAxisLabel === label);
               if (!dataPoint) return '';
@@ -673,6 +721,17 @@ export const ExpenseChart = ({
                 showRealValues ? ` - ${t('expenseChart.realValues')}` : ''
               }`;
             }}
+            labelStyle={{
+              color: '#1f2937',
+              fontWeight: '600',
+              fontSize: '0.875rem',
+              marginBottom: '0.5rem',
+            }}
+            itemStyle={{
+              color: '#374151',
+              fontSize: '0.875rem',
+              padding: '0.25rem 0',
+            }}
           />
           <Legend 
             verticalAlign="bottom" 
@@ -682,7 +741,7 @@ export const ExpenseChart = ({
               bottom: 0
             }}
             formatter={(value) => (
-              <span className="text-sm text-gray-600">{value}</span>
+              <span className="text-sm font-medium text-gray-600">{value}</span>
             )}
           />
 
@@ -697,7 +756,7 @@ export const ExpenseChart = ({
                     return Math.abs(point.year - goal.year) <= halfYearDiff;
                   }
                   return point.year === goal.year;
-                }else{
+                } else {
                   if (chartData.length > 1) {
                     const monthDiff = chartData[1].month - chartData[0].month;
                     const halfMonthDiff = monthDiff / 2;
@@ -714,7 +773,7 @@ export const ExpenseChart = ({
                     x={achievementPoint.xAxisLabel}
                     stroke="#6b7280"
                     strokeDasharray="3 3"
-                    strokeOpacity={0.5}
+                    strokeOpacity={0.3}
                     ifOverflow="extendDomain"
                     label={{
                       position: 'top',
@@ -736,8 +795,14 @@ export const ExpenseChart = ({
                     return Math.abs(point.year - event.year) <= halfYearDiff;
                   }
                   return point.year === event.year;
+                } else {
+                  if (chartData.length > 1) {
+                    const monthDiff = chartData[1].month - chartData[0].month;
+                    const halfMonthDiff = monthDiff / 2;
+                    return point.year === event.year && Math.abs(point.month - event.month) <= halfMonthDiff;
+                  }
+                  return point.year === event.year && point.month === event.month;
                 }
-                return point.year === event.year && point.month === event.month;
               });
 
               if (achievementPoint && event.status === 'projected') {
@@ -747,7 +812,7 @@ export const ExpenseChart = ({
                     x={achievementPoint.xAxisLabel}
                     stroke="#6b7280"
                     strokeDasharray="3 3"
-                    strokeOpacity={0.5}
+                    strokeOpacity={0.3}
                     ifOverflow="extendDomain"
                     label={{
                       position: 'top',
@@ -772,8 +837,11 @@ export const ExpenseChart = ({
               r: 8, 
               strokeWidth: 2,
               stroke: '#3b82f6',
-              fill: 'white'
+              fill: 'white',
+              filter: 'url(#shadow)'
             }}
+            animationDuration={1000}
+            animationEasing="ease-in-out"
           />
         
           <Line 
@@ -789,8 +857,11 @@ export const ExpenseChart = ({
               r: 8, 
               strokeWidth: 2,
               stroke: '#f97316',
-              fill: 'white'
+              fill: 'white',
+              filter: 'url(#shadow)'
             }}
+            animationDuration={1000}
+            animationEasing="ease-in-out"
           />
         </LineChart>
       </ResponsiveContainer>
