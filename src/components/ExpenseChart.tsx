@@ -62,6 +62,7 @@ export const ExpenseChart = ({
   const queryClient = useQueryClient();
   const [zoomLevel, setZoomLevel] = useState<ZoomLevel>('all');
   const [showRealValues, setShowRealValues] = useState<boolean>(false);
+  const [showNegativeValues, setShowNegativeValues] = useState<boolean>(false);
   const [customRange, setCustomRange] = useState<{ past: number, future: number }>({ past: 1, future: 1 });
   const [selectedPoint, setSelectedPoint] = useState<ChartPoint | null>(null);
   const [showDialog, setShowDialog] = useState(false);
@@ -355,14 +356,11 @@ export const ExpenseChart = ({
     events
   );
 
-  // Apply adjustments based on showRealValues setting
-  // aplicar dado do bc se tem
-  // se assumir inflação 
+  // Apply adjustments based on showRealValues and showNegativeValues settings
   const adjustedChartData = showRealValues 
-    ? rawChartData.map(point => ({
-        ...point,
-        actualValue: point.realDataPoint 
-          ? point.actualValue // Keep real data points as is
+    ? rawChartData.map(point => {
+        const adjustedActualValue = point.realDataPoint 
+          ? point.actualValue
           : calculateInflationAdjustedValue(
               point.actualValue, 
               baseYear, 
@@ -370,17 +368,28 @@ export const ExpenseChart = ({
               point.year, 
               point.month, 
               yearlyReturnRateToMonthlyReturnRate(investmentPlan.inflation/100)
-            ),
-        projectedValue: calculateInflationAdjustedValue(
+            );
+
+        const adjustedProjectedValue = calculateInflationAdjustedValue(
           point.projectedValue, 
           baseYear, 
           baseMonth, 
           point.year, 
           point.month, 
           yearlyReturnRateToMonthlyReturnRate(investmentPlan.inflation/100)
-        ),
-      }))
-    : rawChartData;
+        );
+
+        return {
+          ...point,
+          actualValue: showNegativeValues ? adjustedActualValue : Math.max(0, adjustedActualValue),
+          projectedValue: showNegativeValues ? adjustedProjectedValue : Math.max(0, adjustedProjectedValue),
+        };
+      })
+    : rawChartData.map(point => ({
+        ...point,
+        actualValue: showNegativeValues ? point.actualValue : Math.max(0, point.actualValue),
+        projectedValue: showNegativeValues ? point.projectedValue : Math.max(0, point.projectedValue),
+      }));
 
   // Get final data with zoom applied
   const chartData = getZoomedData(adjustedChartData).map(point => ({
@@ -497,6 +506,29 @@ export const ExpenseChart = ({
               )}
             </button>
           </div>
+
+          {/* Negative values toggle */}
+          <div className="inline-flex items-center">
+            <button
+              onClick={() => setShowNegativeValues(!showNegativeValues)}
+              className={`flex items-center gap-2 px-3 py-1.5 text-sm font-medium rounded-md border transition-colors ${
+                showNegativeValues 
+                  ? 'bg-gray-50 border-gray-200 text-gray-700 hover:bg-gray-100' 
+                  : 'bg-blue-50 border-blue-200 text-blue-700'
+              }`}
+            >
+              {showNegativeValues ? (
+                <span>{t('expenseChart.showNegativeValues')}</span>
+              ) : (
+                <>
+                  <span>{t('expenseChart.hideNegativeValues')}</span>
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                  </svg>
+                </>
+              )}
+            </button>
+          </div>
           
           <div className="inline-flex items-center rounded-md border border-gray-200 p-1 bg-gray-50">
             <button
@@ -607,8 +639,8 @@ export const ExpenseChart = ({
         >
           <defs>
             <linearGradient id="colorUv" x1="0" y1="0" x2="1" y2="0">
-              <stop offset={offset} stopColor="#3b82f6" /> {/* blue-500 */}
-              <stop offset={offset} stopColor="#60a5fa" /> {/* blue-400 */}
+              <stop offset={offset} stopColor="#2563eb" /> {/* blue-600 */}
+              <stop offset={offset} stopColor="#93c5fd" /> {/* blue-300 */}
             </linearGradient>
             <linearGradient id="colorProjected" x1="0" y1="0" x2="1" y2="0">
               <stop offset="0%" stopColor="#f97316" stopOpacity={0.8} /> {/* orange-500 */}

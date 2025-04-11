@@ -488,7 +488,9 @@ export const ptBR = {
     clickToAdd: "Clique em um ponto do gráfico para adicionar um objetivo ou evento",
     selectedDate: "Data Selecionada",
     selectedMonth: "Mês Selecionado",
-    selectedYear: "Ano Selecionado"
+    selectedYear: "Ano Selecionado",
+    showNegativeValues: "Com Valores Negativos",
+    hideNegativeValues: "Sem Valores Negativos"
   },
   budgetCategories: {
     categories: {
