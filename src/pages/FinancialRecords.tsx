@@ -239,7 +239,7 @@ const FinancialRecords = () => {
             record_year: parseInt(year),
             record_month: parseInt(month),
             starting_balance: parseFloat(record.PatrimonioInicial.replace('R$ ', '').replace('.', '').replace(',', '.')),
-            monthly_contribution: parseFloat(record.Aporte.replace('R$ ', '').replace('.', '').replace(',', '.')),
+            monthly_contribution: record.Aporte ? parseFloat(record.Aporte.replace('R$ ', '').replace('.', '').replace(',', '.')) : 0,
             ending_balance: parseFloat(record.PatrimonioFinal.replace('R$ ', '').replace('.', '').replace(',', '.')),
             monthly_return_rate: parseFloat(record.RetornoPercentual.replace('%', '').replace(',', '.')),
             target_rentability: parseFloat(record.RentabilidadeMeta.replace('%', '').replace(',', '.')),
