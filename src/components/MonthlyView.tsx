@@ -321,6 +321,8 @@ export const MonthlyView = ({
     );
   };
 
+  console.log(projectionData);
+
   return (
     <DashboardCard 
       title={t('monthlyView.title')}
@@ -697,15 +699,19 @@ export const MonthlyView = ({
                         </span>
                       </td>
                       <td className="p-3 text-right font-semibold">
-                        R$ {projection.balance.toLocaleString('pt-BR', { maximumFractionDigits: 2 })}
+                        <span className={projection.balance < 0 ? 'text-red-600' : ''}>
+                          R$ {projection.balance.toLocaleString('pt-BR', { maximumFractionDigits: 2 })}
+                        </span>
                       </td>
                       <td className="p-3 text-right font-semibold">
-                        R$ {projection.planned_balance.toLocaleString('pt-BR', { maximumFractionDigits: 2 })}
+                        <span className={projection.planned_balance < 0 ? 'text-red-600' : ''}>
+                          R$ {projection.planned_balance.toLocaleString('pt-BR', { maximumFractionDigits: 2 })}
+                        </span>
                         {projection.balance !== projection.planned_balance && (
                           <span className={`ml-2 text-xs ${
-                            projection.balance > projection.planned_balance 
-                              ? 'text-green-600' 
-                              : 'text-red-600'
+                            projection.balance - projection.planned_balance < 0 
+                              ? 'text-red-600' 
+                              : 'text-green-600'
                           }`}>
                             ({projection.balance > projection.planned_balance ? '+' : ''}
                             R$ {(projection.balance - projection.planned_balance).toLocaleString('pt-BR', { maximumFractionDigits: 2 })})
@@ -774,16 +780,18 @@ export const MonthlyView = ({
                               R$ {month.goalsEventsImpact?.toLocaleString('pt-BR', { maximumFractionDigits: 2 })}
                             </span>
                           </td>
-                          <td className="p-2 text-right font-medium">
-                            R$ {month.balance.toLocaleString('pt-BR', { maximumFractionDigits: 2 })}
+                          <td className="p-2 text-right font-semibold">
+                            <span className={month.balance < 0 ? 'text-red-600' : ''}>
+                              R$ {month.balance.toLocaleString('pt-BR', { maximumFractionDigits: 2 })}
+                            </span>
                           </td>
-                          <td className="p-2 text-right font-medium">
+                          <td className="p-2 text-right font-semibold">
                             R$ {month.planned_balance.toLocaleString('pt-BR', { maximumFractionDigits: 2 })}
                             {month.balance !== month.planned_balance && (
                               <span className={`ml-2 text-xs ${
-                                month.balance > month.planned_balance 
-                                  ? 'text-green-600' 
-                                  : 'text-red-600'
+                                month.balance - month.planned_balance < 0 
+                                  ? 'text-red-600' 
+                                  : 'text-green-600'
                               }`}>
                                 ({month.balance > month.planned_balance ? '+' : ''}
                                 R$ {(month.balance - month.planned_balance).toLocaleString('pt-BR', { maximumFractionDigits: 2 })})
