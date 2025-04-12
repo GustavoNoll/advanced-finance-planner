@@ -236,7 +236,7 @@ const FinancialGoals = () => {
                           const month = (i + 1).toString().padStart(2, '0');
                           return (
                             <option key={month} value={month}>
-                              {t('monthlyView.table.months.' + month)}
+                              {t('monthlyView.table.months.' + new Date(2000, parseInt(month) - 1).toLocaleString('en-US', { month: 'long' }).toLowerCase() )}
                             </option>
                           );
                         })}

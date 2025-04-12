@@ -152,7 +152,7 @@ const EditFinancialRecord = () => {
   };
 
   const formatMonth = (month: number) => {
-    return t(`monthlyView.table.months.${new Date(2000, month - 1).toLocaleString('en-US', { month: 'long' })}`);
+    return t(`monthlyView.table.months.${new Date(2000, month - 1).toLocaleString('en-US', { month: 'long' }).toLowerCase()}`);
   };
 
   if (isLoading) {
