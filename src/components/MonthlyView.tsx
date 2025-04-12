@@ -228,7 +228,7 @@ export const MonthlyView = ({
 
   const localizedData = monthlyData.map(data => ({
     ...data,
-    month: `${t(`monthlyView.table.months.${data.month.split('/')[0]}`)}/${data.month.split('/')[1]}`
+    month: `${t(`monthlyView.table.months.${data.month.split('/')[0].toLowerCase()}`)}/${data.month.split('/')[1]}`
   }));
 
   const processRecordsForChart = (records: FinancialRecord[]) => {
@@ -254,7 +254,7 @@ export const MonthlyView = ({
       )?.monthlyRate ?? 0;
 
       return {
-        month: `${t(`monthlyView.table.months.${monthNames[record.record_month - 1]}`)}/${record.record_year}`,
+        month: `${t(`monthlyView.table.months.${monthNames[record.record_month - 1]}`).toLowerCase()}/${record.record_year}`,
         balance: record.starting_balance,
         contribution: record.monthly_contribution,
         percentage: record.monthly_return_rate,
