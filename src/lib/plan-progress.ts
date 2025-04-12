@@ -437,8 +437,8 @@ const financialCalculations = {
     )
     
     // Calculate dates and differences
-    const projectedRetirementDate = utils.addMonthsToDate(referenceDate, projectedMonthsToRetirement);
-    const plannedRetirementDate = utils.addMonthsToDate(referenceDate, plannedMonthsToRetirement);
+    const projectedRetirementDate = utils.addMonthsToDate(planStartDate, projectedMonthsToRetirement);
+    const plannedRetirementDate = utils.addMonthsToDate(planStartDate, plannedMonthsToRetirement);
     const finalAgeDate = utils.createDateAtAge(birthDate, investmentPlan.final_age);
     const monthsDifference = utils.calculateMonthsBetweenDates(projectedRetirementDate, plannedRetirementDate);
     return {
