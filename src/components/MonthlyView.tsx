@@ -254,7 +254,7 @@ export const MonthlyView = ({
       )?.monthlyRate ?? 0;
 
       return {
-        month: `${t(`monthlyView.table.months.${monthNames[record.record_month - 1]}`).toLowerCase()}/${record.record_year}`,
+        month: `${t(`monthlyView.table.months.${monthNames[record.record_month - 1].toLowerCase()}`)}/${record.record_year}`,
         balance: record.starting_balance,
         contribution: record.monthly_contribution,
         percentage: record.monthly_return_rate,
