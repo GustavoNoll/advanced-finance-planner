@@ -652,7 +652,7 @@ const Index = () => {
                   <HoverCardTrigger>
                     <Info className="h-4 w-4 text-gray-400 cursor-help hover:text-blue-600 transition-colors" />
                   </HoverCardTrigger>
-                  <HoverCardContent className="w-80">
+                  <HoverCardContent className="w-80 bg-white shadow-lg rounded-lg">
                     <p className="text-sm text-gray-600">
                       {t('dashboard.cards.portfolioValue.tooltip')}
                     </p>
@@ -698,7 +698,7 @@ const Index = () => {
                     <HoverCardTrigger>
                       <Info className="h-4 w-4 text-gray-400 cursor-help hover:text-blue-600 transition-colors" />
                     </HoverCardTrigger>
-                    <HoverCardContent className="w-80">
+                    <HoverCardContent className="w-80 bg-white shadow-lg rounded-lg">
                       <p className="text-sm text-gray-600">
                         {t('dashboard.cards.contributions.tooltip')}
                       </p>
@@ -749,7 +749,7 @@ const Index = () => {
                     <HoverCardTrigger>
                       <Info className="h-4 w-4 text-gray-400 cursor-help hover:text-blue-600 transition-colors" />
                     </HoverCardTrigger>
-                    <HoverCardContent className="w-80">
+                    <HoverCardContent className="w-80 bg-white shadow-lg rounded-lg">
                       <p className="text-sm text-gray-600">
                         {t('dashboard.cards.totalReturns.tooltip')}
                       </p>
