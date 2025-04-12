@@ -23,6 +23,7 @@ import { processPlanProgressData, PlanProgressData } from "@/lib/plan-progress";
 import { generateProjectionData } from '@/lib/chart-projections';
 import { useQueryClient } from "@tanstack/react-query";
 import { Logo } from '@/components/ui/logo';
+import { InvestmentPlanDetails } from "@/components/InvestmentPlanDetails";
 
 type TimePeriod = 'all' | '6m' | '12m' | '24m';
 
@@ -610,6 +611,34 @@ const Index = () => {
         </div>
       </div>
 
+      {/* Highlights Section */}
+      <div className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8 py-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
+          {calculateHighlights().map((highlight, index) => (
+            <div 
+              key={index}
+              className="flex items-center gap-3 p-3 rounded-lg shadow-sm hover:shadow-md transition-all duration-200"
+              style={{
+                background: index === 0 
+                  ? 'linear-gradient(135deg, rgba(236, 253, 245, 0.8), rgba(167, 243, 208, 0.8))'
+                  : index === 1
+                  ? 'linear-gradient(135deg, rgba(239, 246, 255, 0.8), rgba(191, 219, 254, 0.8))'
+                  : 'linear-gradient(135deg, rgba(254, 242, 242, 0.8), rgba(254, 202, 202, 0.8))'
+              }}
+            >
+              <div className="p-2 rounded-lg bg-white/50">
+                {highlight.icon}
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-medium text-gray-700 truncate">
+                  {highlight.message}
+                </p>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
       <main className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <DashboardCard 
@@ -783,7 +812,7 @@ const Index = () => {
             </div>
           )}
         </div>
-        
+
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           {planProgressData && (
             <Calculator data={planProgressData as PlanProgressData} />
@@ -803,28 +832,16 @@ const Index = () => {
           <DashboardCard 
             title={
               <span className="text-gray-900 font-medium">
-                {t('dashboard.highlights.title')}
+                {t('dashboard.investmentPlan.title')}
               </span>
             }
             className="transform transition-all duration-300 hover:scale-[1.02] hover:shadow-2xl bg-gradient-to-br from-blue-50/95 via-indigo-50/90 to-slate-50/80 backdrop-blur-sm border border-gray-100/50 rounded-xl shadow-lg hover:border-blue-100/50"
             icon={Trophy}
           >
-            <div className="space-y-4">
-              {calculateHighlights().map((highlight, index) => (
-                <div key={index} className="flex items-center gap-3">
-                  <div className={`p-2 rounded-lg shadow-sm backdrop-blur-sm border border-white/50 ${
-                    index === 0 ? 'bg-gradient-to-br from-emerald-50 via-green-50 to-emerald-100/50 text-green-600' :
-                    index === 1 ? 'bg-gradient-to-br from-blue-50 via-indigo-50 to-blue-100/50 text-blue-600' :
-                    'bg-gradient-to-br from-violet-50 via-purple-50 to-violet-100/50 text-purple-600'
-                  }`}>
-                    {highlight.icon}
-                  </div>
-                  <p className="text-sm text-gray-700 leading-relaxed">
-                    {highlight.message}
-                  </p>
-                </div>
-              ))}
-            </div>
+            <InvestmentPlanDetails 
+              investmentPlan={investmentPlan}
+              birthDate={clientProfile?.birth_date}
+            />
           </DashboardCard>
         </div>
 

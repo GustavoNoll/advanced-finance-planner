@@ -206,6 +206,22 @@ export const ptBR = {
       projected: "Projetado",
       difference: "diferença"
     },
+    investmentPlan: {
+      title: "Detalhes do Plano de Investimento",
+      timeline: "Linha do Tempo",
+      financial: "Informações Financeiras",
+      currentAge: "Idade Atual",
+      finalAge: "Idade Final do Plano",
+      lifeExpectancy: "Expectativa de Vida",
+      initialCapital: "Capital Inicial",
+      monthlyContribution: "Aporte Mensal",
+      desiredWithdrawal: "Resgate Desejado",
+      planDuration: "Duração do Plano",
+      planStart: "Início do Plano",
+      duration: "Duração",
+      years: "anos",
+      months: "meses"
+    },
   },
   brokerDashboard: {
     myProfile: "Meu Perfil",

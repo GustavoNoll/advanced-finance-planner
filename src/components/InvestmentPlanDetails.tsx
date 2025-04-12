@@ -1,0 +1,163 @@
+import { Briefcase, Calendar, Clock, DollarSign, Target, TrendingUp, User, Heart, CalendarCheck, PiggyBank, ArrowUpRight, Wallet, Building2, Coins, Scale, ChartLine, CalendarDays, UserCog, HeartPulse, WalletCards } from "lucide-react";
+import { InvestmentPlan } from "@/types/financial";
+import { format } from "date-fns";
+import { ptBR } from "date-fns/locale";
+import { useTranslation } from "react-i18next";
+
+interface InvestmentPlanDetailsProps {
+  investmentPlan: InvestmentPlan;
+  birthDate: string;
+}
+
+interface PlanMetricProps {
+  icon: React.ReactNode;
+  label: string;
+  value: string;
+  color: string;
+  duration?: string;
+}
+
+function PlanMetric({ icon, label, value, color, duration }: PlanMetricProps) {
+  const { t } = useTranslation();
+  return (
+    <div className="flex items-center gap-2 py-1">
+      <div className={`p-1.5 rounded-lg ${color} bg-opacity-10`}>
+        {icon}
+      </div>
+      <div className="flex-1">
+        <p className="text-sm text-gray-500">{label}</p>
+        <p className="text-base font-medium text-gray-900">
+          {value}
+        </p>
+      </div>
+      {duration && (
+        <div className="text-right">
+          <p className="text-sm text-gray-500">{t('dashboard.investmentPlan.duration')}</p>
+          <p className="text-base font-medium text-gray-900">
+            {duration}
+          </p>
+        </div>
+      )}
+    </div>
+  );
+}
+
+export function InvestmentPlanDetails({ investmentPlan, birthDate }: InvestmentPlanDetailsProps) {
+  const { t } = useTranslation();
+  
+  const calculateDate = (age: number) => {
+    const birthDateObj = new Date(birthDate);
+    const targetDate = new Date(birthDateObj);
+    targetDate.setFullYear(birthDateObj.getFullYear() + age);
+    return targetDate;
+  };
+
+  const calculatePlanDuration = () => {
+    const planStartDate = new Date(investmentPlan.plan_initial_date);
+    const finalAgeDate = calculateDate(investmentPlan.final_age);
+    
+    const months = (finalAgeDate.getFullYear() - planStartDate.getFullYear()) * 12 + 
+                  (finalAgeDate.getMonth() - planStartDate.getMonth());
+    return months;
+  };
+
+  const formatCurrency = (value: number) => {
+    return new Intl.NumberFormat('pt-BR', {
+      style: 'currency',
+      currency: 'BRL'
+    }).format(value);
+  };
+
+  const formatDate = (date: Date) => {
+    return format(date, "MMMM 'de' yyyy", { locale: ptBR });
+  };
+
+  const currentAge = new Date().getFullYear() - new Date(birthDate).getFullYear();
+
+  const timelineMetrics: PlanMetricProps[] = [
+    {
+      icon: <UserCog className="h-4 w-4 text-emerald-600" />,
+      label: t('dashboard.investmentPlan.currentAge'),
+      value: `${currentAge} ${t('dashboard.investmentPlan.years')}`,
+      color: "text-emerald-600"
+    },
+    {
+      icon: <CalendarDays className="h-4 w-4 text-blue-600" />,
+      label: t('dashboard.investmentPlan.planStart'),
+      value: formatDate(new Date(investmentPlan.plan_initial_date)).charAt(0).toUpperCase() + formatDate(new Date(investmentPlan.plan_initial_date)).slice(1),
+      color: "text-blue-600",
+      duration: `${calculatePlanDuration()} ${t('dashboard.investmentPlan.months')}`
+    },
+    {
+      icon: <CalendarDays className="h-4 w-4 text-blue-600" />,
+      label: t('dashboard.investmentPlan.finalAge'),
+      value: `${investmentPlan.final_age} ${t('dashboard.investmentPlan.years')} (${formatDate(calculateDate(investmentPlan.final_age))})`,
+      color: "text-blue-600"
+    },
+    {
+      icon: <HeartPulse className="h-4 w-4 text-violet-600" />,
+      label: t('dashboard.investmentPlan.lifeExpectancy'),
+      value: `${investmentPlan.limit_age} ${t('dashboard.investmentPlan.years')} (${formatDate(calculateDate(investmentPlan.limit_age))})`,
+      color: "text-violet-600"
+    }
+  ];
+
+  const financialMetrics: PlanMetricProps[] = [
+    {
+      icon: <Building2 className="h-4 w-4 text-amber-600" />,
+      label: t('dashboard.investmentPlan.initialCapital'),
+      value: formatCurrency(investmentPlan.initial_amount),
+      color: "text-amber-600"
+    }
+  ];
+
+  const monthlyAndWithdrawalMetrics: PlanMetricProps[] = [
+    {
+      icon: <TrendingUp className="h-4 w-4 text-rose-600" />,
+      label: t('dashboard.investmentPlan.monthlyContribution'),
+      value: formatCurrency(investmentPlan.required_monthly_deposit),
+      color: "text-rose-600"
+    },
+    {
+      icon: <WalletCards className="h-4 w-4 text-cyan-600" />,
+      label: t('dashboard.investmentPlan.desiredWithdrawal'),
+      value: formatCurrency(investmentPlan.desired_income),
+      color: "text-cyan-600"
+    }
+  ];
+
+  return (
+    <div className="space-y-6">
+      {/* Timeline Section */}
+      <div className="space-y-3">
+        <h3 className="text-sm font-semibold text-gray-900 flex items-center gap-2">
+          <CalendarDays className="h-4 w-4 text-blue-600" />
+          {t('dashboard.investmentPlan.timeline')}
+        </h3>
+        <div className="space-y-2">
+          {timelineMetrics.map((metric, index) => (
+            <PlanMetric key={index} {...metric} />
+          ))}
+        </div>
+      </div>
+
+      {/* Financial Section */}
+      <div className="space-y-3">
+        <h3 className="text-sm font-semibold text-gray-900 flex items-center gap-2">
+          <ChartLine className="h-4 w-4 text-amber-600" />
+          {t('dashboard.investmentPlan.financial')}
+        </h3>
+        <div className="space-y-2">
+          {financialMetrics.map((metric, index) => (
+            <PlanMetric key={index} {...metric} />
+          ))}
+        </div>
+        <div className="grid grid-cols-2 gap-4">
+          {monthlyAndWithdrawalMetrics.map((metric, index) => (
+            <PlanMetric key={index} {...metric} />
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+} 
