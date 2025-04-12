@@ -1,12 +1,12 @@
 import { Briefcase, Calendar, Clock, DollarSign, Target, TrendingUp, User, Heart, CalendarCheck, PiggyBank, ArrowUpRight, Wallet, Building2, Coins, Scale, ChartLine, CalendarDays, UserCog, HeartPulse, WalletCards } from "lucide-react";
 import { InvestmentPlan } from "@/types/financial";
-import { format } from "date-fns";
+import { format, isValid } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { useTranslation } from "react-i18next";
 
 interface InvestmentPlanDetailsProps {
-  investmentPlan: InvestmentPlan;
-  birthDate: string;
+  investmentPlan: InvestmentPlan | null;
+  birthDate: string | null;
 }
 
 interface PlanMetricProps {
@@ -45,8 +45,15 @@ function PlanMetric({ icon, label, value, color, duration }: PlanMetricProps) {
 export function InvestmentPlanDetails({ investmentPlan, birthDate }: InvestmentPlanDetailsProps) {
   const { t } = useTranslation();
   
+  if (!investmentPlan || !birthDate) {
+    return null;
+  }
+
   const calculateDate = (age: number) => {
     const birthDateObj = new Date(birthDate);
+    if (!isValid(birthDateObj)) {
+      return null;
+    }
     const targetDate = new Date(birthDateObj);
     targetDate.setFullYear(birthDateObj.getFullYear() + age);
     return targetDate;
@@ -56,6 +63,10 @@ export function InvestmentPlanDetails({ investmentPlan, birthDate }: InvestmentP
     const planStartDate = new Date(investmentPlan.plan_initial_date);
     const finalAgeDate = calculateDate(investmentPlan.final_age);
     
+    if (!isValid(planStartDate) || !finalAgeDate) {
+      return 0;
+    }
+
     const months = (finalAgeDate.getFullYear() - planStartDate.getFullYear()) * 12 + 
                   (finalAgeDate.getMonth() - planStartDate.getMonth());
     return months;
@@ -68,11 +79,17 @@ export function InvestmentPlanDetails({ investmentPlan, birthDate }: InvestmentP
     }).format(value);
   };
 
-  const formatDate = (date: Date) => {
+  const formatDate = (date: Date | null) => {
+    if (!date || !isValid(date)) {
+      return '';
+    }
     return format(date, "MMMM 'de' yyyy", { locale: ptBR });
   };
 
-  const currentAge = new Date().getFullYear() - new Date(birthDate).getFullYear();
+  const birthDateObj = new Date(birthDate);
+  const currentAge = isValid(birthDateObj) 
+    ? new Date().getFullYear() - birthDateObj.getFullYear() 
+    : 0;
 
   const timelineMetrics: PlanMetricProps[] = [
     {
