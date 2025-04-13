@@ -7,7 +7,9 @@ import { supabase } from "@/lib/supabase";
 import { useState } from "react";
 import { calculateCompoundedRates, yearlyReturnRateToMonthlyReturnRate } from '@/lib/financial-math';
 import { ChartPointDialog } from "@/components/chart/ChartPointDialog";
-import { TrendingUp } from "lucide-react";
+import { TrendingUp, Car, Home, Plane, GraduationCap, User, AlertCircle, Calendar } from "lucide-react";
+import type { ViewBox } from 'recharts/types/util/types';
+import type { TooltipProps } from 'recharts';
 
 interface Profile {
   birth_date: string;
@@ -49,6 +51,63 @@ interface EventFormValues {
   month: string;
   year: string;
 }
+
+interface IconProps {
+  viewBox?: ViewBox;
+}
+
+interface TooltipPayload {
+  payload: {
+    goal?: Goal;
+    event?: ProjectedEvent;
+  };
+}
+
+const isCartesianViewBox = (viewBox: ViewBox | undefined): viewBox is { x: number; y: number } => {
+  return (
+    viewBox !== undefined &&
+    'x' in viewBox &&
+    'y' in viewBox &&
+    typeof viewBox.x === 'number' &&
+    typeof viewBox.y === 'number'
+  );
+};
+
+const CustomHoverCard = ({ active, payload }: { active?: boolean; payload?: TooltipPayload[] }) => {
+  if (!active || !payload || !payload.length) return null;
+
+  const data = payload[0].payload;
+  if (!data.goal && !data.event) return null;
+
+  const formattedAmount = new Intl.NumberFormat('pt-BR', {
+    style: 'currency',
+    currency: 'BRL'
+  }).format(data.goal?.asset_value || data.event?.amount || 0);
+
+  const monthName = new Date(0, (data.goal?.month || data.event?.month) - 1).toLocaleString('pt-BR', { month: 'long' });
+
+  return (
+    <div className="bg-white p-3 rounded-lg shadow-lg border border-gray-200">
+      <div className="flex flex-col gap-1">
+        <div className="font-semibold text-gray-900">
+          {data.goal ? (
+            data.goal.icon === 'car' ? 'Carro' : 
+            data.goal.icon === 'house' ? 'Casa' : 
+            data.goal.icon === 'travel' ? 'Viagem' : 
+            data.goal.icon === 'education' ? 'Educação' : 
+            data.goal.icon === 'retirement' ? 'Aposentadoria' : 
+            data.goal.icon === 'emergency' ? 'Emergência' : 'Objetivo'
+          ) : (
+            data.event?.name
+          )}
+        </div>
+        <div className="text-gray-600">Valor: {formattedAmount}</div>
+        <div className="text-gray-600">Mês: {monthName}</div>
+        <div className="text-gray-600">Ano: {data.goal?.year || data.event?.year}</div>
+      </div>
+    </div>
+  );
+};
 
 export const ExpenseChart = ({ 
   profile, 
@@ -421,59 +480,154 @@ export const ExpenseChart = ({
 
   const offset = colorOffset();
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const renderContent = (props: any, goal?: Goal, event?: ProjectedEvent) => {
-    if (!props.viewBox?.x || !props.viewBox?.y || (!goal && !event)) return null;
+  const renderGoalIcon = (props: IconProps, goal?: Goal) => {
+    if (!isCartesianViewBox(props.viewBox) || !goal) return null;
     
     const { viewBox: { x, y } } = props;
-    const icon = goal ? goal.icon === 'car' ? '🚗' : 
-                 goal.icon === 'house' ? '🏠' : 
-                 goal.icon === 'travel' ? '✈️' : 
-                 goal.icon === 'education' ? '🎓' :
-                 goal.icon === 'retirement' ? '👴' :
-                 goal.icon === 'emergency' ? '🚨' : '🎯' :
-                 event ? '📅' : null;
+    const iconSize = 20;
     
-    // Format currency for goal/event amount
-    const formattedAmount = (goal?.asset_value || event?.amount) 
-      ? new Intl.NumberFormat('pt-BR', {
-          style: 'currency',
-          currency: 'BRL'
-        }).format(goal?.asset_value || event?.amount || 0)
-      : '';
+    const getIcon = () => {
+      switch (goal.icon) {
+        case 'car':
+          return <Car size={iconSize} className="text-red-500 group-hover:text-red-600 transition-colors" />;
+        case 'house':
+          return <Home size={iconSize} className="text-red-500 group-hover:text-red-600 transition-colors" />;
+        case 'travel':
+          return <Plane size={iconSize} className="text-red-500 group-hover:text-red-600 transition-colors" />;
+        case 'education':
+          return <GraduationCap size={iconSize} className="text-red-500 group-hover:text-red-600 transition-colors" />;
+        case 'retirement':
+          return <User size={iconSize} className="text-red-500 group-hover:text-red-600 transition-colors" />;
+        case 'emergency':
+          return <AlertCircle size={iconSize} className="text-red-500 group-hover:text-red-600 transition-colors" />;
+        default:
+          return <Calendar size={iconSize} className="text-red-500 group-hover:text-red-600 transition-colors" />;
+      }
+    };
+
+    const formattedAmount = new Intl.NumberFormat('pt-BR', {
+      style: 'currency',
+      currency: 'BRL'
+    }).format(goal.asset_value);
+
+    const monthName = new Date(0, goal.month - 1).toLocaleString('pt-BR', { month: 'long' })
 
     return (
-      <g transform={`translate(${x - 7}, ${y - 7})`}>
-        <title>
-          {goal 
-            ? `${t('financialGoals.icons.' + goal.icon)}\n` +
-              `${t('financialGoals.labels.assetValue')}: ${formattedAmount}\n` +
-              `${t('financialGoals.form.goalMonth')}: ${t('monthlyView.table.months.' + new Date(0, goal.month - 1).toLocaleString('en-US', { month: 'long' }).toLowerCase())}\n` +
-              `${t('financialGoals.form.goalYear')}: ${goal.year}\n` +
-              (goal.description ? `${t('financialGoals.description')}: ${goal.description}\n` : '') +
-              (goal.installment_project ? `${t('financialGoals.form.isInstallment')}: ${t('common.yes')}\n` : '') +
-              (goal.installment_count ? `${t('financialGoals.form.installmentCount')}: ${goal.installment_count}` : '')
-            : event
-              ? `${t('events.form.name')}: ${event.name}\n` +
-                `${t('events.form.amount')}: ${formattedAmount}\n` +
-                `${t('events.form.month')}: ${t('monthlyView.table.months.' + new Date(0, event.month - 1).toLocaleString('en-US', { month: 'long' }).toLowerCase())}\n` +
-                `${t('events.form.year')}: ${event.year}`
-              : ''
-          }
-        </title>
-        <text 
-          x="0" 
-          y="0" 
-          fontSize="14" 
-          fill="#374151"
-          style={{ cursor: 'help' }}
-        >
-          {`${icon}`}
-        </text>
+      <g 
+        transform={`translate(${x}, ${y})`}
+        className="group cursor-pointer"
+      >
+        <circle
+          cx={0}
+          cy={0}
+          r={iconSize/2 + 4}
+          fill="white"
+          opacity="0.8"
+          className="shadow-sm group-hover:shadow-md transition-all"
+        />
+        <g transform={`translate(${-iconSize/2}, ${-iconSize/2})`} className="transition-transform duration-200 group-hover:scale-110">
+          {getIcon()}
+        </g>
+        <g transform="translate(0, -60)">
+          <foreignObject
+            x={-100}
+            y={100}
+            width={200}
+            height={120}
+            style={{ overflow: 'visible' }}
+            className="opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none"
+          >
+            <div className="bg-white p-3 rounded-lg shadow-lg border border-gray-200">
+              <div className="text-lg font-semibold text-red-600 mb-2">
+                {t('common.value')}: {formattedAmount}
+              </div>
+              <div className="text-sm text-gray-600 mb-1">
+                {goal.icon === 'car' ? t('financialGoals.icons.car') : 
+                 goal.icon === 'house' ? t('financialGoals.icons.house') : 
+                 goal.icon === 'travel' ? t('financialGoals.icons.travel') : 
+                 goal.icon === 'education' ? t('financialGoals.icons.education') : 
+                 goal.icon === 'retirement' ? t('financialGoals.icons.retirement') : 
+                 goal.icon === 'emergency' ? t('financialGoals.icons.emergency') : t('financialGoals.icons.other')}
+              </div>
+              <div className="text-sm text-gray-600">
+                {t('monthlyView.table.headers.month')}: {monthName}
+              </div>
+              <div className="text-sm text-gray-600">
+                {t('financialRecords.form.year')}: {goal.year}
+              </div>
+              {goal.installment_project && (
+                <div className="text-sm text-blue-600 mt-1">
+                  {t('financialGoals.form.installmentCount')}: {goal.installment_count}x
+                </div>
+              )}
+            </div>
+          </foreignObject>
+        </g>
       </g>
     );
   };
 
+  const renderEventIcon = (props: IconProps, event?: ProjectedEvent) => {
+    if (!isCartesianViewBox(props.viewBox) || !event) return null;
+    
+    const { viewBox: { x, y } } = props;
+    const iconSize = 20;
+
+    const formattedAmount = new Intl.NumberFormat('pt-BR', {
+      style: 'currency',
+      currency: 'BRL'
+    }).format(event.amount);
+
+    const monthName = new Date(0, event.month - 1).toLocaleString('pt-BR', { month: 'long' });
+
+    const isPositive = event.amount >= 0;
+    const amountColor = isPositive ? 'text-green-600' : 'text-red-600';
+    const iconColor = isPositive ? 'text-green-500 group-hover:text-green-600' : 'text-red-500 group-hover:text-red-600';
+
+    return (
+      <g 
+        transform={`translate(${x}, ${y})`}
+        className="group cursor-pointer"
+      >
+        <circle
+          cx={0}
+          cy={0}
+          r={iconSize/2 + 4}
+          fill="white"
+          opacity="0.8"
+          className="shadow-sm group-hover:shadow-md transition-all"
+        />
+        <g transform={`translate(${-iconSize/2}, ${-iconSize/2})`} className="transition-transform duration-200 group-hover:scale-110">
+          <Calendar size={iconSize} className={iconColor + " transition-colors"} />
+        </g>
+        <g transform="translate(0, -60)">
+          <foreignObject
+            x={-100}
+            y={100}
+            width={200}
+            height={120}
+            style={{ overflow: 'visible' }}
+            className="opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none"
+          >
+            <div className={`bg-white p-3 rounded-lg shadow-lg border border-gray-200 ${amountColor}`}>
+              <div className={`text-lg font-semibold ${amountColor} mb-2`}>
+                {t('common.value')}: {formattedAmount}
+              </div>
+              <div className="text-sm text-gray-600 mb-1">
+                {event.name}
+              </div>
+              <div className="text-sm text-gray-600">
+                {t('monthlyView.table.headers.month')}: {monthName}
+              </div>
+              <div className="text-sm text-gray-600">
+                {t('financialRecords.form.year')}: {event.year}
+              </div>
+            </div>
+          </foreignObject>
+        </g>
+      </g>
+    );
+  };
 
   return (
     <div className="space-y-4">
@@ -806,7 +960,7 @@ export const ExpenseChart = ({
                     ifOverflow="extendDomain"
                     label={{
                       position: 'top',
-                      content: (props) => renderContent(props, goal)
+                      content: (props) => renderGoalIcon(props, goal)
                     }}
                   />
                 );
@@ -845,7 +999,7 @@ export const ExpenseChart = ({
                     ifOverflow="extendDomain"
                     label={{
                       position: 'top',
-                      content: (props) => renderContent(props, null, event)
+                      content: (props) => renderEventIcon(props, event)
                     }}
                   />
                 );

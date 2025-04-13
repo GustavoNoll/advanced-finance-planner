@@ -340,6 +340,7 @@ export const ptBR = {
     linkCopied: "Link copiado com sucesso!",
   },
   common: {
+    value: "Valor",
     success: "Sucesso",
     saving: "Salvando..",
     addNew: "Adicionar Novos",
