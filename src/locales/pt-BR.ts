@@ -523,28 +523,27 @@ export const ptBR = {
     }
   },
   savingsGoal: {
-    ageNotAvailable: "Idade projetada não disponível",
-    metaNotAchieved: "Meta não irá ser atingida na idade projetada",
     title: "Meta de Investimento",
-    currentValue: "{{value}}",
-    returnRate: "{{value}}% a.a.",
-    goal: {
-      label: "Meta: {{value}}",
-      goalFutureValue: "Meta Futura: {{value}}",
-      targetAge: "Idade Alvo: {{age}}",
-      presentFutureValue: "Valor Real: {{value}}",
-      goalPresentValue: "Meta: {{value}}",
-      projectedValue: "Valor Futuro Projetado: {{value}}"
-    },
-    projectedAge:{
+    tooltip: "Acompanhe seu progresso em direção à sua meta de investimento. O gráfico mostra quanto você já acumulou em relação ao valor necessário para sua aposentadoria.",
+    currentValue: "Valor Atual: {{value}}",
+    returnRate: "Taxa de retorno: {{value}}% a.a.",
+    projectedAge: {
       label: "Idade Projetada:",
       years: " anos",
       months: " meses",
-      aheadOfSchedule: "Avançado em {{years}} anos e {{months}} meses",
+      aheadOfSchedule: "Adiantado em {{years}} anos e {{months}} meses",
       behindSchedule: "Atrasado em {{years}} anos e {{months}} meses",
-      behindScheduleMonths: "Atrasado em {{months}} meses",
-      aheadOfScheduleMonths: "Avançado em {{months}} meses"
+      aheadOfScheduleMonths: "Adiantado em {{months}} meses",
+      behindScheduleMonths: "Atrasado em {{months}} meses"
     },
+    goal: {
+      goalPresentValue: "Meta: {{value}}",
+      goalFutureValue: "Meta (Valor Futuro): {{value}}",
+      targetAge: "Idade Alvo: {{age}} anos",
+      projectedValue: "Valor Projetado: {{value}}"
+    },
+    ageNotAvailable: "Idade projetada não disponível",
+    metaNotAchieved: "Meta não será atingida na idade projetada"
   },
   financialRecords: {
     confirmIPCASync: "Tem certeza que deseja sincronizar os registros financeiros com o IPCA?",

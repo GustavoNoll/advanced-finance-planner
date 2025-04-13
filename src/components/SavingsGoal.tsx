@@ -1,10 +1,15 @@
 import { Progress } from "@/components/ui/progress";
 import { DashboardCard } from "./DashboardCard";
-import { ArrowUpRight, Clock, Target } from "lucide-react";
+import { ArrowUpRight, Clock, Target, Info } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { FinancialRecord, InvestmentPlan } from "@/types/financial";
 import { useMemo } from "react";
 import { PlanProgressData, utils } from "@/lib/plan-progress";
+import {
+  HoverCard,
+  HoverCardContent,
+  HoverCardTrigger,
+} from "@/components/ui/hover-card";
 
 interface SavingsGoalProps {
   allFinancialRecords: FinancialRecord[];
@@ -52,13 +57,12 @@ export const SavingsGoal = ({ allFinancialRecords, investmentPlan, profile, plan
 
   const calculateProjectedAge = (): ProjectedAgeResult | 'ageNotAvailable' | 'metaNotAchieved' => {
     if (planProgressData) {
-      const projectedDate = planProgressData.projectedRetirementDate;
       const birthDateObj = birthDate ? new Date(birthDate) : null;
-      
+      const finalAgeDate = utils.addMonthsToDate(birthDateObj, finalAge * 12);
       if (!birthDateObj) return 'ageNotAvailable';
       
-      const monthsDifference = utils.calculateMonthsBetweenDates(planProgressData.projectedRetirementDate, planProgressData.finalAgeDate);
-      const isAheadOfSchedule = planProgressData.monthsDifference > 0;
+      const monthsDifference = utils.calculateMonthsBetweenDates(planProgressData.projectedRetirementDate, finalAgeDate);
+      const isAheadOfSchedule = monthsDifference > 0;
       
       return {
         years: planProgressData.projectedAgeYears || 0,
@@ -79,21 +83,37 @@ export const SavingsGoal = ({ allFinancialRecords, investmentPlan, profile, plan
 
   return (
     <DashboardCard
-      title={t('savingsGoal.title')}
+      title={
+        <div className="flex items-center gap-2">
+          <span>{t('savingsGoal.title')}</span>
+          <HoverCard>
+            <HoverCardTrigger>
+              <Info className="h-4 w-4 text-gray-400 cursor-help hover:text-blue-600 transition-colors" />
+            </HoverCardTrigger>
+            <HoverCardContent className="w-80">
+              <p className="text-sm text-gray-600">
+                {t('savingsGoal.tooltip')}
+              </p>
+            </HoverCardContent>
+          </HoverCard>
+        </div>
+      }
       icon={Target}
+      className="transform transition-all duration-300 hover:scale-[1.02] hover:shadow-2xl bg-gradient-to-br from-white/95 via-slate-50/90 to-blue-50/80 backdrop-blur-sm border border-gray-100/50 rounded-xl shadow-lg hover:border-blue-100/50"
     >
       <div className="space-y-6">
         <div className="relative">
           <Progress 
             value={percentage} 
-            className="w-full h-2.5 bg-gray-100/50 rounded-full overflow-hidden"
+            className="w-full h-3 bg-gray-100/50 rounded-full overflow-hidden"
           />
           <span className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-sm font-medium bg-white/90 px-3 py-1.5 rounded-full shadow-sm backdrop-blur-sm border border-gray-100/50">
             {Math.round(percentage)}%
           </span>
         </div>
-        <div className="flex justify-between text-sm">
-          <div className="space-y-3">
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="space-y-4">
             <div>
               <span className="block text-xl font-semibold bg-gradient-to-r from-blue-600 via-indigo-600 to-slate-700 bg-clip-text text-transparent drop-shadow-sm">
                 {t('savingsGoal.currentValue', { 
@@ -105,6 +125,7 @@ export const SavingsGoal = ({ allFinancialRecords, investmentPlan, profile, plan
                 {t('savingsGoal.returnRate', { value: returnRate })}
               </span>
             </div>
+
             <div className={`flex items-start gap-2 ${
               typeof projectedAge !== 'string' && projectedAge.isAheadOfSchedule ? 'text-emerald-600' : 'text-rose-600'
             }`}>
@@ -150,7 +171,8 @@ export const SavingsGoal = ({ allFinancialRecords, investmentPlan, profile, plan
               </div>
             </div>
           </div>
-          <div className="text-right space-y-2">
+
+          <div className="space-y-4">
             <div>
               <span className="block text-xl font-semibold text-gray-800">
                 {t('savingsGoal.goal.goalPresentValue', { 
@@ -163,7 +185,8 @@ export const SavingsGoal = ({ allFinancialRecords, investmentPlan, profile, plan
                 })}
               </span>
             </div>
-            <div className="bg-gray-50/50 rounded-lg p-2">
+
+            <div className="bg-gray-50/50 rounded-lg p-3">
               <p className="text-sm font-medium text-gray-700">
                 {t('savingsGoal.goal.projectedValue', { 
                   value: formatCurrency(planProgressData?.projectedFuturePresentValue ?? 0)
