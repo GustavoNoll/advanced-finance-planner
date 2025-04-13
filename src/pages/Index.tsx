@@ -224,7 +224,7 @@ const Index = () => {
         streak++;
       } else break;
     }
-    if (streak > 0) {
+    if (streak > 1) {
       highlights.push({
         message: t('dashboard.highlights.contributionStreak', { months: streak }),
         value: streak,
@@ -263,6 +263,54 @@ const Index = () => {
       message: t('dashboard.highlights.planAge', { months: planMonths }),
       value: planMonths,
       icon: <Calendar className="h-4 w-4" />
+    });
+
+    // Meta de renda mensal alcançada
+    const currentMonthlyIncome = (latest?.ending_balance || 0) * (investmentPlan.expected_return / 100) / 12;
+    const incomeProgress = (currentMonthlyIncome / investmentPlan.desired_income) * 100;
+    highlights.push({
+      message: t('dashboard.highlights.incomeProgress', { 
+        percentage: incomeProgress.toFixed(1) 
+      }),
+      value: incomeProgress,
+      icon: <TrendingUp className="h-4 w-4" />
+    });
+
+    // Consistência de retornos positivos
+    const positiveReturns = processedRecords.financialRecords
+      .filter(record => record.monthly_return_rate > 0).length;
+    const consistencyRate = (positiveReturns / planMonths) * 100;
+    highlights.push({
+      message: t('dashboard.highlights.returnConsistency', { 
+        percentage: consistencyRate.toFixed(1) 
+      }),
+      value: consistencyRate,
+      icon: <LineChart className="h-4 w-4" />
+    });
+
+    // Novos highlights comportamentais
+    // 1. Frequência de registros
+    const monthsWithRecords = processedRecords.financialRecords.length;
+    const monthsWithContributions = processedRecords.financialRecords
+      .filter(record => record.monthly_contribution > 0).length;
+    const contributionDiscipline = (monthsWithContributions / monthsWithRecords) * 100;
+    highlights.push({
+      message: t('dashboard.highlights.contributionDiscipline', { 
+        percentage: contributionDiscipline.toFixed(1) 
+      }),
+      value: contributionDiscipline,
+      icon: <PiggyBank className="h-4 w-4" />
+    });
+
+    // 3. Evolução do patrimônio
+    const initialBalance = processedRecords.financialRecords[processedRecords.financialRecords.length - 1]?.starting_balance || 0;
+    const patrimonyGrowth = ((latest?.ending_balance || 0) - initialBalance) / initialBalance * 100;
+    highlights.push({
+      message: t('dashboard.highlights.patrimonyGrowth', { 
+        growth: patrimonyGrowth.toFixed(1) 
+      }),
+      value: patrimonyGrowth,
+      icon: <TrendingUp className="h-4 w-4" />
     });
 
     // Retorna os 3 highlights com maiores valores

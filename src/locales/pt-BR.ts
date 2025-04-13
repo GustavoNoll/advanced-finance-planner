@@ -116,7 +116,13 @@ export const ptBR = {
       returnOnContributions: "Seus investimentos já renderam {{percentage}}% sobre os aportes",
       bestReturn: "Seu melhor mês teve retorno de {{return}}%",
       patrimonyGrowth: "Seu patrimônio cresceu {{growth}}% desde o início",
-      planAge: "Seu plano completa {{months}} meses de jornada!"
+      planAge: "Seu plano completa {{months}} meses de jornada!",
+      incomeProgress: "Já está gerando {{percentage}}% da renda mensal desejada",
+      returnConsistency: "{{percentage}}% dos meses tiveram retornos positivos",
+      futureValueProgress: "Já alcançou {{percentage}}% do valor futuro planejado",
+      recordFrequency: "Você registra {{percentage}}% dos meses do seu plano",
+      contributionDiscipline: "Você fez aportes em {{percentage}}% dos meses registrados",
+      monthsToRetirement: "Faltam {{months}} meses para sua aposentadoria"
     },
     brokerName: "Corretor: {{name}}",
     cards: {
