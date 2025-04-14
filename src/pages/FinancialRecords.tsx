@@ -410,10 +410,9 @@ const FinancialRecords = () => {
           const recordKey = `${record.record_year}-${record.record_month}`;
           if (ipcaRateMap.has(recordKey)) {
             const ipcaRate = ipcaRateMap.get(recordKey);
-            // Apenas incluímos o ID e o valor a ser atualizado
             const parsedIpcaRate = ipcaRate;
             const ipcaRateConverted = parseFloat((calculateCompoundedRates([parsedIpcaRate/100, yearlyReturnRateToMonthlyReturnRate(investmentPlan?.expected_return/100)]) * 100).toFixed(2));
-            const parsedTargetRentability = parseFloat(record.target_rentability.toFixed(2));
+            const parsedTargetRentability = parseFloat(record.target_rentability?.toFixed(2) || '0');
             if (parsedTargetRentability !== ipcaRateConverted) {
               updates.push({
                 id: record.id,
@@ -424,10 +423,10 @@ const FinancialRecords = () => {
           }
         }
         
-        // Atualiza records com IPCA correspondente
+        // Update records with matching IPCA rates
         if (updates.length > 0) {
           const updatedIds: string[] = [];
-          // Processa cada atualização individualmente para garantir que são apenas updates
+          // Process each update individually to ensure they are only updates
           for (const update of updates) {
             const { error } = await supabase
               .from('user_financial_records')
@@ -454,6 +453,7 @@ const FinancialRecords = () => {
     onSuccess: (result) => {
       if (!result) return;
       
+      // Invalidate the query cache to force a refetch
       queryClient.invalidateQueries({ queryKey: ['financialRecords', clientId] });
       
       if (result.count > 0) {
