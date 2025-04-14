@@ -232,20 +232,6 @@ const Index = () => {
       });
     }
 
-    // Retorno sobre aportes
-    const totalContributions = (processedRecords.financialRecords[processedRecords.financialRecords.length - 1]?.starting_balance || 0) +
-      processedRecords.financialRecords.reduce((sum, record) => sum + (record.monthly_contribution || 0), 0);
-    const returnOnContributions = ((latest?.ending_balance || 0) - totalContributions) / totalContributions * 100;
-    if (returnOnContributions > 0) {
-      highlights.push({
-        message: t('dashboard.highlights.returnOnContributions', { 
-          percentage: returnOnContributions.toFixed(1) 
-        }),
-        value: returnOnContributions,
-        icon: <PiggyBank className="h-4 w-4" />
-      });
-    }
-
     // Melhor mês de rentabilidade
     const bestReturn = Math.max(...processedRecords.financialRecords
       .map(record => record.monthly_return_rate));
