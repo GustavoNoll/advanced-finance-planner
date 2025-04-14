@@ -9,7 +9,6 @@ import { calculateCompoundedRates, yearlyReturnRateToMonthlyReturnRate } from '@
 import { ChartPointDialog } from "@/components/chart/ChartPointDialog";
 import { TrendingUp, Car, Home, Plane, GraduationCap, User, AlertCircle, Calendar } from "lucide-react";
 import type { ViewBox } from 'recharts/types/util/types';
-import type { TooltipProps } from 'recharts';
 
 interface Profile {
   birth_date: string;

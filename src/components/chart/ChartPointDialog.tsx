@@ -5,6 +5,7 @@ import { EventForm } from "@/components/events/EventForm";
 import { useTranslation } from "react-i18next";
 import { useState } from "react";
 import { toast } from "@/components/ui/use-toast";
+import { useLocale } from "@/hooks/useLocale";
 
 interface ChartPoint {
   age: string;
@@ -54,6 +55,7 @@ export const ChartPointDialog = ({
 }: ChartPointDialogProps) => {
   const { t } = useTranslation();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const { formatDate } = useLocale();
 
   const handleSubmitGoal = async (values: GoalFormValues) => {
     try {
@@ -117,7 +119,7 @@ export const ChartPointDialog = ({
           <>
             <div className="mb-4 p-3 bg-gray-50 rounded-md">
               <p className="text-sm text-gray-600">
-                {t("expenseChart.selectedDate")}: {new Date(selectedPoint.year, selectedPoint.month - 1).toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' })}
+                {t("expenseChart.selectedDate")}: {formatDate(new Date(selectedPoint.year, selectedPoint.month - 1))}
               </p>
             </div>
             
