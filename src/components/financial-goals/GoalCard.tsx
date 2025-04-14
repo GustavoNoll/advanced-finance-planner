@@ -19,7 +19,7 @@ export const GoalCard = ({ goal, onDelete }: {
           <div>
             <p className="font-semibold text-lg">
               {new Date(goal.year, goal.month - 1)
-                .toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' })
+                .toLocaleDateString(navigator.language, { month: 'long', year: 'numeric' })
                 .replace(/^\w/, (c) => c.toUpperCase())}
             </p>
             <p className="text-sm text-gray-600 mt-1">

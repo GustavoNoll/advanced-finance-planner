@@ -104,6 +104,7 @@ export function generateProjectionData(
   // Default to the estimated inflation rate if no IPCA data is available
   const defaultMonthlyInflationRate = yearlyReturnRateToMonthlyReturnRate(investmentPlan.inflation/100);
   const monthlyExpectedReturnRate = yearlyReturnRateToMonthlyReturnRate(investmentPlan.expected_return/100);
+  let accumulatedInflation = 1;
   
   // Create a map of IPCA rates by year and month for easy lookup
   const endDate = new Date(startYear + yearsUntilEnd, 11, 31); // December 31st of the last year
@@ -139,6 +140,7 @@ export function generateProjectionData(
       const monthlyInflationRate = ipcaRatesMap.has(ipcaKey) 
         ? ipcaRatesMap.get(ipcaKey)! 
         : defaultMonthlyInflationRate;
+      accumulatedInflation = calculateCompoundedRates([accumulatedInflation, monthlyInflationRate]);
       
       // Calculate the monthly return rate based on the expected return and inflation
       const monthlyReturnRate = calculateCompoundedRates([monthlyExpectedReturnRate, monthlyInflationRate]);
@@ -192,8 +194,9 @@ export function generateProjectionData(
         currentBalance,
         year,
         currentMonthNumber - 1,
+        accumulatedInflation,
         goalsForChart,
-        events
+        events,
       );
       const goalsEventsImpact = currentBalance - previousBalance;
 
@@ -362,11 +365,11 @@ export function handleMonthlyGoalsAndEvents(
   balance: number,
   year: number,
   month: number,
+  accumulatedInflation: number,
   goals?: GoalForChart[],
   events?: ProjectedEvent[]
 ): number {
   let updatedBalance = balance;
-
   // Handle goals
   const currentGoals = goals?.filter(goal => 
     goal.year === year && goal.month === (month + 1)
@@ -374,7 +377,7 @@ export function handleMonthlyGoalsAndEvents(
 
   if (currentGoals?.length) {
     const totalGoalWithdrawal = currentGoals.reduce((sum, goal) => sum + goal.value, 0);
-    updatedBalance -= totalGoalWithdrawal;
+    updatedBalance -= totalGoalWithdrawal * accumulatedInflation;
   }
 
   // Handle events
@@ -384,7 +387,7 @@ export function handleMonthlyGoalsAndEvents(
 
   if (currentEvents?.length) {
     const totalEventWithdrawal = currentEvents.reduce((sum, event) => sum + event.amount, 0);
-    updatedBalance += totalEventWithdrawal;
+    updatedBalance += totalEventWithdrawal * accumulatedInflation;
   }
 
   return updatedBalance;
