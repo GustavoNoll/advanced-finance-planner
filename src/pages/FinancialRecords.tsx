@@ -443,7 +443,8 @@ const FinancialRecords = () => {
         }
         
         return { 
-          count: updatedCount
+          count: updatedCount,
+          updates
         };
       } catch (error) {
         console.error('Error syncing IPCA rates:', error);
@@ -453,10 +454,23 @@ const FinancialRecords = () => {
     onSuccess: (result) => {
       if (!result) return;
       
-      // Invalidate the query cache to force a refetch
-      queryClient.invalidateQueries({ queryKey: ['financialRecords', clientId] });
+      // Update the records in the query cache with the new target_rentability values
+      queryClient.setQueryData(['financialRecords', clientId], (oldData: FinancialRecord[] | undefined) => {
+        if (!oldData) return [];
+        
+        return oldData.map(record => {
+          const update = result.updates.find(u => u.id === record.id);
+          if (update) {
+            return {
+              ...record,
+              target_rentability: update.target_rentability
+            };
+          }
+          return record;
+        });
+      });
       
-      if (result.count > 0) {
+      if (result.count > 0) {        
         toast({
           title: t('financialRecords.ipcaSyncSuccess', { 
             count: result.count,
