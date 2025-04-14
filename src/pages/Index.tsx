@@ -233,8 +233,8 @@ const Index = () => {
     }
 
     // Retorno sobre aportes
-    const totalContributions = processedRecords.financialRecords
-      .reduce((sum, record) => sum + (record.monthly_contribution || 0), 0);
+    const totalContributions = (processedRecords.financialRecords[processedRecords.financialRecords.length - 1]?.starting_balance || 0) +
+      processedRecords.financialRecords.reduce((sum, record) => sum + (record.monthly_contribution || 0), 0);
     const returnOnContributions = ((latest?.ending_balance || 0) - totalContributions) / totalContributions * 100;
     if (returnOnContributions > 0) {
       highlights.push({
@@ -314,7 +314,7 @@ const Index = () => {
     });
 
     // Retorna os 3 highlights com maiores valores
-    return highlights.sort((a, b) => b.value - a.value).slice(0, 3);
+    return highlights.sort(() => Math.random() - 0.5).slice(0, 3);
   }, [processedRecords.financialRecords, processedRecords.latestRecord, investmentPlan, t]);
 
   // Add these queries after the existing useQuery hooks
