@@ -238,14 +238,14 @@ const FinancialRecords = () => {
             user_id: clientId,
             record_year: parseInt(year),
             record_month: parseInt(month),
-            starting_balance: parseFloat(record.PatrimonioInicial.replace('R$ ', '').replace('.', '').replace(',', '.')),
-            monthly_contribution: record.Aporte ? parseFloat(record.Aporte.replace('R$ ', '').replace('.', '').replace(',', '.')) : 0,
-            ending_balance: parseFloat(record.PatrimonioFinal.replace('R$ ', '').replace('.', '').replace(',', '.')),
-            monthly_return_rate: parseFloat(record.RetornoPercentual.replace('%', '').replace(',', '.')),
-            target_rentability: parseFloat(record.RentabilidadeMeta.replace('%', '').replace(',', '.')),
+            starting_balance: parseFloat(record.PatrimonioInicial.replace('R$ ', '').replace(/\./g, '').replace(',', '.')),
+            monthly_contribution: record.Aporte ? parseFloat(record.Aporte.replace('R$ ', '').replace(/\./g, '').replace(',', '.')) : 0,
+            ending_balance: parseFloat(record.PatrimonioFinal.replace('R$ ', '').replace(/\./g, '').replace(',', '.')),
+            monthly_return_rate: parseFloat(record.RetornoPercentual.replace('%', '').replace(/\./g, '').replace(',', '.')),
+            target_rentability: parseFloat(record.RentabilidadeMeta.replace('%', '').replace(/\./g, '').replace(',', '.')),
             growth_percentage: null,
-            monthly_return: parseFloat(record.Retorno.replace('R$ ', '').replace('.', '').replace(',', '.')),
-            events_balance: record.Eventos ? parseFloat(record.Eventos.replace('R$ ', '').replace('.', '').replace(',', '.')) : null,
+            monthly_return: parseFloat(record.Retorno.replace('R$ ', '').replace(/\./g, '').replace(',', '.')),
+            events_balance: record.Eventos ? parseFloat(record.Eventos.replace('R$ ', '').replace(/\./g, '').replace(',', '.')) : null,
           };
           formattedRecord.growth_percentage = ((formattedRecord.ending_balance - formattedRecord.starting_balance) / formattedRecord.starting_balance) * 100;
 
