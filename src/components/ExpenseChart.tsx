@@ -1,6 +1,6 @@
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend, ReferenceLine, Label } from 'recharts';
 import { useTranslation } from "react-i18next";
-import { ChartDataPoint, FinancialRecord, Goal, ProjectedEvent, MonthNumber, InvestmentPlan } from '@/types/financial';
+import { ChartDataPoint, FinancialRecord, Goal, ProjectedEvent, MonthNumber, InvestmentPlan, Profile } from '@/types/financial';
 import { generateChartProjections, YearlyProjectionData } from '@/lib/chart-projections';
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
@@ -10,9 +10,6 @@ import { ChartPointDialog } from "@/components/chart/ChartPointDialog";
 import { TrendingUp, Car, Home, Plane, GraduationCap, User, AlertCircle, Calendar } from "lucide-react";
 import type { ViewBox } from 'recharts/types/util/types';
 import { CurrencyCode, formatCurrency, getCurrencySymbol } from "@/utils/currency";
-interface Profile {
-  birth_date: string;
-}
 
 interface ChartPoint {
   age: string;
