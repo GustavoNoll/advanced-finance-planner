@@ -96,7 +96,7 @@ export function generateProjectionData(
   const startYear = planStartDate.getFullYear();
   const startMonth = planStartDate.getMonth() + 1;
   
-  let currentBalance = initialRecords[0]?.ending_balance || 0;
+  let currentBalance = initialRecords[0]?.ending_balance || investmentPlan.initial_amount;
   let projectedBalance = investmentPlan.initial_amount;
   let currentMonthlyDeposit = investmentPlan.monthly_deposit;
   let currentMonthlyWithdrawal = investmentPlan.desired_income;
@@ -165,6 +165,7 @@ export function generateProjectionData(
           withdrawal: 0,
           balance: historicalRecord.ending_balance,
           planned_balance: projectedBalance,
+          goalsEventsImpact: 0,
           isHistorical: true,
           retirement: isRetirementAge,
           difference_from_planned_balance: historicalRecord.ending_balance - projectedBalance,
@@ -182,6 +183,7 @@ export function generateProjectionData(
           balance: 0,
           retirement: false,
           planned_balance: projectedBalance,
+          goalsEventsImpact: 0,
           isHistorical: false,
           effectiveRate: monthlyReturnRate,
           difference_from_planned_balance: projectedBalance - currentBalance,
