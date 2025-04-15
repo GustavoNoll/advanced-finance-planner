@@ -400,6 +400,10 @@ const Index = () => {
         projectedFuturePresentValue = monthBeforeRetirement?.balance || 0;
       }
 
+      console.log(
+        plannedFuturePresentValue,
+        projectedFuturePresentValue
+      )
       return processPlanProgressData(
         allFinancialRecords,
         investmentPlan,

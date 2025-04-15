@@ -66,6 +66,8 @@ type MonthlyValues = {
 };
 
 interface ProjectionResult {
+  projectedPresentValue: number;
+  plannedPresentValue: number;
   projectedFuturePresentValue: number;
   plannedFuturePresentValue: number;
   projectedMonthsToRetirement: number;
@@ -82,6 +84,8 @@ interface ProjectionResult {
 }
 
 export interface PlanProgressData {
+  projectedPresentValue: number;
+  plannedPresentValue: number;
   projectedFuturePresentValue: number;
   plannedFuturePresentValue: number;
   plannedMonths: number;
@@ -442,6 +446,8 @@ const financialCalculations = {
     const finalAgeDate = utils.createDateAtAge(birthDate, investmentPlan.final_age);
     const monthsDifference = utils.calculateMonthsBetweenDates(projectedRetirementDate, plannedRetirementDate);
     return {
+      projectedPresentValue,
+      plannedPresentValue,
       projectedFuturePresentValue,
       plannedFuturePresentValue,
       projectedMonthsToRetirement,
@@ -527,6 +533,8 @@ export function processPlanProgressData(
   }
 
   return {
+    projectedPresentValue: projections.projectedPresentValue,
+    plannedPresentValue: projections.plannedPresentValue,
     plannedFuturePresentValue: projections.plannedFuturePresentValue,
     projectedFuturePresentValue: projections.projectedFuturePresentValue,
     plannedMonths: projections.plannedMonthsToRetirement,
