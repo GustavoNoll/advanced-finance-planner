@@ -48,6 +48,7 @@ export interface InvestmentPlan {
   adjust_contribution_for_inflation: boolean;
   adjust_income_for_inflation: boolean;
   plan_initial_date: string;
+  plan_end_accumulation_date: string;
   created_at?: string;
   updated_at?: string;
   currency: 'BRL' | 'USD' | 'EUR';

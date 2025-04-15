@@ -61,6 +61,9 @@ export const ptBR = {
       }
     },
     form: {
+      selectAge: "Selecione a idade",
+      years: "anos",
+      planEndAccumulationDate: "Data de Encerramento do Plano",
       initialAmount: "Valor Inicial",
       planInitialDate: "Data de Início do Plano",
       initialAge: "Idade Inicial",
@@ -445,6 +448,8 @@ export const ptBR = {
       accumulatedReturn: "Retorno Acumulado",
       accumulatedCDIReturn: "Retorno CDI Acumulado",
       accumulatedIPCAReturn: "Retorno IPC-A Acumulado",
+      accumulatedUSCPIReturn: "Retorno CPI EUA Acumulado",
+      accumulatedEuroCPIReturn: "Retorno CPI Euro Acumulado",
       accumulatedTargetReturn: "Rentabilidade Alvo Acumulada",
       endBalance: "Saldo Final",
       contribution: "Contribuição",

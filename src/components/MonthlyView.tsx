@@ -4,7 +4,7 @@ import { useTranslation } from "react-i18next";
 import { useQuery } from "@tanstack/react-query";
 import { useState, useCallback, useMemo } from "react";
 import { toast } from "@/components/ui/use-toast";
-import { fetchCDIRates, fetchIPCARates } from '@/lib/bcb-api';
+import { fetchCDIRates, fetchIPCARates, fetchUSCPIRates, fetchEuroCPIRates } from '@/lib/bcb-api';
 import { ChevronDown, ChevronRight, Download, BarChart } from "lucide-react";
 import { generateProjectionData, YearlyProjectionData } from '@/lib/chart-projections';
 import React from "react";
@@ -72,7 +72,6 @@ export const MonthlyView = ({
   const { data: allCdiRates } = useQuery({
     queryKey: ['allCdiRates'],
     queryFn: async () => {
-      // Get the earliest and latest dates from all financial records
       const sortedRecords = [...allFinancialRecords].sort((a, b) => {
         if (a.record_year !== b.record_year) return a.record_year - b.record_year;
         return a.record_month - b.record_month;
@@ -100,6 +99,40 @@ export const MonthlyView = ({
       const endDate = `01/${lastRecord.record_month.toString().padStart(2, '0')}/${lastRecord.record_year}`;
       
       return fetchIPCARates(startDate, endDate);
+    },
+    enabled: Boolean(allFinancialRecords?.length),
+  });
+
+  const { data: allUsCpiRates } = useQuery({
+    queryKey: ['allUsCpiRates'],
+    queryFn: async () => {
+      const sortedRecords = [...allFinancialRecords].sort((a, b) => {
+        if (a.record_year !== b.record_year) return a.record_year - b.record_year;
+        return a.record_month - b.record_month;
+      });
+
+      const startDate = `01/${sortedRecords[0].record_month.toString().padStart(2, '0')}/${sortedRecords[0].record_year}`;
+      const lastRecord = sortedRecords[sortedRecords.length - 1];
+      const endDate = `01/${lastRecord.record_month.toString().padStart(2, '0')}/${lastRecord.record_year}`;
+      
+      return fetchUSCPIRates(startDate, endDate);
+    },
+    enabled: Boolean(allFinancialRecords?.length),
+  });
+
+  const { data: allEuroCpiRates } = useQuery({
+    queryKey: ['allEuroCpiRates'],
+    queryFn: async () => {
+      const sortedRecords = [...allFinancialRecords].sort((a, b) => {
+        if (a.record_year !== b.record_year) return a.record_year - b.record_year;
+        return a.record_month - b.record_month;
+      });
+
+      const startDate = `01/${sortedRecords[0].record_month.toString().padStart(2, '0')}/${sortedRecords[0].record_year}`;
+      const lastRecord = sortedRecords[sortedRecords.length - 1];
+      const endDate = `01/${lastRecord.record_month.toString().padStart(2, '0')}/${lastRecord.record_year}`;
+      
+      return fetchEuroCPIRates(startDate, endDate);
     },
     enabled: Boolean(allFinancialRecords?.length),
   });
@@ -253,6 +286,16 @@ export const MonthlyView = ({
         rate.date.getFullYear() === record.record_year
       )?.monthlyRate ?? 0;
 
+      const usCpiRate = allUsCpiRates?.find(rate => 
+        rate.date.getMonth() + 1 === record.record_month && 
+        rate.date.getFullYear() === record.record_year
+      )?.monthlyRate ?? 0;
+
+      const euroCpiRate = allEuroCpiRates?.find(rate => 
+        rate.date.getMonth() + 1 === record.record_month && 
+        rate.date.getFullYear() === record.record_year
+      )?.monthlyRate ?? 0;
+
       return {
         month: `${t(`monthlyView.table.months.${monthNames[record.record_month - 1].toLowerCase()}`)}/${record.record_year}`,
         balance: record.starting_balance,
@@ -262,16 +305,16 @@ export const MonthlyView = ({
         endBalance: record.ending_balance,
         targetRentability: record.target_rentability,
         cdiRate,
-        ipcaRate
+        ipcaRate,
+        usCpiRate,
+        euroCpiRate
       };
     }).reverse();
   };
 
   const calculateAccumulatedReturns = (data: ReturnType<typeof processRecordsForChart>) => {
     return data.map((record, index, array) => {
-      // Calculate the start index based on the timeWindow
       const startIndex = timeWindow === 0 ? 0 : Math.max(0, array.length - timeWindow);
-      // Only use data from the startIndex up to the current index
       const relevantData = array.slice(startIndex, index + 1);
       
       const accumulatedReturn = relevantData.reduce((acc, curr) => {
@@ -290,12 +333,22 @@ export const MonthlyView = ({
         return acc * (1 + curr.ipcaRate / 100);
       }, 1);
 
+      const accumulatedUSCPIReturn = relevantData.reduce((acc, curr) => {
+        return acc * (1 + curr.usCpiRate / 100);
+      }, 1);
+
+      const accumulatedEuroCPIReturn = relevantData.reduce((acc, curr) => {
+        return acc * (1 + curr.euroCpiRate / 100);
+      }, 1);
+
       return {
         ...record,
         accumulatedPercentage: ((accumulatedReturn - 1) * 100),
         accumulatedTargetRentability: ((accumulatedTargetReturn - 1) * 100),
         accumulatedCDIReturn: ((accumulatedCDIReturn - 1) * 100),
-        accumulatedIPCAReturn: ((accumulatedIPCAReturn - 1) * 100)
+        accumulatedIPCAReturn: ((accumulatedIPCAReturn - 1) * 100),
+        accumulatedUSCPIReturn: ((accumulatedUSCPIReturn - 1) * 100),
+        accumulatedEuroCPIReturn: ((accumulatedEuroCPIReturn - 1) * 100)
       };
     });
   };
@@ -384,6 +437,14 @@ export const MonthlyView = ({
                     <linearGradient id="colorIPCA" x1="0" y1="0" x2="1" y2="0">
                       <stop offset="0%" stopColor="#eab308" /> {/* yellow-500 */}
                       <stop offset="100%" stopColor="#facc15" /> {/* yellow-400 */}
+                    </linearGradient>
+                    <linearGradient id="colorUSCPI" x1="0" y1="0" x2="1" y2="0">
+                      <stop offset="0%" stopColor="#8b5cf6" /> {/* purple-500 */}
+                      <stop offset="100%" stopColor="#c4b5fd" /> {/* purple-400 */}
+                    </linearGradient>
+                    <linearGradient id="colorEuroCPI" x1="0" y1="0" x2="1" y2="0">
+                      <stop offset="0%" stopColor="#ec4899" /> {/* pink-500 */}
+                      <stop offset="100%" stopColor="#f472b6" /> {/* pink-400 */} 
                     </linearGradient>
                     <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
                       <feGaussianBlur in="SourceAlpha" stdDeviation="3" />
@@ -498,13 +559,14 @@ export const MonthlyView = ({
                     animationDuration={1000}
                     animationEasing="ease-in-out"
                   />
-                  <Line 
-                    type="monotone" 
-                    dataKey="accumulatedCDIReturn" 
-                    stroke="url(#colorCDI)"
-                    name={t('monthlyView.chart.accumulatedCDIReturn')}
-                    strokeWidth={3}
-                    dot={false}
+                  {investmentPlan?.currency === 'BRL' && (
+                    <Line 
+                      type="monotone" 
+                      dataKey="accumulatedCDIReturn" 
+                      stroke="url(#colorCDI)"
+                      name={t('monthlyView.chart.accumulatedCDIReturn')}
+                      strokeWidth={3}
+                      dot={false}
                     activeDot={{ 
                       r: 8, 
                       strokeWidth: 2,
@@ -514,24 +576,65 @@ export const MonthlyView = ({
                     }}
                     animationDuration={1000}
                     animationEasing="ease-in-out"
-                  />
-                  <Line 
-                    type="monotone" 
-                    dataKey="accumulatedIPCAReturn" 
-                    stroke="url(#colorIPCA)"
-                    name={t('monthlyView.chart.accumulatedIPCAReturn')}
-                    strokeWidth={3}
-                    dot={false}
-                    activeDot={{ 
-                      r: 8, 
-                      strokeWidth: 2,
-                      stroke: '#eab308',
-                      fill: 'white',
-                      filter: 'url(#shadow)'
-                    }}
-                    animationDuration={1000}
-                    animationEasing="ease-in-out"
-                  />
+                    />
+                  )}
+                  {investmentPlan?.currency === 'BRL' && (
+                    <Line 
+                      type="monotone" 
+                      dataKey="accumulatedIPCAReturn" 
+                      stroke="url(#colorIPCA)"
+                      name={t('monthlyView.chart.accumulatedIPCAReturn')}
+                      strokeWidth={3}
+                      dot={false}
+                      activeDot={{ 
+                        r: 8, 
+                        strokeWidth: 2,
+                        stroke: '#eab308',
+                        fill: 'white',
+                        filter: 'url(#shadow)'
+                      }}
+                      animationDuration={1000}
+                      animationEasing="ease-in-out"
+                    />
+                  )}
+                  {investmentPlan?.currency === 'USD' && (
+                    <Line 
+                      type="monotone" 
+                      dataKey="accumulatedUSCPIReturn" 
+                      stroke="url(#colorUSCPI)"
+                      name={t('monthlyView.chart.accumulatedUSCPIReturn')}
+                      strokeWidth={3}
+                      dot={false}
+                      activeDot={{ 
+                        r: 8, 
+                        strokeWidth: 2,
+                        stroke: '#8b5cf6',
+                        fill: 'white',
+                        filter: 'url(#shadow)'
+                      }}
+                      animationDuration={1000}
+                      animationEasing="ease-in-out"
+                    />
+                  )}
+                  {investmentPlan?.currency === 'EUR' && (
+                    <Line 
+                      type="monotone" 
+                      dataKey="accumulatedEuroCPIReturn" 
+                      stroke="url(#colorEuroCPI)"
+                      name={t('monthlyView.chart.accumulatedEuroCPIReturn')}
+                      strokeWidth={3}
+                      dot={false}
+                      activeDot={{ 
+                        r: 8, 
+                        strokeWidth: 2,
+                        stroke: '#ec4899',
+                        fill: 'white',
+                        filter: 'url(#shadow)'
+                      }}
+                      animationDuration={1000}
+                      animationEasing="ease-in-out"
+                    />
+                  )}
                   <Legend 
                     verticalAlign="bottom" 
                     align="center"

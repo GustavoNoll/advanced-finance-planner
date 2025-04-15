@@ -4,6 +4,7 @@ export type FormData = {
   initialAmount: string;
   plan_initial_date: string;
   finalAge: string;
+  planEndAccumulationDate: string;
   monthlyDeposit: string;
   desiredIncome: string;
   expectedReturn: string;
@@ -32,7 +33,7 @@ export const isCalculationReady = (data: FormData) => {
   return Boolean(
     data.initialAmount &&
     data.plan_initial_date &&
-    data.finalAge &&
+    (data.finalAge || data.planEndAccumulationDate) &&
     data.desiredIncome &&
     data.expectedReturn &&
     data.inflation
@@ -43,6 +44,7 @@ export const calculateFutureValues = (data: FormData, birthDate: Date): Calculat
   const initialAmount = parseFloat(data.initialAmount.replace(',', '.')) || 0;
   const planInitialDate = new Date(data.plan_initial_date);
   const finalAge = parseFloat(data.finalAge) || 0;
+  const planEndAccumulationDate = data.planEndAccumulationDate ? new Date(data.planEndAccumulationDate) : null;
   const desiredIncome = parseFloat(data.desiredIncome.replace(',', '.')) || 0;
   const expectedReturn = parseFloat(data.expectedReturn.replace(',', '.')) / 100;
   const monthlyDeposit = parseFloat(data.monthlyDeposit.replace(',', '.')) || 0;
@@ -77,7 +79,14 @@ export const calculateFutureValues = (data: FormData, birthDate: Date): Calculat
   const yearDiff = planStartDate.getFullYear() - birthDate.getFullYear();
   const monthDiff = planStartDate.getMonth() - birthDate.getMonth();
   const initialAge = yearDiff + (monthDiff / 12);
-  const monthsToRetirement = parseInt(((finalAge - initialAge) * 12).toFixed(0));
+  
+  let monthsToRetirement;
+  if (planEndAccumulationDate) {
+    monthsToRetirement = (planEndAccumulationDate.getFullYear() - planStartDate.getFullYear()) * 12 + 
+                        (planEndAccumulationDate.getMonth() - planStartDate.getMonth());
+  } else {
+    monthsToRetirement = parseInt(((finalAge - initialAge) * 12).toFixed(0));
+  }
   const endMoney = limitAge;
   const monthsToEndMoney = (endMoney - finalAge) * 12;
 
