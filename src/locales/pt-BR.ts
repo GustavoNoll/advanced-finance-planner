@@ -112,9 +112,6 @@ export const ptBR = {
         necessaryMonthlyDeposit: "Necessário para renda desejada"
       },
     },
-    edit: {
-      title: "Editar Plano de Investimento",
-    }
   },
   dashboard: {
     title: "Portfólio de Investimentos",
