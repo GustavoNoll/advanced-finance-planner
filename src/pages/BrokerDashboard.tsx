@@ -57,6 +57,35 @@ interface DashboardMetrics {
   actions: ActionMetrics;
 }
 
+const ClientActions = ({ clientId, onDelete }: { clientId: string; onDelete: (id: string) => void }) => {
+  const { t } = useTranslation();
+  const navigate = useNavigate();
+
+  return (
+    <div className="flex items-center gap-2">
+      <Button
+        variant="outline"
+        size="sm"
+        onClick={() => navigate(`/client/${clientId}`)}
+        className="flex items-center gap-2"
+      >
+        <Share2 className="h-4 w-4" />
+        {t('brokerDashboard.share')}
+      </Button>
+      
+      <Button
+        variant="destructive"
+        size="sm"
+        onClick={() => onDelete(clientId)}
+        className="flex items-center gap-2"
+      >
+        <Trash2 className="h-4 w-4" />
+        {t('common.delete')}
+      </Button>
+    </div>
+  );
+};
+
 /**
  * Main broker dashboard component that displays client metrics and management tools
  */
@@ -390,8 +419,9 @@ export const BrokerDashboard = () => {
             <div className="flex flex-wrap items-center gap-3">
               <Button 
                 variant="outline" 
+                size="default"
                 onClick={() => navigate(`/client-profile/${brokerProfile?.id}`)}
-                className="flex items-center gap-2 hover:bg-primary/5 transition-all duration-200 shadow-sm border-gray-200 hover:shadow-lg transition-all duration-200 px-6"
+                className="flex items-center gap-2 hover:bg-primary/5 transition-all duration-200"
               >
                 <div className="flex items-center gap-2">
                   <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center ring-2 ring-primary/20">
@@ -405,16 +435,19 @@ export const BrokerDashboard = () => {
               
               <Button 
                 variant="outline" 
+                size="default"
                 onClick={handleLogout}
-                className="flex items-center gap-2 hover:bg-red-50 hover:text-red-600 hover:border-red-200 transition-all duration-200 shadow-sm border-gray-200"
+                className="flex items-center gap-2 hover:bg-red-50 hover:text-red-600 hover:border-red-200 transition-all duration-200"
               >
                 <LogOut className="h-4 w-4" />
-                {t('common.logout', { defaultValue: 'Logout' })}
+                {t('common.logout')}
               </Button>
               
               <Button
+                variant="default"
+                size="default"
                 onClick={() => navigate('/create-client')}
-                className="flex items-center gap-2 bg-blue-500 hover:bg-blue-600 text-white shadow-md hover:shadow-lg transition-all duration-200 px-6"
+                className="flex items-center gap-2"
               >
                 <Plus className="h-4 w-4" />
                 {t('brokerDashboard.buttons.newClient')}

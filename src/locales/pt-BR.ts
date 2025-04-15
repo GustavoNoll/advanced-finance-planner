@@ -744,6 +744,7 @@ export const ptBR = {
     clientName: "Cliente: {{name}}",
     brokerName: "Corretor: {{name}}",
     enterEmail: "Digite seu e-mail",
+    email: "E-mail",
     errors: {
       invalidCredentials: "Credenciais inválidas",
       sessionExpired: "Sessão expirada",

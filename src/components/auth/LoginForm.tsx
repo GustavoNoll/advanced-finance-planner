@@ -7,10 +7,12 @@ import { useToast } from '@/components/ui/use-toast';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { Logo } from '@/components/ui/logo';
+import { Eye, EyeOff, Mail, Lock } from 'lucide-react';
 
 export const LoginForm = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
   const navigate = useNavigate();
@@ -65,45 +67,69 @@ export const LoginForm = () => {
   };
 
   return (
-    <div className="min-h-screen flex flex-col justify-center items-center bg-gradient-to-br from-slate-50 via-white to-blue-50/50">
-      <div className="flex flex-col items-center justify-center w-full h-full">
-      <Logo variant="full" />
-        <div className="h-1/2 flex items-center justify-center w-full">
-          <Card className="w-[400px]">
-            <CardHeader>
-              <CardTitle>{t('auth.login')}</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <form onSubmit={handleLogin} className="space-y-4">
-                <div className="space-y-2">
-                  <label htmlFor="email" className="text-sm font-medium">Email</label>
-                  <Input
-                    id="email"
-                    type="email"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    placeholder={t('auth.enterEmail')}
-                    required
-                  />
-                </div>
-                <div className="space-y-2">
-                  <label htmlFor="password" className="text-sm font-medium">{t('auth.password')}</label>
-                  <Input
-                    id="password"
-                    type="password"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    required
-                    placeholder={t('auth.enterPassword')}
-                  />
-                </div>
-                <Button type="submit" className="w-full" disabled={loading}>
-                  {loading ? t('common.loading') : t('auth.login')}
-                </Button>
-              </form>
-            </CardContent>
-          </Card>
-        </div>
+    <div className="min-h-screen flex flex-col justify-center items-center bg-gradient-to-br from-slate-50 via-white to-blue-50/50 p-4">
+      <div className="flex flex-col items-center justify-center w-full max-w-md">
+        <Logo variant="full" className="mb-8" />
+        <Card className="w-full shadow-lg border-0">
+          <CardHeader className="space-y-1">
+            <CardTitle className="text-2xl font-bold text-center">{t('auth.clientLogin')}</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <form onSubmit={handleLogin} className="space-y-6">
+              <div className="space-y-2">
+                <label htmlFor="email" className="text-sm font-medium text-gray-700">
+                  {t('auth.email')}
+                </label>
+                <Input
+                  id="email"
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder={t('auth.enterEmail')}
+                  required
+                  startIcon={<Mail className="h-5 w-5 text-gray-400" />}
+                />
+              </div>
+              <div className="space-y-2">
+                <label htmlFor="password" className="text-sm font-medium text-gray-700">
+                  {t('auth.password')}
+                </label>
+                <Input
+                  id="password"
+                  type={showPassword ? 'text' : 'password'}
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
+                  placeholder={t('auth.enterPassword')}
+                  startIcon={<Lock className="h-5 w-5 text-gray-400" />}
+                  endIcon={
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="text-gray-400 hover:text-gray-600 transition-colors"
+                    >
+                      {showPassword ? (
+                        <EyeOff className="h-5 w-5" />
+                      ) : (
+                        <Eye className="h-5 w-5" />
+                      )}
+                    </button>
+                  }
+                />
+              </div>
+              <Button 
+                type="submit" 
+                variant="default"
+                size="lg"
+                fullWidth
+                loading={loading}
+                className="mt-4"
+              >
+                {t('auth.login')}
+              </Button>
+            </form>
+          </CardContent>
+        </Card>
       </div>
     </div>
   );
