@@ -14,7 +14,7 @@ import Papa from 'papaparse';
 import { Spinner } from "@/components/ui/spinner";
 import { AddRecordForm } from "@/components/financial-records/AddRecordForm";
 import { FinancialRecord, InvestmentPlan } from "@/types/financial";
-import { fetchIPCARates } from "@/lib/bcb-api";
+import { fetchIPCARates, fetchUSCPIRates, fetchEuroCPIRates } from "@/lib/bcb-api";
 import { calculateCompoundedRates, yearlyReturnRateToMonthlyReturnRate } from "@/lib/financial-math";
 import { SuccessAnimation } from "@/components/ui/success-animation";
 import { formatCurrency, CurrencyCode, getCurrencySymbol } from "@/utils/currency";
@@ -386,45 +386,60 @@ const FinancialRecords = () => {
         // Format the date as DD/MM/YYYY (pt-BR format)
         const startDate = `01/${oldestRecord.record_month.toString().padStart(2, '0')}/${oldestRecord.record_year}`;
         
-        // Fetch IPCA rates from the oldest record to current date
-        const response = fetchIPCARates(startDate, new Date().toLocaleDateString('pt-BR', {
-          day: '2-digit',
-          month: '2-digit',
-          year: 'numeric'
-        }));
+        // Fetch appropriate CPI rates based on currency
+        let response;
+        if (investmentPlan?.currency === 'USD') {
+          response = fetchUSCPIRates(startDate, new Date().toLocaleDateString('pt-BR', {
+            day: '2-digit',
+            month: '2-digit',
+            year: 'numeric'
+          }));
+        } else if (investmentPlan?.currency === 'EUR') {
+          response = fetchEuroCPIRates(startDate, new Date().toLocaleDateString('pt-BR', {
+            day: '2-digit',
+            month: '2-digit',
+            year: 'numeric'
+          }));
+        } else {
+          response = fetchIPCARates(startDate, new Date().toLocaleDateString('pt-BR', {
+            day: '2-digit',
+            month: '2-digit',
+            year: 'numeric'
+          }));
+        }
         
-        // Create a map of IPCA rates by month/year for easier lookup
-        const ipcaRateMap = new Map();
+        // Create a map of CPI rates by month/year for easier lookup
+        const cpiRateMap = new Map();
         response.forEach(item => {
           const date = new Date(item.date);
           const year = date.getFullYear();
           const month = date.getMonth() + 1; // JavaScript months are 0-indexed
           const key = `${year}-${month}`;
-          ipcaRateMap.set(key, Number(item.monthlyRate));
+          cpiRateMap.set(key, Number(item.monthlyRate));
         });
         
-        // Prepare batch updates for each record that has a matching IPCA rate
+        // Prepare batch updates for each record that has a matching CPI rate
         const updates = [];
         let updatedCount = 0;
         
         for (const record of records) {
           const recordKey = `${record.record_year}-${record.record_month}`;
-          if (ipcaRateMap.has(recordKey)) {
-            const ipcaRate = ipcaRateMap.get(recordKey);
-            const parsedIpcaRate = ipcaRate;
-            const ipcaRateConverted = parseFloat((calculateCompoundedRates([parsedIpcaRate/100, yearlyReturnRateToMonthlyReturnRate(investmentPlan?.expected_return/100)]) * 100).toFixed(2));
+          if (cpiRateMap.has(recordKey)) {
+            const cpiRate = cpiRateMap.get(recordKey);
+            const parsedCpiRate = cpiRate;
+            const cpiRateConverted = parseFloat((calculateCompoundedRates([parsedCpiRate/100, yearlyReturnRateToMonthlyReturnRate(investmentPlan?.expected_return/100)]) * 100).toFixed(2));
             const parsedTargetRentability = parseFloat(record.target_rentability?.toFixed(2) || '0');
-            if (parsedTargetRentability !== ipcaRateConverted) {
+            if (parsedTargetRentability !== cpiRateConverted) {
               updates.push({
                 id: record.id,
-                target_rentability: ipcaRateConverted
+                target_rentability: cpiRateConverted
               });
               updatedCount++;
             }
           }
         }
         
-        // Update records with matching IPCA rates
+        // Update records with matching CPI rates
         if (updates.length > 0) {
           const updatedIds: string[] = [];
           // Process each update individually to ensure they are only updates
@@ -448,7 +463,7 @@ const FinancialRecords = () => {
           updates
         };
       } catch (error) {
-        console.error('Error syncing IPCA rates:', error);
+        console.error('Error syncing CPI rates:', error);
         throw error;
       }
     },
@@ -484,7 +499,7 @@ const FinancialRecords = () => {
       }
     },
     onError: (error) => {
-      console.error('Error syncing IPCA rates:', error);
+      console.error('Error syncing CPI rates:', error);
       toast({
         title: t('financialRecords.errors.ipcaSyncFailed'),
         variant: "destructive",
