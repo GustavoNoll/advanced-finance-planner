@@ -372,7 +372,7 @@ const Index = () => {
 
   // Add this before the return statement, after other useMemo hooks
   const projectionData = useMemo(() => {
-    if (!investmentPlan || !clientProfile || !allFinancialRecords) return null;
+    if (isInvestmentPlanLoading || isProfilesLoading || isFinancialRecordsLoading || isGoalsLoading) return null;
 
     return generateProjectionData(
       investmentPlan,
@@ -382,17 +382,28 @@ const Index = () => {
       goalsAndEvents?.events
     );
   }, [investmentPlan, clientProfile, allFinancialRecords, goalsAndEvents?.goals, goalsAndEvents?.events]);
+
   // Memoize plan progress data
   const planProgressData = useMemo(() => {
-    try {
-      if (!investmentPlan || !clientProfile || !projectionData) return {
+    // Só calcula após todos os dados estarem carregados
+    if (
+      isInvestmentPlanLoading ||
+      isProfilesLoading ||
+      isFinancialRecordsLoading ||
+      isGoalsLoading ||
+      !projectionData
+    ) {
+      return {
         plannedMonths: 0,
         projectedMonths: 0,
         monthsDifference: 0,
         plannedContribution: 0,
         projectedContribution: 0,
       };
+    }
+    try {
 
+      // debug
       console.log(projectionData)
 
       // Find the retirement month and get the previous month's data
