@@ -14,5 +14,9 @@ fi
 # Executa o script TypeScript
 echo "🔄 Buscando dados do BCB..."
 npx tsx fetch-indicators.ts
+echo "🔄 Buscando dados do FRED..."
+npx tsx fetch-us-indicators.ts
+echo "🔄 Buscando dados do ECB..."
+npx tsx fetch-euro-indicators.ts
 
 echo "✅ Dados atualizados com sucesso!" 
