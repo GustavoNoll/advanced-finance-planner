@@ -1,5 +1,9 @@
 import { writeFile } from 'fs/promises';
 import path from 'path';
+import dotenv from 'dotenv';
+
+// Load environment variables from .env file
+dotenv.config();
 
 interface BCBResponse {
   data: string;
@@ -15,7 +19,10 @@ interface FredResponse {
   observations: FredObservation[];
 }
 
-const FRED_API_KEY = '846a66a2118140d3613feb646fb36fd2';
+const FRED_API_KEY = process.env.FRED_API_KEY;
+if (!FRED_API_KEY) {
+  throw new Error('FRED_API_KEY environment variable is not set');
+}
 
 type USIndicator = 'us-cpi' | 'us-rate';
 
