@@ -324,28 +324,26 @@ const financialCalculations = {
     let referenceDate;
     
     const planStartDate = new Date(investmentPlan.plan_initial_date);
-    const yearDiff = planStartDate.getFullYear() - birthDate.getFullYear();
-    const monthDiff = planStartDate.getMonth() - birthDate.getMonth();
-    const initialAge = yearDiff + (monthDiff / 12);
-    const monthsToRetirementSinceStart = (investmentPlan.final_age - initialAge) * 12;
+    const planEndDate = new Date(investmentPlan.plan_end_accumulation_date);
+    const finalAgeDate = planEndDate;
+    const monthsToRetirementSinceStart = utils.calculateMonthsBetweenDates(planStartDate, planEndDate);
     monthsToRetirementSinceNow = monthsToRetirementSinceStart;
     const plannedMonths = monthsToRetirementSinceStart;
     if (actualMonth === 0 && actualYear === 0) {
       referenceDate = new Date(investmentPlan.plan_initial_date);
     } else {
       referenceDate = new Date(actualYear, actualMonth - 1);
-      const finalAgeDate = utils.createDateAtAge(birthDate, investmentPlan.final_age);
-      finalAgeDate.setDate(birthDate.getDate());
+
       
       // Calculate difference in months
-      const yearDiff = finalAgeDate.getFullYear() - referenceDate.getFullYear();
-      const monthDiff = finalAgeDate.getMonth() - referenceDate.getMonth();
+      const yearDiff = planEndDate.getFullYear() - referenceDate.getFullYear();
+      const monthDiff = planEndDate.getMonth() - referenceDate.getMonth();
       monthsToRetirementSinceNow = (yearDiff * 12) + monthDiff;
       
       // Adjust for partial days of month
-      if (finalAgeDate.getDate() < referenceDate.getDate()) {
+      if (planEndDate.getDate() < referenceDate.getDate()) {
         monthsToRetirementSinceNow--;
-      }
+      } 
     }
 
     const { preRetirementHash, postRetirementHash } = financialCalculations.generatePreCalculationHash(
@@ -367,7 +365,9 @@ const financialCalculations = {
     // Get plan parameters
     const adjustContributionForInflation = investmentPlan.adjust_contribution_for_inflation;
     const contribution = -investmentPlan.monthly_deposit;
-    const monthsRetired = (investmentPlan.limit_age - investmentPlan.final_age) * 12;
+    
+    const limitAgeDate = utils.createDateAtAge(birthDate, investmentPlan.limit_age || 100);
+    const monthsRetired = utils.calculateMonthsBetweenDates(planEndDate, limitAgeDate);
     
     // Calculate effective rate based on inflation adjustment setting
     const effectiveRate = adjustContributionForInflation ? monthlyExpectedReturn : calculateCompoundedRates([monthlyExpectedReturn, realMonthlyInflation]);
@@ -443,7 +443,6 @@ const financialCalculations = {
     // Calculate dates and differences
     const projectedRetirementDate = utils.addMonthsToDate(planStartDate, projectedMonthsToRetirement);
     const plannedRetirementDate = utils.addMonthsToDate(planStartDate, plannedMonthsToRetirement);
-    const finalAgeDate = utils.createDateAtAge(birthDate, investmentPlan.final_age);
     const monthsDifference = utils.calculateMonthsBetweenDates(projectedRetirementDate, plannedRetirementDate);
     return {
       projectedPresentValue,

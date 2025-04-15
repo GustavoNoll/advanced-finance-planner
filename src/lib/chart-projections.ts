@@ -1,21 +1,6 @@
 import { yearlyReturnRateToMonthlyReturnRate, calculateCompoundedRates } from './financial-math';
-import { ChartDataPoint, FinancialRecord, Goal, MonthNumber, ProjectedEvent } from '@/types/financial';
-import { fetchIPCARates } from './bcb-api';
+import { ChartDataPoint, FinancialRecord, Goal, InvestmentPlan, MonthNumber, ProjectedEvent } from '@/types/financial';
 import { createIPCARatesMap } from './inflation-utils';
-
-interface InvestmentPlan {
-  initial_amount: number;
-  monthly_deposit: number;
-  expected_return: number;
-  inflation: number;
-  plan_initial_date: string;
-  final_age: number;
-  desired_income: number;
-  adjust_contribution_for_inflation: boolean;
-  adjust_income_for_inflation: boolean;
-  plan_type: string;
-  limit_age?: number;
-}
 
 interface DataPoint {
   age: string;
@@ -44,6 +29,7 @@ interface MonthlyProjectionData {
   difference_from_planned_balance: number;
   ipcaRate: number;
   effectiveRate: number;
+  accumulatedInflation: number;
 }
 
 export interface YearlyProjectionData {
@@ -107,7 +93,7 @@ export function generateProjectionData(
   let accumulatedInflation = 1;
   
   // Create a map of IPCA rates by year and month for easy lookup
-  const endDate = new Date(startYear + yearsUntilEnd, 11, 31); // December 31st of the last year
+  const endDate = new Date(investmentPlan.plan_end_accumulation_date);
   const adjustedPlanStartDate = new Date(planStartDate);
   adjustedPlanStartDate.setMonth(adjustedPlanStartDate.getMonth() - 1);
   const ipcaRatesMap = createIPCARatesMap(adjustedPlanStartDate, endDate);
@@ -132,8 +118,8 @@ export function generateProjectionData(
         return null;
       }
 
-      const isRetirementAge = age > investmentPlan.final_age || 
-        (age === investmentPlan.final_age && currentMonthNumber >= birthMonth + 1);
+      const isRetirementAge = year > endDate.getFullYear() ||
+        (year === endDate.getFullYear() && currentMonthNumber >= endDate.getMonth() + 2);
 
       // Get the IPCA rate for this month if available, otherwise use the default
       const ipcaKey = `${year}-${currentMonthNumber}`;
@@ -170,7 +156,8 @@ export function generateProjectionData(
           retirement: isRetirementAge,
           difference_from_planned_balance: historicalRecord.ending_balance - projectedBalance,
           effectiveRate: monthlyReturnRate,
-          ipcaRate: monthlyInflationRate
+          ipcaRate: monthlyInflationRate,
+          accumulatedInflation: accumulatedInflation
         };
       }
 
@@ -187,7 +174,8 @@ export function generateProjectionData(
           isHistorical: false,
           effectiveRate: monthlyReturnRate,
           difference_from_planned_balance: projectedBalance - currentBalance,
-          ipcaRate: monthlyInflationRate
+          ipcaRate: monthlyInflationRate,
+          accumulatedInflation: accumulatedInflation
         };
       }
 
@@ -222,7 +210,8 @@ export function generateProjectionData(
           goalsEventsImpact,
           retirement: isRetirementAge,
           effectiveRate: monthlyReturnRate,
-          ipcaRate: monthlyInflationRate
+          ipcaRate: monthlyInflationRate,
+          accumulatedInflation: accumulatedInflation
         };
       }
 
@@ -240,7 +229,8 @@ export function generateProjectionData(
         retirement: false,
         monthlyReturnRate,
         ipcaRate: monthlyInflationRate,
-        effectiveRate: monthlyReturnRate
+        effectiveRate: monthlyReturnRate,
+        accumulatedInflation: accumulatedInflation
       };
     }).filter(Boolean) as MonthlyProjectionData[];
 
