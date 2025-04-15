@@ -84,14 +84,39 @@ async function fetchEcbData(indicator: EuroIndicator): Promise<BCBResponse[]> {
     }
 
     const data = series['0:0:0:0:0:0']?.observations ?? {};
-    return Object.entries(data).map(([index, [valor]]) => {
+    const rawData = Object.entries(data).map(([index, [valor]]) => {
       const date = structure[parseInt(index, 10)]?.id; // yyyy-mm
       const [year, month] = date.split('-');
       return {
         data: `01/${month}/${year}`,
-        valor: parseFloat(String(valor)).toFixed(2),
+        valor: parseFloat(String(valor)),
       };
     });
+
+    // For CPI, calculate period-over-period change
+    if (indicator === 'euro-cpi') {
+      return rawData.map((current, index) => {
+        if (index === 0) {
+          return {
+            data: current.data,
+            valor: '0.00', // First period has no change
+          };
+        }
+
+        const previous = rawData[index - 1];
+        const change = ((current.valor / previous.valor) - 1) * 100;
+        return {
+          data: current.data,
+          valor: change.toFixed(2),
+        };
+      });
+    }
+
+    // For other indicators, just format the value
+    return rawData.map(item => ({
+      ...item,
+      valor: item.valor.toFixed(2),
+    }));
   } catch (error) {
     console.error(`❌ Error processing ECB data for ${indicatorUrls[indicator].name}:`, error);
     throw error;
@@ -110,7 +135,6 @@ async function saveEuroIndicator(indicator: EuroIndicator): Promise<void> {
 
 async function main() {
   await saveEuroIndicator('euro-cpi');
-  await saveEuroIndicator('euro-rate');
 }
 
 main().catch(console.error);

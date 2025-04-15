@@ -40,13 +40,38 @@ async function fetchFredData(indicator: USIndicator): Promise<BCBResponse[]> {
   const response = await fetch(url);
   const json: FredResponse = await response.json();
 
-  return json.observations.map((entry) => {
+  const observations = json.observations.map((entry) => {
     const [year, month, day] = entry.date.split('-');
     return {
       data: `${day}/${month}/${year}`,
-      valor: parseFloat(entry.value).toFixed(2),
+      valor: parseFloat(entry.value),
     };
   });
+
+  // For CPI, calculate period-over-period change
+  if (indicator === 'us-cpi') {
+    return observations.map((current, index) => {
+      if (index === 0) {
+        return {
+          data: current.data,
+          valor: '0.00', // First period has no change
+        };
+      }
+
+      const previous = observations[index - 1];
+      const change = ((current.valor / previous.valor) - 1) * 100;
+      return {
+        data: current.data,
+        valor: change.toFixed(2),
+      };
+    });
+  }
+
+  // For other indicators, keep original format
+  return observations.map(entry => ({
+    data: entry.data,
+    valor: entry.valor.toFixed(2),
+  }));
 }
 
 /**
@@ -61,7 +86,6 @@ async function saveUSIndicator(indicator: USIndicator): Promise<void> {
 
 async function main() {
   await saveUSIndicator('us-cpi');
-  await saveUSIndicator('us-rate');
 }
 
 main().catch(console.error); 
