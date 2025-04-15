@@ -143,7 +143,7 @@ export function InvestmentPlanDetails({ investmentPlan, birthDate, onPlanUpdated
   ];
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-2">
       <div className="flex justify-between items-center">
         <h3 className="text-sm font-semibold text-gray-900 flex items-center gap-2">
           <CalendarDays className="h-4 w-4 text-blue-600" />
