@@ -144,7 +144,7 @@ const FinancialRecords = () => {
       
       const { data, error } = await supabase
         .from('investment_plans')
-        .select('monthly_deposit, expected_return, currency')
+        .select('monthly_deposit, expected_return, currency, plan_initial_date, initial_amount, inflation')
         .eq('user_id', clientId)
         .single();
 
