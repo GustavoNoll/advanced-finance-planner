@@ -385,7 +385,7 @@ const Index = () => {
   // Memoize plan progress data
   const planProgressData = useMemo(() => {
     try {
-      if (!investmentPlan || !clientProfile) return {
+      if (!investmentPlan || !clientProfile || !projectionData) return {
         plannedMonths: 0,
         projectedMonths: 0,
         monthsDifference: 0,
