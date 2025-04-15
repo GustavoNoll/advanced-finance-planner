@@ -145,6 +145,14 @@ export const InvestmentPlanShow = () => {
                 </p>
               </div>
               <div>
+                <p className="text-sm text-gray-500">{t('investmentPlan.form.planEndAccumulationDate')}</p>
+                <p className="font-medium">
+                  {plan.plan_end_accumulation_date
+                    ? new Date(plan.plan_end_accumulation_date).toLocaleDateString('pt-BR')
+                    : "-"}
+                </p>
+              </div>
+              <div>
                 <p className="text-sm text-gray-500">{t('investmentPlan.details.clientInfo.finalAge')}</p>
                 <p className="font-medium">{plan.final_age} {t('investmentPlan.details.clientInfo.years')}</p>
               </div>

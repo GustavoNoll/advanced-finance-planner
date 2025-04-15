@@ -61,6 +61,9 @@ export const ptBR = {
       }
     },
     form: {
+      selectAge: "Selecione a idade",
+      years: "anos",
+      planEndAccumulationDate: "Data de Encerramento do Plano",
       initialAmount: "Valor Inicial",
       planInitialDate: "Data de Início do Plano",
       initialAge: "Idade Inicial",

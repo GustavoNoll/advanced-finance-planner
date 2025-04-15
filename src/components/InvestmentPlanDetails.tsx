@@ -67,14 +67,14 @@ export function InvestmentPlanDetails({ investmentPlan, birthDate, onPlanUpdated
 
   const calculatePlanDuration = () => {
     const planStartDate = new Date(investmentPlan.plan_initial_date);
-    const finalAgeDate = calculateDate(investmentPlan.final_age);
+    const planEndDate = new Date(investmentPlan.plan_end_accumulation_date);
     
-    if (!isValid(planStartDate) || !finalAgeDate) {
+    if (!isValid(planStartDate) || !planEndDate) {
       return 0;
     }
 
-    const months = (finalAgeDate.getFullYear() - planStartDate.getFullYear()) * 12 + 
-                  (finalAgeDate.getMonth() - planStartDate.getMonth());
+    const months = (planEndDate.getFullYear() - planStartDate.getFullYear()) * 12 + 
+                  (planEndDate.getMonth() - planStartDate.getMonth());
     return months;
   };
 
@@ -107,7 +107,7 @@ export function InvestmentPlanDetails({ investmentPlan, birthDate, onPlanUpdated
     {
       icon: <CalendarDays className="h-4 w-4 text-blue-600" />,
       label: t('dashboard.investmentPlan.finalAge'),
-      value: `${investmentPlan.final_age} ${t('dashboard.investmentPlan.years')} (${formatDate(calculateDate(investmentPlan.final_age))})`,
+      value: `${investmentPlan.final_age} ${t('dashboard.investmentPlan.years')} (${formatDate(new Date(investmentPlan.plan_end_accumulation_date))})`,
       color: "text-blue-600"
     },
     {

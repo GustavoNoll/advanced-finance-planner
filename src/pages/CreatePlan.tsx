@@ -27,6 +27,7 @@ export const CreatePlan = () => {
     initialAmount: "",
     plan_initial_date: new Date().toISOString().split('T')[0],
     finalAge: "",
+    planEndAccumulationDate: "",
     monthlyDeposit: "",
     desiredIncome: "",
     expectedReturn: RISK_PROFILES[1].return,
@@ -51,6 +52,10 @@ export const CreatePlan = () => {
 
   // Add new state for tracking which row is expanded
   const [expandedRow, setExpandedRow] = useState<string | null>(null);
+
+  // Add new state for tracking if the finalAge and plan_end_accumulation_date are being synced
+  const [isSyncing, setIsSyncing] = useState(false);
+  const [updateSource, setUpdateSource] = useState<'age' | 'date' | null>(null);
 
   // Add useEffect to calculate values on mount
   useEffect(() => {
@@ -106,6 +111,7 @@ export const CreatePlan = () => {
 
         if (error) throw error;
 
+
         if (data?.birth_date) {
           const birthDate = new Date(data.birth_date);
           setBirthDate(birthDate);
@@ -140,6 +146,41 @@ export const CreatePlan = () => {
     fetchProfileAndSetDate();
   }, [clientId, toast]);
 
+  // Update useEffect to sync finalAge and plan_end_accumulation_date
+  useEffect(() => {
+    if (birthDate && !isSyncing) {
+      const birthDateObj = new Date(birthDate);
+      
+      // If finalAge changes, update plan_end_accumulation_date
+      if (formData.finalAge) {
+        setIsSyncing(true);
+        const finalAge = parseInt(formData.finalAge);
+        const endDate = new Date(birthDateObj);
+        endDate.setFullYear(birthDateObj.getFullYear() + finalAge);
+        setFormData(prev => ({
+          ...prev,
+          planEndAccumulationDate: endDate.toISOString().split('T')[0]
+        }));
+        setIsSyncing(false);
+      }
+      
+      // If plan_end_accumulation_date changes, update finalAge
+      if (formData.planEndAccumulationDate) {
+        setIsSyncing(true);
+        const endDate = new Date(formData.planEndAccumulationDate);
+        const age = endDate.getFullYear() - birthDateObj.getFullYear();
+        const monthDiff = endDate.getMonth() - birthDateObj.getMonth();
+        const finalAge = monthDiff < 0 ? age - 1 : age;
+        
+        setFormData(prev => ({
+          ...prev,
+          finalAge: finalAge.toString()
+        }));
+        setIsSyncing(false);
+      }
+    }
+  }, [formData.finalAge, formData.planEndAccumulationDate, birthDate]);
+
   // Modify handleChange to update calculations when form values change
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
@@ -171,6 +212,67 @@ export const CreatePlan = () => {
     });
   };
 
+  const handleAgeDateChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+    const { name, value } = e.target;
+    if (!birthDate || isSyncing) return;
+
+    const birthDateObj = new Date(birthDate);
+    
+    if (name === 'finalAge') {
+      setIsSyncing(true);
+      setUpdateSource('age');
+      
+      setFormData(prev => ({
+        ...prev,
+        finalAge: value
+      }));
+
+      const finalAge = parseInt(value);
+      const endDate = new Date(birthDateObj);
+      endDate.setFullYear(birthDateObj.getFullYear() + finalAge);
+      setFormData(prev => ({
+        ...prev,
+        planEndAccumulationDate: endDate.toISOString().split('T')[0]
+      }));
+
+      setTimeout(() => {
+        setIsSyncing(false);
+        setUpdateSource(null);
+      }, 0);
+    } else if (name === 'planEndAccumulationDate') {
+      if (updateSource === 'age') return;
+      
+      setIsSyncing(true);
+      setUpdateSource('date');
+      
+      setFormData(prev => ({
+        ...prev,
+          planEndAccumulationDate: value
+      }));
+
+      if (!value || isNaN(new Date(value).getTime())) {
+        setIsSyncing(false);
+        setUpdateSource(null);
+        return;
+      }
+
+      const endDate = new Date(value);
+      const age = endDate.getFullYear() - birthDateObj.getFullYear();
+      const monthDiff = endDate.getMonth() - birthDateObj.getMonth();
+      const finalAge = monthDiff < 0 ? age - 1 : age;
+      
+      setFormData(prev => ({
+        ...prev,
+        finalAge: finalAge.toString()
+      }));
+
+      setTimeout(() => {
+        setIsSyncing(false);
+        setUpdateSource(null);
+      }, 0);
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!birthDate) {
@@ -189,12 +291,15 @@ export const CreatePlan = () => {
       // Adjust the date to prevent UTC offset
       const adjustedDate = new Date(formData.plan_initial_date);
       adjustedDate.setDate(adjustedDate.getDate() + 1);
+      const adjustedEndDate = new Date(formData.planEndAccumulationDate);
+      adjustedEndDate.setDate(adjustedEndDate.getDate() + 1);
       
       const { error } = await supabase.from("investment_plans").insert([
         {
           user_id: clientId,
           initial_amount: parseFloat(formData.initialAmount),
           plan_initial_date: adjustedDate.toISOString().split('T')[0],
+          plan_end_accumulation_date: adjustedEndDate.toISOString().split('T')[0],
           final_age: parseInt(formData.finalAge),
           monthly_deposit: parseFloat(formData.monthlyDeposit),
           desired_income: parseFloat(formData.desiredIncome),
@@ -314,15 +419,37 @@ export const CreatePlan = () => {
                   <label className="text-sm font-medium text-gray-700">
                     {t('investmentPlan.form.finalAge')}
                   </label>
-                  <Input
-                    type="number"
-                    name="finalAge"
-                    value={formData.finalAge}
-                    onChange={handleChange}
-                    placeholder="65"
-                    required
-                    className="h-10"
-                  />
+                  <div className="flex gap-2">
+                    <select
+                      name="finalAge"
+                      value={formData.finalAge}
+                      onChange={handleAgeDateChange}
+                      className="h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                      required
+                    >
+                      <option value="">{t('investmentPlan.form.selectAge')}</option>
+                      {birthDate && Array.from({ length: 121 - (new Date().getFullYear() - new Date(birthDate).getFullYear()) }, (_, i) => {
+                        const currentAge = new Date().getFullYear() - new Date(birthDate).getFullYear();
+                        const monthDiff = new Date().getMonth() - new Date(birthDate).getMonth();
+                        const adjustedCurrentAge = monthDiff < 0 ? currentAge - 1 : currentAge;
+                        const age = adjustedCurrentAge + i;
+                        return (
+                          <option key={age} value={age}>
+                            {age} {t('investmentPlan.form.years')}
+                          </option>
+                        );
+                      })}
+                    </select>
+                    <Input
+                      type="date"
+                      name="planEndAccumulationDate"
+                      value={formData.planEndAccumulationDate}
+                      onChange={handleAgeDateChange}
+                      min={formData.plan_initial_date}
+                      className="h-10"
+                    />
+                  </div>
+
                 </div>
 
                 <div className="space-y-2">
