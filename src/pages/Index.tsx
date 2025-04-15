@@ -385,17 +385,26 @@ const Index = () => {
   // Memoize plan progress data
   const planProgressData = useMemo(() => {
     try {
+      if (!investmentPlan || !clientProfile) return {
+        plannedMonths: 0,
+        projectedMonths: 0,
+        monthsDifference: 0,
+        plannedContribution: 0,
+        projectedContribution: 0,
+      };
+
+      console.log(projectionData)
 
       // Find the retirement month and get the previous month's data
-      const retirementYear = projectionData.find(year => year.age === investmentPlan.final_age);
-      const retirementMonthIndex = retirementYear?.months?.findIndex(month => month.retirement);
-      
+      const retirementDate = new Date(investmentPlan.plan_end_accumulation_date); 
+      const retirementYear = projectionData.find(year => year.year === retirementDate.getFullYear());
+      const retirementMonthIndex = retirementYear?.months?.findIndex(month => month.month === retirementDate.getMonth() + 1);
       let plannedFuturePresentValue = 0;
       let projectedFuturePresentValue = 0;
 
       if (retirementYear && retirementMonthIndex !== undefined && retirementMonthIndex > 0) {
         // Get the month before retirement
-        const monthBeforeRetirement = retirementYear.months[retirementMonthIndex - 1];
+        const monthBeforeRetirement = retirementYear.months[retirementMonthIndex];
         plannedFuturePresentValue = monthBeforeRetirement?.planned_balance || 0;
         projectedFuturePresentValue = monthBeforeRetirement?.balance || 0;
       }

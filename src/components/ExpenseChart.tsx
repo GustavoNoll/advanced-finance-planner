@@ -465,6 +465,9 @@ export const ExpenseChart = ({
 
     const monthName = new Date(0, goal.month - 1).toLocaleString('pt-BR', { month: 'long' })
 
+
+    console.log(projectionData)
+
     return (
       <g 
         transform={`translate(${x}, ${y})`}
