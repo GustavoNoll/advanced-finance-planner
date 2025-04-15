@@ -25,6 +25,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { Logo } from '@/components/ui/logo';
 import { InvestmentPlanDetails } from "@/components/InvestmentPlanDetails";
 import { formatCurrency, CurrencyCode } from "@/utils/currency";
+import { EditPlanModal } from "@/components/EditPlanModal";
 type TimePeriod = 'all' | '6m' | '12m' | '24m';
 
 const Index = () => {
@@ -35,6 +36,7 @@ const Index = () => {
   const { t } = useTranslation();
   const [selectedPeriod, setSelectedPeriod] = useState<TimePeriod>('all');
   const [contributionPeriod, setContributionPeriod] = useState<TimePeriod>('all');
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const queryClient = useQueryClient();
 
   const handleLogout = useCallback(async () => {
@@ -500,6 +502,12 @@ const Index = () => {
     });
   };
 
+  const handlePlanUpdated = useCallback(() => {
+    queryClient.invalidateQueries({ queryKey: ['investmentPlan', clientId] });
+    queryClient.invalidateQueries({ queryKey: ['allFinancialRecords', clientId] });
+    queryClient.invalidateQueries({ queryKey: ['goalsAndEvents', clientId] });
+  }, [queryClient, clientId]);
+
   if (isInvestmentPlanLoading || isProfilesLoading || isFinancialRecordsLoading || isGoalsLoading || (!investmentPlan && !brokerProfile)) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -873,6 +881,8 @@ const Index = () => {
             <InvestmentPlanDetails 
               investmentPlan={investmentPlan}
               birthDate={clientProfile?.birth_date}
+              onPlanUpdated={handlePlanUpdated}
+              onEditClick={() => setIsEditModalOpen(true)}
             />
           </DashboardCard>
         </div>
@@ -894,6 +904,17 @@ const Index = () => {
           )}
         </section>
       </main>
+      {isEditModalOpen && investmentPlan && clientProfile?.birth_date && (
+        <EditPlanModal
+          investmentPlan={investmentPlan}
+          birthDate={clientProfile.birth_date}
+          onClose={() => setIsEditModalOpen(false)}
+          onSuccess={() => {
+            setIsEditModalOpen(false);
+            handlePlanUpdated();
+          }}
+        />
+      )}
     </div>
   );
 };

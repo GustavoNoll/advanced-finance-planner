@@ -9,6 +9,10 @@ export const ptBR = {
     day: "20"
   },
   investmentPlan: {
+    edit: {
+      title: "Editar Plano de Investimento",
+      success: "Plano de investimento atualizado com sucesso",
+    },
     messages: {
       notFound: {
         title: "Plano de investimento não encontrado",
@@ -63,6 +67,7 @@ export const ptBR = {
       finalAge: "Idade Final",
       monthlyDeposit: "Depósito Mensal",
       desiredIncome: "Renda Mensal Desejada",
+      lifeExpectancy: "Expectativa de Vida",
       riskProfile: "Perfil de Risco / Retorno IPCA+",
       inflationRate: "Taxa de Inflação Anual (%)",
       planType: "Tipo do Plano",
