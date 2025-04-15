@@ -42,6 +42,7 @@ const ComparisonRow = ({
   t
 }: ComparisonRowProps) => {
   const difference = Math.round(projected) - Math.round(planned);
+  const isEqual = difference === 0;
   const isPositive = difference >= 0;
   const isGood = isHigherBetter ? isPositive : !isPositive;
   
@@ -60,19 +61,21 @@ const ComparisonRow = ({
         </div>
         <div className="text-right space-y-1">
           <p className="text-sm text-gray-500">{t('dashboard.planProgress.projected')}:</p>
-          <p className={`text-lg font-semibold ${isGood ? 'text-emerald-600' : 'text-rose-600'}`}>
+          <p className={`text-lg font-semibold ${isEqual ? 'text-gray-900' : isGood ? 'text-emerald-600' : 'text-rose-600'}`}>
             {isCurrency 
               ? formatCurrency(projected, currency as CurrencyCode)
               : `${Math.round(projected)} ${t('common.months')}`
             }
-            <span className={`text-xs ml-1.5 px-1.5 py-0.5 rounded-full ${isGood ? 'bg-emerald-50' : 'bg-rose-50'}`}>
-              {isPositive ? '+' : '-'}
-              {isCurrency 
-                ? formatCurrency(Math.abs(difference), currency as CurrencyCode)
-                : Math.abs(difference)
-              }
-              {!isCurrency && ` ${t('common.months')}`}
-            </span>
+            {!isEqual && (
+              <span className={`text-xs ml-1.5 px-1.5 py-0.5 rounded-full ${isGood ? 'bg-emerald-50' : 'bg-rose-50'}`}>
+                {isPositive ? '+' : '-'}
+                {isCurrency 
+                  ? formatCurrency(Math.abs(difference), currency as CurrencyCode)
+                  : Math.abs(difference)
+                }
+                {!isCurrency && ` ${t('common.months')}`}
+              </span>
+            )}
           </p>
         </div>
       </div>

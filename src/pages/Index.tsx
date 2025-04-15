@@ -385,9 +385,6 @@ const Index = () => {
   // Memoize plan progress data
   const planProgressData = useMemo(() => {
     try {
-      if (!allFinancialRecords?.length || !investmentPlan || !clientProfile?.birth_date || !projectionData) {
-        return null;
-      }
 
       // Find the retirement month and get the previous month's data
       const retirementYear = projectionData.find(year => year.age === investmentPlan.final_age);
