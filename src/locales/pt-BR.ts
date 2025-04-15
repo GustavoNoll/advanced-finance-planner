@@ -545,10 +545,15 @@ export const ptBR = {
       behindScheduleMonths: "Atrasado em {{months}} meses"
     },
     goal: {
-      goalPresentValue: "Meta: {{value}}",
-      goalFutureValue: "Meta (Valor Futuro): {{value}}",
+      meta: "Meta",
+      planned: "Planejado",
+      projected: "Projetado",
+      goalPresentValue: "Meta",
+      goalFutureValue: "Meta (Valor Futuro)",
+      plannedFutureValue: "Planejado (Valor Futuro)",
+      projectedFutureValue: "Projetado (Valor Futuro)",
       targetAge: "Idade Alvo: {{age}} anos",
-      projectedValue: "Valor Projetado: {{value}}"
+      projectedValue: "Projetado (Valor Projetado)"
     },
     ageNotAvailable: "Idade projetada não disponível",
     metaNotAchieved: "Meta não será atingida na idade projetada"

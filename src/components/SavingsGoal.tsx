@@ -11,6 +11,7 @@ import {
   HoverCardTrigger,
 } from "@/components/ui/hover-card";
 import { CurrencyCode, formatCurrency } from "@/utils/currency";
+
 interface SavingsGoalProps {
   allFinancialRecords: FinancialRecord[];
   investmentPlan?: InvestmentPlan;
@@ -25,6 +26,16 @@ interface ProjectedAgeResult {
   months: number;
   isAheadOfSchedule: boolean;
   monthsDifference: number;
+}
+
+interface ComparisonRowProps {
+  title: string;
+  planned: number;
+  projected: number;
+  isCurrency?: boolean;
+  isHigherBetter?: boolean;
+  t: (key: string) => string;
+  currency: string;
 }
 
 export const SavingsGoal = ({ allFinancialRecords, investmentPlan, profile, planProgressData }: SavingsGoalProps) => {
@@ -118,7 +129,9 @@ export const SavingsGoal = ({ allFinancialRecords, investmentPlan, profile, plan
                 {t('savingsGoal.returnRate', { value: returnRate })}
               </span>
             </div>
+          </div>
 
+          <div className="space-y-4">
             <div className={`flex items-start gap-2 ${
               typeof projectedAge !== 'string' && projectedAge.isAheadOfSchedule ? 'text-emerald-600' : 'text-rose-600'
             }`}>
@@ -161,33 +174,61 @@ export const SavingsGoal = ({ allFinancialRecords, investmentPlan, profile, plan
                     </span>
                   )}
                 </span>
+                <span className="text-xs text-gray-500">
+                  {t('savingsGoal.goal.targetAge', { age: finalAge })}
+                </span>
               </div>
             </div>
           </div>
+        </div>
 
-          <div className="space-y-4">
-            <div>
-              <span className="block text-xl font-semibold text-gray-800">
-                {t('savingsGoal.goal.goalPresentValue', { 
-                  value: formatCurrency(presentFutureValue, investmentPlan?.currency as CurrencyCode)
-                })}
-              </span>
-              <span className="text-sm text-gray-500">
-                {t('savingsGoal.goal.goalFutureValue', { 
-                  value: formatCurrency(investmentGoal, investmentPlan?.currency as CurrencyCode)
-                })}
-              </span>
+        <div className="space-y-4">
+          <div className="bg-white/50 rounded-lg p-3 transition-all duration-200 hover:bg-white/80 hover:shadow-md">
+            <div className="flex flex-col">
+              <div className="flex justify-between items-center mb-1">
+                <h3 className="text-xs font-medium text-gray-600">{t('savingsGoal.goal.goalPresentValue')}</h3>
+                <p className="text-sm font-semibold text-blue-700">
+                  {formatCurrency(presentFutureValue, investmentPlan?.currency as CurrencyCode)}
+                </p>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-xs text-gray-500">{t('savingsGoal.goal.goalFutureValue')}</span>
+                <p className="text-xs font-medium text-gray-600">
+                  {formatCurrency(investmentGoal, investmentPlan?.currency as CurrencyCode)}
+                </p>
+              </div>
             </div>
-
-            <div className="bg-gray-50/50 rounded-lg p-3">
-              <p className="text-sm font-medium text-gray-700">
-                {t('savingsGoal.goal.projectedValue', { 
-                  value: formatCurrency(planProgressData?.projectedFuturePresentValue ?? 0, investmentPlan?.currency as CurrencyCode)
-                })}
-              </p>
-              <span className="text-sm text-gray-500">
-                {t('savingsGoal.goal.targetAge', { age: finalAge })}
-              </span>
+          </div>
+          <div className="bg-white/50 rounded-lg p-3 transition-all duration-200 hover:bg-white/80 hover:shadow-md">
+            <div className="flex flex-col">
+              <div className="flex justify-between items-center mb-1">
+                <h3 className="text-xs font-medium text-gray-600">{t('savingsGoal.goal.planned')}</h3>
+                <p className="text-sm font-semibold text-blue-700">
+                  {formatCurrency(planProgressData?.plannedPresentValue ?? 0, investmentPlan?.currency as CurrencyCode)}
+                </p>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-xs text-gray-500">{t('savingsGoal.goal.plannedFutureValue')}</span>
+                <p className="text-xs font-medium text-gray-600">
+                  {formatCurrency(planProgressData?.plannedFuturePresentValue ?? 0, investmentPlan?.currency as CurrencyCode)}
+                </p>
+              </div>
+            </div>
+          </div>
+          <div className="bg-white/50 rounded-lg p-3 transition-all duration-200 hover:bg-white/80 hover:shadow-md">
+            <div className="flex flex-col">
+              <div className="flex justify-between items-center mb-1">
+                <h3 className="text-xs font-medium text-gray-600">{t('savingsGoal.goal.projected')}</h3>
+                <p className="text-sm font-semibold text-blue-700">
+                  {formatCurrency(planProgressData?.projectedPresentValue ?? 0, investmentPlan?.currency as CurrencyCode)}
+                </p>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-xs text-gray-500">{t('savingsGoal.goal.projectedFutureValue')}</span>
+                <p className="text-xs font-medium text-gray-600">
+                  {formatCurrency(planProgressData?.projectedFuturePresentValue ?? 0, investmentPlan?.currency as CurrencyCode)}
+                </p>
+              </div>
             </div>
           </div>
         </div>
