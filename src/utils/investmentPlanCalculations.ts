@@ -13,6 +13,7 @@ export type FormData = {
   adjustIncomeForInflation: boolean;
   limitAge: string;
   legacyAmount: string;
+  currency: 'BRL' | 'USD' | 'EUR';
 };
 
 export type Calculations = {

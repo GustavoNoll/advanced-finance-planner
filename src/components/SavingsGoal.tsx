@@ -10,7 +10,7 @@ import {
   HoverCardContent,
   HoverCardTrigger,
 } from "@/components/ui/hover-card";
-
+import { CurrencyCode, formatCurrency } from "@/utils/currency";
 interface SavingsGoalProps {
   allFinancialRecords: FinancialRecord[];
   investmentPlan?: InvestmentPlan;
@@ -29,13 +29,6 @@ interface ProjectedAgeResult {
 
 export const SavingsGoal = ({ allFinancialRecords, investmentPlan, profile, planProgressData }: SavingsGoalProps) => {
   const { t } = useTranslation();
-  
-  const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat('pt-BR', {
-      style: 'currency',
-      currency: 'BRL'
-    }).format(value);
-  };
 
   const lastFinancialRecord = useMemo(() => {
     if (!allFinancialRecords.length) return null;
@@ -117,7 +110,7 @@ export const SavingsGoal = ({ allFinancialRecords, investmentPlan, profile, plan
             <div>
               <span className="block text-xl font-semibold bg-gradient-to-r from-blue-600 via-indigo-600 to-slate-700 bg-clip-text text-transparent drop-shadow-sm">
                 {t('savingsGoal.currentValue', { 
-                  value: formatCurrency(currentInvestment)
+                  value: formatCurrency(currentInvestment, investmentPlan?.currency as CurrencyCode)
                 })}
               </span>
               <span className="text-gray-500 flex items-center gap-1.5 mt-1">
@@ -176,12 +169,12 @@ export const SavingsGoal = ({ allFinancialRecords, investmentPlan, profile, plan
             <div>
               <span className="block text-xl font-semibold text-gray-800">
                 {t('savingsGoal.goal.goalPresentValue', { 
-                  value: formatCurrency(presentFutureValue)
+                  value: formatCurrency(presentFutureValue, investmentPlan?.currency as CurrencyCode)
                 })}
               </span>
               <span className="text-sm text-gray-500">
                 {t('savingsGoal.goal.goalFutureValue', { 
-                  value: formatCurrency(investmentGoal)
+                  value: formatCurrency(investmentGoal, investmentPlan?.currency as CurrencyCode)
                 })}
               </span>
             </div>
@@ -189,7 +182,7 @@ export const SavingsGoal = ({ allFinancialRecords, investmentPlan, profile, plan
             <div className="bg-gray-50/50 rounded-lg p-3">
               <p className="text-sm font-medium text-gray-700">
                 {t('savingsGoal.goal.projectedValue', { 
-                  value: formatCurrency(planProgressData?.projectedFuturePresentValue ?? 0)
+                  value: formatCurrency(planProgressData?.projectedFuturePresentValue ?? 0, investmentPlan?.currency as CurrencyCode)
                 })}
               </p>
               <span className="text-sm text-gray-500">

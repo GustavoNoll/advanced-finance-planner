@@ -13,6 +13,7 @@ import {
 } from "@/components/ui/form";
 import CurrencyInput from 'react-currency-input-field';
 import { goalIcons } from "@/constants/goals";
+import { CurrencyCode, getCurrencySymbol } from "@/utils/currency";
 
 const formSchema = z.object({
   icon: z.enum(Object.keys(goalIcons) as [string, ...string[]]),
@@ -44,9 +45,10 @@ interface GoalFormProps {
   onCancel: () => void;
   initialValues?: Partial<z.infer<typeof formSchema>>;
   isSubmitting?: boolean;
+  currency: CurrencyCode;
 }
 
-export const GoalForm = ({ onSubmit, onCancel, initialValues, isSubmitting = false }: GoalFormProps) => {
+export const GoalForm = ({ onSubmit, onCancel, initialValues, isSubmitting = false, currency }: GoalFormProps) => {
   const { t } = useTranslation();
   
   const form = useForm<z.infer<typeof formSchema>>({
@@ -102,7 +104,7 @@ export const GoalForm = ({ onSubmit, onCancel, initialValues, isSubmitting = fal
                     className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
                     value={field.value}
                     onValueChange={(value) => field.onChange(value)}
-                    prefix="R$ "
+                    prefix={getCurrencySymbol(currency as CurrencyCode)}
                     groupSeparator="."
                     decimalSeparator=","
                     decimalsLimit={2}
@@ -132,7 +134,7 @@ export const GoalForm = ({ onSubmit, onCancel, initialValues, isSubmitting = fal
                         const month = (i + 1).toString().padStart(2, '0');
                         return (
                           <option key={month} value={month}>
-                            {new Date(2000, i).toLocaleDateString(navigator.language, { month: 'long' })}
+                            {t('monthlyView.table.months.' + new Date(2000, parseInt(month) - 1).toLocaleString('en-US', { month: 'long' }).toLowerCase() )}
                           </option>
                         );
                       })}

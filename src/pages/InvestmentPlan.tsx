@@ -9,6 +9,8 @@ import { RISK_PROFILES } from '@/constants/riskProfiles';
 import { Spinner } from "@/components/ui/spinner";
 import { useTranslation } from "react-i18next";
 import { useAuth } from "@/components/auth/AuthProvider";
+import { formatCurrency } from "@/utils/currency";
+import { CurrencyCode } from "@/utils/currency";
 
 export const InvestmentPlanShow = () => {
   const { id } = useParams();
@@ -154,15 +156,13 @@ export const InvestmentPlanShow = () => {
               <div>
                 <p className="text-sm text-gray-500">{t('investmentPlan.details.planOverview.initialAmount')}</p>
                 <p className="font-medium">
-                  {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' })
-                    .format(plan.initial_amount)}
+                  {formatCurrency(plan.initial_amount, plan.currency as CurrencyCode)}
                 </p>
               </div>
               <div>
                 <p className="text-sm text-gray-500">{t('investmentPlan.details.planOverview.monthlyDeposit')}</p>
                 <p className="font-medium">
-                  {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' })
-                    .format(plan.monthly_deposit)}
+                  {formatCurrency(plan.monthly_deposit, plan.currency as CurrencyCode)}
                 </p>
               </div>
               <div>
@@ -187,29 +187,25 @@ export const InvestmentPlanShow = () => {
               <div>
                 <p className="text-sm text-gray-500">{t('investmentPlan.details.financialGoals.desiredMonthlyIncome')}</p>
                 <p className="font-medium">
-                  {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' })
-                    .format(plan.desired_income)}
+                  {formatCurrency(plan.desired_income, plan.currency as CurrencyCode)}
                 </p>
               </div>
               <div>
                 <p className="text-sm text-gray-500">{t('investmentPlan.details.financialGoals.inflationAdjustedIncome')}</p>
                 <p className="font-medium">
-                  {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' })
-                    .format(plan.inflation_adjusted_income)}
+                  {formatCurrency(plan.inflation_adjusted_income, plan.currency as CurrencyCode)}
                 </p>
               </div>
               <div>
                 <p className="text-sm text-gray-500">{t('investmentPlan.details.financialGoals.presentFutureValue')}</p>
                 <p className="font-medium">
-                  {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' })
-                    .format(plan.present_future_value)}
+                  {formatCurrency(plan.present_future_value, plan.currency as CurrencyCode)}
                 </p>
               </div>
               <div>
                 <p className="text-sm text-gray-500">{t('investmentPlan.details.financialGoals.futureValue')}</p>
                 <p className="font-medium">
-                  {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' })
-                    .format(plan.future_value)}
+                  {formatCurrency(plan.future_value, plan.currency as CurrencyCode)}
                 </p>
               </div>
             </div>
@@ -255,8 +251,7 @@ export const InvestmentPlanShow = () => {
                     <div>
                       <p className="text-sm text-gray-500">{t('investmentPlan.form.legacyAmount')}</p>
                       <p className="font-medium">
-                        {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' })
-                          .format(plan.legacy_amount)}
+                        {formatCurrency(plan.legacy_amount, plan.currency as CurrencyCode)}
                       </p>
                     </div>
                   )}

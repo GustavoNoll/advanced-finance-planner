@@ -1,4 +1,3 @@
-
 create table public.profiles (
   id uuid not null,
   is_broker boolean null default false,
@@ -29,6 +28,7 @@ create table public.investment_plans (
   adjust_income_for_inflation boolean not null default false,
   plan_initial_date date not null,
   status character varying(20) null default 'active'::character varying,
+  currency character varying(3) not null default 'BRL'::character varying,
   constraint investment_plans_pkey primary key (id),
   constraint investment_plans_user_id_fkey foreign KEY (user_id) references auth.users (id),
   constraint check_plan_type check (
@@ -70,6 +70,19 @@ create table public.investment_plans (
       and (monthly_deposit >= (0)::numeric)
       and (desired_income >= (0)::numeric)
     )
+  ),
+  constraint check_currency check (
+    (
+      (currency)::text = any (
+        (
+          array[
+            'BRL'::character varying,
+            'USD'::character varying,
+            'EUR'::character varying
+          ]
+        )::text[]
+      )
+    )
   )
 ) TABLESPACE pg_default;
 
@@ -99,3 +112,26 @@ create table public.user_financial_records (
     )
   )
 ) TABLESPACE pg_default;
+
+-- Add currency column to investment_plans table
+ALTER TABLE public.investment_plans 
+ADD COLUMN currency character varying(3) NOT NULL DEFAULT 'BRL'::character varying;
+
+-- Add check constraint for valid currency values
+ALTER TABLE public.investment_plans
+ADD CONSTRAINT check_currency CHECK (
+  (currency)::text = any (
+    (
+      array[
+        'BRL'::character varying,
+        'USD'::character varying,
+        'EUR'::character varying
+      ]
+    )::text[]
+  )
+);
+
+-- Update all existing records to BRL
+UPDATE public.investment_plans 
+SET currency = 'BRL' 
+WHERE currency IS NULL;

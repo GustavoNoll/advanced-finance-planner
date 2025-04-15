@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useParams, Link } from "react-router-dom";
+import { useParams, Link, useLocation } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
 import { Button } from "@/components/ui/button";
@@ -22,7 +22,7 @@ import { useTranslation } from "react-i18next";
 import { GoalCard } from '@/components/financial-goals/GoalCard';
 import { goalIcons } from "@/constants/goals";
 import CurrencyInput from 'react-currency-input-field';
-
+import { CurrencyCode, getCurrencySymbol } from "@/utils/currency";
 
 const formSchema = z.object({
   icon: z.enum(Object.keys(goalIcons) as [string, ...string[]]),
@@ -52,6 +52,8 @@ const formSchema = z.object({
 
 const FinancialGoals = () => {
   const { id: userId } = useParams();
+  const location = useLocation();
+  const [currency, setCurrency] = useState<CurrencyCode | null>(location.state?.currency || null);
   const { toast } = useToast();
   const { t } = useTranslation();
   const queryClient = useQueryClient();
@@ -143,20 +145,6 @@ const FinancialGoals = () => {
     },
   });
 
-  const toggleGoalStatus = useMutation({
-    mutationFn: async ({ goalId, status }: { goalId: string; status: 'pending' | 'completed' }) => {
-      const { error } = await supabase
-        .from("financial_goals")
-        .update({ status })
-        .eq("id", goalId);
-
-      if (error) throw error;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["financial-goals"] });
-    },
-  });
-
   if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -208,7 +196,7 @@ const FinancialGoals = () => {
                       className="flex h-12 w-full rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
                       value={field.value}
                       onValueChange={(value) => field.onChange(value)}
-                      prefix="R$ "
+                      prefix={getCurrencySymbol(currency as CurrencyCode)}
                       groupSeparator="."
                       decimalSeparator=","
                       decimalsLimit={2}
@@ -396,6 +384,7 @@ const FinancialGoals = () => {
               <GoalCard
                 key={goal.id}
                 goal={goal}
+                currency={currency as CurrencyCode}
                 onDelete={() => {
                   if (window.confirm(t("common.confirmDelete"))) {
                     deleteGoal.mutate(goal.id);
@@ -420,6 +409,7 @@ const FinancialGoals = () => {
                   <GoalCard
                     key={goal.id}
                     goal={goal}
+                    currency={currency as CurrencyCode}
                     onDelete={() => {
                       if (window.confirm(t("common.confirmDelete"))) {
                         deleteGoal.mutate(goal.id);

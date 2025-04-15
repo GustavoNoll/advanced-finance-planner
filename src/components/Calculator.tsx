@@ -1,12 +1,9 @@
 import { useTranslation } from "react-i18next";
 import { Info, Calculator as CalculatorIcon } from "lucide-react";
-import {
-  HoverCard,
-  HoverCardContent,
-  HoverCardTrigger,
-} from "@/components/ui/hover-card";
 import { PlanProgressData } from "@/lib/plan-progress";
 import { DashboardCard } from "./DashboardCard";
+import { InvestmentPlan } from "@/types/financial";
+import { formatCurrency, CurrencyCode} from '@/utils/currency';
 
 /**
  * Props for the PlanProgress component
@@ -14,19 +11,10 @@ import { DashboardCard } from "./DashboardCard";
 interface PlanProgressProps {
   /** Processed plan progress data */
   data: PlanProgressData;
+  /** Investment plan data */
+  investmentPlan: InvestmentPlan;
 }
 
-/**
- * Formats a currency value in BRL format
- * @param value - The value to format
- * @returns Formatted currency string
- */
-function formatCurrency(value: number): string {
-  return new Intl.NumberFormat('pt-BR', {
-    style: 'currency',
-    currency: 'BRL'
-  }).format(value);
-}
 
 /**
  * Component to display comparison between planned and projected values
@@ -38,6 +26,7 @@ interface ComparisonRowProps {
   isCurrency?: boolean;
   isHigherBetter?: boolean;
   t: (key: string) => string;
+  currency: string;
 }
 
 /**
@@ -49,6 +38,7 @@ const ComparisonRow = ({
   projected, 
   isCurrency = true, 
   isHigherBetter = false,
+  currency,
   t
 }: ComparisonRowProps) => {
   const difference = Math.round(projected) - Math.round(planned);
@@ -63,7 +53,7 @@ const ComparisonRow = ({
           <p className="text-sm text-gray-500">{t('dashboard.planProgress.planned')}:</p>
           <p className="text-lg font-semibold text-blue-700">
             {isCurrency 
-              ? formatCurrency(planned)
+              ? formatCurrency(planned, currency as CurrencyCode)
               : `${planned.toFixed(0)} ${t('common.months')}`
             }
           </p>
@@ -72,13 +62,13 @@ const ComparisonRow = ({
           <p className="text-sm text-gray-500">{t('dashboard.planProgress.projected')}:</p>
           <p className={`text-lg font-semibold ${isGood ? 'text-emerald-600' : 'text-rose-600'}`}>
             {isCurrency 
-              ? formatCurrency(projected)
+              ? formatCurrency(projected, currency as CurrencyCode)
               : `${Math.round(projected)} ${t('common.months')}`
             }
             <span className={`text-xs ml-1.5 px-1.5 py-0.5 rounded-full ${isGood ? 'bg-emerald-50' : 'bg-rose-50'}`}>
               {isPositive ? '+' : '-'}
               {isCurrency 
-                ? formatCurrency(Math.abs(difference))
+                ? formatCurrency(Math.abs(difference), currency as CurrencyCode)
                 : Math.abs(difference)
               }
               {!isCurrency && ` ${t('common.months')}`}
@@ -93,7 +83,7 @@ const ComparisonRow = ({
 /**
  * Component that displays the progress of a financial plan
  */
-export const Calculator = ({ data }: PlanProgressProps) => {
+export const Calculator = ({ data, investmentPlan }: PlanProgressProps) => {
   const { t } = useTranslation();
 
   return (
@@ -109,6 +99,7 @@ export const Calculator = ({ data }: PlanProgressProps) => {
           isCurrency={false}
           isHigherBetter={false}
           t={t}
+          currency={investmentPlan.currency}
         />
 
         <div className="space-y-4">
@@ -119,6 +110,7 @@ export const Calculator = ({ data }: PlanProgressProps) => {
             isCurrency={true}
             isHigherBetter={false}
             t={t}
+            currency={investmentPlan.currency}
           />
 
           <ComparisonRow
@@ -128,6 +120,7 @@ export const Calculator = ({ data }: PlanProgressProps) => {
             isCurrency={true}
             isHigherBetter={true}
             t={t}
+            currency={investmentPlan.currency}
           />
         </div>
       </div>
