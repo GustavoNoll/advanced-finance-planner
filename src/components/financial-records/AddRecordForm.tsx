@@ -35,12 +35,21 @@ const formSchema = z.object({
     goals: z.array(z.string()),
     events: z.array(z.string())
   })
-}).refine((data) => {
+})
+.refine((data) => {
   const currentDate = new Date();
   const recordDate = new Date(data.record_year, data.record_month - 1);
   return recordDate <= currentDate;
 }, {
   message: "Não é possível adicionar registros para datas futuras",
+  path: ["record_month", "record_year"],
+})
+.refine((data) => {
+  // investmentPlan.plan_initial_date está disponível no escopo do componente, mas não aqui.
+  // Então, a validação precisa ser feita no handleSubmit/onSubmit, ou passar a data inicial como parâmetro do schema.
+  return true; // Placeholder, será ajustado no componente.
+}, {
+  message: "Não é possível adicionar registros para datas anteriores ao início do plano",
   path: ["record_month", "record_year"],
 });
 
@@ -144,12 +153,6 @@ export const AddRecordForm = ({ clientId, onSuccess, editingRecord, investmentPl
             .limit(1)
             .single();
 
-          const { data: investmentPlan } = await supabase
-            .from('investment_plans')
-            .select('initial_amount, inflation')
-            .eq('user_id', clientId)
-            .single();
-
           const startingBalance = lastRecord?.ending_balance || investmentPlan?.initial_amount || 0;
           form.setValue('starting_balance', startingBalance);
 
@@ -202,6 +205,23 @@ export const AddRecordForm = ({ clientId, onSuccess, editingRecord, investmentPl
       form.setValue('events_balance', newItems.totalValue);
       return newItems;
     });
+  };
+
+
+  const handleSubmit = (values: z.infer<typeof formSchema>) => {
+    const recordDate = new Date(values.record_year, values.record_month - 1);
+    // Garante que planInitialDate sempre será o dia 1 do mês/ano
+    const planInitialDateRaw = new Date(investmentPlan.plan_initial_date);
+    const planInitialDate = new Date(planInitialDateRaw.getFullYear(), planInitialDateRaw.getMonth(), 1);
+    if (recordDate < planInitialDate) {
+      toast({
+        title: t('financialRecords.errors.beforePlanInitialDate'),
+        description: t('financialRecords.errors.beforePlanInitialDateDescription', { date: planInitialDate.toLocaleDateString() }),
+        variant: "destructive",
+      });
+      return;
+    }
+    onSubmit(values);
   };
 
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
@@ -302,7 +322,7 @@ export const AddRecordForm = ({ clientId, onSuccess, editingRecord, investmentPl
   };
 
   const renderFormFields = () => (
-    <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+    <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div className="space-y-4">
           <h3 className="text-lg font-medium text-gray-900">{t('financialRecords.form.basicInfo')}</h3>
@@ -314,7 +334,12 @@ export const AddRecordForm = ({ clientId, onSuccess, editingRecord, investmentPl
               render={({ field }) => (
                 <FormItem>
                   <FormLabel className="text-sm font-medium text-gray-700">{t('financialRecords.form.month')}</FormLabel>
-                  <select className="w-full h-12 px-4 py-2 text-sm rounded-lg border border-gray-200 bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors appearance-none bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjQiIGhlaWdodD0iMjQiIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cGF0aCBkPSJNNiA5TDEyIDE1TDE4IDkiIHN0cm9rZT0iIzYxNjE2MSIgc3Ryb2tlLXdpZHRoPSIyIiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiLz48L3N2Zz4=')] bg-no-repeat bg-[right_1rem_center]">
+                  <select
+                    {...field}
+                    value={field.value}
+                    onChange={e => field.onChange(Number(e.target.value))}
+                    className="w-full h-12 px-4 py-2 text-sm rounded-lg border border-gray-200 bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors appearance-none bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjQiIGhlaWdodD0iMjQiIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cGF0aCBkPSJNNiA5TDEyIDE1TDE4IDkiIHN0cm9rZT0iIzYxNjE2MSIgc3Ryb2tlLXdpZHRoPSIyIiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiLz48L3N2Zz4=')] bg-no-repeat bg-[right_1rem_center]"
+                  >
                     <option value="">{t('common.select')}</option>
                     <option value="1">{t('date.months.january')}</option>
                     <option value="2">{t('date.months.february')}</option>

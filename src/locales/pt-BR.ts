@@ -623,7 +623,9 @@ export const ptBR = {
       importFailed: "Erro ao importar registros",
       resetFailed: "Erro ao resetar registros",
       invalidFormat: "Formato de arquivo inválido",
-      emptyFields: "Por favor, preencha todos os campos obrigatórios" 
+      emptyFields: "Por favor, preencha todos os campos obrigatórios",
+      beforePlanInitialDate: "Data anterior ao início do plano",
+      beforePlanInitialDateDescription: "O registro não pode ser criado antes de {{date}} (data inicial do plano)."
     },
     success: {
       updated: "Registro financeiro atualizado com sucesso",

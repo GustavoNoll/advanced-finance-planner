@@ -26,6 +26,14 @@ export interface ChartDataPoint {
   realValue?: number;
 }
 
+export interface Profile {
+  id: string;
+  user_id: string;
+  name: string;
+  birth_date: string;
+}
+
+
 export type CreateFinancialRecord = Omit<FinancialRecord, 'id' | 'created_at' | 'updated_at'>;
 
 export type UpdateFinancialRecord = Partial<CreateFinancialRecord>;

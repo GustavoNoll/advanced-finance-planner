@@ -8,7 +8,7 @@ import { fetchCDIRates, fetchIPCARates, fetchUSCPIRates, fetchEuroCPIRates } fro
 import { ChevronDown, ChevronRight, Download, BarChart } from "lucide-react";
 import { generateProjectionData, YearlyProjectionData } from '@/lib/chart-projections';
 import React from "react";
-import { FinancialRecord, InvestmentPlan, Goal, ProjectedEvent } from '@/types/financial';
+import { FinancialRecord, InvestmentPlan, Goal, ProjectedEvent, Profile } from '@/types/financial';
 import { supabase } from "@/lib/supabase";
 import { CartesianGrid, Line, Tooltip, LineChart as RechartsLineChart, XAxis, YAxis, Legend } from "recharts";
 import { ResponsiveContainer } from "recharts";
@@ -27,9 +27,7 @@ export const MonthlyView = ({
   initialRecords: FinancialRecord[];
   allFinancialRecords: FinancialRecord[];
   investmentPlan: InvestmentPlan;
-  profile: {
-    birth_date: string;
-  };
+  profile: Profile;
   projectionData?: YearlyProjectionData[];
 }) => {
   const { t } = useTranslation();
@@ -243,12 +241,15 @@ export const MonthlyView = ({
         });
       }
 
+      const clientName = profile?.name ? profile.name.replace(/\s+/g, '_').toLowerCase() : filename;
+      const dateStr = new Date().toISOString().split('T')[0];
+      const csvFileName = `${clientName}_${dateStr}.csv`;
       const csvContent = [headers.join(','), ...rows.map(row => row.join(','))].join('\n');
       const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
       const link = document.createElement('a');
       const url = URL.createObjectURL(blob);
       link.setAttribute('href', url);
-      link.setAttribute('download', `${filename}_${new Date().toISOString().split('T')[0]}.csv`);
+      link.setAttribute('download', csvFileName);
       link.style.visibility = 'hidden';
       document.body.appendChild(link);
       link.click();
