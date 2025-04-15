@@ -174,50 +174,76 @@ export const MonthlyView = ({
 
   const downloadCSV = async (data: typeof localizedData | typeof projectionData, filename: string) => {
     try {
-      // Create CSV headers based on the data type
-      const headers = data === localizedData ? [
-        t('monthlyView.table.headers.month'),
-        t('monthlyView.table.headers.initialBalance'),
-        t('monthlyView.table.headers.contribution'),
-        t('monthlyView.table.headers.returns'),
-        t('monthlyView.table.headers.returnPercentage'),
-        t('monthlyView.table.headers.endBalance'),
-        t('monthlyView.table.headers.targetRentability')
-      ] : [
-        t('monthlyView.futureProjection.age'),
-        t('monthlyView.futureProjection.year'),
-        t('monthlyView.futureProjection.cashFlow'),
-        t('monthlyView.futureProjection.goalsEventsImpact'),
-        t('monthlyView.futureProjection.balance'),
-        t('monthlyView.futureProjection.projectedBalance'),
-        t('monthlyView.futureProjection.ipcaRate'),
-        t('monthlyView.futureProjection.effectiveRate')
-      ].join(',');
+      let headers: string[]
+      let rows: string[][]
 
-      // Process records for CSV
-      const processedData = data === localizedData ? data.map(record => [
-        record.month,
-        record.balance.toString(),
-        record.contribution.toString(),
-        record.return.toString(),
-        `${record.percentage.toFixed(2)}%`,
-        record.endBalance.toString(),
-        `${record.targetRentability.toFixed(2)}%`
-      ]) : data.map(record => [
-        record.age,
-        record.year,
-        record.contribution > 0 ? `+${record.contribution}` : record.withdrawal > 0 ? `-${record.withdrawal}` : '-',
-        record.goalsEventsImpact,
-        record.balance,
-        record.planned_balance,
-        `${(record.ipcaRate * 100).toFixed(2)}%`,
-        `${(record.effectiveRate * 100).toFixed(2)}%`
-      ]);
+      if (data === localizedData) {
+        headers = [
+          t('monthlyView.table.headers.month'),
+          t('monthlyView.table.headers.initialBalance'),
+          t('monthlyView.table.headers.contribution'),
+          t('monthlyView.table.headers.returns'),
+          t('monthlyView.table.headers.returnPercentage'),
+          t('monthlyView.table.headers.endBalance'),
+          t('monthlyView.table.headers.targetRentability')
+        ];
+        rows = data.map(record => [
+          record.month,
+          record.balance.toString(),
+          record.contribution.toString(),
+          record.return.toString(),
+          `${record.percentage.toFixed(2)}%`,
+          record.endBalance.toString(),
+          `${record.targetRentability.toFixed(2)}%`
+        ]);
+      } else {
+        // projectionData
+        headers = [
+          t('monthlyView.futureProjection.age'),
+          t('monthlyView.futureProjection.year'),
+          t('monthlyView.table.headers.month'),
+          t('monthlyView.futureProjection.cashFlow'),
+          t('monthlyView.futureProjection.goalsEventsImpact'),
+          t('monthlyView.futureProjection.balance'),
+          t('monthlyView.futureProjection.projectedBalance'),
+          t('monthlyView.futureProjection.ipcaRate'),
+          t('monthlyView.futureProjection.effectiveRate')
+        ];
+        rows = [];
+        data.forEach(yearRow => {
+          // If months exist, add a row for each month
+          if (Array.isArray(yearRow.months) && yearRow.months.length > 0) {
+            yearRow.months.forEach(month => {
+              rows.push([
+                yearRow.age?.toString() ?? '',
+                yearRow.year?.toString() ?? '',
+                month.month?.toString() ?? '',
+                month.contribution > 0 ? `+${month.contribution}` : month.withdrawal > 0 ? `-${month.withdrawal}` : '-',
+                month.goalsEventsImpact?.toString() ?? '',
+                month.balance?.toString() ?? '',
+                month.planned_balance?.toString() ?? '',
+                month.ipcaRate !== undefined ? `${(month.ipcaRate * 100).toFixed(4) || ''}` : '',
+                month.effectiveRate !== undefined ? `${(month.effectiveRate * 100).toFixed(4) || ''}` : ''
+              ]);
+            });
+          } else {
+            // Fallback: just the year row
+            rows.push([
+              yearRow.age?.toString() ?? '',
+              yearRow.year?.toString() ?? '',
+              '',
+              yearRow.contribution > 0 ? `+${yearRow.contribution}` : yearRow.withdrawal > 0 ? `-${yearRow.withdrawal}` : '-',
+              yearRow.goalsEventsImpact?.toString() ?? '',
+              yearRow.balance?.toString() ?? '',
+              yearRow.planned_balance?.toString() ?? '',
+              yearRow.ipcaRate !== undefined ? `${(yearRow.ipcaRate * 100).toFixed(2) || ''}` : '',
+              yearRow.effectiveRate !== undefined ? `${(yearRow.effectiveRate * 100).toFixed(2) || ''}` : ''
+            ]);
+          }
+        });
+      }
 
-      // Combine headers and rows
-      const csvContent = [headers, ...processedData.map(row => row.join(','))].join('\n');
-      
-      // Create and trigger download
+      const csvContent = [headers.join(','), ...rows.map(row => row.join(','))].join('\n');
       const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
       const link = document.createElement('a');
       const url = URL.createObjectURL(blob);
