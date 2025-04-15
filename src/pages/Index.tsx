@@ -25,6 +25,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { Logo } from '@/components/ui/logo';
 import { InvestmentPlanDetails } from "@/components/InvestmentPlanDetails";
 import { formatCurrency, CurrencyCode } from "@/utils/currency";
+import { EditPlanModal } from "@/components/EditPlanModal";
 type TimePeriod = 'all' | '6m' | '12m' | '24m';
 
 const Index = () => {
@@ -35,6 +36,7 @@ const Index = () => {
   const { t } = useTranslation();
   const [selectedPeriod, setSelectedPeriod] = useState<TimePeriod>('all');
   const [contributionPeriod, setContributionPeriod] = useState<TimePeriod>('all');
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const queryClient = useQueryClient();
 
   const handleLogout = useCallback(async () => {
@@ -500,6 +502,12 @@ const Index = () => {
     });
   };
 
+  const handlePlanUpdated = useCallback(() => {
+    queryClient.invalidateQueries({ queryKey: ['investmentPlan', clientId] });
+    queryClient.invalidateQueries({ queryKey: ['allFinancialRecords', clientId] });
+    queryClient.invalidateQueries({ queryKey: ['goalsAndEvents', clientId] });
+  }, [queryClient, clientId]);
+
   if (isInvestmentPlanLoading || isProfilesLoading || isFinancialRecordsLoading || isGoalsLoading || (!investmentPlan && !brokerProfile)) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -539,8 +547,9 @@ const Index = () => {
               {brokerProfile && (
                 <Button 
                   variant="ghost" 
+                  size="sm"
                   onClick={handleShareClient}
-                  className="text-gray-600 hover:text-blue-600 transition-colors flex items-center gap-1"
+                  className="flex items-center gap-1 text-gray-600 hover:text-blue-600 transition-colors"
                 >
                   <Share2 className="h-4 w-4" />
                   <span>{t('brokerDashboard.shareWithClient')}</span>
@@ -548,6 +557,7 @@ const Index = () => {
               )}
               <Button 
                 variant="ghost" 
+                size="sm"
                 onClick={handleLogout}
                 className="text-gray-600 hover:text-red-600 transition-colors"
               >
@@ -565,7 +575,8 @@ const Index = () => {
             state={{ records: allFinancialRecords }}
           >
             <Button 
-              variant="ghost"
+              variant="outline"
+              size="lg"
               className="w-full h-14 flex flex-col items-center justify-center gap-1 bg-gradient-to-br from-white/95 via-slate-50/90 to-blue-50/80 backdrop-blur-sm hover:from-blue-50/95 hover:via-blue-100/90 hover:to-blue-200/80 shadow-md hover:shadow-xl transition-all duration-200 border border-gray-100/50 rounded-xl"
             >
               <div className="flex items-center gap-2">
@@ -577,7 +588,8 @@ const Index = () => {
 
           <Link to={`/investment-plan/${investmentPlan?.id}`}>
             <Button 
-              variant="ghost"
+              variant="outline"
+              size="lg"
               className="w-full h-14 flex flex-col items-center justify-center gap-1 bg-gradient-to-br from-white/95 via-slate-50/90 to-blue-50/80 backdrop-blur-sm hover:from-blue-50/95 hover:via-blue-100/90 hover:to-blue-200/80 shadow-md hover:shadow-xl transition-all duration-200 border border-gray-100/50 rounded-xl"
             >
               <div className="flex items-center gap-2">
@@ -592,7 +604,8 @@ const Index = () => {
             state={{ currency: investmentPlan?.currency }}
           >
             <Button 
-              variant="ghost"
+              variant="outline"
+              size="lg"
               className="w-full h-14 flex flex-col items-center justify-center gap-1 bg-gradient-to-br from-white/95 via-slate-50/90 to-blue-50/80 backdrop-blur-sm hover:from-blue-50/95 hover:via-blue-100/90 hover:to-blue-200/80 shadow-md hover:shadow-xl transition-all duration-200 border border-gray-100/50 rounded-xl"
             >
               <div className="flex items-center gap-2">
@@ -614,7 +627,8 @@ const Index = () => {
             state={{ currency: investmentPlan?.currency }}
           >
             <Button 
-              variant="ghost"
+              variant="outline"
+              size="lg"
               className="w-full h-14 flex flex-col items-center justify-center gap-1 bg-gradient-to-br from-white/95 via-slate-50/90 to-blue-50/80 backdrop-blur-sm hover:from-blue-50/95 hover:via-blue-100/90 hover:to-blue-200/80 shadow-md hover:shadow-xl transition-all duration-200 border border-gray-100/50 rounded-xl"
             >
               <div className="flex items-center gap-2">
@@ -631,19 +645,18 @@ const Index = () => {
             </Button>
           </Link>
 
-          {
-            <Link to={`/client-profile/${clientId}`}>
-              <Button 
-                variant="ghost"
-                className="w-full h-14 flex flex-col items-center justify-center gap-1 bg-gradient-to-br from-white/95 via-slate-50/90 to-blue-50/80 backdrop-blur-sm hover:from-blue-50/95 hover:via-blue-100/90 hover:to-blue-200/80 shadow-md hover:shadow-xl transition-all duration-200 border border-gray-100/50 rounded-xl"
-              >
-                <div className="flex items-center gap-2">
-                  <User className="h-4 w-4 text-blue-600" />
-                  <span className="text-sm font-medium text-gray-700 whitespace-nowrap">{t('dashboard.buttons.clientInfo')}</span>
-                </div>
-              </Button>
-            </Link>
-          }
+          <Link to={`/client-profile/${clientId}`}>
+            <Button 
+              variant="outline"
+              size="lg"
+              className="w-full h-14 flex flex-col items-center justify-center gap-1 bg-gradient-to-br from-white/95 via-slate-50/90 to-blue-50/80 backdrop-blur-sm hover:from-blue-50/95 hover:via-blue-100/90 hover:to-blue-200/80 shadow-md hover:shadow-xl transition-all duration-200 border border-gray-100/50 rounded-xl"
+            >
+              <div className="flex items-center gap-2">
+                <User className="h-4 w-4 text-blue-600" />
+                <span className="text-sm font-medium text-gray-700 whitespace-nowrap">{t('dashboard.buttons.clientInfo')}</span>
+              </div>
+            </Button>
+          </Link>
         </div>
       </div>
 
@@ -868,6 +881,8 @@ const Index = () => {
             <InvestmentPlanDetails 
               investmentPlan={investmentPlan}
               birthDate={clientProfile?.birth_date}
+              onPlanUpdated={handlePlanUpdated}
+              onEditClick={() => setIsEditModalOpen(true)}
             />
           </DashboardCard>
         </div>
@@ -889,6 +904,17 @@ const Index = () => {
           )}
         </section>
       </main>
+      {isEditModalOpen && investmentPlan && clientProfile?.birth_date && (
+        <EditPlanModal
+          investmentPlan={investmentPlan}
+          birthDate={clientProfile.birth_date}
+          onClose={() => setIsEditModalOpen(false)}
+          onSuccess={() => {
+            setIsEditModalOpen(false);
+            handlePlanUpdated();
+          }}
+        />
+      )}
     </div>
   );
 };

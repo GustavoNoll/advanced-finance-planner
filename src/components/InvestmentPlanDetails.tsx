@@ -1,13 +1,18 @@
-import { Briefcase, Calendar, Clock, DollarSign, Target, TrendingUp, User, Heart, CalendarCheck, PiggyBank, ArrowUpRight, Wallet, Building2, Coins, Scale, ChartLine, CalendarDays, UserCog, HeartPulse, WalletCards } from "lucide-react";
+import { Briefcase, Calendar, Clock, DollarSign, Target, TrendingUp, User, Heart, CalendarCheck, PiggyBank, ArrowUpRight, Wallet, Building2, Coins, Scale, ChartLine, CalendarDays, UserCog, HeartPulse, WalletCards, Pencil } from "lucide-react";
 import { InvestmentPlan } from "@/types/financial";
 import { format, isValid } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { useTranslation } from "react-i18next";
 import { formatCurrency, getCurrencySymbol } from '@/utils/currency';
+import { useState } from 'react';
+import { EditPlanModal } from './EditPlanModal';
+import { Button } from './ui/button';
 
 interface InvestmentPlanDetailsProps {
   investmentPlan: InvestmentPlan | null;
   birthDate: string | null;
+  onPlanUpdated?: () => void;
+  onEditClick: () => void;
 }
 
 interface PlanMetricProps {
@@ -43,7 +48,7 @@ function PlanMetric({ icon, label, value, color, duration }: PlanMetricProps) {
   );
 }
 
-export function InvestmentPlanDetails({ investmentPlan, birthDate }: InvestmentPlanDetailsProps) {
+export function InvestmentPlanDetails({ investmentPlan, birthDate, onPlanUpdated, onEditClick }: InvestmentPlanDetailsProps) {
   const { t } = useTranslation();
   
   if (!investmentPlan || !birthDate) {
@@ -126,7 +131,7 @@ export function InvestmentPlanDetails({ investmentPlan, birthDate }: InvestmentP
     {
       icon: <TrendingUp className="h-4 w-4 text-rose-600" />,
       label: t('dashboard.investmentPlan.monthlyContribution'),
-      value: formatCurrency(investmentPlan.required_monthly_deposit, investmentPlan.currency),
+      value: formatCurrency(investmentPlan.monthly_deposit, investmentPlan.currency),
       color: "text-rose-600"
     },
     {
@@ -139,12 +144,23 @@ export function InvestmentPlanDetails({ investmentPlan, birthDate }: InvestmentP
 
   return (
     <div className="space-y-6">
-      {/* Timeline Section */}
-      <div className="space-y-3">
+      <div className="flex justify-between items-center">
         <h3 className="text-sm font-semibold text-gray-900 flex items-center gap-2">
           <CalendarDays className="h-4 w-4 text-blue-600" />
           {t('dashboard.investmentPlan.timeline')}
         </h3>
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={onEditClick}
+          className="text-gray-600 hover:text-blue-600"
+        >
+          <Pencil className="h-4 w-4" />
+        </Button>
+      </div>
+
+      {/* Timeline Section */}
+      <div className="space-y-3">
         <div className="space-y-2">
           {timelineMetrics.map((metric, index) => (
             <PlanMetric key={index} {...metric} />

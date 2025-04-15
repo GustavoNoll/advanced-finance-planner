@@ -7,7 +7,7 @@ import { useToast } from '@/components/ui/use-toast';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { Logo } from '@/components/ui/logo';
-import { Spinner } from '@/components/ui/spinner';
+import { Lock } from 'lucide-react';
 
 export const ClientLoginForm: React.FC = () => {
   const [password, setPassword] = useState('');
@@ -69,33 +69,41 @@ export const ClientLoginForm: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen flex flex-col justify-center items-center bg-gradient-to-br from-slate-50 via-white to-blue-50/50">
-      <div className="flex flex-col items-center">
-        <Logo variant="full" />
-        <Card className="w-[400px]">
-          <CardHeader>
-              <CardTitle>{t('auth.clientLogin')}</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <form onSubmit={handleLogin} className="space-y-4">
-                <div className="space-y-2">
-                  <label htmlFor="password" className="text-sm font-medium">
-                    {t('auth.password')}
-                  </label>
-                  <Input
-                    id="password"
-                    type="password"
-                    value={password}
-                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => setPassword(e.target.value)}
-                    required
-                    placeholder={t('auth.enterPassword')}
-                  />
-                </div>
-                <Button type="submit" className="w-full" disabled={loading}>
-                  {loading ? t('common.loading') : t('auth.login')}
-                </Button>
-              </form>
-            </CardContent>
+    <div className="min-h-screen flex flex-col justify-center items-center bg-gradient-to-br from-slate-50 via-white to-blue-50/50 p-4">
+      <div className="flex flex-col items-center justify-center w-full max-w-md">
+        <Logo variant="full" className="mb-8" />
+        <Card className="w-full shadow-lg border-0">
+          <CardHeader className="space-y-1">
+            <CardTitle className="text-2xl font-bold text-center">{t('auth.clientLogin')}</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <form onSubmit={handleLogin} className="space-y-6">
+              <div className="space-y-2">
+                <label htmlFor="password" className="text-sm font-medium text-gray-700">
+                  {t('auth.password')}
+                </label>
+                <Input
+                  id="password"
+                  type="password"
+                  value={password}
+                  onChange={(e: React.ChangeEvent<HTMLInputElement>) => setPassword(e.target.value)}
+                  required
+                  placeholder={t('auth.enterPassword')}
+                  startIcon={<Lock className="h-5 w-5 text-gray-400" />}
+                />
+              </div>
+              <Button 
+                type="submit" 
+                variant="default"
+                size="lg"
+                fullWidth
+                loading={loading}
+                className="mt-4"
+              >
+                {t('auth.login')}
+              </Button>
+            </form>
+          </CardContent>
         </Card>
       </div>
     </div>
