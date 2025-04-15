@@ -4,9 +4,10 @@ import { Trash2 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { goalIcons } from "@/constants/goals";
 import { Goal } from "@/types/financial";
-
-export const GoalCard = ({ goal, onDelete }: { 
+import { formatCurrency, CurrencyCode, getCurrencySymbol } from "@/utils/currency";
+export const GoalCard = ({ goal, currency, onDelete }: { 
   goal: Goal; 
+  currency: CurrencyCode;
   onDelete: () => void;
 }) => {
   const { t } = useTranslation();
@@ -24,8 +25,8 @@ export const GoalCard = ({ goal, onDelete }: {
             </p>
             <p className="text-sm text-gray-600 mt-1">
               {goal.installment_project 
-                ? `R$ ${goal.asset_value.toLocaleString('pt-BR')} (${goal.installment_count}x de R$ ${(goal.asset_value / goal.installment_count).toLocaleString('pt-BR')})`
-                : `R$ ${goal.asset_value.toLocaleString('pt-BR')}`
+                ? `${getCurrencySymbol(currency)} ${goal.asset_value.toLocaleString('pt-BR')} (${goal.installment_count}x de ${formatCurrency(goal.asset_value / goal.installment_count, currency)})`
+                : `${getCurrencySymbol(currency)} ${goal.asset_value.toLocaleString('pt-BR')}`
               }
             </p>
           </div>

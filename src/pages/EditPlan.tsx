@@ -16,7 +16,7 @@ import {
 } from '@/utils/investmentPlanCalculations';
 import { useTranslation } from "react-i18next";
 import CurrencyInput from 'react-currency-input-field';
-
+import { CurrencyCode, getCurrencySymbol } from "@/utils/currency";
 export const EditPlan = () => {
   const { user } = useAuth();
   const { id } = useParams();
@@ -38,6 +38,7 @@ export const EditPlan = () => {
     adjustIncomeForInflation: false,
     limitAge: "100",
     legacyAmount: "1000000",
+    currency: "BRL",
   });
 
   const [calculations, setCalculations] = useState<InvestmentCalculations | null>(null);
@@ -127,6 +128,7 @@ export const EditPlan = () => {
         adjustIncomeForInflation: data.adjust_income_for_inflation,
         limitAge: data.limit_age?.toString() || "",
         legacyAmount: data.legacy_amount?.toString() || "1000000",
+        currency: data.currency || "BRL",
       });
     };
 
@@ -204,6 +206,7 @@ export const EditPlan = () => {
           adjust_income_for_inflation: formData.adjustIncomeForInflation,
           limit_age: formData.limitAge ? parseInt(formData.limitAge) : null,
           legacy_amount: formData.planType === "2" ? parseFloat(formData.legacyAmount.replace(',', '.')) : null,
+          currency: formData.currency,
         })
         .eq('id', id);
 
@@ -226,6 +229,8 @@ export const EditPlan = () => {
       setLoading(false);
     }
   };
+
+  const prefix = getCurrencySymbol(formData.currency as CurrencyCode);
 
   return (
     <div className="min-h-screen bg-gray-50 py-8">
@@ -298,7 +303,7 @@ export const EditPlan = () => {
                         }))
                       }}
                       placeholder="1000"
-                      prefix="R$ "
+                      prefix={prefix}
                       decimalsLimit={2}
                       decimalSeparator=","
                       groupSeparator="."
@@ -336,7 +341,7 @@ export const EditPlan = () => {
                         }))
                       }}
                       placeholder="1000"
-                      prefix="R$ "
+                      prefix={prefix}
                       decimalsLimit={2}
                       decimalSeparator=","
                       groupSeparator="."
@@ -359,7 +364,7 @@ export const EditPlan = () => {
                         }))
                       }}
                       placeholder="5000"
-                      prefix="R$ "
+                      prefix={prefix}
                       decimalsLimit={2}
                       decimalSeparator=","
                       groupSeparator="."
@@ -450,7 +455,7 @@ export const EditPlan = () => {
                         }))
                       }}
                       placeholder="1000000"
-                      prefix="R$ "
+                      prefix={prefix}
                       decimalsLimit={2}
                       decimalSeparator=","
                       groupSeparator="."
@@ -463,6 +468,23 @@ export const EditPlan = () => {
                 <div className="space-y-4">
                   <h3 className="text-lg font-medium text-gray-900">{t('investmentPlan.form.advancedSettings')}</h3>
                   <div className="space-y-4">
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium text-gray-700">
+                        {t('investmentPlan.form.currency')}
+                      </label>
+                      <select
+                        name="currency"
+                        value={formData.currency}
+                        onChange={handleChange}
+                        className="w-full h-10 rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                        required
+                      >
+                        <option value="BRL">{t('investmentPlan.form.currencies.BRL')}</option>
+                        <option value="USD">{t('investmentPlan.form.currencies.USD')}</option>
+                        <option value="EUR">{t('investmentPlan.form.currencies.EUR')}</option>
+                      </select>
+                    </div>
+
                     <div className="flex items-center space-x-2">
                       <input
                         type="checkbox"
@@ -515,7 +537,7 @@ export const EditPlan = () => {
                     <div className="flex items-center gap-2">
                       <span className="text-sm text-gray-600">{t('investmentPlan.create.calculations.inflationAdjustedIncome')}:</span>
                     </div>
-                    <span className="font-medium">R$ {calculations?.inflationAdjustedIncome.toLocaleString('pt-BR', { maximumFractionDigits: 2 }) || '---'}/mês</span>
+                    <span className="font-medium">{prefix} {calculations?.inflationAdjustedIncome.toLocaleString('pt-BR', { maximumFractionDigits: 2 }) || '---'}/mês</span>
                   </div>
                   
                   <div className="flex justify-between p-3 bg-white rounded-lg border">
@@ -523,7 +545,7 @@ export const EditPlan = () => {
                       <span className="text-sm text-gray-600">{t('investmentPlan.create.calculations.requiredFutureValue')}:</span>
                     </div>
                     <span className="font-medium">
-                      R$ {calculations?.futureValue.toLocaleString('pt-BR', { maximumFractionDigits: 2 }) || '---'}
+                      {prefix} {calculations?.futureValue.toLocaleString('pt-BR', { maximumFractionDigits: 2 }) || '---'}
                     </span>
                   </div>
 
@@ -535,7 +557,7 @@ export const EditPlan = () => {
                       <div className="flex items-center gap-2">
                         <span className="text-sm text-gray-600">{t('investmentPlan.create.calculations.totalMonthlyReturn')}:</span>
                       </div>
-                      <span className="font-medium">R$ {calculations?.totalMonthlyReturn.toLocaleString('pt-BR', { maximumFractionDigits: 2 }) || '---'}</span>
+                      <span className="font-medium">{prefix} {calculations?.totalMonthlyReturn.toLocaleString('pt-BR', { maximumFractionDigits: 2 }) || '---'}</span>
                     </div>
                     {expandedRow === 'return' && (
                       <div className="px-3 pb-3 space-y-2 border-t">
@@ -543,13 +565,13 @@ export const EditPlan = () => {
                           <div className="flex items-center gap-2">
                             <span className="text-sm text-gray-600">{t('investmentPlan.create.calculations.monthlyRealReturn')}:</span>
                           </div>
-                          <span className="font-medium">R$ {calculations?.realReturn.toLocaleString('pt-BR', { maximumFractionDigits: 2 }) || '---'}</span>
+                          <span className="font-medium">{prefix} {calculations?.realReturn.toLocaleString('pt-BR', { maximumFractionDigits: 2 }) || '---'}</span>
                         </div>
                         <div className="flex justify-between">
                           <div className="flex items-center gap-2">
                             <span className="text-sm text-gray-600">{t('investmentPlan.create.calculations.monthlyInflationReturn')}:</span>
                           </div>
-                          <span className="font-medium">R$ {calculations?.inflationReturn.toLocaleString('pt-BR', { maximumFractionDigits: 2 }) || '---'}</span>
+                          <span className="font-medium">{prefix} {calculations?.inflationReturn.toLocaleString('pt-BR', { maximumFractionDigits: 2 }) || '---'}</span>
                         </div>
                       </div>
                     )}
@@ -560,7 +582,7 @@ export const EditPlan = () => {
                       <span className="text-sm text-gray-600">{t('investmentPlan.create.calculations.requiredMonthlyDeposit')}:</span>
                     </div>
                     <span className="font-medium">
-                      R$ {calculations?.requiredMonthlyDeposit.toLocaleString('pt-BR', { maximumFractionDigits: 2 }) || '---'}
+                      {prefix} {calculations?.requiredMonthlyDeposit.toLocaleString('pt-BR', { maximumFractionDigits: 2 }) || '---'}
                     </span>
                   </div>
                 </div>

@@ -74,7 +74,13 @@ export const ptBR = {
       endAge: "Idade de Encerramento",
       legacyAge: "Idade para Deixar Herança",
       keepAge: "Idade para Fim do Planejamento",
-      legacyAmount: "Valor da Herança"
+      legacyAmount: "Valor da Herança",
+      currency: "Moeda",
+      currencies: {
+        BRL: "Real Brasileiro (R$)",
+        USD: "Dólar Americano ($)",
+        EUR: "Euro (€)"
+      }
     },
     planTypes: {
       endAt120: "Encerrar",

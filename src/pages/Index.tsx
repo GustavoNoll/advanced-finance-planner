@@ -24,7 +24,7 @@ import { generateProjectionData } from '@/lib/chart-projections';
 import { useQueryClient } from "@tanstack/react-query";
 import { Logo } from '@/components/ui/logo';
 import { InvestmentPlanDetails } from "@/components/InvestmentPlanDetails";
-
+import { formatCurrency, CurrencyCode } from "@/utils/currency";
 type TimePeriod = 'all' | '6m' | '12m' | '24m';
 
 const Index = () => {
@@ -589,6 +589,7 @@ const Index = () => {
 
           <Link 
             to={`/financial-goals${params.id ? `/${params.id}` : ''}`}
+            state={{ currency: investmentPlan?.currency }}
           >
             <Button 
               variant="ghost"
@@ -610,6 +611,7 @@ const Index = () => {
 
           <Link 
             to={`/events${params.id ? `/${params.id}` : ''}`}
+            state={{ currency: investmentPlan?.currency }}
           >
             <Button 
               variant="ghost"
@@ -698,10 +700,7 @@ const Index = () => {
           >
             <div className="space-y-3">
               <p className="text-3xl font-bold bg-gradient-to-r from-blue-600 via-indigo-600 to-slate-700 bg-clip-text text-transparent drop-shadow-sm">
-                {new Intl.NumberFormat('pt-BR', {
-                  style: 'currency',
-                  currency: 'BRL'
-                }).format(portfolioValue)}
+                {formatCurrency(portfolioValue, investmentPlan?.currency as CurrencyCode)}
               </p>
               {portfolioIncreaseRate && (
                 <div className={`flex items-center gap-2 ${
@@ -760,10 +759,7 @@ const Index = () => {
                   ? 'text-green-600' 
                   : 'text-red-600'
               }`}>
-                {new Intl.NumberFormat('pt-BR', {
-                  style: 'currency',
-                  currency: 'BRL'
-                }).format(totalContribution)}
+                {formatCurrency(totalContribution, investmentPlan?.currency as CurrencyCode)}
               </p>
               <p className="text-sm text-muted-foreground">
                 {t('dashboard.cards.contributions.total')}
@@ -808,10 +804,7 @@ const Index = () => {
               <p className={`text-2xl font-bold drop-shadow-sm ${
                 totalAmount >= 0 ? 'text-green-600' : 'text-red-600'
               }`}>
-                {new Intl.NumberFormat('pt-BR', {
-                  style: 'currency',
-                  currency: 'BRL'
-                }).format(totalAmount)}
+                {formatCurrency(totalAmount, investmentPlan?.currency as CurrencyCode)}
               </p>
               
               <div className={`flex items-center gap-2 ${
@@ -849,7 +842,7 @@ const Index = () => {
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           {planProgressData && (
-            <Calculator data={planProgressData as PlanProgressData} />
+            <Calculator data={planProgressData as PlanProgressData} investmentPlan={investmentPlan} />
           )}
           
           {investmentPlan?.present_future_value > 0 && (

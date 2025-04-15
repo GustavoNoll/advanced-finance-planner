@@ -13,10 +13,11 @@ import { useState, useEffect } from "react";
 import Papa from 'papaparse';
 import { Spinner } from "@/components/ui/spinner";
 import { AddRecordForm } from "@/components/financial-records/AddRecordForm";
-import { FinancialRecord } from "@/types/financial";
+import { FinancialRecord, InvestmentPlan } from "@/types/financial";
 import { fetchIPCARates } from "@/lib/bcb-api";
 import { calculateCompoundedRates, yearlyReturnRateToMonthlyReturnRate } from "@/lib/financial-math";
 import { SuccessAnimation } from "@/components/ui/success-animation";
+import { formatCurrency, CurrencyCode, getCurrencySymbol } from "@/utils/currency";
 
 interface CSVRecord {
   Data: string;
@@ -143,7 +144,7 @@ const FinancialRecords = () => {
       
       const { data, error } = await supabase
         .from('investment_plans')
-        .select('monthly_deposit, expected_return')
+        .select('monthly_deposit, expected_return, currency')
         .eq('user_id', clientId)
         .single();
 
@@ -238,14 +239,14 @@ const FinancialRecords = () => {
             user_id: clientId,
             record_year: parseInt(year),
             record_month: parseInt(month),
-            starting_balance: parseFloat(record.PatrimonioInicial.replace('R$ ', '').replace(/\./g, '').replace(',', '.')),
-            monthly_contribution: record.Aporte ? parseFloat(record.Aporte.replace('R$ ', '').replace(/\./g, '').replace(',', '.')) : 0,
-            ending_balance: parseFloat(record.PatrimonioFinal.replace('R$ ', '').replace(/\./g, '').replace(',', '.')),
+            starting_balance: parseFloat(record.PatrimonioInicial.replace(getCurrencySymbol(investmentPlan?.currency as CurrencyCode), '').replace(/\./g, '').replace(',', '.')),
+            monthly_contribution: record.Aporte ? parseFloat(record.Aporte.replace(getCurrencySymbol(investmentPlan?.currency as CurrencyCode), '').replace(/\./g, '').replace(',', '.')) : 0,
+            ending_balance: parseFloat(record.PatrimonioFinal.replace(getCurrencySymbol(investmentPlan?.currency as CurrencyCode), '').replace(/\./g, '').replace(',', '.')),
             monthly_return_rate: parseFloat(record.RetornoPercentual.replace('%', '').replace(/\./g, '').replace(',', '.')),
             target_rentability: parseFloat(record.RentabilidadeMeta.replace('%', '').replace(/\./g, '').replace(',', '.')),
             growth_percentage: null,
-            monthly_return: parseFloat(record.Retorno.replace('R$ ', '').replace(/\./g, '').replace(',', '.')),
-            events_balance: record.Eventos ? parseFloat(record.Eventos.replace('R$ ', '').replace(/\./g, '').replace(',', '.')) : null,
+            monthly_return: parseFloat(record.Retorno.replace(getCurrencySymbol(investmentPlan?.currency as CurrencyCode), '').replace(/\./g, '').replace(',', '.')),
+            events_balance: record.Eventos ? parseFloat(record.Eventos.replace(getCurrencySymbol(investmentPlan?.currency as CurrencyCode), '').replace(/\./g, '').replace(',', '.')) : null,
           };
           formattedRecord.growth_percentage = ((formattedRecord.ending_balance - formattedRecord.starting_balance) / formattedRecord.starting_balance) * 100;
 
@@ -517,13 +518,6 @@ const FinancialRecords = () => {
     return `${month.toString().padStart(2, '0')}/${year}`;
   };
 
-  const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat('pt-BR', {
-      style: 'currency',
-      currency: 'BRL'
-    }).format(value);
-  };
-
   const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
@@ -665,13 +659,13 @@ const FinancialRecords = () => {
                         <tbody>
                           <tr>
                             <td className="whitespace-nowrap px-3 py-2 text-gray-700">01/08/2023</td>
-                            <td className="whitespace-nowrap px-3 py-2 text-gray-700">R$ 51.447,92</td>
-                            <td className="whitespace-nowrap px-3 py-2 text-gray-700">R$ 4.000,00</td>
-                            <td className="whitespace-nowrap px-3 py-2 text-gray-700">R$ 55.992,62</td>
-                            <td className="whitespace-nowrap px-3 py-2 text-gray-700">R$ 1.000,00</td>
+                            <td className="whitespace-nowrap px-3 py-2 text-gray-700">{formatCurrency(51447.92, 'BRL')}</td>
+                            <td className="whitespace-nowrap px-3 py-2 text-gray-700">{formatCurrency(4000, 'BRL')}</td>
+                            <td className="whitespace-nowrap px-3 py-2 text-gray-700">{formatCurrency(55992.62, 'BRL')}</td>
+                            <td className="whitespace-nowrap px-3 py-2 text-gray-700">{formatCurrency(1000, 'BRL')}</td>
                             <td className="whitespace-nowrap px-3 py-2 text-gray-700">1,19%</td>
                             <td className="whitespace-nowrap px-3 py-2 text-gray-700">0,64%</td>
-                            <td className="whitespace-nowrap px-3 py-2 text-gray-700">R$ 500,00</td>
+                            <td className="whitespace-nowrap px-3 py-2 text-gray-700">{formatCurrency(500, 'BRL')}</td>
                           </tr>
                         </tbody>
                       </table>
@@ -715,6 +709,7 @@ const FinancialRecords = () => {
           <AddRecordForm 
             clientId={clientId!} 
             onSuccess={() => setShowAddForm(false)} 
+            investmentPlan={investmentPlan as InvestmentPlan}
           />
         )}
       </div>
@@ -754,7 +749,7 @@ const FinancialRecords = () => {
                   </div>
                   <div>
                     <p className="text-sm text-gray-500">{t('financialRecords.startingBalance')}</p>
-                    <p className="font-semibold">{formatCurrency(record.starting_balance)}</p>
+                    <p className="font-semibold">{formatCurrency(record.starting_balance, investmentPlan?.currency as CurrencyCode)}</p>
                   </div>
                   <div>
                     <p className="text-sm text-gray-500">{t('financialRecords.monthlyContribution')}</p>
@@ -765,21 +760,21 @@ const FinancialRecords = () => {
                           ? 'text-green-600' 
                           : ''
                       }`}>
-                        {formatCurrency(record.monthly_contribution)}
+                        {formatCurrency(record.monthly_contribution, investmentPlan?.currency as CurrencyCode)}
                       </p>
                       {investmentPlan?.monthly_deposit && (
                         <p className="text-xs text-gray-400 mt-0.5">
-                          Meta: {formatCurrency(investmentPlan.monthly_deposit)}
+                          Meta: {formatCurrency(investmentPlan.monthly_deposit, investmentPlan?.currency as CurrencyCode)}
                         </p>
                       )}
                     </div>
                   </div>
                   <div>
                     <p className="text-sm text-gray-500">{t('financialRecords.endingBalance')}</p>
-                    <p className="font-semibold">{formatCurrency(record.ending_balance)}</p>
+                    <p className="font-semibold">{formatCurrency(record.ending_balance, investmentPlan?.currency as CurrencyCode)}</p>
                     {record.events_balance != null && record.events_balance !== 0 && (
                       <p className="text-xs text-gray-500 mt-0.5">
-                        Eventos: {formatCurrency(record.events_balance)}
+                        Eventos: {formatCurrency(record.events_balance, investmentPlan?.currency as CurrencyCode)}
                       </p>
                     )}
                   </div>
@@ -795,7 +790,7 @@ const FinancialRecords = () => {
                         </span>
                       </div>
                       <p className={`text-xs ${record.monthly_return >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                        {formatCurrency(record.monthly_return)}
+                        {formatCurrency(record.monthly_return, investmentPlan?.currency as CurrencyCode )}
                       </p>
                     </div>
                   </div>
@@ -822,10 +817,11 @@ const FinancialRecords = () => {
                 </div>
                 
                 {editingRecordId === record.id && (
-                  <AddRecordForm 
+                  <AddRecordForm  
                     clientId={clientId!}
                     onSuccess={() => setEditingRecordId(null)}
                     editingRecord={record}
+                    investmentPlan={investmentPlan as InvestmentPlan}
                   />
                 )}
               </Card>

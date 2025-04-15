@@ -9,7 +9,7 @@ import { calculateCompoundedRates, yearlyReturnRateToMonthlyReturnRate } from '@
 import { ChartPointDialog } from "@/components/chart/ChartPointDialog";
 import { TrendingUp, Car, Home, Plane, GraduationCap, User, AlertCircle, Calendar } from "lucide-react";
 import type { ViewBox } from 'recharts/types/util/types';
-
+import { CurrencyCode, formatCurrency, getCurrencySymbol } from "@/utils/currency";
 interface Profile {
   birth_date: string;
 }
@@ -55,13 +55,6 @@ interface IconProps {
   viewBox?: ViewBox;
 }
 
-interface TooltipPayload {
-  payload: {
-    goal?: Goal;
-    event?: ProjectedEvent;
-  };
-}
-
 const isCartesianViewBox = (viewBox: ViewBox | undefined): viewBox is { x: number; y: number } => {
   return (
     viewBox !== undefined &&
@@ -69,42 +62,6 @@ const isCartesianViewBox = (viewBox: ViewBox | undefined): viewBox is { x: numbe
     'y' in viewBox &&
     typeof viewBox.x === 'number' &&
     typeof viewBox.y === 'number'
-  );
-};
-
-const CustomHoverCard = ({ active, payload }: { active?: boolean; payload?: TooltipPayload[] }) => {
-  if (!active || !payload || !payload.length) return null;
-
-  const data = payload[0].payload;
-  if (!data.goal && !data.event) return null;
-
-  const formattedAmount = new Intl.NumberFormat('pt-BR', {
-    style: 'currency',
-    currency: 'BRL'
-  }).format(data.goal?.asset_value || data.event?.amount || 0);
-
-  const monthName = new Date(0, (data.goal?.month || data.event?.month) - 1).toLocaleString('pt-BR', { month: 'long' });
-
-  return (
-    <div className="bg-white p-3 rounded-lg shadow-lg border border-gray-200">
-      <div className="flex flex-col gap-1">
-        <div className="font-semibold text-gray-900">
-          {data.goal ? (
-            data.goal.icon === 'car' ? 'Carro' : 
-            data.goal.icon === 'house' ? 'Casa' : 
-            data.goal.icon === 'travel' ? 'Viagem' : 
-            data.goal.icon === 'education' ? 'Educação' : 
-            data.goal.icon === 'retirement' ? 'Aposentadoria' : 
-            data.goal.icon === 'emergency' ? 'Emergência' : 'Objetivo'
-          ) : (
-            data.event?.name
-          )}
-        </div>
-        <div className="text-gray-600">Valor: {formattedAmount}</div>
-        <div className="text-gray-600">Mês: {monthName}</div>
-        <div className="text-gray-600">Ano: {data.goal?.year || data.event?.year}</div>
-      </div>
-    </div>
   );
 };
 
@@ -504,10 +461,7 @@ export const ExpenseChart = ({
       }
     };
 
-    const formattedAmount = new Intl.NumberFormat('pt-BR', {
-      style: 'currency',
-      currency: 'BRL'
-    }).format(goal.asset_value);
+    const formattedAmount = formatCurrency(goal.asset_value, investmentPlan?.currency as CurrencyCode);
 
     const monthName = new Date(0, goal.month - 1).toLocaleString('pt-BR', { month: 'long' })
 
@@ -572,10 +526,7 @@ export const ExpenseChart = ({
     const { viewBox: { x, y } } = props;
     const iconSize = 20;
 
-    const formattedAmount = new Intl.NumberFormat('pt-BR', {
-      style: 'currency',
-      currency: 'BRL'
-    }).format(event.amount);
+    const formattedAmount = formatCurrency(event.amount, investmentPlan?.currency as CurrencyCode);
 
     const monthName = new Date(0, event.month - 1).toLocaleString('pt-BR', { month: 'long' });
 
@@ -843,7 +794,7 @@ export const ExpenseChart = ({
             tickFormatter={(value) => 
               new Intl.NumberFormat('pt-BR', {
                 style: 'currency',
-                currency: 'BRL',
+                currency: investmentPlan?.currency as CurrencyCode,
                 notation: 'compact',
                 maximumFractionDigits: 1
               }).format(value)
@@ -878,10 +829,7 @@ export const ExpenseChart = ({
                 <div className="flex flex-col">
                   <span className="text-gray-600 text-sm font-medium">{name}</span>
                   <span className={`text-gray-900 font-semibold ${value >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                    {value < 0 && '-'}{new Intl.NumberFormat('pt-BR', {
-                      style: 'currency',
-                      currency: 'BRL'
-                    }).format(Math.abs(value))}
+                    {value < 0 && '-'}{formatCurrency(Math.abs(value), investmentPlan?.currency as CurrencyCode)}
                   </span>
                 </div>
               </div>
@@ -1052,6 +1000,7 @@ export const ExpenseChart = ({
         open={showDialog}
         onOpenChange={setShowDialog}
         selectedPoint={selectedPoint}
+        currency={investmentPlan?.currency as CurrencyCode}
         dialogType={dialogType}
         onDialogTypeChange={setDialogType}
         onSubmitGoal={createGoal.mutateAsync}

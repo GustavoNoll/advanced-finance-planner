@@ -13,7 +13,7 @@ import { supabase } from "@/lib/supabase";
 import { CartesianGrid, Line, Tooltip, LineChart as RechartsLineChart, XAxis, YAxis, Legend } from "recharts";
 import { ResponsiveContainer } from "recharts";
 import { Button } from "@tremor/react";
-
+import { formatCurrency, CurrencyCode } from "@/utils/currency";
 
 export const MonthlyView = ({ 
   userId, 
@@ -321,8 +321,6 @@ export const MonthlyView = ({
     );
   };
 
-  console.log(projectionData);
-
   return (
     <DashboardCard 
       title={t('monthlyView.title')}
@@ -589,19 +587,19 @@ export const MonthlyView = ({
                       }`}
                     >
                       <td className="p-3 font-medium">{data.month}</td>
-                      <td className="p-3 text-right">R$ {data.balance.toLocaleString()}</td>
-                      <td className="p-3 text-right">R$ {data.contribution.toLocaleString()}</td>
+                      <td className="p-3 text-right">{formatCurrency(data.balance, investmentPlan?.currency as CurrencyCode)}</td>
+                      <td className="p-3 text-right">{formatCurrency(data.contribution, investmentPlan?.currency as CurrencyCode)}</td>
                       <td className={`p-3 text-right font-medium ${
                         data.return >= 0 ? 'text-green-600' : 'text-red-600'
                       }`}>
-                        {data.return >= 0 ? '+' : ''}{`R$ ${data.return.toLocaleString()}`}
+                        {data.return >= 0 ? '+' : ''}{formatCurrency(data.return, investmentPlan?.currency as CurrencyCode)}
                       </td>
                       <td className={`p-3 text-right font-medium ${
                         data.percentage >= 0 ? 'text-green-600' : 'text-red-600'
                       }`}>
                         {data.percentage >= 0 ? '+' : ''}{data.percentage.toFixed(2)}%
                       </td>
-                      <td className="p-3 text-right font-semibold">R$ {data.endBalance.toLocaleString()}</td>
+                      <td className="p-3 text-right font-semibold">{formatCurrency(data.endBalance, investmentPlan?.currency as CurrencyCode)}</td>
                       <td className="p-3 text-right font-medium">{data.targetRentability?.toFixed(2)}%</td>
                     </tr>
                   ))}
@@ -679,11 +677,11 @@ export const MonthlyView = ({
                       <td className="p-3 text-right">
                         {projection.contribution > 0 ? (
                           <span className="text-green-600 font-medium">
-                            +R$ {projection.contribution.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                            +{formatCurrency(projection.contribution, investmentPlan?.currency as CurrencyCode)}
                           </span>
                         ) : projection.withdrawal > 0 ? (
                           <span className="text-red-600 font-medium">
-                            -R$ {projection.withdrawal.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                            -{formatCurrency(projection.withdrawal, investmentPlan?.currency as CurrencyCode)}
                           </span>
                         ) : '-'}
                       </td>
@@ -695,17 +693,17 @@ export const MonthlyView = ({
                               ? 'text-red-600' 
                               : 'text-foreground'
                         }`}>
-                          R$ {projection.goalsEventsImpact?.toLocaleString('pt-BR', { maximumFractionDigits: 2 })}
+                          {formatCurrency(projection.goalsEventsImpact, investmentPlan?.currency as CurrencyCode)}
                         </span>
                       </td>
                       <td className="p-3 text-right font-semibold">
                         <span className={projection.balance < 0 ? 'text-red-600' : ''}>
-                          R$ {projection.balance.toLocaleString('pt-BR', { maximumFractionDigits: 2 })}
+                          {formatCurrency(projection.balance, investmentPlan?.currency as CurrencyCode)}
                         </span>
                       </td>
                       <td className="p-3 text-right font-semibold">
                         <span className={projection.planned_balance < 0 ? 'text-red-600' : ''}>
-                          R$ {projection.planned_balance.toLocaleString('pt-BR', { maximumFractionDigits: 2 })}
+                          {formatCurrency(projection.planned_balance, investmentPlan?.currency as CurrencyCode)}
                         </span>
                         {projection.balance !== projection.planned_balance && (
                           <span className={`ml-2 text-xs ${
@@ -714,7 +712,7 @@ export const MonthlyView = ({
                               : 'text-green-600'
                           }`}>
                             ({projection.balance > projection.planned_balance ? '+' : ''}
-                            R$ {(projection.balance - projection.planned_balance).toLocaleString('pt-BR', { maximumFractionDigits: 2 })})
+                            {formatCurrency(projection.balance - projection.planned_balance, investmentPlan?.currency as CurrencyCode)})
                           </span>
                         )}
                       </td>
@@ -761,11 +759,11 @@ export const MonthlyView = ({
                           <td className="p-2 text-right">
                             {month.contribution > 0 ? (
                               <span className="text-green-600 font-medium">
-                                +R$ {month.contribution.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                +{formatCurrency(month.contribution, investmentPlan?.currency as CurrencyCode)}
                               </span>
                             ) : month.withdrawal > 0 ? (
                               <span className="text-red-600 font-medium">
-                                -R$ {month.withdrawal.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                -{formatCurrency(month.withdrawal, investmentPlan?.currency as CurrencyCode)}
                               </span>
                             ) : '-'}
                           </td>
@@ -777,16 +775,16 @@ export const MonthlyView = ({
                                   ? 'text-red-600' 
                                   : 'text-foreground'
                             }`}>
-                              R$ {month.goalsEventsImpact?.toLocaleString('pt-BR', { maximumFractionDigits: 2 })}
+                              {formatCurrency(month.goalsEventsImpact, investmentPlan?.currency as CurrencyCode)}
                             </span>
                           </td>
                           <td className="p-2 text-right font-semibold">
                             <span className={month.balance < 0 ? 'text-red-600' : ''}>
-                              R$ {month.balance.toLocaleString('pt-BR', { maximumFractionDigits: 2 })}
+                              {formatCurrency(month.balance, investmentPlan?.currency as CurrencyCode)}
                             </span>
                           </td>
                           <td className="p-2 text-right font-semibold">
-                            R$ {month.planned_balance.toLocaleString('pt-BR', { maximumFractionDigits: 2 })}
+                            {formatCurrency(month.planned_balance, investmentPlan?.currency as CurrencyCode)}
                             {month.balance !== month.planned_balance && (
                               <span className={`ml-2 text-xs ${
                                 month.balance - month.planned_balance < 0 
@@ -794,7 +792,7 @@ export const MonthlyView = ({
                                   : 'text-green-600'
                               }`}>
                                 ({month.balance > month.planned_balance ? '+' : ''}
-                                R$ {(month.balance - month.planned_balance).toLocaleString('pt-BR', { maximumFractionDigits: 2 })})
+                                {formatCurrency(month.balance - month.planned_balance, investmentPlan?.currency as CurrencyCode)})
                               </span>
                             )}
                           </td>

@@ -50,6 +50,7 @@ export interface InvestmentPlan {
   plan_initial_date: string;
   created_at?: string;
   updated_at?: string;
+  currency: 'BRL' | 'USD' | 'EUR';
 }
 
 export interface MonthlyMetrics {

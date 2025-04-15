@@ -3,6 +3,7 @@ import { InvestmentPlan } from "@/types/financial";
 import { format, isValid } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { useTranslation } from "react-i18next";
+import { formatCurrency, getCurrencySymbol } from '@/utils/currency';
 
 interface InvestmentPlanDetailsProps {
   investmentPlan: InvestmentPlan | null;
@@ -72,13 +73,6 @@ export function InvestmentPlanDetails({ investmentPlan, birthDate }: InvestmentP
     return months;
   };
 
-  const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat('pt-BR', {
-      style: 'currency',
-      currency: 'BRL'
-    }).format(value);
-  };
-
   const formatDate = (date: Date | null) => {
     if (!date || !isValid(date)) {
       return '';
@@ -123,7 +117,7 @@ export function InvestmentPlanDetails({ investmentPlan, birthDate }: InvestmentP
     {
       icon: <Building2 className="h-4 w-4 text-amber-600" />,
       label: t('dashboard.investmentPlan.initialCapital'),
-      value: formatCurrency(investmentPlan.initial_amount),
+      value: formatCurrency(investmentPlan.initial_amount, investmentPlan.currency),
       color: "text-amber-600"
     }
   ];
@@ -132,13 +126,13 @@ export function InvestmentPlanDetails({ investmentPlan, birthDate }: InvestmentP
     {
       icon: <TrendingUp className="h-4 w-4 text-rose-600" />,
       label: t('dashboard.investmentPlan.monthlyContribution'),
-      value: formatCurrency(investmentPlan.required_monthly_deposit),
+      value: formatCurrency(investmentPlan.required_monthly_deposit, investmentPlan.currency),
       color: "text-rose-600"
     },
     {
       icon: <WalletCards className="h-4 w-4 text-cyan-600" />,
       label: t('dashboard.investmentPlan.desiredWithdrawal'),
-      value: formatCurrency(investmentPlan.desired_income),
+      value: formatCurrency(investmentPlan.desired_income, investmentPlan.currency),
       color: "text-cyan-600"
     }
   ];

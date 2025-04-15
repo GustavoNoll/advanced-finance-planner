@@ -6,7 +6,7 @@ import { useTranslation } from "react-i18next";
 import { useState } from "react";
 import { toast } from "@/components/ui/use-toast";
 import { useLocale } from "@/hooks/useLocale";
-
+import { CurrencyCode } from "@/utils/currency";
 interface ChartPoint {
   age: string;
   year: number;
@@ -36,6 +36,7 @@ interface ChartPointDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   selectedPoint: ChartPoint | null;
+  currency: CurrencyCode;
   dialogType: 'goal' | 'event' | null;
   onDialogTypeChange: (type: 'goal' | 'event' | null) => void;
   onSubmitGoal: (values: GoalFormValues) => Promise<void>;
@@ -47,6 +48,7 @@ export const ChartPointDialog = ({
   open,
   onOpenChange,
   selectedPoint,
+  currency,
   dialogType,
   onDialogTypeChange,
   onSubmitGoal,
@@ -132,6 +134,7 @@ export const ChartPointDialog = ({
                   goal_year: selectedPoint.year.toString(),
                 }}
                 isSubmitting={isSubmitting}
+                currency={currency}
               />
             ) : dialogType === 'event' ? (
               <EventForm
@@ -142,6 +145,7 @@ export const ChartPointDialog = ({
                   year: selectedPoint.year.toString(),
                 }}
                 isSubmitting={isSubmitting}
+                currency={currency}
               />
             ) : (
               <div className="flex flex-col gap-4">

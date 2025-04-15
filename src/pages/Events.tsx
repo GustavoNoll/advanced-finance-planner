@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useParams, Link } from "react-router-dom";
+import { useParams, Link, useLocation } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
 import { Button } from "@/components/ui/button";
@@ -20,6 +20,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { useTranslation } from "react-i18next";
 import CurrencyInput from 'react-currency-input-field';
+import { CurrencyCode, formatCurrency, getCurrencySymbol } from "@/utils/currency";
 
 const formSchema = z.object({
   name: z.string().min(1, "Nome é obrigatório"),
@@ -57,6 +58,8 @@ interface Event {
 
 const Events = () => {
   const { id: userId } = useParams();
+  const location = useLocation();
+  const [currency, setCurrency] = useState<CurrencyCode | null>(location.state?.currency || null);
   const { toast } = useToast();
   const { t } = useTranslation();
   const queryClient = useQueryClient();
@@ -92,7 +95,7 @@ const Events = () => {
     mutationFn: async (values: z.infer<typeof formSchema>) => {
       // Remove currency symbol, group separators, and convert comma to dot
       const cleanAmount = values.amount
-        .replace(/[R$\s]/g, '')  // Remove R$ and spaces
+        .replace(/[R$|€|US$|€|U\s]/g, '')  // Remove R$ and spaces
         .replace(/\./g, '')      // Remove thousand separators
         .replace(',', '.');      // Convert decimal comma to dot
 
@@ -212,7 +215,7 @@ const Events = () => {
                     className="flex h-12 w-full rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
                     value={field.value}
                     onValueChange={(value) => field.onChange(value)}
-                    prefix="R$ "
+                    prefix={getCurrencySymbol(currency as CurrencyCode)}
                     groupSeparator="."
                     decimalSeparator=","
                     decimalsLimit={2}
@@ -318,11 +321,7 @@ const Events = () => {
               .replace(/^\w/, (c) => c.toUpperCase())} / {event.year}
           </p>
           <p className={`font-medium ${event.amount >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-            {new Intl.NumberFormat('pt-BR', {
-              style: 'currency',
-              currency: 'BRL',
-              signDisplay: 'always'
-            }).format(event.amount)}
+            {formatCurrency(event.amount, currency as CurrencyCode)}
           </p>
         </div>
         <div>

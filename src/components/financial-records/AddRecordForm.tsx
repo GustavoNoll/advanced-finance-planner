@@ -13,17 +13,13 @@ import { useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 import CurrencyInput from 'react-currency-input-field';
 import { FinancialRecord, MonthNumber, Goal, ProjectedEvent, SelectedGoalsEvents } from '@/types/financial';
+import { InvestmentPlan } from '@/types/financial';
 import { Checkbox } from "@/components/ui/checkbox";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
 import { useQuery } from "@tanstack/react-query";
+import { formatCurrency, CurrencyCode, getCurrencySymbol } from "@/utils/currency";
 
-const formatCurrency = (value: number) => {
-  return new Intl.NumberFormat('pt-BR', {
-    style: 'currency',
-    currency: 'BRL'
-  }).format(value);
-};
 
 const formSchema = z.object({
   record_year: z.number(),
@@ -52,6 +48,7 @@ interface AddRecordFormProps {
   clientId: string;
   onSuccess: () => void;
   editingRecord?: FinancialRecord;
+  investmentPlan: InvestmentPlan;
 }
 
 // Helper function to sort records
@@ -64,7 +61,7 @@ const sortRecords = (records: FinancialRecord[]) => {
   });
 };
 
-export const AddRecordForm = ({ clientId, onSuccess, editingRecord }: AddRecordFormProps) => {
+export const AddRecordForm = ({ clientId, onSuccess, editingRecord, investmentPlan }: AddRecordFormProps) => {
   const { t } = useTranslation();
   const queryClient = useQueryClient();
   const [ipcaDate, setIpcaDate] = useState<string>('');
@@ -371,7 +368,7 @@ export const AddRecordForm = ({ clientId, onSuccess, editingRecord }: AddRecordF
                     <CurrencyInput
                       id={'starting_balance'}
                       className="flex h-12 w-full rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
-                      prefix="R$ "
+                      prefix={getCurrencySymbol(investmentPlan?.currency as CurrencyCode)}
                       groupSeparator="."
                       decimalSeparator=","
                       decimalsLimit={2}
@@ -396,7 +393,7 @@ export const AddRecordForm = ({ clientId, onSuccess, editingRecord }: AddRecordF
                     <CurrencyInput
                       id={'ending_balance'}
                       className="flex h-12 w-full rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
-                      prefix="R$ "
+                      prefix={getCurrencySymbol(investmentPlan?.currency as CurrencyCode)}
                       groupSeparator="."
                       decimalSeparator=","
                       decimalsLimit={2}
@@ -428,7 +425,7 @@ export const AddRecordForm = ({ clientId, onSuccess, editingRecord }: AddRecordF
                     <CurrencyInput
                       id="monthly_contribution"
                       className="flex h-12 w-full rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
-                      prefix="R$ "
+                      prefix={getCurrencySymbol(investmentPlan?.currency as CurrencyCode)}
                       groupSeparator="."
                       decimalSeparator=","
                       decimalsLimit={2}
@@ -482,7 +479,7 @@ export const AddRecordForm = ({ clientId, onSuccess, editingRecord }: AddRecordF
                     <CurrencyInput
                       id="monthly_return"
                       className="flex h-12 w-full rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
-                      prefix="R$ "
+                      prefix={getCurrencySymbol(investmentPlan?.currency as CurrencyCode)}
                       groupSeparator="."
                       decimalSeparator=","
                       decimalsLimit={2}
@@ -547,7 +544,7 @@ export const AddRecordForm = ({ clientId, onSuccess, editingRecord }: AddRecordF
                           htmlFor={`goal-${goal.id}`}
                           className="text-sm leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
                         >
-                          {goal.icon} - {formatCurrency(goal.asset_value)}
+                          {goal.icon} - {formatCurrency(goal.asset_value, investmentPlan?.currency as CurrencyCode)}
                         </label>
                       </div>
                     ))}
@@ -574,7 +571,7 @@ export const AddRecordForm = ({ clientId, onSuccess, editingRecord }: AddRecordF
                           htmlFor={`event-${event.id}`}
                           className="text-sm leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
                         >
-                          {event.name} - {formatCurrency(event.amount)}
+                          {event.name} - {formatCurrency(event.amount, investmentPlan?.currency as CurrencyCode)}
                         </label>
                       </div>
                     ))}
@@ -586,7 +583,7 @@ export const AddRecordForm = ({ clientId, onSuccess, editingRecord }: AddRecordF
 
           {selectedItems.totalValue > 0 && (
             <p className="text-sm font-medium text-gray-900">
-              {t('financialRecords.form.selectedTotal')}: {formatCurrency(selectedItems.totalValue)}
+              {t('financialRecords.form.selectedTotal')}: {formatCurrency(selectedItems.totalValue, investmentPlan?.currency as CurrencyCode)}
             </p>
           )}
         </div>
@@ -602,7 +599,7 @@ export const AddRecordForm = ({ clientId, onSuccess, editingRecord }: AddRecordF
                   <CurrencyInput
                     id="events_balance"
                     className="flex h-12 w-full rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
-                    prefix="R$ "
+                    prefix={getCurrencySymbol(investmentPlan?.currency as CurrencyCode)}
                     groupSeparator="."
                     decimalSeparator=","
                     decimalsLimit={2}
