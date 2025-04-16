@@ -219,6 +219,8 @@ export const CreatePlan = () => {
     const birthDateObj = new Date(birthDate);
     
     if (name === 'finalAge') {
+      if (!value) return; // Don't update if age is empty
+      
       setIsSyncing(true);
       setUpdateSource('age');
       
@@ -242,19 +244,15 @@ export const CreatePlan = () => {
     } else if (name === 'planEndAccumulationDate') {
       if (updateSource === 'age') return;
       
+      if (!value || isNaN(new Date(value).getTime())) return; // Don't update if date is empty or invalid
+      
       setIsSyncing(true);
       setUpdateSource('date');
       
       setFormData(prev => ({
         ...prev,
-          planEndAccumulationDate: value
+        planEndAccumulationDate: value
       }));
-
-      if (!value || isNaN(new Date(value).getTime())) {
-        setIsSyncing(false);
-        setUpdateSource(null);
-        return;
-      }
 
       const endDate = new Date(value);
       const age = endDate.getFullYear() - birthDateObj.getFullYear();

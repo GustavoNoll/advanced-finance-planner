@@ -104,10 +104,15 @@ export function EditPlanModal({ investmentPlan, birthDate, onClose, onSuccess }:
   function handleAgeDateChange(e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) {
     const { name, value } = e.target;
     if (!birthDate || isSyncing) return;
+
     if (name === 'finalAge') {
+      if (!value) return; // Don't update if age is empty
+      
       setUpdateSource('age');
       setFormData(prev => ({ ...prev, finalAge: value }));
     } else if (name === 'planEndAccumulationDate') {
+      if (!value || isNaN(new Date(value).getTime())) return; // Don't update if date is empty or invalid
+      
       setUpdateSource('date');
       setFormData(prev => ({ ...prev, planEndAccumulationDate: value }));
     }
