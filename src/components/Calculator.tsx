@@ -108,8 +108,8 @@ export const Calculator = ({ data, investmentPlan }: PlanProgressProps) => {
         <div className="space-y-4">
           <ComparisonRow
             title={t('dashboard.planProgress.monthlyContribution')}
-            planned={data.plannedContribution}
-            projected={data.projectedContribution}
+            planned={Math.max(data.plannedContribution, 0)}
+            projected={Math.max(data.projectedContribution, 0)}
             isCurrency={true}
             isHigherBetter={false}
             t={t}
