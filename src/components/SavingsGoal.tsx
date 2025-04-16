@@ -62,9 +62,8 @@ export const SavingsGoal = ({ allFinancialRecords, investmentPlan, profile, plan
   const calculateProjectedAge = (): ProjectedAgeResult | 'ageNotAvailable' | 'metaNotAchieved' => {
     if (planProgressData) {
       const birthDateObj = birthDate ? new Date(birthDate) : null;
-      const finalAgeDate = utils.addMonthsToDate(birthDateObj, finalAge * 12);
+      const finalAgeDate = new Date(investmentPlan?.plan_end_accumulation_date);
       if (!birthDateObj) return 'ageNotAvailable';
-      
       const monthsDifference = utils.calculateMonthsBetweenDates(planProgressData.projectedRetirementDate, finalAgeDate);
       const isAheadOfSchedule = monthsDifference > 0;
       

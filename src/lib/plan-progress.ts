@@ -36,7 +36,7 @@ export const utils = {
    */
   addMonthsToDate: (date: Date, months: number): Date => {
     const newDate = new Date(date);
-    newDate.setMonth(date.getMonth() + months);
+    newDate.setMonth(date.getMonth() + months + 1);
     return newDate;
   }
 };
