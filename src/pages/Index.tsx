@@ -413,7 +413,7 @@ const Index = () => {
       let plannedFuturePresentValue = 0;
       let projectedFuturePresentValue = 0;
 
-      if (retirementYear && retirementMonthIndex !== undefined && retirementMonthIndex > 0) {
+      if (retirementYear && retirementMonthIndex !== undefined) {
         // Get the month before retirement
         const monthBeforeRetirement = retirementYear.months[retirementMonthIndex];
         plannedFuturePresentValue = monthBeforeRetirement?.planned_balance || 0;
