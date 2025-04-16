@@ -19,7 +19,7 @@ export const utils = {
     if (date1 == undefined || date2 == undefined) {
       return null;
     }
-    return Math.floor((date2.getTime() - date1.getTime()) / (DAYS_PER_MONTH * MS_PER_DAY));
+    return Math.floor((date2.getTime() - date1.getTime()) / (DAYS_PER_MONTH * MS_PER_DAY)) + 1;
   },
 
   /**
@@ -333,17 +333,8 @@ const financialCalculations = {
       referenceDate = new Date(investmentPlan.plan_initial_date);
     } else {
       referenceDate = new Date(actualYear, actualMonth - 1);
-
-      
       // Calculate difference in months
-      const yearDiff = planEndDate.getFullYear() - referenceDate.getFullYear();
-      const monthDiff = planEndDate.getMonth() - referenceDate.getMonth();
-      monthsToRetirementSinceNow = (yearDiff * 12) + monthDiff;
-      
-      // Adjust for partial days of month
-      if (planEndDate.getDate() < referenceDate.getDate()) {
-        monthsToRetirementSinceNow--;
-      } 
+      monthsToRetirementSinceNow = utils.calculateMonthsBetweenDates(referenceDate, planEndDate)
     }
 
     const { preRetirementHash, postRetirementHash } = financialCalculations.generatePreCalculationHash(
