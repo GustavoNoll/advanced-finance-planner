@@ -75,7 +75,7 @@ export function InvestmentPlanDetails({ investmentPlan, birthDate, onPlanUpdated
 
     const months = (planEndDate.getFullYear() - planStartDate.getFullYear()) * 12 + 
                   (planEndDate.getMonth() - planStartDate.getMonth());
-    return months;
+    return months + 1;
   };
 
   const formatDate = (date: Date | null) => {

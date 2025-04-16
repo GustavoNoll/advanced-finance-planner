@@ -324,6 +324,8 @@ export const MonthlyView = ({
       )?.monthlyRate ?? 0;
 
       return {
+        monthIndex: record.record_month - 1,
+        year: record.record_year,
         month: `${t(`monthlyView.table.months.${monthNames[record.record_month - 1].toLowerCase()}`)}/${record.record_year}`,
         balance: record.starting_balance,
         contribution: record.monthly_contribution,
@@ -340,8 +342,11 @@ export const MonthlyView = ({
   };
 
   const calculateAccumulatedReturns = (data: ReturnType<typeof processRecordsForChart>) => {
-    return data.map((record, index, array) => {
-      const startIndex = timeWindow === 0 ? 0 : Math.max(0, array.length - timeWindow);
+    if (data.length === 0) return [];
+    console.log("calculating accumulated returns")
+    console.log(data.length)
+    const processedData = data.map((record, index, array) => {
+      const startIndex = timeWindow === 0 ? 0 : Math.max(0, array.length - timeWindow );
       const relevantData = array.slice(startIndex, index + 1);
       
       const accumulatedReturn = relevantData.reduce((acc, curr) => {
@@ -378,20 +383,51 @@ export const MonthlyView = ({
         accumulatedEuroCPIReturn: ((accumulatedEuroCPIReturn - 1) * 100)
       };
     });
+
+    // Create a synthetic data point for the month before the first record
+    const firstRecord = { ...processedData[0] };
+    const month = firstRecord.monthIndex;
+    const year = firstRecord.year;
+    const monthNames = ['january', 'february', 'march', 'april', 'may', 'june', 
+      'july', 'august', 'september', 'october', 'november', 'december'];
+    const previousMonth = month === 0 ? 'december' : monthNames[month - 1];
+    const previousYear = month === 0 ? year - 1 : year;
+    firstRecord.month = `${t(`monthlyView.table.months.${previousMonth.toLowerCase()}`)}/${previousYear}`;
+    const syntheticDataPoint = {
+      ...firstRecord,
+      accumulatedPercentage: 0,
+      accumulatedTargetRentability: 0,
+      accumulatedCDIReturn: 0,
+      accumulatedIPCAReturn: 0,
+      accumulatedUSCPIReturn: 0,
+      accumulatedEuroCPIReturn: 0
+    };
+    return [syntheticDataPoint, ...processedData];
   };
 
-  // Modify the chartDataToUse assignment
-  const chartDataToUse = processRecordsForChart(
-    timeWindow === 0 || timeWindow > RECORDS_PER_PAGE ? 
-    chartRecords : 
-    initialRecords
-  );
-
-  // Update getFilteredChartData to handle the data consistently
   const getFilteredChartData = (data: ReturnType<typeof calculateAccumulatedReturns>) => {
     if (timeWindow === 0) return data;
-    return data.slice(-Math.min(timeWindow, data.length));
+    return data.slice(-Math.min(timeWindow + 1, data.length));
   };
+
+  const chartDataToUse = useMemo(() => 
+    processRecordsForChart(
+      timeWindow === 0 || timeWindow > RECORDS_PER_PAGE ? 
+      chartRecords : 
+      initialRecords
+    ),
+    [timeWindow, chartRecords, initialRecords]
+  );
+
+  const accumulatedReturns = useMemo(() => {
+    console.log("calculating accumulated returns");
+    return calculateAccumulatedReturns(chartDataToUse);
+  }, [chartDataToUse]);
+
+  const filteredChartData = useMemo(() => 
+    getFilteredChartData(accumulatedReturns),
+    [accumulatedReturns, timeWindow]
+  );
 
   const toggleYearExpansion = (year: number) => {
     setExpandedYears(prev => 
@@ -447,7 +483,7 @@ export const MonthlyView = ({
             </div>
             <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-4">
               <ResponsiveContainer width="100%" height={400}>
-                <RechartsLineChart data={getFilteredChartData(calculateAccumulatedReturns(chartDataToUse))}>
+                <RechartsLineChart data={filteredChartData}>
                   <defs>
                     <linearGradient id="colorAccumulated" x1="0" y1="0" x2="1" y2="0">
                       <stop offset="0%" stopColor="#22c55e" /> {/* green-500 */}
