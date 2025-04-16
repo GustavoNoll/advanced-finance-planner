@@ -4,7 +4,6 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/components/ui/use-toast";
 import { supabase } from "@/lib/supabase";
-import { RISK_PROFILES } from '@/constants/riskProfiles';
 import { X } from "lucide-react";
 import { 
   calculateFutureValues, 

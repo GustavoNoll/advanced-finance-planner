@@ -225,9 +225,11 @@ export const InvestmentPlanShow = () => {
                 <p className="text-sm text-gray-500">{t('investmentPlan.details.investmentParams.expectedReturn')}</p>
                 <p className="font-medium">
                   {(() => {
-                    const profile = RISK_PROFILES.find(p => parseInt(p.return) === parseInt(plan.expected_return));
+                    const profiles = RISK_PROFILES[plan.currency];
+                    const profile = profiles.find(p => parseInt(p.return) === parseInt(plan.expected_return));
                     return profile 
-                      ? `${profile.label} (IPCA+${plan.expected_return}%)`                      : `IPCA+${plan.expected_return}%`;
+                      ? `${profile.label} (${plan.currency === 'BRL' ? 'IPCA' : 'CPI'}+${plan.expected_return}%)`
+                      : `${plan.currency === 'BRL' ? 'IPCA' : 'CPI'}+${plan.expected_return}%`;
                   })()}
                 </p>
               </div>

@@ -30,7 +30,7 @@ export const CreatePlan = () => {
     planEndAccumulationDate: "",
     monthlyDeposit: "",
     desiredIncome: "",
-    expectedReturn: RISK_PROFILES[1].return,
+    expectedReturn: RISK_PROFILES.BRL[1].return,
     inflation: "6.0",
     planType: "3",
     adjustContributionForInflation: false,
@@ -190,9 +190,16 @@ export const CreatePlan = () => {
       const newFormData = { ...prev };
       
       if (name === 'expectedReturn') {
-        const profile = RISK_PROFILES.find(p => p.return === value);
+        const profiles = RISK_PROFILES[prev.currency];
+        const profile = profiles.find(p => p.return === value);
         if (profile) {
           newFormData.expectedReturn = profile.return;
+        }
+      } else if (name === 'currency') {
+        // When currency changes, update the expected return to the first profile of the new currency
+        if (value === 'BRL' || value === 'USD' || value === 'EUR') {
+          newFormData.currency = value;
+          newFormData.expectedReturn = RISK_PROFILES[value][0].return;
         }
       } else if (name === 'adjust_contribution_for_inflation') {
         newFormData.adjustContributionForInflation = checked;
@@ -507,13 +514,13 @@ export const CreatePlan = () => {
                     className="w-full h-10 rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
                     required
                   >
-                    {RISK_PROFILES.map((profile) => (
+                    {RISK_PROFILES[formData.currency].map((profile) => (
                       <option
                         key={profile.value}
                         value={profile.return}
                         className={`${profile.bgColor} ${profile.textColor}`}
                       >
-                        {profile.label} (IPCA+{profile.return}%)
+                        {profile.label} ({formData.currency === 'BRL' ? 'IPCA' : 'CPI'}+{profile.return}%)
                       </option>
                     ))}
                   </select>
