@@ -49,11 +49,6 @@ export interface YearlyProjectionData {
   effectiveRate: number;
 }
 
-interface IPCARate {
-  date: Date;
-  monthlyRate: number;
-}
-
 interface ProjectedEventForChart extends ProjectedEvent {
   value: number;
   isInstallment?: boolean;
@@ -76,6 +71,8 @@ export function generateProjectionData(
   const endAge = getEndAge(investmentPlan);
   const goalsForChart = processGoals(goals);
   const eventsForChart = processEvents(events);
+  console.log(goalsForChart);
+  console.log(eventsForChart);
   const birthDate = new Date(profile.birth_date);
   const birthYear = birthDate.getFullYear();
   
@@ -323,14 +320,20 @@ function processSingleEvent(event: ProjectedEvent): ProjectedEventForChart[] {
     return [baseEvent];
   }
 
-  return Array.from({ length: event.installment_count }, (_, index) => ({
-    ...baseEvent,
-    value: event.asset_value / event.installment_count,
-    isInstallment: true,
-    installmentNumber: index + 1,
-    month: (event.month + index) as MonthNumber,
-    year: event.year + Math.floor((event.month + index - 1) / 12)
-  }));
+  return Array.from({ length: event.installment_count }, (_, index) => {
+    const monthOffset = event.month + index;
+    const yearOffset = Math.floor((monthOffset - 1) / 12);
+    const month = ((monthOffset - 1) % 12) + 1;
+    
+    return {
+      ...baseEvent,
+      value: event.asset_value / event.installment_count,
+      isInstallment: true,
+      installmentNumber: index + 1,
+      month: month as MonthNumber,
+      year: event.year + yearOffset
+    };
+  });
 }
 
 /**
@@ -350,14 +353,20 @@ function processSingleGoal(goal: Goal): GoalForChart[] {
     return [baseGoal];
   }
 
-  return Array.from({ length: goal.installment_count }, (_, index) => ({
-    ...baseGoal,
-    month: (((goal.month - 1 + index) % 12) + 1) as MonthNumber,
-    year: goal.year + Math.floor((goal.month - 1 + index) / 12),
-    value: goal.asset_value / goal.installment_count,
-    isInstallment: true,
-    installmentNumber: index + 1
-  }));
+  return Array.from({ length: goal.installment_count }, (_, index) => {
+    const monthOffset = goal.month + index;
+    const yearOffset = Math.floor((monthOffset - 1) / 12);
+    const month = ((monthOffset - 1) % 12) + 1;
+    
+    return {
+      ...baseGoal,
+      month: month as MonthNumber,
+      year: goal.year + yearOffset,
+      value: goal.asset_value / goal.installment_count,
+      isInstallment: true,
+      installmentNumber: index + 1
+    };
+  });
 }
 
 /**

@@ -760,7 +760,7 @@ export const ExpenseChart = ({
 
       <ResponsiveContainer 
         width="100%" 
-        height={400}
+        height={500}
         key={`${JSON.stringify(chartData)}-${showRealValues}`}
       >
         <LineChart 
@@ -790,10 +790,11 @@ export const ExpenseChart = ({
             </filter>
           </defs>
           <CartesianGrid 
-            strokeDasharray="3 3" 
+            strokeDasharray="5 5" 
             stroke="#e5e7eb" 
+            strokeOpacity={1}
             vertical={false}
-            strokeOpacity={0.3}
+            horizontal={true}
           />
           <XAxis 
             dataKey="xAxisLabel"
@@ -818,6 +819,7 @@ export const ExpenseChart = ({
             }}
           />
           <YAxis 
+            tickCount={6}
             tickFormatter={(value) => 
               new Intl.NumberFormat('pt-BR', {
                 style: 'currency',
