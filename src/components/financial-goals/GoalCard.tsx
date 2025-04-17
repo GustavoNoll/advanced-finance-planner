@@ -22,16 +22,19 @@ export const GoalCard = ({ goal, currency, onDelete }: {
             <Icon className="h-6 w-6 text-blue-600" />
           </div>
           <div>
-            <p className="font-semibold text-lg">
+            <p className="font-semibold text-lg">{goal.name}</p>
+            <p className="text-sm text-gray-600 mt-1">
               {new Date(goal.year, goal.month - 1)
                 .toLocaleDateString(navigator.language, { month: 'long', year: 'numeric' })
                 .replace(/^\w/, (c) => c.toUpperCase())}
             </p>
-            <p className="text-sm text-gray-600 mt-1">
-              {goal.installment_project 
-                ? `${getCurrencySymbol(currency)} ${goal.asset_value.toLocaleString('pt-BR')} (${goal.installment_count}x de ${formatCurrency(goal.asset_value / goal.installment_count, currency)})`
-                : `${getCurrencySymbol(currency)} ${goal.asset_value.toLocaleString('pt-BR')}`
-              }
+            <p className={`font-medium ${goal.asset_value >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+              {goal.asset_value >= 0 ? '+' : ''}{formatCurrency(goal.asset_value, currency)}
+              {goal.installment_project && goal.installment_count && (
+                <span className="text-sm text-gray-500 ml-2">
+                  ({goal.installment_count}x de {formatCurrency(goal.asset_value / goal.installment_count, currency)})
+                </span>
+              )}
             </p>
           </div>
         </div>

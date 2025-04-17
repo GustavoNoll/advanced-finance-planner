@@ -7,7 +7,7 @@ import { supabase } from "@/lib/supabase";
 import { useState } from "react";
 import { calculateCompoundedRates, yearlyReturnRateToMonthlyReturnRate } from '@/lib/financial-math';
 import { ChartPointDialog } from "@/components/chart/ChartPointDialog";
-import { TrendingUp, Car, Home, Plane, GraduationCap, User, AlertCircle, Calendar, Users, Laptop, BookOpen, Briefcase, Heart, Target } from "lucide-react";
+import { TrendingUp, Car, Home, Plane, GraduationCap, User, AlertCircle, Calendar, Users, Laptop, BookOpen, Briefcase, Heart, Target, Banknote } from "lucide-react";
 import type { ViewBox } from 'recharts/types/util/types';
 import { CurrencyCode, formatCurrency, getCurrencySymbol } from "@/utils/currency";
 
@@ -33,19 +33,25 @@ interface ExpenseChartProps {
 type ZoomLevel = '1y' | '5y' | '10y' | 'all' | 'custom';
 
 interface GoalFormValues {
+  type: 'goal';
+  name: string;
   icon: string;
   asset_value: string;
-  goal_month: string;
-  goal_year: string;
+  month: string;
+  year: string;
   installment_project: boolean;
   installment_count?: string;
 }
 
 interface EventFormValues {
+  type: 'event';
   name: string;
-  amount: string;
+  icon: string;
+  asset_value: string;
   month: string;
   year: string;
+  installment_project: boolean;
+  installment_count?: string;
 }
 
 interface IconProps {
@@ -78,7 +84,6 @@ export const ExpenseChart = ({
   const [customRange, setCustomRange] = useState<{ past: number, future: number }>({ past: 1, future: 1 });
   const [selectedPoint, setSelectedPoint] = useState<ChartPoint | null>(null);
   const [showDialog, setShowDialog] = useState(false);
-  const [dialogType, setDialogType] = useState<'goal' | 'event' | null>(null);
   
   // Add query for financial goals
   const { data: goals } = useQuery<Goal[]>({
@@ -104,7 +109,7 @@ export const ExpenseChart = ({
         .from("events")
         .select("*")
         .eq("profile_id", clientId)
-        .eq("status", "projected"); 
+        .eq("status", "pending"); 
 
       if (error) throw error;
       return data;
@@ -118,9 +123,10 @@ export const ExpenseChart = ({
         {
           profile_id: clientId,
           icon: values.icon,
+          name: values.name,
           asset_value: parseFloat(values.asset_value.replace(/[^\d.,]/g, '').replace(',', '.')),
-          month: parseInt(values.goal_month),
-          year: parseInt(values.goal_year),
+          month: parseInt(values.month),
+          year: parseInt(values.year),
           installment_project: values.installment_project,
           installment_count: values.installment_project ? parseInt(values.installment_count || "0") : null,
           status: 'pending',
@@ -132,6 +138,7 @@ export const ExpenseChart = ({
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["financial-goals"] });
+      queryClient.invalidateQueries({ queryKey: ["counters"] });
       setShowDialog(false);
       setSelectedPoint(null);
       onProjectionDataChange?.();
@@ -140,7 +147,7 @@ export const ExpenseChart = ({
 
   const createEvent = useMutation({
     mutationFn: async (values: EventFormValues) => {
-      const cleanAmount = values.amount
+      const cleanAmount = values.asset_value
         .replace(/[R$\s]/g, '')
         .replace(/\./g, '')
         .replace(',', '.');
@@ -151,10 +158,13 @@ export const ExpenseChart = ({
         {
           profile_id: clientId,
           name: values.name,
-          amount: amount,
+          icon: values.icon,
+          asset_value: amount,
           month: parseInt(values.month),
           year: parseInt(values.year),
-          status: 'projected'
+          installment_project: values.installment_project,
+          installment_count: values.installment_project ? parseInt(values.installment_count || "0") : null,
+          status: 'pending'
         },
       ]);
 
@@ -163,6 +173,7 @@ export const ExpenseChart = ({
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["events"] });
+      queryClient.invalidateQueries({ queryKey: ["counters"] });
       setShowDialog(false);
       setSelectedPoint(null);
       onProjectionDataChange?.();
@@ -177,7 +188,6 @@ export const ExpenseChart = ({
   const handleDialogClose = () => {
     setShowDialog(false);
     setSelectedPoint(null);
-    setDialogType(null);
   };
 
   if (!profile || !investmentPlan || !clientId || !allFinancialRecords) {
@@ -493,6 +503,9 @@ export const ExpenseChart = ({
             className="opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none"
           >
             <div className="bg-white p-3 rounded-lg shadow-lg border border-gray-200">
+              <div className="text-sm font-medium text-blue-600 mb-1">
+                {t('financialGoals.title')}
+              </div>
               <div className="text-lg font-semibold text-red-600 mb-2">
                 {t('common.value')}: {formattedAmount}
               </div>
@@ -522,14 +535,23 @@ export const ExpenseChart = ({
     
     const { viewBox: { x, y } } = props;
     const iconSize = 20;
+    
+    // Determine icon color based on asset value
+    const iconColor = event.asset_value >= 0 ? 'text-green-500 group-hover:text-green-600' : 'text-red-500 group-hover:text-red-600';
+    
+    const getIcon = () => {
+      switch (event.icon) {
+        case 'goal':
+          return <Target size={iconSize} className={`${iconColor} transition-colors`} />;
+        case 'contribution':
+          return <Banknote size={iconSize} className={`${iconColor} transition-colors`} />;
+        default:
+          return <Calendar size={iconSize} className={`${iconColor} transition-colors`} />;
+      }
+    };
 
-    const formattedAmount = formatCurrency(event.amount, investmentPlan?.currency as CurrencyCode);
-
+    const formattedAmount = formatCurrency(event.asset_value, investmentPlan?.currency as CurrencyCode);
     const monthName = new Date(0, event.month - 1).toLocaleString('pt-BR', { month: 'long' });
-
-    const isPositive = event.amount >= 0;
-    const amountColor = isPositive ? 'text-green-600' : 'text-red-600';
-    const iconColor = isPositive ? 'text-green-500 group-hover:text-green-600' : 'text-red-500 group-hover:text-red-600';
 
     return (
       <g 
@@ -545,7 +567,7 @@ export const ExpenseChart = ({
           className="shadow-sm group-hover:shadow-md transition-all"
         />
         <g transform={`translate(${-iconSize/2}, ${-iconSize/2})`} className="transition-transform duration-200 group-hover:scale-110">
-          <Calendar size={iconSize} className={iconColor + " transition-colors"} />
+          {getIcon()}
         </g>
         <g transform="translate(0, -60)">
           <foreignObject
@@ -556,8 +578,11 @@ export const ExpenseChart = ({
             style={{ overflow: 'visible' }}
             className="opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none"
           >
-            <div className={`bg-white p-3 rounded-lg shadow-lg border border-gray-200 ${amountColor}`}>
-              <div className={`text-lg font-semibold ${amountColor} mb-2`}>
+            <div className="bg-white p-3 rounded-lg shadow-lg border border-gray-200">
+              <div className={`text-sm font-medium ${event.asset_value >= 0 ? 'text-green-600' : 'text-red-600'} mb-1`}>
+                {t('events.title')}
+              </div>
+              <div className={`text-lg font-semibold ${event.asset_value >= 0 ? 'text-green-600' : 'text-red-600'} mb-2`}>
                 {t('common.value')}: {formattedAmount}
               </div>
               <div className="text-sm text-gray-600 mb-1">
@@ -569,6 +594,11 @@ export const ExpenseChart = ({
               <div className="text-sm text-gray-600">
                 {t('financialRecords.form.year')}: {event.year}
               </div>
+              {event.installment_project && event.installment_count && (
+                <div className="text-sm text-blue-600 mt-1">
+                  {t('financialGoals.form.installmentCount')}: {event.installment_count}x
+                </div>
+              )}
             </div>
           </foreignObject>
         </g>
@@ -932,7 +962,7 @@ export const ExpenseChart = ({
                 }
               });
 
-              if (achievementPoint && event.status === 'projected') {
+              if (achievementPoint && event.status === 'pending') {
                 acc.push(
                   <ReferenceLine
                     key={event.id}
@@ -998,11 +1028,10 @@ export const ExpenseChart = ({
         onOpenChange={setShowDialog}
         selectedPoint={selectedPoint}
         currency={investmentPlan?.currency as CurrencyCode}
-        dialogType={dialogType}
-        onDialogTypeChange={setDialogType}
         onSubmitGoal={createGoal.mutateAsync}
         onSubmitEvent={createEvent.mutateAsync}
         onCancel={handleDialogClose}
+        type={'goal'}
       />
     </div>
   );

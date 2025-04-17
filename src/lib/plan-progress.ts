@@ -135,14 +135,26 @@ const financialCalculations = {
    * Processes events for financial calculations
    */
   processEvents: (events: ProjectedEvent[], referenceDate: Date): ProcessedGoalEvent[] => {
-    return events.map(event => {
+    return events.flatMap(event => {
       const eventDate = new Date(event.year, event.month - 1);
       const monthsSinceReference = utils.calculateMonthsBetweenDates(referenceDate, eventDate);
-      return {
-        amount: event.amount,
-        month: monthsSinceReference,
-        name: event.name
-      };
+      
+      if (event.installment_project && event.installment_count) {
+        const monthlyAmount = event.asset_value / event.installment_count;
+        return Array.from({ length: event.installment_count }, (_, index) => ({
+          amount: monthlyAmount,
+          month: monthsSinceReference + index,
+          description: `${event.icon} (${index + 1}/${event.installment_count})`,
+          name: event.name
+        }));
+      } else {
+        return [{
+          amount: event.asset_value,
+          month: monthsSinceReference,
+          description: event.icon,
+          name: event.name
+        }];
+      }
     });
   },
 

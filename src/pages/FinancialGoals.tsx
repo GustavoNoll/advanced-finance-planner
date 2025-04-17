@@ -7,48 +7,11 @@ import { useToast } from "@/components/ui/use-toast";
 import { Spinner } from "@/components/ui/spinner";
 import { ArrowLeft, Plus } from "lucide-react";
 import { Card } from "@/components/ui/card";
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "@/components/ui/form";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import * as z from "zod";
 import { useTranslation } from "react-i18next";
 import { GoalCard } from '@/components/financial-goals/GoalCard';
-import { goalIcons } from "@/constants/goals";
-import CurrencyInput from 'react-currency-input-field';
-import { CurrencyCode, getCurrencySymbol } from "@/utils/currency";
-
-const formSchema = z.object({
-  icon: z.enum(Object.keys(goalIcons) as [string, ...string[]]),
-  asset_value: z.string().min(1, "Valor do bem é obrigatório"),
-  goal_month: z.string().min(1, "Mês é obrigatório"),
-  goal_year: z.string().min(1, "Ano é obrigatório"),
-  installment_project: z.boolean().default(false),
-  installment_count: z.string().optional(),
-}).refine((data) => {
-  const currentDate = new Date();
-  const selectedDate = new Date(
-    parseInt(data.goal_year),
-    parseInt(data.goal_month) - 1
-  );
-  
-  // Set both dates to the first of the month to compare only month/year
-  currentDate.setDate(1);
-  currentDate.setHours(0, 0, 0, 0);
-  selectedDate.setDate(1);
-  selectedDate.setHours(0, 0, 0, 0);
-  
-  return selectedDate >= currentDate;
-}, {
-  message: "A data selecionada não pode ser no passado",
-  path: ["goal_month"] // This will show the error under the month field
-});
+import { FinancialItemForm } from '@/components/chart/FinancialItemForm';
+import { CurrencyCode } from "@/utils/currency";
+import { FinancialItemFormValues } from "@/types/financial";
 
 const FinancialGoals = () => {
   const { id: userId } = useParams();
@@ -59,18 +22,6 @@ const FinancialGoals = () => {
   const queryClient = useQueryClient();
   const [showAddForm, setShowAddForm] = useState(false);
   const [showCompleted, setShowCompleted] = useState(false);
-
-  const form = useForm<z.infer<typeof formSchema>>({
-    resolver: zodResolver(formSchema),
-    defaultValues: {
-      icon: "other",
-      asset_value: "",
-      goal_month: "",
-      goal_year: "",
-      installment_project: false,
-      installment_count: "",
-    },
-  });
 
   const { data: goals, isLoading } = useQuery({
     queryKey: ["financial-goals", userId],
@@ -88,17 +39,20 @@ const FinancialGoals = () => {
   });
 
   const createGoal = useMutation({
-    mutationFn: async (values: z.infer<typeof formSchema>) => {
+    mutationFn: async (values: FinancialItemFormValues) => {
+      const assetValue = parseFloat(values.asset_value.replace(/[^\d.,-]/g, '').replace(',', '.'));
+      
       const { data, error } = await supabase.from("financial_goals").insert([
         {
           profile_id: userId,
+          name: values.name,
           icon: values.icon,
-          asset_value: parseFloat(values.asset_value.replace(/[^\d.,]/g, '').replace(',', '.')),
-          month: parseInt(values.goal_month),
-          year: parseInt(values.goal_year),
-          installment_project: values.installment_project,
-          installment_count: values.installment_project ? parseInt(values.installment_count || "0") : null,
+          asset_value: assetValue,
+          month: parseInt(values.month),
+          year: parseInt(values.year),
           status: 'pending',
+          installment_project: values.installment_project,
+          installment_count: values.installment_count ? parseInt(values.installment_count) : null
         },
       ]);
 
@@ -108,7 +62,6 @@ const FinancialGoals = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["financial-goals"] });
       setShowAddForm(false);
-      form.reset();
       toast({
         title: t("financialGoals.messages.createSuccess"),
       });
@@ -123,13 +76,12 @@ const FinancialGoals = () => {
 
   const deleteGoal = useMutation({
     mutationFn: async (goalId: string) => {
-      // Delete the goal
-      const { error: deleteError } = await supabase
+      const { error } = await supabase
         .from("financial_goals")
         .delete()
         .eq("id", goalId);
 
-      if (deleteError) throw deleteError;
+      if (error) throw error;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["financial-goals"] });
@@ -153,191 +105,6 @@ const FinancialGoals = () => {
     );
   }
 
-  const renderForm = () => (
-    <Form {...form}>
-      <form
-        onSubmit={form.handleSubmit((values) => createGoal.mutate(values))}
-        className="space-y-6 p-6 bg-white rounded-lg shadow-sm border border-gray-100"
-      >
-        <div className="space-y-4">
-          <FormField
-            control={form.control}
-            name="icon"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel className="text-sm font-medium text-gray-700">{t("financialGoals.form.icon")}</FormLabel>
-                <FormControl>
-                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
-                    {Object.entries(goalIcons).map(([key, Icon]) => (
-                      <button
-                        key={key}
-                        type="button"
-                        onClick={() => field.onChange(key)}
-                        className={`flex flex-col items-center justify-center p-4 rounded-lg border-2 transition-all duration-200 ${
-                          field.value === key
-                            ? 'border-blue-500 bg-blue-50'
-                            : 'border-gray-200 hover:border-blue-300 hover:bg-gray-50'
-                        }`}
-                      >
-                        <Icon className="h-8 w-8 text-gray-700 mb-2" />
-                        <span className="text-sm font-medium text-gray-700">
-                          {t(`financialGoals.icons.${key}`)}
-                        </span>
-                      </button>
-                    ))}
-                  </div>
-                </FormControl>
-                <FormMessage className="text-red-500 text-sm mt-1" />
-              </FormItem>
-            )}
-          />
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <FormField
-              control={form.control}
-              name="asset_value"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel className="text-sm font-medium text-gray-700">{t("financialGoals.form.assetValue")}</FormLabel>
-                  <FormControl>
-                    <CurrencyInput
-                      id="asset_value"
-                      className="flex h-12 w-full rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
-                      value={field.value}
-                      onValueChange={(value) => field.onChange(value)}
-                      prefix={getCurrencySymbol(currency as CurrencyCode)}
-                      groupSeparator="."
-                      decimalSeparator=","
-                      decimalsLimit={2}
-                    />
-                  </FormControl>
-                  <FormMessage className="text-red-500 text-sm mt-1" />
-                </FormItem>
-              )}
-            />
-
-            <div className="grid grid-cols-2 gap-4">
-              <FormField
-                control={form.control}
-                name="goal_month"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel className="text-sm font-medium text-gray-700">{t("financialGoals.form.goalMonth")}</FormLabel>
-                    <FormControl>
-                      <select
-                        className="flex h-12 w-full rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
-                        {...field}
-                      >
-                        <option value="">{t("common.select")}</option>
-                        {Array.from({ length: 12 }, (_, i) => {
-                          const month = (i + 1).toString().padStart(2, '0');
-                          return (
-                            <option key={month} value={month}>
-                              {t('monthlyView.table.months.' + new Date(2000, parseInt(month) - 1).toLocaleString('en-US', { month: 'long' }).toLowerCase() )}
-                            </option>
-                          );
-                        })}
-                      </select>
-                    </FormControl>
-                    <FormMessage className="text-red-500 text-sm mt-1" />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="goal_year"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel className="text-sm font-medium text-gray-700">{t("financialGoals.form.goalYear")}</FormLabel>
-                    <FormControl>
-                      <select
-                        className="flex h-12 w-full rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
-                        {...field}
-                      >
-                        <option value="">{t("common.select")}</option>
-                        {Array.from({ length: 2300 - new Date().getFullYear() + 1 }, (_, i) => {
-                          const year = (new Date().getFullYear() + i).toString();
-                          return (
-                            <option key={year} value={year}>
-                              {year}
-                            </option>
-                          );
-                        })}
-                      </select>
-                    </FormControl>
-                    <FormMessage className="text-red-500 text-sm mt-1" />
-                  </FormItem>
-                )}
-              />
-            </div>
-          </div>
-
-          <div className="space-y-4">
-            <FormField
-              control={form.control}
-              name="installment_project"
-              render={({ field }) => (
-                <FormItem className="flex items-center space-x-3 p-4 bg-gray-50 rounded-lg">
-                  <FormControl>
-                    <input
-                      type="checkbox"
-                      checked={field.value}
-                      onChange={field.onChange}
-                      className="h-5 w-5 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                    />
-                  </FormControl>
-                  <FormLabel className="font-medium text-gray-700">
-                    {t("financialGoals.form.isInstallment")}
-                  </FormLabel>
-                </FormItem>
-              )}
-            />
-
-            {form.watch("installment_project") && (
-              <FormField
-                control={form.control}
-                name="installment_count"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel className="text-sm font-medium text-gray-700">{t("financialGoals.form.installmentCount")}</FormLabel>
-                    <FormControl>
-                      <input
-                        type="number"
-                        min="1"
-                        className="flex h-12 w-full rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
-                        {...field}
-                      />
-                    </FormControl>
-                    <FormMessage className="text-red-500 text-sm mt-1" />
-                  </FormItem>
-                )}
-              />
-            )}
-          </div>
-        </div>
-
-        <div className="flex gap-3 justify-end pt-4 border-t border-gray-100">
-          <Button 
-            type="button" 
-            variant="outline"
-            onClick={() => setShowAddForm(false)}
-            className="px-6 py-2 text-gray-700 hover:bg-gray-50"
-          >
-            {t("common.cancel")}
-          </Button>
-          <Button 
-            type="submit"
-            className="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white"
-          >
-            {t("common.save")}
-          </Button>
-        </div>
-      </form>
-    </Form>
-  );
-
-  // Separate goals into projected and completed
   const projectedGoals = goals?.filter(goal => goal.status === 'pending') || [];
   const completedGoals = goals?.filter(goal => goal.status === 'completed') || [];
 
@@ -358,8 +125,7 @@ const FinancialGoals = () => {
               <h1 className="text-xl font-semibold text-gray-900">{t("financialGoals.title")}</h1>
             </div>
 
-            <div className="flex justify-end w-1/3">
-            </div>
+            <div className="w-1/3" />
           </div>
         </div>
       </header>
@@ -379,7 +145,14 @@ const FinancialGoals = () => {
 
           {showAddForm && (
             <Card className="p-4">
-              {renderForm()}
+              <FinancialItemForm
+                type="goal"
+                onSubmit={(values) => createGoal.mutate(values)}
+                onCancel={() => setShowAddForm(false)}
+                isSubmitting={createGoal.isPending}
+                currency={currency as CurrencyCode}
+                showTypeSelector={false}
+              />
             </Card>
           )}
         </div>
