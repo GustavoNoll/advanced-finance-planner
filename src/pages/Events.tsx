@@ -158,7 +158,7 @@ const Events = () => {
           </Button>
 
           {showAddForm && (
-            <Card className="p-4">
+            <Card className="p-4 bg-white shadow-sm border border-gray-200">
               <FinancialItemForm
                 type="event"
                 onSubmit={(values) => createEvent.mutate(values)}

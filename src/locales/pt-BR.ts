@@ -353,6 +353,7 @@ export const ptBR = {
     selectMonth: "Selecione o mês",
     selectYear: "Selecione o ano",
     formErrors: "Erros de validação",
+    and: "e",
     name: "Nome",
     enterName: "Digite o nome do objetivo ou evento",
     year: "Ano",
