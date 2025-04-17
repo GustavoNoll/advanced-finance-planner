@@ -12,7 +12,11 @@ const sizeClasses = {
 
 export function Spinner({ className, size = 'md', ...props }: SpinnerProps) {
   return (
-    <div role="status" {...props}>
+    <div 
+      role="status" 
+      className="flex items-center justify-center"
+      {...props}
+    >
       <div
         className={cn(
           "animate-spin rounded-full border-4 border-gray-200",

@@ -7,7 +7,7 @@ import { supabase } from "@/lib/supabase";
 import { useState } from "react";
 import { calculateCompoundedRates, yearlyReturnRateToMonthlyReturnRate } from '@/lib/financial-math';
 import { ChartPointDialog } from "@/components/chart/ChartPointDialog";
-import { TrendingUp, Car, Home, Plane, GraduationCap, User, AlertCircle, Calendar } from "lucide-react";
+import { TrendingUp, Car, Home, Plane, GraduationCap, User, AlertCircle, Calendar, Users, Laptop, BookOpen, Briefcase, Heart, Target } from "lucide-react";
 import type { ViewBox } from 'recharts/types/util/types';
 import { CurrencyCode, formatCurrency, getCurrencySymbol } from "@/utils/currency";
 
@@ -441,29 +441,31 @@ export const ExpenseChart = ({
     
     const getIcon = () => {
       switch (goal.icon) {
-        case 'car':
-          return <Car size={iconSize} className="text-red-500 group-hover:text-red-600 transition-colors" />;
         case 'house':
           return <Home size={iconSize} className="text-red-500 group-hover:text-red-600 transition-colors" />;
+        case 'car':
+          return <Car size={iconSize} className="text-red-500 group-hover:text-red-600 transition-colors" />;
         case 'travel':
           return <Plane size={iconSize} className="text-red-500 group-hover:text-red-600 transition-colors" />;
+        case 'family':
+          return <Users size={iconSize} className="text-red-500 group-hover:text-red-600 transition-colors" />;
+        case 'electronic':
+          return <Laptop size={iconSize} className="text-red-500 group-hover:text-red-600 transition-colors" />;
         case 'education':
           return <GraduationCap size={iconSize} className="text-red-500 group-hover:text-red-600 transition-colors" />;
-        case 'retirement':
-          return <User size={iconSize} className="text-red-500 group-hover:text-red-600 transition-colors" />;
-        case 'emergency':
-          return <AlertCircle size={iconSize} className="text-red-500 group-hover:text-red-600 transition-colors" />;
+        case 'hobby':
+          return <BookOpen size={iconSize} className="text-red-500 group-hover:text-red-600 transition-colors" />;
+        case 'professional':
+          return <Briefcase size={iconSize} className="text-red-500 group-hover:text-red-600 transition-colors" />;
+        case 'health':
+          return <Heart size={iconSize} className="text-red-500 group-hover:text-red-600 transition-colors" />;
         default:
-          return <Calendar size={iconSize} className="text-red-500 group-hover:text-red-600 transition-colors" />;
+          return <Target size={iconSize} className="text-red-500 group-hover:text-red-600 transition-colors" />;
       }
     };
 
     const formattedAmount = formatCurrency(goal.asset_value, investmentPlan?.currency as CurrencyCode);
-
-    const monthName = new Date(0, goal.month - 1).toLocaleString('pt-BR', { month: 'long' })
-
-
-    console.log(projectionData)
+    const monthName = new Date(0, goal.month - 1).toLocaleString('pt-BR', { month: 'long' });
 
     return (
       <g 
@@ -495,12 +497,7 @@ export const ExpenseChart = ({
                 {t('common.value')}: {formattedAmount}
               </div>
               <div className="text-sm text-gray-600 mb-1">
-                {goal.icon === 'car' ? t('financialGoals.icons.car') : 
-                 goal.icon === 'house' ? t('financialGoals.icons.house') : 
-                 goal.icon === 'travel' ? t('financialGoals.icons.travel') : 
-                 goal.icon === 'education' ? t('financialGoals.icons.education') : 
-                 goal.icon === 'retirement' ? t('financialGoals.icons.retirement') : 
-                 goal.icon === 'emergency' ? t('financialGoals.icons.emergency') : t('financialGoals.icons.other')}
+                {t(`financialGoals.icons.${goal.icon}`)}
               </div>
               <div className="text-sm text-gray-600">
                 {t('monthlyView.table.headers.month')}: {monthName}

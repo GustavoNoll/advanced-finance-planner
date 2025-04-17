@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -8,6 +8,7 @@ import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/components/auth/AuthProvider";
 import { RISK_PROFILES } from '@/constants/riskProfiles';
 import { ArrowLeft } from "lucide-react";
+import { Spinner } from "@/components/ui/spinner";
 import { 
   calculateFutureValues, 
   isCalculationReady, 
@@ -32,7 +33,7 @@ export const EditPlan = () => {
     planEndAccumulationDate: "",
     monthlyDeposit: "",
     desiredIncome: "",
-    expectedReturn: RISK_PROFILES[1].return,
+    expectedReturn: RISK_PROFILES.BRL[1].return,
     inflation: "6.0",
     planType: "3",
     adjustContributionForInflation: false,
@@ -42,11 +43,18 @@ export const EditPlan = () => {
     currency: "BRL",
   });
 
-  const [calculations, setCalculations] = useState<InvestmentCalculations | null>(null);
   const { t } = useTranslation();
   const [expandedRow, setExpandedRow] = useState<string | null>(null);
   const [isSyncing, setIsSyncing] = useState(false);
   const [updateSource, setUpdateSource] = useState<'age' | 'date' | null>(null);
+
+  // Memoize calculations to prevent unnecessary recalculations
+  const calculations = useMemo(() => {
+    if (isCalculationReady(formData) && birthDate) {
+      return calculateFutureValues(formData, birthDate);
+    }
+    return null;
+  }, [formData, birthDate]);
 
   useEffect(() => {
     const fetchPlan = async () => {
@@ -118,6 +126,11 @@ export const EditPlan = () => {
       const planDate = new Date(data.plan_initial_date);
       planDate.setDate(planDate.getDate() - 1);
 
+      // Find the matching risk profile for the plan's currency
+      const profiles = RISK_PROFILES[data.currency || "BRL"];
+      const matchingProfile = profiles.find(p => parseFloat(p.return) === parseFloat(data.expected_return));
+      const defaultProfile = profiles[1]; // Use moderate as default
+
       setFormData({
         initialAmount: data.initial_amount.toString(),
         plan_initial_date: planDate.toISOString().split('T')[0],
@@ -125,7 +138,7 @@ export const EditPlan = () => {
         planEndAccumulationDate: data.plan_end_accumulation_date,
         monthlyDeposit: data.monthly_deposit.toString(),
         desiredIncome: data.desired_income.toString(),
-        expectedReturn: data.expected_return.toFixed(1),
+        expectedReturn: matchingProfile?.return || defaultProfile.return,
         inflation: data.inflation.toString(),
         planType: data.plan_type,
         adjustContributionForInflation: data.adjust_contribution_for_inflation,
@@ -144,7 +157,7 @@ export const EditPlan = () => {
       setIsLoadingData(false);
     }
     if (isCalculationReady(formData) && birthDate) {
-      setCalculations(calculateFutureValues(formData, birthDate));
+      // Calculations are now handled by useMemo
     }
   }, [formData, birthDate]);
 
@@ -182,7 +195,8 @@ export const EditPlan = () => {
     }
   }, [formData.finalAge, formData.planEndAccumulationDate, birthDate]);
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+  // Memoize the handleChange function
+  const handleChange = useCallback((e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
     const checked = (e.target as HTMLInputElement).checked;
     
@@ -190,9 +204,15 @@ export const EditPlan = () => {
       const newFormData = { ...prev };
       
       if (name === 'expectedReturn') {
-        const profile = RISK_PROFILES.find(p => p.return === value);
+        const profiles = RISK_PROFILES[prev.currency];
+        const profile = profiles.find(p => p.return === value);
         if (profile) {
           newFormData.expectedReturn = profile.return;
+        }
+      } else if (name === 'currency') {
+        if (value === 'BRL' || value === 'USD' || value === 'EUR') {
+          newFormData.currency = value;
+          newFormData.expectedReturn = RISK_PROFILES[value][0].return;
         }
       } else if (name === 'adjust_contribution_for_inflation') {
         newFormData.adjustContributionForInflation = checked;
@@ -204,30 +224,28 @@ export const EditPlan = () => {
       
       return newFormData;
     });
-  };
+  }, []);
 
-  const handleAgeDateChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+  // Optimize age/date synchronization
+  const handleAgeDateChange = useCallback((e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
     if (!birthDate || isSyncing) return;
 
     const birthDateObj = new Date(birthDate);
     
     if (name === 'finalAge') {
-      if (!value) return; // Don't update if age is empty
+      if (!value) return;
       
       setIsSyncing(true);
       setUpdateSource('age');
       
-      setFormData(prev => ({
-        ...prev,
-        finalAge: value
-      }));
-
       const finalAge = parseInt(value);
       const endDate = new Date(birthDateObj);
       endDate.setFullYear(birthDateObj.getFullYear() + finalAge);
+      
       setFormData(prev => ({
         ...prev,
+        finalAge: value,
         planEndAccumulationDate: endDate.toISOString().split('T')[0]
       }));
 
@@ -238,16 +256,11 @@ export const EditPlan = () => {
     } else if (name === 'planEndAccumulationDate') {
       if (updateSource === 'age') return;
       
-      if (!value || isNaN(new Date(value).getTime())) return; // Don't update if date is empty or invalid
+      if (!value || isNaN(new Date(value).getTime())) return;
       
       setIsSyncing(true);
       setUpdateSource('date');
       
-      setFormData(prev => ({
-        ...prev,
-        planEndAccumulationDate: value
-      }));
-
       const endDate = new Date(value);
       const age = endDate.getFullYear() - birthDateObj.getFullYear();
       const monthDiff = endDate.getMonth() - birthDateObj.getMonth();
@@ -255,6 +268,7 @@ export const EditPlan = () => {
       
       setFormData(prev => ({
         ...prev,
+        planEndAccumulationDate: value,
         finalAge: finalAge.toString()
       }));
 
@@ -263,7 +277,7 @@ export const EditPlan = () => {
         setUpdateSource(null);
       }, 0);
     }
-  };
+  }, [birthDate, isSyncing, updateSource]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -352,9 +366,10 @@ export const EditPlan = () => {
           </CardHeader>
           <CardContent className="pt-6">
             {isLoadingData ? (
-              <div className="flex justify-center items-center h-[400px]">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
-              </div>
+              <Spinner 
+                size="lg" 
+                className="border-t-primary/80"
+              />
             ) : (
               <form onSubmit={handleSubmit} className="space-y-8">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -506,13 +521,13 @@ export const EditPlan = () => {
                       className="w-full h-10 rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
                       required
                     >
-                      {RISK_PROFILES.map((profile) => (
+                      {RISK_PROFILES[formData.currency].map((profile) => (
                         <option
                           key={profile.value}
                           value={profile.return}
                           className={`${profile.bgColor} ${profile.textColor}`}
                         >
-                          {profile.label} (IPCA+{profile.return}%)
+                          {profile.label} ({formData.currency === 'BRL' ? 'IPCA' : 'CPI'}+{profile.return}%)
                         </option>
                       ))}
                     </select>

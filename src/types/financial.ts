@@ -74,7 +74,7 @@ export type MonthNumber = 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12;
 export interface Goal {
   id: string;
   profile_id: string;
-  icon: 'house' | 'car' | 'education' | 'retirement' | 'travel' | 'emergency' | 'other';
+  icon: 'house' | 'car' | 'travel' | 'family' | 'electronic' | 'education' | 'hobby' | 'professional' | 'health' | 'other';
   asset_value: number;
   month: MonthNumber;
   year: number;
