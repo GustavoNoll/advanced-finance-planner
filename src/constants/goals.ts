@@ -23,16 +23,3 @@ export const goalIcons = {
   health: Heart,
   other: Target,
 } as const;
-
-export const goalNames = {
-  house: "Casa",
-  car: "Carro",
-  travel: "Viagem",
-  family: "Família",
-  electronic: "Eletrônico",
-  education: "Educação",
-  hobby: "Hobby",
-  professional: "Profissional",
-  health: "Saúde",
-  other: "Outro",
-} as const;

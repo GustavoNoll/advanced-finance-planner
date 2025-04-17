@@ -13,15 +13,14 @@ import {
 } from "@/components/ui/form";
 import CurrencyInput from 'react-currency-input-field';
 import { goalIcons } from "@/constants/goals";
+import { eventIcons } from "@/constants/events";
 import { CurrencyCode, getCurrencySymbol, formatCurrency } from "@/utils/currency";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
-import { LucideIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Input } from "@/components/ui/input";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { BaseFormValues, FinancialItemFormValues } from "@/types/financial";
-import { Calendar, Target, TrendingUp } from "lucide-react";
+import { FinancialItemFormValues } from "@/types/financial";
 
 const createSchema = (type: 'goal' | 'event') => {
   const baseFields = {
@@ -61,12 +60,6 @@ interface FinancialItemFormProps {
   onTypeChange?: (type: 'goal' | 'event') => void;
   showTypeSelector?: boolean;
 }
-
-const eventIcons = {
-  goal: Target,
-  contribution: TrendingUp,
-  other: Calendar,
-};
 
 export const FinancialItemForm = ({
   type,
