@@ -80,6 +80,7 @@ export interface Goal {
   year: number;
   installment_project: boolean;
   installment_count?: number;
+  name: string;
   status?: 'pending' | 'completed';
   created_at?: string;
   updated_at?: string;
@@ -92,11 +93,17 @@ export type UpdateGoal = Partial<CreateGoal>;
 
 export interface ProjectedEvent {
   id: string;
+  profile_id: string;
   name: string;
-  amount: number;
-  status: 'pending' | 'completed' | 'projected';
+  asset_value: number;
+  installment_project: boolean;
+  installment_count?: number;
+  icon: 'goal' | 'contribution' | 'other';
+  status: 'pending' | 'completed';
   month: MonthNumber;
   year: number;
+  created_at?: string;
+  updated_at?: string;
 }
 
 export interface SelectedGoalsEvents {
@@ -104,3 +111,38 @@ export interface SelectedGoalsEvents {
   events: string[];
   totalValue: number;
 }
+
+export type BaseFormValues = {
+  name: string;
+  month: string;
+  year: string;
+  icon: string;
+  asset_value: string;
+};
+
+export type GoalFormValues = BaseFormValues & {
+  type: 'goal';
+  installment_project: boolean;
+  installment_count?: string;
+};
+
+export type EventFormValues = BaseFormValues & {
+  type: 'event';
+  installment_project: boolean;
+  installment_count?: string;
+};
+
+export type FinancialItemFormValues = GoalFormValues | EventFormValues;
+
+export type ChartFormValues = {
+  name: string;
+  amount: number;
+  date: string;
+  type: 'goal' | 'event';
+  icon: string;
+  asset_value: number;
+  month: number;
+  year: number;
+  installment_project?: boolean;
+  installment_count?: number;
+};

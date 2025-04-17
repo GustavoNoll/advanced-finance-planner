@@ -326,7 +326,7 @@ const Index = () => {
           .from('events')
           .select('*', { count: 'exact', head: true })
           .eq('profile_id', clientId)
-          .eq('status', 'projected')
+          .eq('status', 'pending')
       ]);
 
       return {
@@ -350,7 +350,7 @@ const Index = () => {
           .from('events')
           .select('*')
           .eq('profile_id', clientId)
-          .eq('status', 'projected')
+          .eq('status', 'pending')
       ]);
       return {
         goals: goalsResponse.data || [],

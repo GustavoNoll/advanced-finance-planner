@@ -49,9 +49,10 @@ export interface YearlyProjectionData {
   effectiveRate: number;
 }
 
-interface IPCARate {
-  date: Date;
-  monthlyRate: number;
+interface ProjectedEventForChart extends ProjectedEvent {
+  value: number;
+  isInstallment?: boolean;
+  installmentNumber?: number;
 }
 
 export function generateProjectionData(
@@ -69,9 +70,11 @@ export function generateProjectionData(
 
   const endAge = getEndAge(investmentPlan);
   const goalsForChart = processGoals(goals);
+  const eventsForChart = processEvents(events);
+  console.log(goalsForChart);
+  console.log(eventsForChart);
   const birthDate = new Date(profile.birth_date);
   const birthYear = birthDate.getFullYear();
-  const birthMonth = birthDate.getMonth() + 1;
   
   // Calculate initial age from plan_initial_date and birth_date
   const planStartDate = new Date(investmentPlan.plan_initial_date);
@@ -186,7 +189,7 @@ export function generateProjectionData(
         currentMonthNumber - 1,
         accumulatedInflation,
         goalsForChart,
-        events,
+        eventsForChart,
       );
       const goalsEventsImpact = currentBalance - previousBalance;
 
@@ -300,30 +303,90 @@ export function getEndAge(investmentPlan: InvestmentPlan): number {
   return 100;
 }
 
-export function processGoals(goals?: Goal[]): GoalForChart[] {
-  if (!goals) return [];
-  
-  return goals.flatMap(goal => {
-    const baseGoal = {
-      ...goal,
-      year: goal.year,
-      month: goal.month as MonthNumber,
-      value: goal.asset_value
+/**
+ * Processes a single event into one or more chart events based on installment settings
+ * @param event - The event to process
+ * @returns An array of processed events for the chart
+ */
+function processSingleEvent(event: ProjectedEvent): ProjectedEventForChart[] {
+  const baseEvent = {
+    ...event,
+    year: event.year,
+    month: event.month as MonthNumber,
+    value: event.asset_value
+  };
+
+  if (!event.installment_project || !event.installment_count) {
+    return [baseEvent];
+  }
+
+  return Array.from({ length: event.installment_count }, (_, index) => {
+    const monthOffset = event.month + index;
+    const yearOffset = Math.floor((monthOffset - 1) / 12);
+    const month = ((monthOffset - 1) % 12) + 1;
+    
+    return {
+      ...baseEvent,
+      value: event.asset_value / event.installment_count,
+      isInstallment: true,
+      installmentNumber: index + 1,
+      month: month as MonthNumber,
+      year: event.year + yearOffset
     };
+  });
+}
 
-    if (!goal.installment_project || !goal.installment_count) {
-      return [baseGoal];
-    }
+/**
+ * Processes a single goal into one or more chart goals based on installment settings
+ * @param goal - The goal to process
+ * @returns An array of processed goals for the chart
+ */
+function processSingleGoal(goal: Goal): GoalForChart[] {
+  const baseGoal = {
+    ...goal,
+    year: goal.year,
+    month: goal.month as MonthNumber,
+    value: goal.asset_value
+  };
 
-    return Array.from({ length: goal.installment_count }, (_, index) => ({
+  if (!goal.installment_project || !goal.installment_count) {
+    return [baseGoal];
+  }
+
+  return Array.from({ length: goal.installment_count }, (_, index) => {
+    const monthOffset = goal.month + index;
+    const yearOffset = Math.floor((monthOffset - 1) / 12);
+    const month = ((monthOffset - 1) % 12) + 1;
+    
+    return {
       ...baseGoal,
-      month: (((goal.month - 1 + index) % 12) + 1) as MonthNumber,
-      year: goal.year + Math.floor((goal.month - 1 + index) / 12),
+      month: month as MonthNumber,
+      year: goal.year + yearOffset,
       value: goal.asset_value / goal.installment_count,
       isInstallment: true,
       installmentNumber: index + 1
-    }));
+    };
   });
+}
+
+/**
+ * Processes an array of events into chart events, handling installments
+ * @param events - Optional array of events to process
+ * @returns Array of processed events for the chart
+ */
+export function processEvents(events?: ProjectedEvent[]): ProjectedEventForChart[] {
+  if (!events) return [];
+  return events.flatMap(processSingleEvent);
+}
+
+/**
+ * Processes an array of goals into chart goals, handling installments
+ * @param goals - Optional array of goals to process
+ * @returns Array of processed goals for the chart
+ */
+export function processGoals(goals?: Goal[]): GoalForChart[] {
+  if (!goals) return [];
+  return goals.flatMap(processSingleGoal);
 }
 
 export function generateDataPoints(
@@ -359,9 +422,10 @@ export function handleMonthlyGoalsAndEvents(
   month: number,
   accumulatedInflation: number,
   goals?: GoalForChart[],
-  events?: ProjectedEvent[]
+  events?: ProjectedEventForChart[]
 ): number {
   let updatedBalance = balance;
+  
   // Handle goals
   const currentGoals = goals?.filter(goal => 
     goal.year === year && goal.month === (month + 1)
@@ -378,7 +442,7 @@ export function handleMonthlyGoalsAndEvents(
   );
 
   if (currentEvents?.length) {
-    const totalEventWithdrawal = currentEvents.reduce((sum, event) => sum + event.amount, 0);
+    const totalEventWithdrawal = currentEvents.reduce((sum, event) => sum + event.value, 0);
     updatedBalance += totalEventWithdrawal * accumulatedInflation;
   }
 

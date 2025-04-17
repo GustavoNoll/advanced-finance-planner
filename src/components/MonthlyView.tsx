@@ -158,7 +158,7 @@ export const MonthlyView = ({
         .from("events")
         .select("*")
         .eq("profile_id", userId)
-        .eq("status", "projected"); 
+        .eq("status", "pending"); 
 
       if (error) throw error;
       return data;
