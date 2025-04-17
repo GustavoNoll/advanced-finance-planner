@@ -30,6 +30,22 @@ interface ComparisonRowProps {
 }
 
 /**
+ * Formats months into years and months string
+ */
+const formatMonthsToYearsAndMonths = (months: number, t: (key: string) => string): string => {
+  const years = Math.floor(months / 12);
+  const remainingMonths = Math.round(months % 12);
+  
+  if (months < 12) return '';
+
+  if (remainingMonths === 0) {
+    return `(${years} ${t('common.years')})`;
+  }
+
+  return `(${years} ${t('common.years')} ${t('common.and')} ${remainingMonths} ${t('common.months')})`;
+};
+
+/**
  * Renders a comparison row between planned and projected values
  */
 const ComparisonRow = ({ 
@@ -52,31 +68,44 @@ const ComparisonRow = ({
       <div className="flex justify-between items-baseline">
         <div className="space-y-1">
           <p className="text-sm text-gray-500">{t('dashboard.planProgress.planned')}:</p>
-          <p className="text-lg font-semibold text-blue-700">
-            {isCurrency 
-              ? formatCurrency(planned, currency as CurrencyCode)
-              : `${planned.toFixed(0)} ${t('common.months')}`
-            }
-          </p>
+          <div>
+            <p className="text-lg font-semibold text-blue-700">
+              {isCurrency 
+                ? formatCurrency(planned, currency as CurrencyCode)
+                : `${planned.toFixed(0)} ${t('common.months')}`
+              }
+            </p>
+            {!isCurrency && planned >= 12 && (
+              <p className="text-xs text-gray-500 mt-0.5">
+                {formatMonthsToYearsAndMonths(planned, t)}
+              </p>
+            )}
+          </div>
         </div>
         <div className="text-right space-y-1">
           <p className="text-sm text-gray-500">{t('dashboard.planProgress.projected')}:</p>
-          <p className={`text-lg font-semibold ${isEqual ? 'text-gray-900' : isGood ? 'text-emerald-600' : 'text-rose-600'}`}>
-            {isCurrency 
-              ? formatCurrency(projected, currency as CurrencyCode)
-              : `${Math.round(projected)} ${t('common.months')}`
-            }
-            {!isEqual && (
-              <span className={`text-xs ml-1.5 px-1.5 py-0.5 rounded-full ${isGood ? 'bg-emerald-50' : 'bg-rose-50'}`}>
-                {isPositive ? '+' : '-'}
-                {isCurrency 
-                  ? formatCurrency(Math.abs(difference), currency as CurrencyCode)
-                  : Math.abs(difference)
-                }
-                {!isCurrency && ` ${t('common.months')}`}
-              </span>
+          <div>
+            <p className={`text-lg font-semibold ${isEqual ? 'text-gray-900' : isGood ? 'text-emerald-600' : 'text-rose-600'}`}>
+              {isCurrency 
+                ? formatCurrency(projected, currency as CurrencyCode)
+                : `${Math.round(projected)} ${t('common.months')}`
+              }
+              {!isEqual && (
+                <span className={`text-xs ml-1.5 px-1.5 py-0.5 rounded-full ${isGood ? 'bg-emerald-50' : 'bg-rose-50'}`}>
+                  {isPositive ? '+' : '-'}
+                  {isCurrency 
+                    ? formatCurrency(Math.abs(difference), currency as CurrencyCode)
+                    : `${Math.abs(difference)} ${t('common.months')}`
+                  }
+                </span>
+              )}
+            </p>
+            {!isCurrency && projected >= 12 && (
+              <p className="text-xs text-gray-500 mt-0.5">
+                {formatMonthsToYearsAndMonths(Math.round(projected), t)}
+              </p>
             )}
-          </p>
+          </div>
         </div>
       </div>
     </div>
