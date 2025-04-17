@@ -167,16 +167,25 @@ const FinancialGoals = () => {
               <FormItem>
                 <FormLabel className="text-sm font-medium text-gray-700">{t("financialGoals.form.icon")}</FormLabel>
                 <FormControl>
-                  <select
-                    {...field}
-                    className="w-full p-3 border border-gray-200 rounded-lg bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
-                  >
-                    {Object.entries(goalIcons).map(([key, value]) => (
-                      <option key={key} value={key} className="p-2">
-                        {value} {t(`financialGoals.icons.${key}`)}
-                      </option>
+                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
+                    {Object.entries(goalIcons).map(([key, Icon]) => (
+                      <button
+                        key={key}
+                        type="button"
+                        onClick={() => field.onChange(key)}
+                        className={`flex flex-col items-center justify-center p-4 rounded-lg border-2 transition-all duration-200 ${
+                          field.value === key
+                            ? 'border-blue-500 bg-blue-50'
+                            : 'border-gray-200 hover:border-blue-300 hover:bg-gray-50'
+                        }`}
+                      >
+                        <Icon className="h-8 w-8 text-gray-700 mb-2" />
+                        <span className="text-sm font-medium text-gray-700">
+                          {t(`financialGoals.icons.${key}`)}
+                        </span>
+                      </button>
                     ))}
-                  </select>
+                  </div>
                 </FormControl>
                 <FormMessage className="text-red-500 text-sm mt-1" />
               </FormItem>

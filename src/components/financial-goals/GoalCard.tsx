@@ -5,18 +5,22 @@ import { useTranslation } from "react-i18next";
 import { goalIcons } from "@/constants/goals";
 import { Goal } from "@/types/financial";
 import { formatCurrency, CurrencyCode, getCurrencySymbol } from "@/utils/currency";
+
 export const GoalCard = ({ goal, currency, onDelete }: { 
   goal: Goal; 
   currency: CurrencyCode;
   onDelete: () => void;
 }) => {
   const { t } = useTranslation();
+  const Icon = goalIcons[goal.icon];
   
   return (
     <Card className="p-6 hover:shadow-lg transition-all duration-200">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-5">
-          <span className="text-3xl bg-gray-50 p-3 rounded-xl">{goalIcons[goal.icon]}</span>
+          <div className="bg-gray-50 p-3 rounded-xl">
+            <Icon className="h-6 w-6 text-blue-600" />
+          </div>
           <div>
             <p className="font-semibold text-lg">
               {new Date(goal.year, goal.month - 1)
