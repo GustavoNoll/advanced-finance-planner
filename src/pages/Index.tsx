@@ -391,7 +391,8 @@ const Index = () => {
       isProfilesLoading ||
       isFinancialRecordsLoading ||
       isGoalsLoading ||
-      !projectionData
+      !projectionData ||
+      !investmentPlan
     ) {
       return {
         plannedMonths: 0,
