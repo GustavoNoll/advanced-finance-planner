@@ -352,6 +352,7 @@ export const ptBR = {
     loading: "Verificando permissões..."
   },
   common: {
+    change: "Alterar",
     selectMonth: "Selecione o mês",
     selectYear: "Selecione o ano",
     formErrors: "Erros de validação",
@@ -940,7 +941,7 @@ export const ptBR = {
     activateClient: 'Ativar Corretor',
     clientDeactivated: 'Corretor desativado com sucesso',
     clientActivated: 'Corretor ativado com sucesso',
-    clients: 'Corretores',
+    clients: 'Clientes',
     plans: 'Planos',
     balance: 'Saldo',
     lastActivity: 'Última Atividade',
@@ -971,5 +972,12 @@ export const ptBR = {
     last: 'Último',
     email: 'Email',
     activeRatio: 'Razão de Ativos',
+    changePassword: 'Alterar Senha',
+    changePasswordDescription: 'Digite sua nova senha abaixo. Certifique-se de que ela seja forte e segura.',
+    newPassword: 'Nova Senha',
+    newPasswordPlaceholder: 'Digite sua nova senha',
+    confirmPassword: 'Confirmar Senha',
+    confirmPasswordPlaceholder: 'Digite novamente sua nova senha',
+    passwordChanged: 'Senha alterada com sucesso',
   },
 };

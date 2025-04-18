@@ -4,7 +4,7 @@ import { supabase } from '@/lib/supabase';
 import { useToast } from '@/components/ui/use-toast';
 import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui/button';
-import { LogOut, Search, ChevronLeft, ChevronRight, Plus, UserX, UserCheck, Users, Wallet, Target, Activity, Eye, EyeOff } from 'lucide-react';
+import { LogOut, Search, ChevronLeft, ChevronRight, Plus, UserX, UserCheck, Users, Wallet, Target, Activity, Eye, EyeOff, Key } from 'lucide-react';
 import { Logo } from '@/components/ui/logo';
 import { Avatar } from '@/components/ui/avatar-initial';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -62,12 +62,15 @@ export const AdminDashboard = () => {
   const [isAdmin, setIsAdmin] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [isCreatingBroker, setIsCreatingBroker] = useState(false);
+  const [isChangingPassword, setIsChangingPassword] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [newBroker, setNewBroker] = useState({
     email: '',
     password: '',
     name: ''
   });
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
   const itemsPerPage = 10;
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -188,16 +191,27 @@ export const AdminDashboard = () => {
 
           if (recordsError) throw recordsError;
 
-          // Filter to get only the most recent record per client
+          // Get current date
+          const currentDate = new Date();
+
+          // Function to check if a record is within the last 3 months
+          const isWithinLast3Months = (year: number, month: number) => {
+            const recordDate = new Date(year, month - 1); // month - 1 because JavaScript months are 0-based
+            const threeMonthsAgo = new Date(currentDate);
+            threeMonthsAgo.setMonth(currentDate.getMonth() - 3);
+            return recordDate >= threeMonthsAgo;
+          };
+
+          // Filter to get only the most recent record per client within the last 3 months
           const uniqueRecords = records?.reduce((acc, record) => {
-            if (!acc[record.user_id]) {
+            if (!acc[record.user_id] && isWithinLast3Months(record.record_year, record.record_month)) {
               acc[record.user_id] = record;
             }
             return acc;
           }, {} as Record<string, FinancialRecord>);
 
           const latestRecords = Object.values(uniqueRecords || {});
-          const totalBalance = latestRecords.reduce((sum, record) => sum + record.ending_balance, 0);
+          const totalBalance = latestRecords.reduce((sum, record) => sum + (record.ending_balance || 0), 0);
           const lastActivity = latestRecords[0]?.created_at || null;
           const clientsWithActiveRecords = new Set(latestRecords.map(r => r.user_id)).size;
           const clientsWithOutdatedRecords = clientIds.length - clientsWithActiveRecords;
@@ -363,25 +377,51 @@ export const AdminDashboard = () => {
     }
   };
 
-  const handleToggleClientStatus = async (brokerId: string, currentStatus: boolean) => {
+  const handleChangePassword = async () => {
     try {
-      const { error } = await supabase
-        .from('profiles')
-        .update({ active: !currentStatus })
-        .eq('id', brokerId);
+      if (!newPassword || !confirmPassword) {
+        toast({
+          title: t('common.error'),
+          description: t('validation.required'),
+          variant: "destructive",
+        });
+        return;
+      }
+
+      if (newPassword !== confirmPassword) {
+        toast({
+          title: t('common.error'),
+          description: t('validation.passwordsDontMatch'),
+          variant: "destructive",
+        });
+        return;
+      }
+
+      if (newPassword.length < 6) {
+        toast({
+          title: t('common.error'),
+          description: t('validation.passwordTooShort'),
+          variant: "destructive",
+        });
+        return;
+      }
+
+      const { error } = await supabase.auth.updateUser({
+        password: newPassword
+      });
 
       if (error) throw error;
 
       toast({
         title: t('common.success'),
-        description: currentStatus 
-          ? t('adminDashboard.clientDeactivated') 
-          : t('adminDashboard.clientActivated'),
+        description: t('adminDashboard.passwordChanged'),
       });
 
-      fetchBrokerMetrics();
+      setIsChangingPassword(false);
+      setNewPassword('');
+      setConfirmPassword('');
     } catch (error) {
-      console.error('Error toggling client status:', error);
+      console.error('Error changing password:', error);
       toast({
         title: t('common.error'),
         description: error instanceof Error ? error.message : String(error),
@@ -567,6 +607,76 @@ export const AdminDashboard = () => {
                     </Button>
                     <Button onClick={handleCreateBroker}>
                       {t('common.create')}
+                    </Button>
+                  </DialogFooter>
+                </DialogContent>
+              </Dialog>
+              
+              <Dialog open={isChangingPassword} onOpenChange={setIsChangingPassword}>
+                <DialogTrigger asChild>
+                  <Button 
+                    variant="default" 
+                    className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white"
+                  >
+                    <Key className="h-4 w-4" />
+                    {t('adminDashboard.changePassword')}
+                  </Button>
+                </DialogTrigger>
+                <DialogContent>
+                  <DialogHeader>
+                    <DialogTitle>{t('adminDashboard.changePassword')}</DialogTitle>
+                    <DialogDescription>
+                      {t('adminDashboard.changePasswordDescription')}
+                    </DialogDescription>
+                  </DialogHeader>
+                  <div className="grid gap-4 py-4">
+                    <div className="grid gap-2">
+                      <label htmlFor="newPassword" className="text-sm font-medium">
+                        {t('adminDashboard.newPassword')}
+                      </label>
+                      <div className="relative">
+                        <Input
+                          id="newPassword"
+                          type={showPassword ? "text" : "password"}
+                          value={newPassword}
+                          onChange={(e) => setNewPassword(e.target.value)}
+                          placeholder={t('adminDashboard.newPasswordPlaceholder')}
+                          className="pr-10"
+                        />
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          className="absolute right-2 top-1/2 -translate-y-1/2 h-6 w-6"
+                          onClick={() => setShowPassword(!showPassword)}
+                        >
+                          {showPassword ? (
+                            <EyeOff className="h-4 w-4 text-gray-500" />
+                          ) : (
+                            <Eye className="h-4 w-4 text-gray-500" />
+                          )}
+                        </Button>
+                      </div>
+                    </div>
+                    <div className="grid gap-2">
+                      <label htmlFor="confirmPassword" className="text-sm font-medium">
+                        {t('adminDashboard.confirmPassword')}
+                      </label>
+                      <Input
+                        id="confirmPassword"
+                        type="password"
+                        value={confirmPassword}
+                        onChange={(e) => setConfirmPassword(e.target.value)}
+                        placeholder={t('adminDashboard.confirmPasswordPlaceholder')}
+                      />
+                    </div>
+                  </div>
+                  <DialogFooter>
+                    <Button variant="outline" onClick={() => setIsChangingPassword(false)}>
+                      {t('common.cancel')}
+                    </Button>
+                    <Button onClick={handleChangePassword}>
+                      {t('common.change')}
                     </Button>
                   </DialogFooter>
                 </DialogContent>
