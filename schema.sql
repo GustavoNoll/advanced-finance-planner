@@ -1,6 +1,7 @@
 create table public.profiles (
   id uuid not null,
   is_broker boolean null default false,
+  is_admin boolean null default false,
   created_at timestamp with time zone not null default timezone ('utc'::text, now()),
   name text null,
   birth_date date null,

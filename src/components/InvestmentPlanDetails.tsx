@@ -3,9 +3,7 @@ import { InvestmentPlan } from "@/types/financial";
 import { format, isValid } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { useTranslation } from "react-i18next";
-import { formatCurrency, getCurrencySymbol } from '@/utils/currency';
-import { useState } from 'react';
-import { EditPlanModal } from './EditPlanModal';
+import { formatCurrency } from '@/utils/currency';
 import { Button } from './ui/button';
 
 interface InvestmentPlanDetailsProps {
@@ -13,6 +11,7 @@ interface InvestmentPlanDetailsProps {
   birthDate: string | null;
   onPlanUpdated?: () => void;
   onEditClick: () => void;
+  isBroker?: boolean;
 }
 
 interface PlanMetricProps {
@@ -48,7 +47,7 @@ function PlanMetric({ icon, label, value, color, duration }: PlanMetricProps) {
   );
 }
 
-export function InvestmentPlanDetails({ investmentPlan, birthDate, onPlanUpdated, onEditClick }: InvestmentPlanDetailsProps) {
+export function InvestmentPlanDetails({ investmentPlan, birthDate, onPlanUpdated, onEditClick, isBroker = false }: InvestmentPlanDetailsProps) {
   const { t } = useTranslation();
   
   if (!investmentPlan || !birthDate) {
@@ -149,14 +148,16 @@ export function InvestmentPlanDetails({ investmentPlan, birthDate, onPlanUpdated
           <CalendarDays className="h-4 w-4 text-blue-600" />
           {t('dashboard.investmentPlan.timeline')}
         </h3>
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={onEditClick}
-          className="text-gray-600 hover:text-blue-600"
-        >
-          <Pencil className="h-4 w-4" />
-        </Button>
+        {isBroker && (
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={onEditClick}
+            className="text-gray-600 hover:text-blue-600"
+          >
+            <Pencil className="h-4 w-4" />
+          </Button>
+        )}
       </div>
 
       {/* Timeline Section */}

@@ -2,6 +2,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Users, Wallet, CheckCircle2 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { DashboardMetrics } from '@/types/broker-dashboard';
+import { Avatar } from '@/components/ui/avatar-initial';
 
 interface SummaryMetricsProps {
   metrics: DashboardMetrics;
@@ -20,9 +21,13 @@ export const SummaryMetrics = ({ metrics }: SummaryMetricsProps) => {
         <CardContent className="pt-6">
           <div className="flex flex-col space-y-4">
             <div className="flex items-center gap-3">
-              <div className="h-12 w-12 rounded-xl bg-primary/10 flex items-center justify-center ring-2 ring-primary/20">
-                <Users className="h-6 w-6 text-primary" />
-              </div>
+              <Avatar 
+                icon={Users} 
+                size="lg" 
+                variant="square"
+                iconClassName="h-6 w-6"
+                color="gray"
+              />
               <div>
                 <p className="text-sm font-medium text-gray-500">{t('brokerDashboard.metrics.totalClients')}</p>
                 <p className="text-2xl font-bold text-gray-900 tracking-tight">{metrics.totalClients}</p>
@@ -43,9 +48,13 @@ export const SummaryMetrics = ({ metrics }: SummaryMetricsProps) => {
         <CardContent className="pt-6">
           <div className="flex flex-col space-y-4">
             <div className="flex items-center gap-3">
-              <div className="h-12 w-12 rounded-xl bg-green-50 flex items-center justify-center ring-2 ring-green-100">
-                <Wallet className="h-6 w-6 text-green-600" />
-              </div>
+              <Avatar 
+                icon={Wallet} 
+                size="lg" 
+                variant="square"
+                iconClassName="h-6 w-6"
+                color="green"
+              />
               <div>
                 <p className="text-sm font-medium text-gray-500">{t('brokerDashboard.metrics.totalBalance')}</p>
                 <p className="text-2xl font-bold text-gray-900 tracking-tight">
@@ -67,9 +76,13 @@ export const SummaryMetrics = ({ metrics }: SummaryMetricsProps) => {
         <CardContent className="pt-6">
           <div className="flex flex-col space-y-4">
             <div className="flex items-center gap-3">
-              <div className="h-12 w-12 rounded-xl bg-blue-50 flex items-center justify-center ring-2 ring-blue-100">
-                <CheckCircle2 className="h-6 w-6 text-blue-600" />
-              </div>
+              <Avatar 
+                icon={CheckCircle2} 
+                size="lg" 
+                variant="square"
+                iconClassName="h-6 w-6"
+                color="blue"
+              />
               <div>
                 <p className="text-sm font-medium text-gray-500">{t('brokerDashboard.metrics.activeRecords')}</p>
                 <p className="text-2xl font-bold text-gray-900 tracking-tight">{metrics.clientsWithActiveRecords}</p>

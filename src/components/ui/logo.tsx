@@ -15,7 +15,7 @@ export function Logo({ variant = 'full', className }: LogoProps) {
           alt="Logo" 
           className={cn(
             "object-contain",
-            variant === 'full' ? "h-50" : "h-10"
+            variant === 'full' ? "h-12" : "h-10"
           )}
         />
       </div>

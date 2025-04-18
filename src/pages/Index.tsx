@@ -26,6 +26,7 @@ import { Logo } from '@/components/ui/logo';
 import { InvestmentPlanDetails } from "@/components/InvestmentPlanDetails";
 import { formatCurrency, CurrencyCode } from "@/utils/currency";
 import { EditPlanModal } from "@/components/EditPlanModal";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 type TimePeriod = 'all' | '6m' | '12m' | '24m';
 
 const Index = () => {
@@ -769,16 +770,17 @@ const Index = () => {
                     </HoverCardContent>
                   </HoverCard>
                 </div>
-                <select
-                  value={contributionPeriod}
-                  onChange={(e) => setContributionPeriod(e.target.value as TimePeriod)}
-                  className="text-sm border border-gray-200 rounded-lg px-2 py-1 bg-white/90 text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent shadow-sm hover:border-blue-200 transition-colors"
-                >
-                  <option value="all">{t('common.allTime')}</option>
-                  <option value="6m">{t('common.last6Months')}</option>
-                  <option value="12m">{t('common.last12Months')}</option>
-                  <option value="24m">{t('common.last24Months')}</option>
-                </select>
+                <Select value={contributionPeriod} onValueChange={(value) => setContributionPeriod(value as TimePeriod)}>
+                  <SelectTrigger className="w-[150px] h-8 text-sm border border-gray-200 rounded-lg px-2 bg-white/90 text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent shadow-sm hover:border-blue-200 transition-colors ml-auto">
+                    <SelectValue placeholder={t('common.selectPeriod')} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">{t('common.allTime')}</SelectItem>
+                    <SelectItem value="6m">{t('common.last6Months')}</SelectItem>
+                    <SelectItem value="12m">{t('common.last12Months')}</SelectItem>
+                    <SelectItem value="24m">{t('common.last24Months')}</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
             }
             icon={PiggyBank}
@@ -817,16 +819,17 @@ const Index = () => {
                     </HoverCardContent>
                   </HoverCard>
                 </div>
-                <select
-                  value={selectedPeriod}
-                  onChange={(e) => setSelectedPeriod(e.target.value as TimePeriod)}
-                  className="text-sm border border-gray-200 rounded-lg px-2 py-1 bg-white/90 text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent shadow-sm hover:border-blue-200 transition-colors"
-                >
-                  <option value="all">{t('common.allTime')}</option>
-                  <option value="6m">{t('common.last6Months')}</option>
-                  <option value="12m">{t('common.last12Months')}</option>
-                  <option value="24m">{t('common.last24Months')}</option>
-                </select>
+                <Select value={selectedPeriod} onValueChange={(value) => setSelectedPeriod(value as TimePeriod)}>
+                  <SelectTrigger className="w-[150px] h-8 text-sm border border-gray-200 rounded-lg px-2 bg-white/90 text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent shadow-sm hover:border-blue-200 transition-colors ml-auto">
+                    <SelectValue placeholder={t('common.selectPeriod')} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">{t('common.allTime')}</SelectItem>
+                    <SelectItem value="6m">{t('common.last6Months')}</SelectItem>
+                    <SelectItem value="12m">{t('common.last12Months')}</SelectItem>
+                    <SelectItem value="24m">{t('common.last24Months')}</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
             }
             icon={LineChart}
@@ -901,6 +904,7 @@ const Index = () => {
               birthDate={clientProfile?.birth_date}
               onPlanUpdated={handlePlanUpdated}
               onEditClick={() => setIsEditModalOpen(true)}
+              isBroker={brokerProfile !== undefined}
             />
           </DashboardCard>
         </div>

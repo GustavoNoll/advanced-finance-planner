@@ -13,6 +13,8 @@ import { ActionMetrics } from '@/components/broker-dashboard/metrics/ActionMetri
 import { ClientList } from '@/components/broker-dashboard/client-list/ClientList';
 import { UserProfileInvestment, BrokerProfile } from '@/types/broker-dashboard';
 import { Logo } from '@/components/ui/logo';
+import { Avatar } from '@/components/ui/avatar-initial';
+import { useAuth } from '@/components/auth/AuthProvider';
 
 interface WealthDistribution {
   range: string;
@@ -93,9 +95,11 @@ export const BrokerDashboard = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState<UserProfileInvestment[]>([]);
   const [isSearching, setIsSearching] = useState(false);
+  const [isBroker, setIsBroker] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
   const { t } = useTranslation();
+  const { user } = useAuth();
   const [currentBroker, setCurrentBroker] = useState<string | null>(null);
   const [brokerProfile, setBrokerProfile] = useState<BrokerProfile | null>(null);
   const [metrics, setMetrics] = useState<DashboardMetrics>({
@@ -128,6 +132,50 @@ export const BrokerDashboard = () => {
       lowReturns: 0
     }
   });
+
+  useEffect(() => {
+    checkBrokerStatus();
+  }, [user]);
+
+  const checkBrokerStatus = async () => {
+    if (!user) {
+      navigate('/login');
+      return;
+    }
+
+    try {
+      const { data: profile, error } = await supabase
+        .from('profiles')
+        .select('is_broker, id, name')
+        .eq('id', user.id)
+        .single();
+
+      if (error) throw error;
+
+      if (!profile?.is_broker) {
+        toast({
+          title: t('common.error'),
+          description: t('brokerDashboard.messages.error.unauthorized'),
+          variant: "destructive",
+        });
+        navigate('/');
+        return;
+      }
+
+      setIsBroker(true);
+      setCurrentBroker(profile.id);
+      setBrokerProfile(profile);
+      fetchInitialUsers();
+    } catch (error) {
+      console.error('Error checking broker status:', error);
+      toast({
+        title: t('common.error'),
+        description: error instanceof Error ? error.message : String(error),
+        variant: "destructive",
+      });
+      navigate('/login');
+    }
+  };
 
   useEffect(() => {
     const getCurrentBroker = async () => {
@@ -400,6 +448,10 @@ export const BrokerDashboard = () => {
     }
   };
 
+  if (!isBroker) {
+    return null;
+  }
+
   return (
     <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -424,11 +476,10 @@ export const BrokerDashboard = () => {
                 className="flex items-center gap-2 hover:bg-primary/5 transition-all duration-200"
               >
                 <div className="flex items-center gap-2">
-                  <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center ring-2 ring-primary/20">
-                    <span className="text-primary text-sm font-semibold">
-                      {brokerProfile?.name?.[0]?.toUpperCase() || ''}
-                    </span>
-                  </div>
+                  <Avatar 
+                    initial={brokerProfile?.name?.[0] || ''} 
+                    color="bluePrimary"
+                  />
                   <span className="text-sm font-medium text-gray-700">{t('brokerDashboard.myProfile')}</span>
                 </div>
               </Button>
