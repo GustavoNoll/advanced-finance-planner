@@ -526,6 +526,8 @@ export const ptBR = {
     goalAchievement: "Meta atingida",
     realValues: "Valores Reais",
     nominalValues: "Valores Nominais",
+    realValuesTooltip: "Valores ajustados pela inflação, mostrando o poder de compra real ao longo do tempo",
+    nominalValuesTooltip: "Valores nominais, sem ajuste pela inflação, mostrando o valor bruto ao longo do tempo",
     addNewGoal: "Adicionar Novo Objetivo",
     addNewEvent: "Adicionar Novo Evento",
     clickToAdd: "Clique em um ponto do gráfico para adicionar um objetivo ou evento",

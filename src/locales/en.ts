@@ -1,5 +1,31 @@
 export default {
   financialGoals: {
+    title: "Financial Expenses",
+    addNew: "New Expense",
+    projected: "Projected Expenses",
+    showCompleted: "Show Completed Expenses",
+    hideCompleted: "Hide Completed Expenses",
+    messages: {
+      createSuccess: "Expense created successfully",
+      createError: "Error creating expense",
+      deleteSuccess: "Expense removed successfully",
+      deleteError: "Error removing expense",
+    },
+    form: {
+      name: "Expense Name",
+      icon: "Icon",
+      assetValue: "Expense value",
+      goalMonth: "Expense month",
+      goalYear: "Expense year",
+      isInstallment: "Installment?",
+      installmentProject: "Installment?",
+      selectInstallments: "Select number of installments",
+      installmentCount: "Number of installments"
+    },
+    labels: {
+      assetValue: "Expense value",
+      targetAmount: "Required amount"
+    },
     icons: {
       house: "House",
       car: "Car",

@@ -14,15 +14,16 @@ export const EventCard = ({ event, currency, onDelete, onToggleStatus }: {
   const { t } = useTranslation();
   
   const getEventIcon = () => {
+    const iconColor = event.asset_value >= 0 ? 'text-green-600' : 'text-red-600';
     switch (event.icon) {
       case 'goal':
-        return <Target className="h-6 w-6 text-blue-600" />;
+        return <Target className={`h-6 w-6 ${iconColor}`} />;
       case 'contribution':
-        return <TrendingUp className="h-6 w-6 text-green-600" />;
+        return <TrendingUp className={`h-6 w-6 ${iconColor}`} />;
       case 'other':
-        return <Calendar className="h-6 w-6 text-purple-600" />;
+        return <Calendar className={`h-6 w-6 ${iconColor}`} />;
       default:
-        return <Calendar className="h-6 w-6 text-purple-600" />;
+        return <Calendar className={`h-6 w-6 ${iconColor}`} />;
     }
   };
   
@@ -30,7 +31,7 @@ export const EventCard = ({ event, currency, onDelete, onToggleStatus }: {
     <Card className={`p-6 hover:shadow-lg transition-all duration-200 ${event.status === 'completed' ? 'opacity-60' : ''}`}>
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-5">
-          <div className="bg-gray-50 p-3 rounded-xl">
+          <div className={`p-3 rounded-xl ${event.asset_value >= 0 ? 'bg-green-50' : 'bg-red-50'}`}>
             {getEventIcon()}
           </div>
           <div>

@@ -7,9 +7,16 @@ import { supabase } from "@/lib/supabase";
 import { useState } from "react";
 import { calculateCompoundedRates, yearlyReturnRateToMonthlyReturnRate } from '@/lib/financial-math';
 import { ChartPointDialog } from "@/components/chart/ChartPointDialog";
-import { TrendingUp, Car, Home, Plane, GraduationCap, User, AlertCircle, Calendar, Users, Laptop, BookOpen, Briefcase, Heart, Target, Banknote } from "lucide-react";
+import { TrendingUp, Car, Home, Plane, GraduationCap, User, AlertCircle, Calendar, Users, Laptop, BookOpen, Briefcase, Heart, Target, Banknote, Info, HelpCircle } from "lucide-react";
 import type { ViewBox } from 'recharts/types/util/types';
 import { CurrencyCode, formatCurrency, getCurrencySymbol } from "@/utils/currency";
+import {
+  Tooltip as NextUITooltip,
+  TooltipTrigger,
+  TooltipContent,
+} from "@/components/ui/tooltip";
+import { Switch } from "@/components/ui/switch";
+import { HoverCard, HoverCardContent, HoverCardTrigger } from "@/components/ui/hover-card";
 
 interface ChartPoint {
   age: string;
@@ -616,26 +623,30 @@ export const ExpenseChart = ({
         
         <div className="flex flex-wrap items-center gap-4">
           {/* Inflation adjustment toggle */}
-          <div className="inline-flex items-center">
-            <button
-              onClick={() => setShowRealValues(!showRealValues)}
-              className={`flex items-center gap-2 px-3 py-1.5 text-sm font-medium rounded-md border transition-colors ${
-                showRealValues 
-                  ? 'bg-blue-50 border-blue-200 text-blue-700' 
-                  : 'bg-gray-50 border-gray-200 text-gray-700 hover:bg-gray-100'
-              }`}
-            >
-              {showRealValues ? (
-                <>
-                  <span>{t('expenseChart.realValues')}</span>
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                  </svg>
-                </>
-              ) : (
-                <span>{t('expenseChart.nominalValues')}</span>
-              )}
-            </button>
+          <div className="inline-flex items-center gap-2">
+            <div className="flex items-center gap-2">
+              <span className="text-sm font-medium text-gray-600">{t('expenseChart.nominalValues')}</span>
+              <Switch
+                checked={showRealValues}
+                onCheckedChange={setShowRealValues}
+              />
+              <span className="text-sm font-medium text-gray-600">{t('expenseChart.realValues')}</span>
+            </div>
+
+            <HoverCard>
+              <HoverCardTrigger asChild>
+                <button className="text-gray-400 hover:text-gray-600 transition-colors">
+                  <HelpCircle className="w-4 h-4" />
+                </button>
+              </HoverCardTrigger>
+              <HoverCardContent className="max-w-xs">
+                <p className="text-sm text-gray-600">
+                  {showRealValues 
+                    ? t('expenseChart.realValuesTooltip')
+                    : t('expenseChart.nominalValuesTooltip')}
+                </p>
+              </HoverCardContent>
+            </HoverCard>
           </div>
 
           {/* Negative values toggle */}

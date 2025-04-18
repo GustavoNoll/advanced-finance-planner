@@ -473,7 +473,7 @@ export const MonthlyView = ({
               <select
                 value={timeWindow}
                 onChange={(e) => setTimeWindow(Number(e.target.value) as typeof timeWindow)}
-                className="px-4 py-2 text-sm border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 bg-white"
+                className="appearance-none px-4 py-2 text-sm border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 bg-white"
               >
                 <option value={6}>{t('monthlyView.timeWindows.last6Months')}</option>
                 <option value={12}>{t('monthlyView.timeWindows.last12Months')}</option>

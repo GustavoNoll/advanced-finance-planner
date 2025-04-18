@@ -15,11 +15,11 @@ export const GoalCard = ({ goal, currency, onDelete }: {
   const Icon = goalIcons[goal.icon];
   
   return (
-    <Card className="p-6 hover:shadow-lg transition-all duration-200">
+    <Card className="p-6 hover:shadow-lg transition-all duration-200 border-red-100">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-5">
-          <div className="bg-gray-50 p-3 rounded-xl">
-            <Icon className="h-6 w-6 text-blue-600" />
+          <div className="bg-red-50 p-3 rounded-xl">
+            <Icon className="h-6 w-6 text-red-600" />
           </div>
           <div>
             <p className="font-semibold text-lg">{goal.name}</p>
@@ -28,11 +28,11 @@ export const GoalCard = ({ goal, currency, onDelete }: {
                 .toLocaleDateString(navigator.language, { month: 'long', year: 'numeric' })
                 .replace(/^\w/, (c) => c.toUpperCase())}
             </p>
-            <p className={`font-medium ${goal.asset_value >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-              {goal.asset_value >= 0 ? '+' : ''}{formatCurrency(goal.asset_value, currency)}
+            <p className="text-red-600 font-medium">
+              {formatCurrency(Math.abs(goal.asset_value), currency)}
               {goal.installment_project && goal.installment_count && (
                 <span className="text-sm text-gray-500 ml-2">
-                  ({goal.installment_count}x de {formatCurrency(goal.asset_value / goal.installment_count, currency)})
+                  ({goal.installment_count}x de {formatCurrency(Math.abs(goal.asset_value) / goal.installment_count, currency)})
                 </span>
               )}
             </p>
