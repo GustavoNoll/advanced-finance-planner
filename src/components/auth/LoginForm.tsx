@@ -30,27 +30,38 @@ export const LoginForm = () => {
 
       if (signInError) throw signInError;
 
-      // Check if user is a broker
+      // Check user profile
       const { data: profile, error: profileError } = await supabase
         .from('profiles')
-        .select('is_broker')
+        .select('is_broker, is_admin, active')
         .eq('id', signInData.user.id)
         .single();
 
       if (profileError) throw profileError;
 
+      // Check if user is neither admin nor broker
+      if (!profile?.is_admin && !profile?.is_broker) {
+        throw new Error(t('auth.notAuthorized'));
+      }
+
       toast({
         title: t('common.success'),
         description: t('auth.loginSuccess'),
       });
-      
-      console.log("Profile data:", profile); // Debug log
-      console.log("Is broker:", profile?.is_broker); // Debug log
 
-      if (profile?.is_broker) {
-        navigate('/broker-dashboard');
-      } else {
-        navigate('/');
+      // Redirect based on user type
+      if (profile?.is_admin) {
+        navigate('/admin-dashboard');
+      } else if (profile?.is_broker) {
+        if (profile?.active) {
+          navigate('/broker-dashboard');
+        } else {
+          toast({
+            title: t('common.error'),
+            description: t('auth.brokerInactive'),
+            variant: "destructive",
+          });
+        }
       }
     } catch (error: unknown) {
       console.error('Login error:', error);
@@ -72,7 +83,7 @@ export const LoginForm = () => {
         <Logo variant="full" className="mb-8" />
         <Card className="w-full shadow-lg border-0">
           <CardHeader className="space-y-1">
-            <CardTitle className="text-2xl font-bold text-center">{t('auth.clientLogin')}</CardTitle>
+            <CardTitle className="text-2xl font-bold text-center">{t('auth.brokerLogin')}</CardTitle>
           </CardHeader>
           <CardContent>
             <form onSubmit={handleLogin} className="space-y-6">

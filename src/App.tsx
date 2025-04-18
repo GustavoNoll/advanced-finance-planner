@@ -21,6 +21,7 @@ import Events from "@/pages/Events";
 import { LoadingScreen } from "@/components/ui/loading-screen";
 import { SpeedInsights } from "@vercel/speed-insights/react"
 import { Analytics } from "@vercel/analytics/react"
+import { AdminDashboard } from './pages/AdminDashboard';
 const queryClient = new QueryClient();
 
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
@@ -47,6 +48,14 @@ const App = () => (
           <Routes>
             <Route path="/login" element={<LoginForm />} />
             <Route path="/client-login/:clientId" element={<ClientLoginForm />} />
+            <Route
+              path="/admin-dashboard"
+              element={
+                <ProtectedRoute>
+                  <AdminDashboard />
+                </ProtectedRoute>
+              }
+            />
             <Route
               path="/"
               element={

@@ -342,12 +342,14 @@ export const ptBR = {
       error: {
         title: "Erro",
         fetchClients: "Erro ao buscar clientes",
-        search: "Erro ao realizar busca"
+        search: "Erro ao realizar busca",
+        unauthorized: "Acesso não autorizado. Apenas corretores podem acessar esta área."
       }
     },
     share: "Compartilhar",
     shareWithClient: "Compartilhar com Cliente",
     linkCopied: "Link copiado com sucesso!",
+    loading: "Verificando permissões..."
   },
   common: {
     selectMonth: "Selecione o mês",
@@ -397,6 +399,9 @@ export const ptBR = {
     target: "Meta",
     projected: "Projetado",
     years: "anos",
+    showing: 'Mostrando',
+    of: 'de',
+    items: 'itens',
   },
   createClient: {
     title: "Criar Novo Cliente",
@@ -794,7 +799,9 @@ export const ptBR = {
     },
   },
   auth: {
+    brokerInactive: "Corretor inativo. Entre em contato com o suporte para mais informações.",
     clientLogin: "Acesso do Cliente",
+    brokerLogin: "Acesso do Corretor",
     password: "Senha",
     enterPassword: "Digite sua senha",
     login: "Entrar",
@@ -809,7 +816,8 @@ export const ptBR = {
       invalidCredentials: "Credenciais inválidas",
       sessionExpired: "Sessão expirada",
       networkError: "Erro de conexão",
-      unknownError: "Erro desconhecido"
+      unknownError: "Erro desconhecido",
+      unauthorized: "Acesso não autorizado. Apenas corretores e administradores podem acessar esta área."
     }
   },
   notFound: {
@@ -828,8 +836,8 @@ export const ptBR = {
     description: "Por favor, aguarde enquanto carregamos os dados"
   },
   validation: {
-    required: "Este campo é obrigatório",
-    invalidEmail: "Email inválido",
+    required: 'Todos os campos são obrigatórios',
+    invalidEmail: 'Email inválido',
     invalidPassword: "Senha inválida",
     passwordsDontMatch: "As senhas não coincidem",
     minLength: "Mínimo de {{min}} caracteres",
@@ -897,5 +905,71 @@ export const ptBR = {
       saturday: "Sábado",
       sunday: "Domingo"
     }
-  }
+  },
+  adminDashboard: {
+    top5BrokersByClients: "Top 5 Corretores por Clientes",
+    top5BrokersByBalance: "Top 5 Corretores por Patrimônio",
+    top5BrokersByPlans: "Top 5 Corretores por Planos",
+    top5BrokersByActivity: "Top 5 Corretores por Atividade",
+    averagePerClient: "Média por cliente",
+    needReview: "precisam de revisão",
+    title: 'Painel Administrativo',
+    subtitle: 'Gerenciar corretores e monitorar métricas do sistema',
+    createBroker: 'Criar Corretor',
+    createBrokerDescription: 'Criar uma nova conta de corretor com email e senha.',
+    brokerName: 'Nome do Corretor',
+    brokerNamePlaceholder: 'Digite o nome do corretor',
+    brokerEmail: 'Email',
+    brokerEmailPlaceholder: 'Digite o email do corretor',
+    brokerPassword: 'Senha',
+    brokerPasswordPlaceholder: 'Digite a senha do corretor',
+    brokerCreated: 'Corretor criado com sucesso',
+    brokersList: 'Lista de Corretores',
+    broker: 'Corretor',
+    status: 'Status',
+    active: 'Ativo',
+    inactive: 'Inativo',
+    actions: 'Ações',
+    brokerActivated: 'Corretor ativado com sucesso',
+    brokerDeactivated: 'Corretor desativado com sucesso',
+    filterStatus: 'Filtrar por Status',
+    allStatus: 'Todos',
+    activeOnly: 'Somente Ativos',
+    inactiveOnly: 'Somente Inativos',
+    deactivateClient: 'Desativar Corretor',
+    activateClient: 'Ativar Corretor',
+    clientDeactivated: 'Corretor desativado com sucesso',
+    clientActivated: 'Corretor ativado com sucesso',
+    clients: 'Corretores',
+    plans: 'Planos',
+    balance: 'Saldo',
+    lastActivity: 'Última Atividade',
+    activeClients: 'Clientes Ativos',
+    totalBrokers: 'Total de Corretores',
+    totalClients: 'Total de Clientes',
+    totalPlans: 'Total de Planos',
+    totalBalance: 'Saldo Total',
+    clientsPerBroker: 'Clientes por Corretor',
+    balancePerBroker: 'Saldo por Corretor',
+    planDistribution: 'Distribuição de Planos',
+    clientActivity: 'Atividade dos Clientes',
+    searchPlaceholder: 'Buscar corretores...',
+    loading: 'Carregando...',
+    brokers: 'corretoras',
+    errors: {
+      unauthorized: 'Você não está autorizado a acessar esta página',
+      emailExists: 'Este email já está em uso. Por favor, use outro email.'
+    },
+    showing: 'Mostrando',
+    of: 'de',
+    items: 'itens',
+    showingItems: 'Mostrando {{from}} a {{to}} de {{total}} itens',
+    page: 'Página',
+    next: 'Próximo',
+    previous: 'Anterior',
+    first: 'Primeiro',
+    last: 'Último',
+    email: 'Email',
+    activeRatio: 'Razão de Ativos',
+  },
 };

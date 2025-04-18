@@ -8,6 +8,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { DashboardMetrics } from '@/types/broker-dashboard';
+import { Avatar } from '@/components/ui/avatar-initial';
 
 interface ActionMetricsProps {
   metrics: DashboardMetrics;
@@ -24,9 +25,13 @@ export const ActionMetrics = ({ metrics }: ActionMetricsProps) => {
     <Card className="hover:shadow-lg transition-all duration-200 border-gray-100">
       <CardHeader className="pb-2">
         <CardTitle className="flex items-center gap-2 text-lg">
-          <div className="h-8 w-8 rounded-xl bg-yellow-50 flex items-center justify-center ring-2 ring-yellow-100">
-            <AlertTriangle className="h-5 w-5 text-yellow-600" />
-          </div>
+          <Avatar 
+            icon={AlertTriangle} 
+            size="md" 
+            variant="square"
+            iconClassName="h-5 w-5"
+            color="yellow"
+          />
           {t('brokerDashboard.metrics.actions.title')}
         </CardTitle>
       </CardHeader>

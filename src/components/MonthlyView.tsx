@@ -12,7 +12,8 @@ import { FinancialRecord, InvestmentPlan, Goal, ProjectedEvent, Profile } from '
 import { supabase } from "@/lib/supabase";
 import { CartesianGrid, Line, Tooltip, LineChart as RechartsLineChart, XAxis, YAxis, Legend } from "recharts";
 import { ResponsiveContainer } from "recharts";
-import { Button } from "@tremor/react";
+import { Select, SelectItem, SelectTrigger, SelectContent, SelectValue } from "@/components/ui/select";
+import { Button } from "@/components/ui/button";
 import { formatCurrency, CurrencyCode } from "@/utils/currency";
 
 export const MonthlyView = ({ 
@@ -448,20 +449,17 @@ export const MonthlyView = ({
           {allFinancialRecords.length > 0 && (
             <TabsTrigger 
               value="returnChart"
-              className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm transition-colors relative data-[state=active]:after:absolute data-[state=active]:after:bottom-0 data-[state=active]:after:left-0 data-[state=active]:after:w-full data-[state=active]:after:h-0.5 data-[state=active]:after:bg-blue-500"
             >
               {t('monthlyView.tabs.returnChart')}
             </TabsTrigger>
           )}
           <TabsTrigger 
             value="table"
-            className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm transition-colors relative data-[state=active]:after:absolute data-[state=active]:after:bottom-0 data-[state=active]:after:left-0 data-[state=active]:after:w-full data-[state=active]:after:h-0.5 data-[state=active]:after:bg-blue-500"
           >
             {t('monthlyView.tabs.table')}
           </TabsTrigger>
           <TabsTrigger 
             value="futureProjection"
-            className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm transition-colors relative data-[state=active]:after:absolute data-[state=active]:after:bottom-0 data-[state=active]:after:left-0 data-[state=active]:after:w-full data-[state=active]:after:h-0.5 data-[state=active]:after:bg-blue-500"
           >
             {t('monthlyView.tabs.futureProjection')}
           </TabsTrigger>
@@ -470,16 +468,17 @@ export const MonthlyView = ({
         {allFinancialRecords.length > 0 && (
           <TabsContent value="returnChart" className="space-y-4">
             <div className="flex justify-end gap-2 mb-4">
-              <select
-                value={timeWindow}
-                onChange={(e) => setTimeWindow(Number(e.target.value) as typeof timeWindow)}
-                className="appearance-none px-4 py-2 text-sm border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 bg-white"
-              >
-                <option value={6}>{t('monthlyView.timeWindows.last6Months')}</option>
-                <option value={12}>{t('monthlyView.timeWindows.last12Months')}</option>
-                <option value={24}>{t('monthlyView.timeWindows.last24Months')}</option>
-                <option value={0}>{t('monthlyView.timeWindows.allTime')}</option>
-              </select>
+                <Select value={timeWindow.toString()} onValueChange={(value) => setTimeWindow(Number(value) as typeof timeWindow)}>
+                  <SelectTrigger className="w-[150px] h-8 text-sm border border-gray-200 rounded-lg px-2 bg-white/90 text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent shadow-sm hover:border-blue-200 transition-colors ml-auto">
+                    <SelectValue placeholder={t('common.selectPeriod')} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="6">{t('monthlyView.timeWindows.last6Months')}</SelectItem>
+                    <SelectItem value="12">{t('monthlyView.timeWindows.last12Months')}</SelectItem>
+                    <SelectItem value="24">{t('monthlyView.timeWindows.last24Months')}</SelectItem>
+                    <SelectItem value="0">{t('monthlyView.timeWindows.allTime')}</SelectItem>
+                  </SelectContent>
+                </Select> 
             </div>
             <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-4">
               <ResponsiveContainer width="100%" height={400}>
@@ -719,10 +718,10 @@ export const MonthlyView = ({
           <div className="flex justify-end gap-2 mb-4">
             <Button
               onClick={() => downloadCSV(localizedData, 'financial_records')}
-              icon={Download}
-              variant="primary"
-              size="xs"
+              variant="default"
+              size="sm"
             >
+              <Download className="mr-2 h-4 w-4" />
               {t('monthlyView.downloadCSV')}
             </Button>
           </div>
@@ -795,10 +794,10 @@ export const MonthlyView = ({
                 goals,
                 events
               ), 'future_projection')}
-              icon={Download}
-              variant="primary"
-              size="xs"
+              variant="default"
+              size="sm"
             >
+              <Download className="mr-2 h-4 w-4" />
               {t('monthlyView.downloadCSV')}
             </Button>
           </div>

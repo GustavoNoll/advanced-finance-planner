@@ -2,9 +2,9 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { LineChart, TrendingUp, Users, AlertCircle } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { DashboardMetrics } from '@/types/broker-dashboard';
-import { Metric, Text, AreaChart, CustomTooltipProps } from '@tremor/react';
-import { chartColors, AvailableChartColorsKeys, getColorClassName } from '@/lib/chartColors';
-
+import { Metric, Text } from '@tremor/react';
+import { AvailableChartColorsKeys, getColorClassName } from '@/lib/chartColors';
+import { Avatar } from '@/components/ui/avatar-initial';
 interface TrendMetricsProps {
   metrics: DashboardMetrics;
 }
@@ -34,9 +34,13 @@ export const TrendMetrics = ({ metrics }: TrendMetricsProps) => {
     <Card className="hover:shadow-lg transition-all duration-200 border-gray-100">
       <CardHeader className="pb-2">
         <CardTitle className="flex items-center gap-2 text-lg">
-        <div className="h-8 w-8 rounded-xl bg-blue-50 flex items-center justify-center ring-2 ring-blue-100">
-            <LineChart className="h-5 w-5 text-blue-600" />
-          </div>
+          <Avatar 
+            icon={LineChart} 
+            size="md" 
+            variant="square"
+            iconClassName="h-5 w-5"
+            color="blue"
+          />
           {t('brokerDashboard.metrics.trends.title')}
         </CardTitle>
       </CardHeader>

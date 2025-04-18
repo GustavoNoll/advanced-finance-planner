@@ -3,6 +3,7 @@ import { Wallet } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { BarChart, Text, CustomTooltipProps } from '@tremor/react';
 import { DashboardMetrics } from '@/types/broker-dashboard';
+import { Avatar } from '@/components/ui/avatar-initial';
 
 interface WealthDistributionChartProps {
   metrics: DashboardMetrics;
@@ -53,9 +54,13 @@ export const WealthDistributionChart = ({ metrics }: WealthDistributionChartProp
     <Card className="hover:shadow-lg transition-all duration-200 border-gray-100">
       <CardHeader className="pb-2">
         <CardTitle className="flex items-center gap-2 text-lg">
-          <div className="h-8 w-8 rounded-xl bg-primary/10 flex items-center justify-center ring-2 ring-primary/20">
-            <Wallet className="h-5 w-5 text-primary" />
-          </div>
+          <Avatar 
+            icon={Wallet} 
+            size="md" 
+            variant="square"
+            iconClassName="h-5 w-5"
+            color="green"
+          />
           {t('brokerDashboard.metrics.wealthDistribution.title')}
         </CardTitle>
       </CardHeader>

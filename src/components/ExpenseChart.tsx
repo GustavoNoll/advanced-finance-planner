@@ -10,11 +10,6 @@ import { ChartPointDialog } from "@/components/chart/ChartPointDialog";
 import { TrendingUp, Car, Home, Plane, GraduationCap, User, AlertCircle, Calendar, Users, Laptop, BookOpen, Briefcase, Heart, Target, Banknote, Info, HelpCircle } from "lucide-react";
 import type { ViewBox } from 'recharts/types/util/types';
 import { CurrencyCode, formatCurrency, getCurrencySymbol } from "@/utils/currency";
-import {
-  Tooltip as NextUITooltip,
-  TooltipTrigger,
-  TooltipContent,
-} from "@/components/ui/tooltip";
 import { Switch } from "@/components/ui/switch";
 import { HoverCard, HoverCardContent, HoverCardTrigger } from "@/components/ui/hover-card";
 
@@ -629,6 +624,7 @@ export const ExpenseChart = ({
               <Switch
                 checked={showRealValues}
                 onCheckedChange={setShowRealValues}
+                className="data-[state=checked]:bg-blue-400"
               />
               <span className="text-sm font-medium text-gray-600">{t('expenseChart.realValues')}</span>
             </div>

@@ -5,7 +5,7 @@ import { DashboardMetrics } from '@/types/broker-dashboard';
 import { DonutChart, Metric, Text, CustomTooltipProps } from '@tremor/react';
 import { AvailableChartColorsKeys } from '@/lib/chartColors';
 import { t } from 'i18next';
-
+import { Avatar } from '@/components/ui/avatar-initial';
 interface PlanningMetricsProps {
   metrics: DashboardMetrics;
 }
@@ -30,6 +30,15 @@ const customTooltip = (props: CustomTooltipProps) => {
       </div>
     </div>
   );
+};
+
+/**
+ * Helper function to handle NaN values
+ * @param value - The value to check
+ * @returns The value if it's a number, 0 if it's NaN
+ */
+const handleNaN = (value: number): number => {
+  return isNaN(value) ? 0 : value;
 };
 
 /**
@@ -63,9 +72,13 @@ export const PlanningMetrics = ({ metrics }: PlanningMetricsProps) => {
     <Card className="hover:shadow-lg transition-all duration-200 border-gray-100">
       <CardHeader className="pb-2">
         <CardTitle className="flex items-center gap-2 text-lg">
-          <div className="h-8 w-8 rounded-xl bg-purple-50 flex items-center justify-center ring-2 ring-purple-100">
-            <Target className="h-5 w-5 text-purple-600" />
-          </div>
+          <Avatar 
+            icon={Target} 
+            size="md" 
+            variant="square"
+            iconClassName="h-5 w-5"
+            color="purple"
+        />
           {t('brokerDashboard.metrics.planning.title')}
         </CardTitle>
       </CardHeader>
@@ -75,14 +88,14 @@ export const PlanningMetrics = ({ metrics }: PlanningMetricsProps) => {
             <div className="space-y-2">
               <Text className="text-sm font-medium text-gray-500">{t('brokerDashboard.metrics.planning.averageAge')}</Text>
               <Metric className="text-3xl font-bold text-gray-900 tracking-tight">
-                {metrics.planning.averageAge.toFixed(1)}
+                {handleNaN(metrics.planning.averageAge).toFixed(1)}
                 <span className="text-sm text-gray-500 ml-2">anos</span>
               </Metric>
             </div>
             <div className="space-y-2">
               <Text className="text-sm font-medium text-gray-500">{t('brokerDashboard.metrics.planning.averageDesiredIncome')}</Text>
               <Metric className="text-3xl font-bold text-gray-900 tracking-tight">
-                {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(metrics.planning.averageDesiredIncome)}
+                {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(handleNaN(metrics.planning.averageDesiredIncome))}
               </Metric>
             </div>
           </div>
@@ -90,7 +103,7 @@ export const PlanningMetrics = ({ metrics }: PlanningMetricsProps) => {
             <div className="space-y-2">
               <Text className="text-sm font-medium text-gray-500">{t('brokerDashboard.metrics.planning.averageRetirementAge')}</Text>
               <Metric className="text-3xl font-bold text-gray-900 tracking-tight">
-                {metrics.planning.averageRetirementAge.toFixed(1)}
+                {handleNaN(metrics.planning.averageRetirementAge).toFixed(1)}
                 <span className="text-sm text-gray-500 ml-2">anos</span>
               </Metric>
             </div>

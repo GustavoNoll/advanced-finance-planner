@@ -22,6 +22,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { useState } from 'react';
+import { Avatar } from '@/components/ui/avatar-initial';
 
 interface ClientListProps {
   clients: UserProfileInvestment[];
@@ -81,16 +82,25 @@ export const ClientList = ({
         <CardHeader className="pb-2">
           <div className="flex flex-col gap-4">
             <CardTitle className="flex items-center gap-2 text-lg">
-              <div className="h-8 w-8 rounded-xl bg-primary/10 flex items-center justify-center ring-2 ring-primary/20">
-                <User className="h-5 w-5 text-primary" />
-              </div>
+              <Avatar 
+                icon={User} 
+                size="md" 
+                variant="square"
+                iconClassName="h-5 w-5"
+                color="gray"
+              />
               {t('brokerDashboard.search.results')}
             </CardTitle>
             <div className="relative group">
               <div className="absolute inset-0 bg-gradient-to-r from-primary/5 to-primary/10 rounded-lg blur-sm group-hover:blur-md transition-all duration-300" />
               <div className="relative flex items-center">
                 <div className="absolute left-4 top-1/2 -translate-y-1/2">
-                  <Search className="h-4 w-4 text-gray-400 group-hover:text-primary transition-colors duration-200" />
+                  <Avatar 
+                    icon={Search} 
+                    size="lg" 
+                    color="gray"
+                    iconClassName="h-6 w-6"
+                  />
                 </div>
                 <Input
                   placeholder={t('brokerDashboard.search.placeholder')}
@@ -124,11 +134,11 @@ export const ClientList = ({
                 >
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-3">
-                      <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center ring-2 ring-primary/20">
-                        <span className="text-primary font-semibold text-sm">
-                          {client.profile_name?.[0]?.toUpperCase() || '?'}
-                        </span>
-                      </div>
+                      <Avatar 
+                        initial={client.profile_name?.[0] || '?'}
+                        size="md"
+                        color="gray"
+                      />
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2">
                           <p className="text-sm font-medium text-gray-900 truncate">{client.profile_name}</p>
@@ -288,7 +298,12 @@ export const ClientList = ({
             ) : (
               <div className="flex flex-col items-center justify-center py-12 px-4 text-center">
                 <div className="h-12 w-12 rounded-full bg-gray-50 flex items-center justify-center mb-4">
-                  <Search className="h-6 w-6 text-gray-400" />
+                  <Avatar 
+                    icon={Search} 
+                    size="lg" 
+                    color="gray"
+                    iconClassName="h-6 w-6"
+                  />
                 </div>
                 <h3 className="text-lg font-medium text-gray-900 mb-2">
                   {t('brokerDashboard.search.noResults')}

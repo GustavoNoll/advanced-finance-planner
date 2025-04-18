@@ -904,6 +904,7 @@ const Index = () => {
               birthDate={clientProfile?.birth_date}
               onPlanUpdated={handlePlanUpdated}
               onEditClick={() => setIsEditModalOpen(true)}
+              isBroker={brokerProfile !== undefined}
             />
           </DashboardCard>
         </div>
