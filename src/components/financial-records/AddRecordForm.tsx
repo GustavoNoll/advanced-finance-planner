@@ -589,14 +589,14 @@ export const AddRecordForm = ({ clientId, onSuccess, editingRecord, investmentPl
                           id={`event-${event.id}`}
                           checked={selectedItems.events.includes(event.id)}
                           onCheckedChange={(checked) => 
-                            handleItemSelection('events', event.id, event.amount, checked as boolean)
+                            handleItemSelection('events', event.id, event.asset_value, checked as boolean)
                           }
                         />
                         <label
                           htmlFor={`event-${event.id}`}
                           className="text-sm leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
                         >
-                          {event.name} - {formatCurrency(event.amount, investmentPlan?.currency as CurrencyCode)}
+                          {event.name} - {formatCurrency(event.asset_value, investmentPlan?.currency as CurrencyCode)}
                         </label>
                       </div>
                     ))}

@@ -154,7 +154,7 @@ export function generateProjectionData(
           withdrawal: 0,
           balance: historicalRecord.ending_balance,
           planned_balance: projectedBalance,
-          goalsEventsImpact: 0,
+          goalsEventsImpact: historicalRecord.events_balance,
           isHistorical: true,
           retirement: isRetirementAge,
           difference_from_planned_balance: historicalRecord.ending_balance - projectedBalance,
