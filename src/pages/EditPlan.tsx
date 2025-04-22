@@ -13,11 +13,14 @@ import {
   calculateFutureValues, 
   isCalculationReady, 
   type FormData as InvestmentFormData,
-  type Calculations as InvestmentCalculations
+  FormData
 } from '@/utils/investmentPlanCalculations';
 import { useTranslation } from "react-i18next";
 import CurrencyInput from 'react-currency-input-field';
 import { CurrencyCode, getCurrencySymbol } from "@/utils/currency";
+import { roundUpToNextMonth, calculateAge, calculateEndDate, calculateFinalAge } from '@/utils/dateUtils';
+import { handleAgeDateSync, handleFormChange } from '@/utils/formUtils';
+
 export const EditPlan = () => {
   const { user } = useAuth();
   const { id } = useParams();
@@ -26,7 +29,7 @@ export const EditPlan = () => {
   const [loading, setLoading] = useState(false);
   const [isLoadingData, setIsLoadingData] = useState(true);
   const [birthDate, setBirthDate] = useState<Date | null>(null);
-  const [formData, setFormData] = useState<InvestmentFormData>({
+  const [formData, setFormData] = useState<FormData>({
     initialAmount: "",
     plan_initial_date: new Date().toISOString().split('T')[0],
     finalAge: "",
@@ -161,123 +164,39 @@ export const EditPlan = () => {
     }
   }, [formData, birthDate]);
 
-  useEffect(() => {
-    if (birthDate && !isSyncing) {
-      const birthDateObj = new Date(birthDate);
-      
-      // If finalAge changes, update plan_end_accumulation_date
-      if (formData.finalAge) {
-        setIsSyncing(true);
-        const finalAge = parseInt(formData.finalAge);
-        const endDate = new Date(birthDateObj);
-        endDate.setFullYear(birthDateObj.getFullYear() + finalAge);
-        setFormData(prev => ({
-          ...prev,
-          planEndAccumulationDate: endDate.toISOString().split('T')[0]
-        }));
-        setIsSyncing(false);
-      }
-      
-      // If plan_end_accumulation_date changes, update finalAge
-      if (formData.planEndAccumulationDate) {
-        setIsSyncing(true);
-        const endDate = new Date(formData.planEndAccumulationDate);
-        const age = endDate.getFullYear() - birthDateObj.getFullYear();
-        const monthDiff = endDate.getMonth() - birthDateObj.getMonth();
-        const finalAge = monthDiff < 0 ? age - 1 : age;
-        
-        setFormData(prev => ({
-          ...prev,
-          finalAge: finalAge.toString()
-        }));
-        setIsSyncing(false);
-      }
-    }
-  }, [formData.finalAge, formData.planEndAccumulationDate, birthDate]);
-
-  // Memoize the handleChange function
-  const handleChange = useCallback((e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-    const { name, value } = e.target;
-    const checked = (e.target as HTMLInputElement).checked;
-    
-    setFormData((prev) => {
-      const newFormData = { ...prev };
-      
-      if (name === 'expectedReturn') {
-        const profiles = RISK_PROFILES[prev.currency];
-        const profile = profiles.find(p => p.return === value);
-        if (profile) {
-          newFormData.expectedReturn = profile.return;
-        }
-      } else if (name === 'currency') {
-        if (value === 'BRL' || value === 'USD' || value === 'EUR') {
-          newFormData.currency = value;
-          newFormData.expectedReturn = RISK_PROFILES[value][0].return;
-        }
-      } else if (name === 'adjust_contribution_for_inflation') {
-        newFormData.adjustContributionForInflation = checked;
-      } else if (name === 'adjust_income_for_inflation') {
-        newFormData.adjustIncomeForInflation = checked;
-      } else {
-        newFormData[name as keyof FormData] = value;
-      }
-      
-      return newFormData;
-    });
-  }, []);
-
-  // Optimize age/date synchronization
+  // Update the handleAgeDateChange function
   const handleAgeDateChange = useCallback((e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
     if (!birthDate || isSyncing) return;
 
-    const birthDateObj = new Date(birthDate);
-    
-    if (name === 'finalAge') {
-      if (!value) return;
-      
+    const result = handleAgeDateSync(name, value, birthDate, isSyncing, updateSource);
+    if (result) {
       setIsSyncing(true);
-      setUpdateSource('age');
-      
-      const finalAge = parseInt(value);
-      const endDate = new Date(birthDateObj);
-      endDate.setFullYear(birthDateObj.getFullYear() + finalAge);
+      setUpdateSource(name === 'finalAge' ? 'age' : 'date');
       
       setFormData(prev => ({
         ...prev,
-        finalAge: value,
-        planEndAccumulationDate: endDate.toISOString().split('T')[0]
+        ...result
       }));
 
       setTimeout(() => {
         setIsSyncing(false);
         setUpdateSource(null);
-      }, 0);
-    } else if (name === 'planEndAccumulationDate') {
-      if (updateSource === 'age') return;
-      
-      if (!value || isNaN(new Date(value).getTime())) return;
-      
-      setIsSyncing(true);
-      setUpdateSource('date');
-      
-      const endDate = new Date(value);
-      const age = endDate.getFullYear() - birthDateObj.getFullYear();
-      const monthDiff = endDate.getMonth() - birthDateObj.getMonth();
-      const finalAge = monthDiff < 0 ? age - 1 : age;
-      
-      setFormData(prev => ({
-        ...prev,
-        planEndAccumulationDate: value,
-        finalAge: finalAge.toString()
-      }));
-
-      setTimeout(() => {
-        setIsSyncing(false);
-        setUpdateSource(null);
-      }, 0);
+      }, 100);
     }
   }, [birthDate, isSyncing, updateSource]);
+
+  // Update the handleChange function
+  const handleChange = useCallback((e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+    const { name, value } = e.target;
+    const checked = (e.target as HTMLInputElement).checked;
+    
+    const newFormData = handleFormChange(name, value, checked, formData.currency, RISK_PROFILES);
+    setFormData(prev => ({
+      ...prev,
+      ...newFormData
+    }));
+  }, [formData.currency]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -349,7 +268,7 @@ export const EditPlan = () => {
 
   return (
     <div className="min-h-screen bg-gray-50 py-8">
-      <div className="max-w-2xl mx-auto px-4">
+      <div className="max-w-3xl mx-auto px-4">
         <Card className="shadow-lg">
           <CardHeader className="border-b">
             <div className="flex items-center gap-4">
@@ -453,14 +372,66 @@ export const EditPlan = () => {
                           );
                         })}
                       </select>
-                      <Input
-                        type="date"
-                        name="planEndAccumulationDate"
-                        value={formData.planEndAccumulationDate}
-                        onChange={handleAgeDateChange}
-                        min={formData.plan_initial_date}
-                        className="h-10"
-                      />
+                      <div className="flex gap-2">
+                        <select
+                          name="month"
+                          value={new Date(formData.planEndAccumulationDate).getMonth()}
+                          onChange={(e) => {
+                            const newDate = new Date(formData.planEndAccumulationDate);
+                            newDate.setMonth(parseInt(e.target.value));
+                            newDate.setDate(1); // Always set to first day of month
+                            handleAgeDateChange({
+                              target: {
+                                name: 'planEndAccumulationDate',
+                                value: newDate.toISOString().split('T')[0]
+                              }
+                            } as React.ChangeEvent<HTMLInputElement>);
+                          }}
+                          className="h-10 w-28 rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                        >
+                          <option value="0">{t('date.months.january')}</option>
+                          <option value="1">{t('date.months.february')}</option>
+                          <option value="2">{t('date.months.march')}</option>
+                          <option value="3">{t('date.months.april')}</option>
+                          <option value="4">{t('date.months.may')}</option>
+                          <option value="5">{t('date.months.june')}</option>
+                          <option value="6">{t('date.months.july')}</option>
+                          <option value="7">{t('date.months.august')}</option>
+                          <option value="8">{t('date.months.september')}</option>
+                          <option value="9">{t('date.months.october')}</option>
+                          <option value="10">{t('date.months.november')}</option>
+                          <option value="11">{t('date.months.december')}</option>
+                        </select>
+                        <select
+                          name="year"
+                          value={new Date(formData.planEndAccumulationDate).getFullYear()}
+                          onChange={(e) => {
+                            const newDate = new Date(formData.planEndAccumulationDate);
+                            newDate.setFullYear(parseInt(e.target.value));
+                            newDate.setDate(1); // Always set to first day of month
+                            handleAgeDateChange({
+                              target: {
+                                name: 'planEndAccumulationDate',
+                                value: newDate.toISOString().split('T')[0]
+                              }
+                            } as React.ChangeEvent<HTMLInputElement>);
+                          }}
+                          className="h-10 w-24 rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                        >
+                          {(() => {
+                            const currentYear = new Date().getFullYear();
+                            const years = [];
+                            for (let i = currentYear; i <= currentYear + 100; i++) {
+                              years.push(
+                                <option key={i} value={i}>
+                                  {i}
+                                </option>
+                              );
+                            }
+                            return years;
+                          })()}
+                        </select>
+                      </div>
                     </div>
                   </div>
 

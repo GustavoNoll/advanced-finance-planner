@@ -100,10 +100,10 @@ export const calculateFutureValues = (data: FormData, birthDate: Date): Calculat
   // Renda ajustada para inflação
   const inflationAdjustedIncome = fv(monthInflationRate, monthsToRetirement, 0, desiredIncome);
   
-  let presentValue, futureValue, necessaryFutureValue;
+  let presentValue = 0, futureValue = 0, necessaryFutureValue = 0;
   let requiredMonthlyDeposit = 0;
   let realReturn = 0, inflationReturn = 0, totalMonthlyReturn = 0;
-  let necessaryDepositToNecessaryFutureValue;
+  let necessaryDepositToNecessaryFutureValue = 0;
   
   const formatDecimals = (num: number, fixed: number = 10): number => {
     return parseFloat((num.toFixed(fixed)));
