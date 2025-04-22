@@ -232,6 +232,7 @@ export const ptBR = {
       initialCapital: "Capital Inicial",
       monthlyContribution: "Aporte Mensal",
       desiredWithdrawal: "Resgate Desejado",
+      adjustedWithdrawal: "Resgate Ajustado",
       planDuration: "Duração do Plano",
       planStart: "Início do Plano",
       duration: "Duração",

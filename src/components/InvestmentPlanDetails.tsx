@@ -123,6 +123,12 @@ export function InvestmentPlanDetails({ investmentPlan, birthDate, onPlanUpdated
       label: t('dashboard.investmentPlan.initialCapital'),
       value: formatCurrency(investmentPlan.initial_amount, investmentPlan.currency),
       color: "text-amber-600"
+    },
+    {
+      icon: <WalletCards className="h-4 w-4 text-cyan-600" />,
+      label: t('dashboard.investmentPlan.desiredWithdrawal'),
+      value: formatCurrency(investmentPlan.desired_income, investmentPlan.currency),
+      color: "text-cyan-600"
     }
   ];
 
@@ -134,10 +140,13 @@ export function InvestmentPlanDetails({ investmentPlan, birthDate, onPlanUpdated
       color: "text-rose-600"
     },
     {
-      icon: <WalletCards className="h-4 w-4 text-cyan-600" />,
-      label: t('dashboard.investmentPlan.desiredWithdrawal'),
-      value: formatCurrency(investmentPlan.desired_income, investmentPlan.currency),
-      color: "text-cyan-600"
+      icon: <Scale className="h-4 w-4 text-indigo-600" />,
+      label: t('dashboard.investmentPlan.adjustedWithdrawal'),
+      value: formatCurrency(
+        investmentPlan.inflation_adjusted_income,
+        investmentPlan.currency
+      ),
+      color: "text-indigo-600"
     }
   ];
 
@@ -175,7 +184,7 @@ export function InvestmentPlanDetails({ investmentPlan, birthDate, onPlanUpdated
           <ChartLine className="h-4 w-4 text-amber-600" />
           {t('dashboard.investmentPlan.financial')}
         </h3>
-        <div className="space-y-2">
+        <div className="grid grid-cols-2 gap-4">
           {financialMetrics.map((metric, index) => (
             <PlanMetric key={index} {...metric} />
           ))}

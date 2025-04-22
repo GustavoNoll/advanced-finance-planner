@@ -15,6 +15,9 @@ import { useTranslation } from "react-i18next";
 import CurrencyInput from 'react-currency-input-field';
 import { CurrencyCode, getCurrencySymbol } from "@/utils/currency";
 import { InvestmentPlan } from "@/types/financial";
+import { calculateAge, calculateEndDate, calculateFinalAge } from '@/utils/dateUtils';
+import { handleAgeDateSync, handleFormChange, type FormData, type Currency } from '@/utils/formUtils';
+import { RISK_PROFILES } from '@/constants/riskProfiles';
 
 interface EditPlanModalProps {
   investmentPlan: InvestmentPlan;
@@ -26,7 +29,7 @@ interface EditPlanModalProps {
 export function EditPlanModal({ investmentPlan, birthDate, onClose, onSuccess }: EditPlanModalProps) {
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
-  const [formData, setFormData] = useState<InvestmentFormData>({
+  const [formData, setFormData] = useState<FormData>({
     initialAmount: investmentPlan.initial_amount.toString(),
     plan_initial_date: new Date(investmentPlan.plan_initial_date).toISOString().split('T')[0],
     finalAge: investmentPlan.final_age.toString(),
@@ -36,6 +39,11 @@ export function EditPlanModal({ investmentPlan, birthDate, onClose, onSuccess }:
           const birth = new Date(birthDate);
           const finalAge = parseInt(investmentPlan.final_age.toString());
           birth.setFullYear(birth.getFullYear() + finalAge);
+          // Round up to next month if not first day
+          if (birth.getDate() > 1) {
+            birth.setMonth(birth.getMonth() + 1);
+          }
+          birth.setDate(1); // Always use first day of month
           return birth.toISOString().split('T')[0];
         })(),
     monthlyDeposit: investmentPlan.monthly_deposit.toString(),
@@ -63,12 +71,7 @@ export function EditPlanModal({ investmentPlan, birthDate, onClose, onSuccess }:
 
   // Helper to get current age
   const getCurrentAge = () => {
-    const today = new Date(formData.plan_initial_date);
-    const birth = new Date(birthDate);
-    let age = today.getFullYear() - birth.getFullYear();
-    const monthDiff = today.getMonth() - birth.getMonth();
-    if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birth.getDate())) age--;
-    return age;
+    return calculateAge(new Date(birthDate), new Date(formData.plan_initial_date));
   };
 
   // Sync age <-> date
@@ -76,22 +79,20 @@ export function EditPlanModal({ investmentPlan, birthDate, onClose, onSuccess }:
     if (!birthDate || isSyncing) return;
     if (updateSource === 'age') {
       setIsSyncing(true);
-      const birth = new Date(birthDate);
-      const finalAge = parseInt(formData.finalAge);
-      birth.setFullYear(birth.getFullYear() + finalAge);
-      setFormData(prev => ({ ...prev, planEndAccumulationDate: birth.toISOString().split('T')[0] }));
+      const result = handleAgeDateSync('finalAge', formData.finalAge || '', new Date(birthDate), isSyncing, updateSource);
+      if (result) {
+        setFormData(prev => ({ ...prev, ...result }));
+      }
       setTimeout(() => {
         setIsSyncing(false);
         setUpdateSource(null);
       }, 0);
     } else if (updateSource === 'date') {
       setIsSyncing(true);
-      const birth = new Date(birthDate);
-      const endDate = new Date(formData.planEndAccumulationDate);
-      let age = endDate.getFullYear() - birth.getFullYear();
-      const monthDiff = endDate.getMonth() - birth.getMonth();
-      if (monthDiff < 0 || (monthDiff === 0 && endDate.getDate() < birth.getDate())) age--;
-      setFormData(prev => ({ ...prev, finalAge: age.toString() }));
+      const result = handleAgeDateSync('planEndAccumulationDate', formData.planEndAccumulationDate || '', new Date(birthDate), isSyncing, updateSource);
+      if (result) {
+        setFormData(prev => ({ ...prev, ...result }));
+      }
       setTimeout(() => {
         setIsSyncing(false);
         setUpdateSource(null);
@@ -104,22 +105,19 @@ export function EditPlanModal({ investmentPlan, birthDate, onClose, onSuccess }:
     const { name, value } = e.target;
     if (!birthDate || isSyncing) return;
 
-    if (name === 'finalAge') {
-      if (!value) return; // Don't update if age is empty
-      
-      setUpdateSource('age');
-      setFormData(prev => ({ ...prev, finalAge: value }));
-    } else if (name === 'planEndAccumulationDate') {
-      if (!value || isNaN(new Date(value).getTime())) return; // Don't update if date is empty or invalid
-      
-      setUpdateSource('date');
-      setFormData(prev => ({ ...prev, planEndAccumulationDate: value }));
+    const result = handleAgeDateSync(name, value, new Date(birthDate), isSyncing, updateSource);
+    if (result) {
+      setUpdateSource(name === 'finalAge' ? 'age' : 'date');
+      setFormData(prev => ({ ...prev, ...result }));
     }
   }
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
+    const checked = (e.target as HTMLInputElement).checked;
+    
+    const newFormData = handleFormChange(name, value, checked, formData.currency as Currency, RISK_PROFILES);
+    setFormData(prev => ({ ...prev, ...newFormData }));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -255,14 +253,64 @@ export function EditPlanModal({ investmentPlan, birthDate, onClose, onSuccess }:
                         });
                       })()}
                     </select>
-                    <Input
-                      type="date"
-                      name="planEndAccumulationDate"
-                      value={formData.planEndAccumulationDate}
-                      onChange={handleAgeDateChange}
-                      min={formData.plan_initial_date}
-                      className="h-10"
-                    />
+                    <div className="flex gap-2">
+                      <select
+                        name="month"
+                        value={new Date(formData.planEndAccumulationDate).getMonth()}
+                        onChange={(e) => {
+                          const newDate = new Date(formData.planEndAccumulationDate);
+                          newDate.setMonth(parseInt(e.target.value));
+                          handleAgeDateChange({
+                            target: {
+                              name: 'planEndAccumulationDate',
+                              value: newDate.toISOString().split('T')[0]
+                            }
+                          } as React.ChangeEvent<HTMLInputElement>);
+                        }}
+                        className="h-10 w-32 rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                      >
+                        <option value="0">{t('date.months.january')}</option>
+                        <option value="1">{t('date.months.february')}</option>
+                        <option value="2">{t('date.months.march')}</option>
+                        <option value="3">{t('date.months.april')}</option>
+                        <option value="4">{t('date.months.may')}</option>
+                        <option value="5">{t('date.months.june')}</option>
+                        <option value="6">{t('date.months.july')}</option>
+                        <option value="7">{t('date.months.august')}</option>
+                        <option value="8">{t('date.months.september')}</option>
+                        <option value="9">{t('date.months.october')}</option>
+                        <option value="10">{t('date.months.november')}</option>
+                        <option value="11">{t('date.months.december')}</option>
+                      </select>
+                      <select
+                        name="year"
+                        value={new Date(formData.planEndAccumulationDate).getFullYear()}
+                        onChange={(e) => {
+                          const newDate = new Date(formData.planEndAccumulationDate);
+                          newDate.setFullYear(parseInt(e.target.value));
+                          handleAgeDateChange({
+                            target: {
+                              name: 'planEndAccumulationDate',
+                              value: newDate.toISOString().split('T')[0]
+                            }
+                          } as React.ChangeEvent<HTMLInputElement>);
+                        }}
+                        className="h-10 w-24 rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                      >
+                        {(() => {
+                          const currentYear = new Date().getFullYear();
+                          const years = [];
+                          for (let i = currentYear; i <= currentYear + 100; i++) {
+                            years.push(
+                              <option key={i} value={i}>
+                                {i}
+                              </option>
+                            );
+                          }
+                          return years;
+                        })()}
+                      </select>
+                    </div>
                   </div>
                 </div>
 

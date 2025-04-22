@@ -52,6 +52,7 @@ export interface InvestmentPlan {
   expected_return: number;
   plan_type: string;
   desired_income: number;
+  inflation_adjusted_income: number;
   required_monthly_deposit: number;
   adjust_contribution_for_inflation: boolean;
   adjust_income_for_inflation: boolean;

@@ -4,7 +4,6 @@ import { supabase } from "@/lib/supabase";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, Pencil } from "lucide-react";
 import { DashboardCard } from "@/components/DashboardCard";
-import { ptBR } from "@/locales/pt-BR";
 import { RISK_PROFILES } from '@/constants/riskProfiles';
 import { Spinner } from "@/components/ui/spinner";
 import { useTranslation } from "react-i18next";
