@@ -109,7 +109,8 @@ export function handleFormChange(
     newFormData.adjustContributionForInflation = checked;
   } else if (name === 'adjust_income_for_inflation') {
     newFormData.adjustIncomeForInflation = checked;
-  } else if (name in newFormData) {
+  } else {
+    // Handle all other fields directly
     (newFormData as Record<string, string | boolean>)[name] = value;
   }
   
