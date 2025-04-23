@@ -71,8 +71,6 @@ export function generateProjectionData(
   const endAge = getEndAge(investmentPlan);
   const goalsForChart = processGoals(goals);
   const eventsForChart = processEvents(events);
-  console.log(goalsForChart);
-  console.log(eventsForChart);
   const birthDate = new Date(profile.birth_date);
   const birthYear = birthDate.getFullYear();
   
@@ -150,11 +148,11 @@ export function generateProjectionData(
         projectedBalance = (projectedBalance) * (1 + monthlyReturnRate) + (currentMonthlyDeposit);
         return {
           month: currentMonthNumber,
-          contribution: historicalRecord.monthly_contribution,
-          withdrawal: 0,
+          contribution: historicalRecord.monthly_contribution > 0 ? historicalRecord.monthly_contribution : 0,
+          withdrawal: historicalRecord.monthly_contribution < 0 ? Math.abs(historicalRecord.monthly_contribution) : 0,
           balance: historicalRecord.ending_balance,
           planned_balance: projectedBalance,
-          goalsEventsImpact: historicalRecord.events_balance,
+          goalsEventsImpact: historicalRecord.events_balance || 0,
           isHistorical: true,
           retirement: isRetirementAge,
           difference_from_planned_balance: historicalRecord.ending_balance - projectedBalance,
