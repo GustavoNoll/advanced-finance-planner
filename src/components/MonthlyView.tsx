@@ -840,13 +840,13 @@ export const MonthlyView = ({
                       </td>
                       <td className="p-3 font-medium">{projection.year}</td>
                       <td className="p-3 text-right">
-                        {projection.contribution > 0 ? (
+                        {projection.contribution - projection.withdrawal > 0 ? (
                           <span className="text-green-600 font-medium">
-                            +{formatCurrency(projection.contribution, investmentPlan?.currency as CurrencyCode)}
+                            +{formatCurrency(projection.contribution - projection.withdrawal, investmentPlan?.currency as CurrencyCode)}
                           </span>
                         ) : projection.withdrawal > 0 ? (
                           <span className="text-red-600 font-medium">
-                            -{formatCurrency(projection.withdrawal, investmentPlan?.currency as CurrencyCode)}
+                            -{formatCurrency(projection.withdrawal - projection.contribution, investmentPlan?.currency as CurrencyCode)}
                           </span>
                         ) : '-'}
                       </td>
