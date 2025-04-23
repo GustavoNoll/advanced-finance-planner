@@ -74,6 +74,26 @@ const sortRecords = (records: FinancialRecord[]) => {
   });
 };
 
+const parseCurrencyValue = (value: string, currency: CurrencyCode) => {
+  if (!value) return 0;
+  
+  // Remove currency symbol and spaces
+  const cleanValue = value.replace(getCurrencySymbol(currency), '').trim();
+  
+  // Check if the value is negative (starts with - or has - after R$)
+  const isNegative = cleanValue.startsWith('-') || cleanValue.includes(' -');
+  
+  // Remove all non-numeric characters except decimal separator
+  const numericValue = cleanValue.replace(/[^\d,-]/g, '');
+  
+  // Replace comma with dot for decimal point
+  const normalizedValue = numericValue.replace(',', '.');
+  
+  // Parse the number and apply negative sign if needed
+  const parsedValue = parseFloat(normalizedValue);
+  return isNegative ? -Math.abs(parsedValue) : parsedValue;
+};
+
 const FinancialRecords = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
@@ -235,18 +255,19 @@ const FinancialRecords = () => {
       const formattedRecords = records.map(record => {
         try {
           const [_, month, year] = record.Data.split('/');
+          console.log(record.Aporte);
           const formattedRecord = {
             user_id: clientId,
             record_year: parseInt(year),
             record_month: parseInt(month),
-            starting_balance: parseFloat(record.PatrimonioInicial.replace(getCurrencySymbol(investmentPlan?.currency as CurrencyCode), '').replace(/\./g, '').replace(',', '.')),
-            monthly_contribution: record.Aporte ? parseFloat(record.Aporte.replace(getCurrencySymbol(investmentPlan?.currency as CurrencyCode), '').replace(/\./g, '').replace(',', '.')) : 0,
-            ending_balance: parseFloat(record.PatrimonioFinal.replace(getCurrencySymbol(investmentPlan?.currency as CurrencyCode), '').replace(/\./g, '').replace(',', '.')),
+            starting_balance: parseCurrencyValue(record.PatrimonioInicial, investmentPlan?.currency as CurrencyCode),
+            monthly_contribution: parseCurrencyValue(record.Aporte, investmentPlan?.currency as CurrencyCode),
+            ending_balance: parseCurrencyValue(record.PatrimonioFinal, investmentPlan?.currency as CurrencyCode),
             monthly_return_rate: parseFloat(record.RetornoPercentual.replace('%', '').replace(/\./g, '').replace(',', '.')),
             target_rentability: parseFloat(record.RentabilidadeMeta.replace('%', '').replace(/\./g, '').replace(',', '.')),
             growth_percentage: null,
-            monthly_return: parseFloat(record.Retorno.replace(getCurrencySymbol(investmentPlan?.currency as CurrencyCode), '').replace(/\./g, '').replace(',', '.')),
-            events_balance: record.Eventos ? parseFloat(record.Eventos.replace(getCurrencySymbol(investmentPlan?.currency as CurrencyCode), '').replace(/\./g, '').replace(',', '.')) : null,
+            monthly_return: parseCurrencyValue(record.Retorno, investmentPlan?.currency as CurrencyCode),
+            events_balance: record.Eventos ? parseCurrencyValue(record.Eventos, investmentPlan?.currency as CurrencyCode) : null,
           };
           formattedRecord.growth_percentage = ((formattedRecord.ending_balance - formattedRecord.starting_balance) / formattedRecord.starting_balance) * 100;
 
