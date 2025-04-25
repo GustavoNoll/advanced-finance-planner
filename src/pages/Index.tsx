@@ -6,7 +6,7 @@ import { Briefcase, LineChart, PiggyBank, LogOut, History, Search, User, Info, T
 import { Button } from "@/components/ui/button";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { useAuth } from "@/components/auth/AuthProvider";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
 import { toast } from "@/components/ui/use-toast";
 import { useEffect, useMemo, useCallback, useState } from "react";
@@ -21,12 +21,13 @@ import {
 import { Calculator } from "@/components/Calculator";
 import { processPlanProgressData, PlanProgressData } from "@/lib/plan-progress";
 import { generateProjectionData } from '@/lib/chart-projections';
-import { useQueryClient } from "@tanstack/react-query";
 import { Logo } from '@/components/ui/logo';
 import { InvestmentPlanDetails } from "@/components/InvestmentPlanDetails";
 import { formatCurrency, CurrencyCode } from "@/utils/currency";
 import { EditPlanModal } from "@/components/EditPlanModal";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { useIPCASync } from "@/hooks/useIPCASync";
+
 type TimePeriod = 'all' | '6m' | '12m' | '24m';
 
 const Index = () => {
@@ -526,6 +527,15 @@ const Index = () => {
     queryClient.invalidateQueries({ queryKey: ['allFinancialRecords', clientId] });
     queryClient.invalidateQueries({ queryKey: ['goalsAndEvents', clientId] });
   }, [queryClient, clientId]);
+
+  const { syncIPCA, isSyncing } = useIPCASync(clientId, allFinancialRecords, investmentPlan);
+
+  // Add useEffect to sync IPCA when component mounts
+  useEffect(() => {
+    if (allFinancialRecords?.length && investmentPlan) {
+      syncIPCA();
+    }
+  }, [allFinancialRecords, investmentPlan, syncIPCA]);
 
   if (isInvestmentPlanLoading || isProfilesLoading || isFinancialRecordsLoading || isGoalsLoading || (!investmentPlan && !brokerProfile)) {
     return (
