@@ -80,6 +80,7 @@ interface ProjectionResult {
   plannedMonths: number;
   referenceDate: Date;
   projectedRetirementDate: Date;
+  plannedRetirementDate: Date;
   finalAgeDate: Date;
 }
 
@@ -98,8 +99,11 @@ export interface PlanProgressData {
   projectedRetirementDate: Date;
   finalAgeDate: Date;
   currentProgress: number;
+  plannedAgeYears: number;
+  plannedAgeMonths: number;
   projectedAgeYears: number;
   projectedAgeMonths: number;
+  projectedAge: number;
   isAheadOfSchedule: boolean;
 }
 
@@ -462,6 +466,7 @@ const financialCalculations = {
       plannedMonths,
       referenceDate,
       projectedRetirementDate,
+      plannedRetirementDate,
       finalAgeDate
     };
   }
@@ -528,10 +533,18 @@ export function processPlanProgressData(
   let projectedAgeYears = projectedDate.getFullYear() - birthDate.getFullYear();
   let projectedAgeMonths = projectedDate.getMonth() - birthDate.getMonth();
   
+  const plannedDate = projections.plannedRetirementDate;
+  let plannedAgeYears = plannedDate.getFullYear() - birthDate.getFullYear();
+  let plannedAgeMonths = plannedDate.getMonth() - birthDate.getMonth();
+  
   // Ajustar meses se negativo
   if (projectedAgeMonths < 0) {
     projectedAgeYears--;
     projectedAgeMonths += 12;
+  }
+  if (plannedAgeMonths < 0) {
+    plannedAgeYears--;
+    plannedAgeMonths += 12;
   }
 
   return {
@@ -551,6 +564,9 @@ export function processPlanProgressData(
     currentProgress,
     projectedAgeYears,
     projectedAgeMonths,
+    plannedAgeYears,
+    plannedAgeMonths,
+    projectedAge: projectedAgeYears + projectedAgeMonths / 12,
     isAheadOfSchedule: projections.monthsDifference > 0
   };
 } 
