@@ -188,7 +188,7 @@ export const Calculator = ({ data, investmentPlan }: PlanProgressProps) => {
       title={t('dashboard.planProgress.title')}
       icon={CalculatorIcon}
     >
-      {data && (
+      {data && investmentPlan && (
         <div className="space-y-6">
           <ComparisonRow
             title={t('dashboard.planProgress.timeToRetirement')}
