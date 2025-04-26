@@ -208,6 +208,7 @@ export const ptBR = {
       management: "Gerenciamento",
     },
     planProgress: {
+      retirement: "Aposentadoria",
       title: "Progresso do Plano",
       timeToRetirement: "Meses para Aposentadoria",
       tooltip: "Acompanhamento do seu plano de aposentadoria baseado nos dados atuais",
@@ -220,7 +221,8 @@ export const ptBR = {
       monthlyWithdrawal: "Renda Mensal",
       planned: "Planejado",
       projected: "Projetado",
-      difference: "diferença"
+      difference: "diferença",
+      ageAtRetirement: "Idade na Aposentadoria"
     },
     investmentPlan: {
       title: "Detalhes do Plano de Investimento",

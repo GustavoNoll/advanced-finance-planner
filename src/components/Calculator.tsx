@@ -27,22 +27,45 @@ interface ComparisonRowProps {
   isHigherBetter?: boolean;
   t: (key: string) => string;
   currency: string;
+  plannedAgeYears?: number;
+  plannedAgeMonths?: number;
+  projectedAgeYears?: number;
+  projectedAgeMonths?: number;
 }
 
 /**
- * Formats months into years and months string
+ * Formats months into years and months string with client's age
  */
-const formatMonthsToYearsAndMonths = (months: number, t: (key: string) => string): string => {
+const formatMonthsToYearsAndMonths = (months: number, t: (key: string) => string, currentAge?: number): string => {
   const years = Math.floor(months / 12);
   const remainingMonths = Math.round(months % 12);
   
   if (months < 12) return '';
 
+  let result = '';
   if (remainingMonths === 0) {
-    return `(${years} ${t('common.years')})`;
+    result = `(${years} ${t('common.years')})`;
+  } else {
+    result = `(${years} ${t('common.years')} ${t('common.and')} ${remainingMonths} ${t('common.months')})`;
   }
 
-  return `(${years} ${t('common.years')} ${t('common.and')} ${remainingMonths} ${t('common.months')})`;
+  if (currentAge !== undefined) {
+    result += `\n${t('dashboard.planProgress.ageAtRetirement')}: ${currentAge} ${t('common.years')}`;
+  }
+
+  return result;
+};
+
+/**
+ * Formats retirement tooltip
+ */
+const formatRetirementTooltip = (years?: number, months?: number, t?: (key: string) => string): string => {
+  if (years === undefined || months === undefined || !t) return '';
+  let result = '';
+  if (years > 0 && months > 0) result = `${years} ${t('common.years')} e ${months} ${t('common.months')}`;
+  else if (years > 0) result = `${years} ${t('common.years')}`;
+  else if (months > 0) result = `${months} ${t('common.months')}`;
+  return `Aposentadoria em ${result}`;
 };
 
 /**
@@ -55,7 +78,11 @@ const ComparisonRow = ({
   isCurrency = true, 
   isHigherBetter = false,
   currency,
-  t
+  t,
+  plannedAgeYears,
+  plannedAgeMonths,
+  projectedAgeYears,
+  projectedAgeMonths
 }: ComparisonRowProps) => {
   const difference = Math.round(projected) - Math.round(planned);
   const isEqual = difference === 0;
@@ -76,9 +103,28 @@ const ComparisonRow = ({
               }
             </p>
             {!isCurrency && planned >= 12 && (
-              <p className="text-xs text-gray-500 mt-0.5">
+              <span className="block text-xs text-gray-500">
                 {formatMonthsToYearsAndMonths(planned, t)}
-              </p>
+              </span>
+            )}
+            {!isCurrency && planned >= 12 && plannedAgeYears !== undefined && (
+              <div className="text-xs text-gray-500 mt-0.5">
+                <span className="block">
+                  <span className="relative group cursor-pointer">
+                    <span>
+                      {t('dashboard.planProgress.retirement')}: {plannedAgeYears} {t('common.years')}
+                    </span>
+                    <span className="absolute left-1/2 z-10 hidden group-hover:flex -translate-x-1/2 mt-1 px-2 py-1 bg-gray-800 text-white text-xs rounded shadow-lg whitespace-nowrap">
+                      {plannedAgeYears > 0 && plannedAgeMonths > 0
+                        ? formatRetirementTooltip(plannedAgeYears, plannedAgeMonths, t)
+                        : plannedAgeYears > 0
+                          ? formatRetirementTooltip(plannedAgeYears, undefined, t)
+                          : formatRetirementTooltip(undefined, plannedAgeMonths, t)
+                      }
+                    </span>
+                  </span>
+                </span>
+              </div>
             )}
           </div>
         </div>
@@ -101,9 +147,28 @@ const ComparisonRow = ({
               )}
             </p>
             {!isCurrency && projected >= 12 && (
-              <p className="text-xs text-gray-500 mt-0.5">
+              <span className="block text-xs text-gray-500">
                 {formatMonthsToYearsAndMonths(Math.round(projected), t)}
-              </p>
+              </span>
+            )}
+            {!isCurrency && projected >= 12 && projectedAgeYears !== undefined && (
+              <div className="text-xs text-gray-500 mt-0.5">
+                <span className="block">
+                  <span className="relative group cursor-pointer">
+                    <span>
+                      {t('dashboard.planProgress.retirement')}: {projectedAgeYears} {t('common.years')}
+                    </span>
+                    <span className="absolute left-1/2 z-10 hidden group-hover:flex -translate-x-1/2 mt-1 px-2 py-1 bg-gray-800 text-white text-xs rounded shadow-lg whitespace-nowrap">
+                      {projectedAgeYears > 0 && projectedAgeMonths > 0
+                        ? formatRetirementTooltip(projectedAgeYears, projectedAgeMonths, t)
+                        : projectedAgeYears > 0
+                          ? formatRetirementTooltip(projectedAgeYears, undefined, t)
+                          : formatRetirementTooltip(undefined, projectedAgeMonths, t)
+                      }
+                    </span>
+                  </span>
+                </span>
+              </div>
             )}
           </div>
         </div>
@@ -117,45 +182,51 @@ const ComparisonRow = ({
  */
 export const Calculator = ({ data, investmentPlan }: PlanProgressProps) => {
   const { t } = useTranslation();
-
+  
   return (
     <DashboardCard
       title={t('dashboard.planProgress.title')}
       icon={CalculatorIcon}
     >
-      <div className="space-y-6">
-        <ComparisonRow
-          title={t('dashboard.planProgress.timeToRetirement')}
-          planned={data.plannedMonths}
-          projected={data.projectedMonths}
-          isCurrency={false}
-          isHigherBetter={false}
-          t={t}
-          currency={investmentPlan.currency}
-        />
-
-        <div className="space-y-4">
+      {data && (
+        <div className="space-y-6">
           <ComparisonRow
-            title={t('dashboard.planProgress.monthlyContribution')}
-            planned={Math.max(data.plannedContribution, 0)}
-            projected={Math.max(data.projectedContribution, 0)}
-            isCurrency={true}
+            title={t('dashboard.planProgress.timeToRetirement')}
+            planned={data.plannedMonths}
+            projected={data.projectedMonths}
+            isCurrency={false}
             isHigherBetter={false}
             t={t}
             currency={investmentPlan.currency}
+            plannedAgeYears={data.plannedAgeYears}
+            plannedAgeMonths={data.plannedAgeMonths}
+            projectedAgeYears={data.projectedAgeYears}
+            projectedAgeMonths={data.projectedAgeMonths}
           />
 
-          <ComparisonRow
-            title={t('dashboard.planProgress.monthlyWithdrawal')}
-            planned={data.plannedMonthlyIncome}
-            projected={data.projectedMonthlyIncome}
-            isCurrency={true}
-            isHigherBetter={true}
-            t={t}
-            currency={investmentPlan.currency}
-          />
+          <div className="space-y-4">
+            <ComparisonRow
+              title={t('dashboard.planProgress.monthlyContribution')}
+              planned={Math.max(data.plannedContribution, 0)}
+              projected={Math.max(data.projectedContribution, 0)}
+              isCurrency={true}
+              isHigherBetter={false}
+              t={t}
+              currency={investmentPlan.currency}
+            />
+
+            <ComparisonRow
+              title={t('dashboard.planProgress.monthlyWithdrawal')}
+              planned={data.plannedMonthlyIncome}
+              projected={data.projectedMonthlyIncome}
+              isCurrency={true}
+              isHigherBetter={true}
+              t={t}
+              currency={investmentPlan.currency}
+            />
+          </div>
         </div>
-      </div>
+      )}
     </DashboardCard>
   );
 };
