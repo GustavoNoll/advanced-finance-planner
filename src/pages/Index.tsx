@@ -2,7 +2,7 @@ import { DashboardCard } from "@/components/DashboardCard";
 import { ExpenseChart } from "@/components/ExpenseChart";
 import { SavingsGoal } from "@/components/SavingsGoal";
 import { MonthlyView } from "@/components/MonthlyView";
-import { Briefcase, LineChart, PiggyBank, LogOut, History, Search, User, Info, Target, Trophy, Calendar, Share2, TrendingUp } from "lucide-react";
+import { Briefcase, LineChart, PiggyBank, LogOut, History, ArrowLeft, User, Info, Target, Trophy, Calendar, Share2, TrendingUp } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { useAuth } from "@/components/auth/AuthProvider";
@@ -557,7 +557,7 @@ const Index = () => {
               {brokerProfile && (
                 <Link to="/broker-dashboard">
                   <Button variant="ghost" className="text-gray-600 hover:text-blue-600 transition-colors">
-                    <Search className="h-4 w-4" />
+                    <ArrowLeft className="h-4 w-4" />
                   </Button>
                 </Link>
               )}
