@@ -173,9 +173,6 @@ export const SavingsGoal = ({ allFinancialRecords, investmentPlan, profile, plan
                     </span>
                   )}
                 </span>
-                <span className="text-xs text-gray-500">
-                  {t('savingsGoal.goal.targetAge', { age: finalAge })}
-                </span>
               </div>
             </div>
           </div>
