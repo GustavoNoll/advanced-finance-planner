@@ -1,4 +1,4 @@
-# NextWealth
+# Foundation
 
 A modern financial planning application built with React, TypeScript, and Vite.
 

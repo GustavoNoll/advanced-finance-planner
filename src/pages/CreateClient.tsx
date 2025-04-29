@@ -10,7 +10,7 @@ import { v4 as uuidv4 } from 'uuid';
 
 const generateRandomEmail = () => {
   const uuid = uuidv4().replace(/-/g, '').substring(0, 12);
-  return `${uuid}@nextwealth.com`;
+  return `${uuid}@foundation.com`;
 };
 
 const checkEmailExists = async (email: string) => {
