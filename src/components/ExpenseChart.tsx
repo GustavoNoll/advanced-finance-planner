@@ -43,6 +43,7 @@ interface GoalFormValues {
   year: string;
   installment_project: boolean;
   installment_count?: string;
+  installment_interval?: string;
 }
 
 interface EventFormValues {
@@ -54,6 +55,7 @@ interface EventFormValues {
   year: string;
   installment_project: boolean;
   installment_count?: string;
+  installment_interval?: string;
 }
 
 interface IconProps {
@@ -131,6 +133,7 @@ export const ExpenseChart = ({
           year: parseInt(values.year),
           installment_project: values.installment_project,
           installment_count: values.installment_project ? parseInt(values.installment_count || "0") : null,
+          installment_interval: values.installment_project ? parseInt(values.installment_interval || "1") : null,
           status: 'pending',
         },
       ]);
@@ -166,6 +169,7 @@ export const ExpenseChart = ({
           year: parseInt(values.year),
           installment_project: values.installment_project,
           installment_count: values.installment_project ? parseInt(values.installment_count || "0") : null,
+          installment_interval: values.installment_project ? parseInt(values.installment_interval || "1") : null,
           status: 'pending'
         },
       ]);
@@ -521,9 +525,11 @@ export const ExpenseChart = ({
                 {t('financialRecords.form.year')}: {goal.year}
               </div>
               {goal.installment_project && (
-                <div className="text-sm text-blue-600 mt-1">
-                  {t('financialGoals.form.installmentCount')}: {goal.installment_count}x
-                </div>
+                <>
+                  <div className="text-sm text-blue-600 mt-1">
+                    {t('financialGoals.form.installmentCount')}: {goal.installment_count}x {goal.installment_interval > 1 ? t('common.every') + ' ' + goal.installment_interval + ' ' + t('common.months') : ''}
+                  </div>
+                </>
               )}
             </div>
           </foreignObject>
@@ -598,7 +604,7 @@ export const ExpenseChart = ({
               </div>
               {event.installment_project && event.installment_count && (
                 <div className="text-sm text-blue-600 mt-1">
-                  {t('financialGoals.form.installmentCount')}: {event.installment_count}x
+                  {t('financialGoals.form.installmentCount')}: {event.installment_count}x {event.installment_interval > 1 ? t('common.every') + ' ' + event.installment_interval + ' ' + t('common.months') : ''}
                 </div>
               )}
             </div>

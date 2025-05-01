@@ -32,7 +32,11 @@ export const GoalCard = ({ goal, currency, onDelete }: {
               {formatCurrency(Math.abs(goal.asset_value), currency)}
               {goal.installment_project && goal.installment_count && (
                 <span className="text-sm text-gray-500 ml-2">
-                  ({goal.installment_count}x de {formatCurrency(Math.abs(goal.asset_value) / goal.installment_count, currency)})
+                  ({goal.installment_count}x de {formatCurrency(Math.abs(goal.asset_value) / goal.installment_count, currency)}
+                  {goal.installment_interval && goal.installment_interval > 1 && (
+                    <span> {t('common.every')} {goal.installment_interval} {t('common.months')}</span>
+                  )}
+                  )
                 </span>
               )}
             </p>

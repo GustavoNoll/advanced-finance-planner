@@ -20,7 +20,9 @@ export default {
       isInstallment: "Installment?",
       installmentProject: "Installment?",
       selectInstallments: "Select number of installments",
-      installmentCount: "Number of installments"
+      installmentCount: "Number of installments",
+      installmentInterval: "Interval between installments (months)",
+      enterInstallmentInterval: "Enter interval in months",
     },
     labels: {
       assetValue: "Expense value",
@@ -61,7 +63,9 @@ export default {
       isInstallment: "Installment?",
       installmentProject: "Installment?",
       selectInstallments: "Select number of installments",
-      installmentCount: "Number of installments"
+      installmentCount: "Number of installments",
+      installmentInterval: "Interval between installments (months)",
+      enterInstallmentInterval: "Enter interval in months",
     },
     labels: {
       assetValue: "Event value",

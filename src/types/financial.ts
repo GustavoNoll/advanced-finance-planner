@@ -81,6 +81,7 @@ export interface Goal {
   year: number;
   installment_project: boolean;
   installment_count?: number;
+  installment_interval?: number;
   name: string;
   status?: 'pending' | 'completed';
   created_at?: string;
@@ -99,6 +100,7 @@ export interface ProjectedEvent {
   asset_value: number;
   installment_project: boolean;
   installment_count?: number;
+  installment_interval?: number;
   icon: 'goal' | 'contribution' | 'other';
   status: 'pending' | 'completed';
   month: MonthNumber;
@@ -119,18 +121,17 @@ export type BaseFormValues = {
   year: string;
   icon: string;
   asset_value: string;
+  installment_project: boolean;
+  installment_count?: string;
+  installment_interval?: string;
 };
 
 export type GoalFormValues = BaseFormValues & {
   type: 'goal';
-  installment_project: boolean;
-  installment_count?: string;
 };
 
 export type EventFormValues = BaseFormValues & {
   type: 'event';
-  installment_project: boolean;
-  installment_count?: string;
 };
 
 export type FinancialItemFormValues = GoalFormValues | EventFormValues;

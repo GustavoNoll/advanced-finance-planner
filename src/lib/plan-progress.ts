@@ -1,6 +1,7 @@
 import { FinancialRecord, InvestmentPlan, Goal, ProjectedEvent } from "@/types/financial";
 import { calculateCompoundedRates, nper, yearlyReturnRateToMonthlyReturnRate, pmt, calculateFutureValue, vp } from "@/lib/financial-math";
 import { calculateAccumulatedInflation, calculatePlanAccumulatedInflation } from "./inflation-utils";
+import { processItem } from './financial-goals-processor';
 
 /**
  * Constants for date calculations
@@ -114,52 +115,15 @@ const financialCalculations = {
   /**
    * Processes goals for financial calculations
    */
-  processGoals: (goals: Goal[], referenceDate: Date): ProcessedGoalEvent[] => {
-    return goals.flatMap(goal => {
-      const goalDate = new Date(goal.year, goal.month - 1);
-      const monthsSinceReference = utils.calculateMonthsBetweenDates(referenceDate, goalDate);
-      if (goal.installment_project && goal.installment_count) {
-        const monthlyAmount = goal.asset_value / goal.installment_count;
-        return Array.from({ length: goal.installment_count }, (_, index) => ({
-          amount: monthlyAmount,
-          month: monthsSinceReference + index,
-          description: `${goal.icon} (${index + 1}/${goal.installment_count})`
-        }));
-      } else {
-        return [{
-          amount: goal.asset_value,
-          month: monthsSinceReference,
-          description: goal.icon
-        }];
-      }
-    });
+  processGoals: (goals: Goal[], referenceDate: Date) => {
+    return goals.flatMap(goal => processItem(goal, 'goal'));
   },
 
   /**
    * Processes events for financial calculations
    */
-  processEvents: (events: ProjectedEvent[], referenceDate: Date): ProcessedGoalEvent[] => {
-    return events.flatMap(event => {
-      const eventDate = new Date(event.year, event.month - 1);
-      const monthsSinceReference = utils.calculateMonthsBetweenDates(referenceDate, eventDate);
-      
-      if (event.installment_project && event.installment_count) {
-        const monthlyAmount = event.asset_value / event.installment_count;
-        return Array.from({ length: event.installment_count }, (_, index) => ({
-          amount: monthlyAmount,
-          month: monthsSinceReference + index,
-          description: `${event.icon} (${index + 1}/${event.installment_count})`,
-          name: event.name
-        }));
-      } else {
-        return [{
-          amount: event.asset_value,
-          month: monthsSinceReference,
-          description: event.icon,
-          name: event.name
-        }];
-      }
-    });
+  processEvents: (events: ProjectedEvent[], referenceDate: Date) => {
+    return events.flatMap(event => processItem(event, 'event'));
   },
 
   /**
