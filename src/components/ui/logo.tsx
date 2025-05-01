@@ -11,11 +11,11 @@ export function Logo({ variant = 'full', className }: LogoProps) {
     <div className={cn("flex items-center gap-2", className)}>
       <div className="relative">
         <img 
-          src="/images/logoCropped.png" 
+          src="/images/fCroppedLogo.png" 
           alt="Logo" 
           className={cn(
             "object-contain",
-            variant === 'full' ? "h-12" : "h-10"
+            variant === 'full' ? "h-12" : "h-6"
           )}
         />
       </div>

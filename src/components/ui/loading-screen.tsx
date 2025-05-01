@@ -1,6 +1,7 @@
 import { cn } from "@/lib/utils";
 import { Spinner } from "./spinner";
 import { useTranslation } from "react-i18next";
+import { Logo } from "./logo";
 
 interface LoadingScreenProps extends React.HTMLAttributes<HTMLDivElement> {
   title?: string;
@@ -30,9 +31,7 @@ export function LoadingScreen({
           </div>
         </div>
         <div className="space-y-2 text-center">
-          <h1 className="text-2xl font-bold text-gray-900 animate-pulse">
-            {t('software.title')}
-          </h1>
+          <Logo variant="full" />
           <p className="text-sm text-gray-500">{t('common.loading')}</p>
         </div>
       </div>
