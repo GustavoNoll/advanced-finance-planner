@@ -29,6 +29,9 @@ const createSchema = (type: 'goal' | 'event') => {
     year: z.string().min(1, "Ano é obrigatório"),
     icon: z.enum(['other']),
     asset_value: z.string().min(1, "Valor é obrigatório"),
+    installment_project: z.boolean().default(false),
+    installment_count: z.string().optional(),
+    installment_interval: z.string().optional(),
   };
 
   if (type === 'goal') {
@@ -36,16 +39,12 @@ const createSchema = (type: 'goal' | 'event') => {
       ...baseFields,
       icon: z.enum(['house', 'car', 'travel', 'family', 'electronic', 'education', 'hobby', 'professional', 'health', 'other']),
       type: z.literal('goal'),
-      installment_project: z.boolean().default(false),
-      installment_count: z.string().optional(),
     });
-  }else if (type === 'event') {
+  } else if (type === 'event') {
     return z.object({
       ...baseFields,
       icon: z.enum(['goal', 'contribution', 'other']),
       type: z.literal('event'),
-      installment_project: z.boolean().default(false),
-      installment_count: z.string().optional(),
     });
   }
 };
@@ -83,6 +82,7 @@ export const FinancialItemForm = ({
       type,
       installment_project: false,
       installment_count: '',
+      installment_interval: initialValues?.installment_interval?.toString() || '1',
     },
   });
 
@@ -98,6 +98,7 @@ export const FinancialItemForm = ({
       type: newType,
       installment_project: false,
       installment_count: '',
+      installment_interval: '1',
     });
   };
 
@@ -325,34 +326,64 @@ export const FinancialItemForm = ({
           />
 
           {(form.watch('installment_project') as boolean) && (
-            <FormField
-              control={form.control}
-              name="installment_count"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel className={cn(
-                    "text-sm font-medium",
-                    form.formState.errors.installment_count && "text-red-600"
-                  )}>
-                    {t('financialGoals.form.installmentCount')}
-                  </FormLabel>
-                  <FormControl>
-                    <Input
-                      type="number"
-                      min="1"
-                      max="120"
-                      {...field}
-                      placeholder={t('financialGoals.form.selectInstallments')}
-                      className={cn(
-                        "flex h-9 w-full rounded-lg border border-gray-200 bg-white px-3 py-1 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors",
-                        form.formState.errors.installment_count && "border-red-500 focus:ring-red-500 focus:border-red-500"
-                      )}
-                    />
-                  </FormControl>
-                  <FormMessage className="text-red-600 text-xs mt-1" />
-                </FormItem>
-              )}
-            />
+            <>
+              <FormField
+                control={form.control}
+                name="installment_count"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className={cn(
+                      "text-sm font-medium",
+                      form.formState.errors.installment_count && "text-red-600"
+                    )}>
+                      {t('financialGoals.form.installmentCount')}
+                    </FormLabel>
+                    <FormControl>
+                      <Input
+                        type="number"
+                        min="1"
+                        max="120"
+                        {...field}
+                        placeholder={t('financialGoals.form.selectInstallments')}
+                        className={cn(
+                          "flex h-9 w-full rounded-lg border border-gray-200 bg-white px-3 py-1 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors",
+                          form.formState.errors.installment_count && "border-red-500 focus:ring-red-500 focus:border-red-500"
+                        )}
+                      />
+                    </FormControl>
+                    <FormMessage className="text-red-600 text-xs mt-1" />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="installment_interval"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className={cn(
+                      "text-sm font-medium",
+                      form.formState.errors.installment_interval && "text-red-600"
+                    )}>
+                      {t('financialGoals.form.installmentInterval')}
+                    </FormLabel>
+                    <FormControl>
+                      <Input
+                        type="number"
+                        min="1"
+                        {...field}
+                        placeholder={t('financialGoals.form.enterInstallmentInterval')}
+                        className={cn(
+                          "flex h-9 w-full rounded-lg border border-gray-200 bg-white px-3 py-1 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors",
+                          form.formState.errors.installment_interval && "border-red-500 focus:ring-red-500 focus:border-red-500"
+                        )}
+                      />
+                    </FormControl>
+                    <FormMessage className="text-red-600 text-xs mt-1" />
+                  </FormItem>
+                )}
+              />
+            </>
           )}
         </div>
 

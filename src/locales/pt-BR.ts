@@ -355,6 +355,7 @@ export const ptBR = {
     loading: "Verificando permissões..."
   },
   common: {
+    every: "a cada",
     change: "Alterar",
     selectMonth: "Selecione o mês",
     selectYear: "Selecione o ano",
@@ -731,7 +732,8 @@ export const ptBR = {
       isInstallment: "Parcelado?",
       installmentProject: "Parcelado?",
       selectInstallments: "Selecione o número de parcelas",
-      installmentCount: "Número de parcelas"
+      installmentCount: "Número de parcelas",
+      installmentInterval: "Intervalo entre parcelas (meses)"
     },
     labels: {
       assetValue: "Valor do bem",
@@ -773,6 +775,7 @@ export const ptBR = {
       installmentProject: "Parcelado?",
       selectInstallments: "Selecione o número de parcelas",
       installmentCount: "Número de parcelas",
+      installmentInterval: "Intervalo entre parcelas (meses)",
       eventType: "Tipo do Evento",
       amount: "Valor",
       month: "Mês",
