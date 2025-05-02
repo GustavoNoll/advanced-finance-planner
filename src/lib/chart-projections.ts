@@ -134,7 +134,7 @@ export function generateProjectionData(
         
       if (historicalRecord) {
         lastHistoricalRecord = new Date(year, month + 1);
-        projectedBalance = (projectedBalance) * (1 + monthlyReturnRate) + (currentMonthlyDeposit);
+        projectedBalance = ((projectedBalance) * (1 + monthlyReturnRate) + (currentMonthlyDeposit)) + ((historicalRecord.events_balance || 0) * accumulatedInflation);
         return {
           month: currentMonthNumber,
           contribution: historicalRecord.monthly_contribution > 0 ? historicalRecord.monthly_contribution : 0,
@@ -172,6 +172,14 @@ export function generateProjectionData(
       const previousBalance = currentBalance;
       currentBalance = handleMonthlyGoalsAndEvents(
         currentBalance,
+        year,
+        currentMonthNumber - 1,
+        accumulatedInflation,
+        goalsForChart,
+        eventsForChart,
+      );
+      projectedBalance = handleMonthlyGoalsAndEvents(
+        projectedBalance,
         year,
         currentMonthNumber - 1,
         accumulatedInflation,
