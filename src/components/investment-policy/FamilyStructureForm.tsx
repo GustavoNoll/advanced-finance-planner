@@ -10,12 +10,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { supabase } from '@/lib/supabase';
 import { toast } from '@/components/ui/use-toast';
 import { Plus, Trash2, Calendar as CalendarIcon } from 'lucide-react';
-import { Checkbox } from '@radix-ui/react-checkbox';
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Calendar } from "@/components/ui/calendar";
 import { format, parse } from "date-fns";
-import { ptBR } from "date-fns/locale";
-import { cn } from "@/lib/utils";
+import { useTranslation } from 'react-i18next';
 
 const familyStructureSchema = z.object({
   marital_status: z.string().optional(),
@@ -23,8 +19,8 @@ const familyStructureSchema = z.object({
   spouse_birth_date: z.date().optional(),
   has_children: z.boolean().optional(),
   children: z.array(z.object({
-    name: z.string(),
-    birth_date: z.date(),
+    name: z.string().min(1, 'Nome é obrigatório'),
+    birth_date: z.date({ required_error: 'Data de nascimento é obrigatória' }),
   })).optional(),
 });
 
@@ -37,13 +33,17 @@ interface FamilyStructureFormProps {
 }
 
 const maritalStatuses = [
-  { value: 'solteiro', label: 'Solteiro' },
-  { value: 'separacao_total', label: 'Separação Total' },
-  { value: 'comunhao_parcial', label: 'Comunhão Parcial' },
-  { value: 'comunhao_total', label: 'Comunhão Total' },
+  { value: 'single'},
+  { value: 'total_separation'},
+  { value: 'partial_community'},
+  { value: 'total_community'},
 ];
 
-const calculateAge = (birthDate: Date): number => {
+const calculateAge = (birthDate: Date | undefined | null): number | null => {
+  if (!birthDate || !(birthDate instanceof Date) || isNaN(birthDate.getTime())) {
+    return null;
+  }
+
   const today = new Date();
   let age = today.getFullYear() - birthDate.getFullYear();
   const monthDiff = today.getMonth() - birthDate.getMonth();
@@ -55,7 +55,17 @@ const calculateAge = (birthDate: Date): number => {
   return age;
 };
 
-const DateInput = ({ value, onChange, disabled }: { value?: Date, onChange: (date: Date) => void, disabled?: boolean }) => {
+const DateInput = ({ 
+  value, 
+  onChange, 
+  disabled,
+  placeholder = 'dd/mm/aaaa'
+}: { 
+  value?: Date; 
+  onChange: (date: Date) => void; 
+  disabled?: boolean;
+  placeholder?: string;
+}) => {
   const [inputValue, setInputValue] = useState(value ? format(value, 'dd/MM/yyyy') : '');
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -95,30 +105,46 @@ const DateInput = ({ value, onChange, disabled }: { value?: Date, onChange: (dat
       type="text"
       value={inputValue}
       onChange={handleInputChange}
-      placeholder="dd/mm/aaaa"
+      placeholder={placeholder}
       disabled={disabled}
       className="w-[200px]"
     />
   );
 };
 
+function parseDate(value?: string | Date | null): Date | undefined {
+  if (!value) return undefined;
+  if (value instanceof Date) return value;
+  // tenta converter string para Date (aceita yyyy-MM-dd ou dd/MM/yyyy)
+  let parsed = parse(value, 'yyyy-MM-dd', new Date());
+  if (isNaN(parsed.getTime())) {
+    parsed = parse(value, 'dd/MM/yyyy', new Date());
+  }
+  return isNaN(parsed.getTime()) ? undefined : parsed;
+}
+
 export const FamilyStructureForm = ({
   initialData,
   isEditing = false,
   policyId,
 }: FamilyStructureFormProps) => {
+  const { t } = useTranslation();
   const [children, setChildren] = useState<{ name?: string; birth_date?: Date }[]>(
-    initialData?.children || []
+    initialData?.children?.map(child => ({
+      ...child,
+      birth_date: parseDate(child.birth_date)
+    })) || []
   );
 
   const form = useForm<FamilyStructureFormValues>({
     resolver: zodResolver(familyStructureSchema),
-    defaultValues: initialData || {
-      marital_status: '',
-      spouse_name: '',
-      spouse_birth_date: undefined,
-      has_children: false,
-      children: [],
+    defaultValues: {
+      ...initialData,
+      spouse_birth_date: parseDate(initialData?.spouse_birth_date),
+      children: initialData?.children?.map(child => ({
+        ...child,
+        birth_date: parseDate(child.birth_date)
+      })) || [],
     },
   });
 
@@ -126,52 +152,79 @@ export const FamilyStructureForm = ({
     if (!policyId) return;
 
     try {
+      const invalidChildren = children.filter(child => !child.name || !child.birth_date);
+      if (invalidChildren.length > 0) {
+        toast({
+          title: t('common.error'),
+          description: t('familyStructure.messages.validation.children'),
+          variant: 'destructive',
+        });
+        return;
+      }
+
       // First, update the family structure
-      const { error: structureError } = await supabase
+      const { children: _children, ...familyStructureData } = data;
+      const { data: familyStructure, error: structureError } = await supabase
         .from('family_structures')
-        .upsert([{ ...data, policy_id: policyId }]);
+        .upsert([{ 
+          ...familyStructureData, 
+          policy_id: policyId,
+          has_children: children.length > 0,
+          spouse_birth_date: data.spouse_birth_date ? format(data.spouse_birth_date, 'yyyy-MM-dd') : null
+        }], {
+          onConflict: 'policy_id',
+          ignoreDuplicates: false
+        })
+        .select()
+        .single();
 
       if (structureError) throw structureError;
 
       // Then, update children
-      if (data.has_children) {
+      if (familyStructure) {
         // Delete existing children
         const { error: deleteError } = await supabase
           .from('children')
           .delete()
-          .eq('family_structure_id', policyId);
+          .eq('family_structure_id', familyStructure.id);
 
         if (deleteError) throw deleteError;
 
-        // Insert new children
+        // Insert new children if there are any
         if (children.length > 0) {
+          const childrenToInsert = children.map(child => ({
+            name: child.name,
+            birth_date: child.birth_date ? format(child.birth_date, 'yyyy-MM-dd') : null,
+            family_structure_id: familyStructure.id
+          }));
+
           const { error: insertError } = await supabase
             .from('children')
-            .insert(children.map(child => ({
-              ...child,
-              family_structure_id: policyId,
-            })));
+            .insert(childrenToInsert);
 
           if (insertError) throw insertError;
         }
       }
 
       toast({
-        title: 'Sucesso',
-        description: 'Estrutura familiar atualizada com sucesso',
+        title: t('common.success'),
+        description: t('familyStructure.messages.success'),
       });
     } catch (error) {
       console.error('Erro ao atualizar estrutura familiar:', error);
       toast({
-        title: 'Erro',
-        description: 'Falha ao atualizar estrutura familiar',
+        title: t('common.error'),
+        description: t('familyStructure.messages.error'),
         variant: 'destructive',
       });
     }
   };
 
   const addChild = () => {
-    setChildren([...children, { name: '', birth_date: undefined }]);
+    if (!isEditing) return;
+    
+    const newChild = { name: '', birth_date: undefined };
+    setChildren([...children, newChild]);
   };
 
   const removeChild = (index: number) => {
@@ -179,6 +232,8 @@ export const FamilyStructureForm = ({
   };
 
   const updateChild = (index: number, field: 'name' | 'birth_date', value: string | Date) => {
+    if (!isEditing) return;
+    
     const newChildren = [...children];
     newChildren[index] = { ...newChildren[index], [field]: value };
     setChildren(newChildren);
@@ -189,7 +244,6 @@ export const FamilyStructureForm = ({
       <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
         <Card>
           <CardHeader>
-            <CardTitle>Estrutura Familiar</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
             <FormField
@@ -197,7 +251,7 @@ export const FamilyStructureForm = ({
               name="marital_status"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Estado Civil</FormLabel>
+                  <FormLabel>{t('familyStructure.maritalStatus.label')}</FormLabel>
                   <FormControl>
                     <Select
                       value={field.value}
@@ -205,12 +259,12 @@ export const FamilyStructureForm = ({
                       disabled={!isEditing}
                     >
                       <SelectTrigger>
-                        <SelectValue placeholder="Selecione o estado civil" />
+                        <SelectValue placeholder={t('familyStructure.maritalStatus.placeholder')} />
                       </SelectTrigger>
                       <SelectContent>
                         {maritalStatuses.map((status) => (
                           <SelectItem key={status.value} value={status.value}>
-                            {status.label}
+                            {t(`familyStructure.maritalStatus.options.${status.value}`)}
                           </SelectItem>
                         ))}
                       </SelectContent>
@@ -226,7 +280,7 @@ export const FamilyStructureForm = ({
               name="spouse_name"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Nome do Cônjuge</FormLabel>
+                  <FormLabel>{t('familyStructure.spouse.name.label')}</FormLabel>
                   <FormControl>
                     <Input
                       value={field.value}
@@ -244,17 +298,18 @@ export const FamilyStructureForm = ({
               name="spouse_birth_date"
               render={({ field }) => (
                 <FormItem className="flex flex-col">
-                  <FormLabel>Data de Nascimento do Cônjuge</FormLabel>
+                  <FormLabel>{t('familyStructure.spouse.birthDate.label')}</FormLabel>
                   <FormControl>
                     <DateInput
                       value={field.value}
                       onChange={field.onChange}
                       disabled={!isEditing}
+                      placeholder={t('familyStructure.spouse.birthDate.placeholder')}
                     />
                   </FormControl>
                   {field.value && (
                     <p className="text-sm text-muted-foreground">
-                      Idade: {calculateAge(field.value)} anos
+                      {t('familyStructure.children.age', { age: calculateAge(field.value) ?? 'N/A' })}
                     </p>
                   )}
                   <FormMessage />
@@ -262,10 +317,9 @@ export const FamilyStructureForm = ({
               )}
             />
 
-            {/* Seção de filhos sempre visível */}
             <div className="space-y-4">
               <div className="flex justify-between items-center">
-                <h3 className="text-lg font-semibold">Filhos</h3>
+                <h3 className="text-lg font-semibold">{t('familyStructure.children.title')}</h3>
                 {isEditing && (
                   <Button
                     type="button"
@@ -274,33 +328,34 @@ export const FamilyStructureForm = ({
                     onClick={addChild}
                   >
                     <Plus className="h-4 w-4 mr-2" />
-                    Adicionar Filho
+                    {t('familyStructure.children.add')}
                   </Button>
                 )}
               </div>
 
               {children.map((child, index) => (
-                <div key={index} className="grid grid-cols-[1fr_1fr_auto] gap-4 items-end">
-                  <div className="flex flex-col">
-                    <FormLabel>Nome</FormLabel>
+                <div key={index} className="flex items-center gap-4 w-full">
+                  <div className="w-[200px] flex flex-col justify-center">
+                    <FormLabel className="text-base mb-1">{t('familyStructure.children.name.label')}</FormLabel>
                     <Input
                       value={child.name}
                       onChange={(e) => updateChild(index, 'name', e.target.value)}
                       disabled={!isEditing}
+                      className="h-10 text-base px-3 py-2"
                     />
+                    <span className="text-xs text-muted-foreground block opacity-0">a</span>
                   </div>
-                  <div className="flex flex-col">
-                    <FormLabel>Data de Nascimento</FormLabel>
+                  <div className="w-[200px]">
+                    <FormLabel className="text-base mb-1">{t('familyStructure.children.birthDate.label')}</FormLabel>
                     <DateInput
                       value={child.birth_date}
                       onChange={(date) => updateChild(index, 'birth_date', date)}
                       disabled={!isEditing}
+                      placeholder={t('familyStructure.children.birthDate.placeholder')}
                     />
-                    {child.birth_date && (
-                      <span className="text-sm text-muted-foreground mt-1">
-                        Idade: {calculateAge(child.birth_date)} anos
-                      </span>
-                    )}
+                    <span className={child.birth_date ? 'text-xs text-muted-foreground block' : 'text-xs text-muted-foreground block opacity-0'}>
+                      {t('familyStructure.children.age', { age: calculateAge(child.birth_date) ?? 'N/A' })}
+                    </span>
                   </div>
                   {isEditing && (
                     <Button
@@ -309,7 +364,7 @@ export const FamilyStructureForm = ({
                       size="icon"
                       onClick={() => removeChild(index)}
                       className="self-center"
-                      aria-label="Remover filho"
+                      aria-label={t('familyStructure.children.remove')}
                     >
                       <Trash2 className="h-4 w-4" />
                     </Button>
@@ -322,7 +377,7 @@ export const FamilyStructureForm = ({
 
         {isEditing && (
           <div className="flex justify-end">
-            <Button type="submit">Salvar Alterações</Button>
+            <Button type="submit">{t('common.save')}</Button>
           </div>
         )}
       </form>

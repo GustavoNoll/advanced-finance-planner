@@ -9,6 +9,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { supabase } from '@/lib/supabase';
 import { toast } from '@/components/ui/use-toast';
+import { useTranslation } from 'react-i18next';
 
 const professionalInformationSchema = z.object({
   occupation: z.string().min(1, 'Profissão é obrigatória'),
@@ -28,57 +29,71 @@ interface ProfessionalInformationFormProps {
   initialData?: ProfessionalInformationFormValues;
   isEditing?: boolean;
   policyId?: string;
+  clientId: string;
 }
 
 const workRegimes = [
-  { value: 'clt', label: 'CLT' },
-  { value: 'pj', label: 'PJ' },
-  { value: 'public_servant', label: 'Funcionário Público' },
+  { value: 'pj' },
+  { value: 'clt' },
+  { value: 'public_servant' },
 ];
 
 const taxDeclarationMethods = [
-  { value: 'simplified', label: 'Simplificado' },
-  { value: 'complete', label: 'Completo' },
-  { value: 'exempt', label: 'Não Declara' },
+  { value: 'simplified' },
+  { value: 'complete' },
+  { value: 'exempt' },
 ];
 
 export const ProfessionalInformationForm = ({
   initialData,
   isEditing = false,
   policyId,
+  clientId,
 }: ProfessionalInformationFormProps) => {
+  const { t } = useTranslation();
   const form = useForm<ProfessionalInformationFormValues>({
     resolver: zodResolver(professionalInformationSchema),
-    defaultValues: initialData || {
-      occupation: '',
-      work_description: '',
-      work_location: '',
-      work_regime: undefined,
-      tax_declaration_method: undefined,
+    defaultValues: {
+      occupation: initialData?.occupation || '',
+      work_description: initialData?.work_description || '',
+      work_location: initialData?.work_location || '',
+      work_regime: initialData?.work_regime || undefined,
+      tax_declaration_method: initialData?.tax_declaration_method || undefined,
     },
   });
 
   const handleSubmit = async (data: ProfessionalInformationFormValues) => {
     if (!policyId) return;
 
-    const { error } = await supabase
-      .from('professional_information')
-      .upsert([{ ...data, policy_id: policyId }]);
+    try {
+      const { error } = await supabase
+        .from('professional_information')
+        .upsert(
+          { 
+            ...data, 
+            policy_id: policyId,
+            updated_at: new Date().toISOString()
+          },
+          { 
+            onConflict: 'policy_id',
+            ignoreDuplicates: false
+          }
+        );
 
-    if (error) {
+      if (error) throw error;
+
+      toast({
+        title: t('common.success'),
+        description: t('professionalInformation.messages.success'),
+      });
+    } catch (error) {
       console.error('Error updating professional information:', error);
       toast({
-        title: 'Erro',
-        description: 'Falha ao atualizar informações profissionais',
+        title: t('common.error'),
+        description: t('professionalInformation.messages.error'),
         variant: 'destructive',
       });
-      return;
     }
-
-    toast({
-      title: 'Sucesso',
-      description: 'Informações profissionais atualizadas com sucesso',
-    });
   };
 
   return (
@@ -86,7 +101,6 @@ export const ProfessionalInformationForm = ({
       <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
         <Card>
           <CardHeader>
-            <CardTitle>Informações Profissionais</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
             <FormField
@@ -94,10 +108,10 @@ export const ProfessionalInformationForm = ({
               name="occupation"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Profissão</FormLabel>
+                  <FormLabel>{t('professionalInformation.occupation.label')}</FormLabel>
                   <FormControl>
                     <Input
-                      placeholder="Sua profissão"
+                      placeholder={t('professionalInformation.occupation.placeholder')}
                       value={field.value}
                       onChange={field.onChange}
                       disabled={!isEditing}
@@ -113,10 +127,10 @@ export const ProfessionalInformationForm = ({
               name="work_description"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>O que faz</FormLabel>
+                  <FormLabel>{t('professionalInformation.workDescription.label')}</FormLabel>
                   <FormControl>
                     <Textarea
-                      placeholder="Descrição das suas atividades profissionais"
+                      placeholder={t('professionalInformation.workDescription.placeholder')}
                       value={field.value}
                       onChange={field.onChange}
                       disabled={!isEditing}
@@ -132,10 +146,10 @@ export const ProfessionalInformationForm = ({
               name="work_location"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Onde trabalha</FormLabel>
+                  <FormLabel>{t('professionalInformation.workLocation.label')}</FormLabel>
                   <FormControl>
                     <Input
-                      placeholder="Local de trabalho"
+                      placeholder={t('professionalInformation.workLocation.placeholder')}
                       value={field.value}
                       onChange={field.onChange}
                       disabled={!isEditing}
@@ -151,7 +165,7 @@ export const ProfessionalInformationForm = ({
               name="work_regime"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Regime de trabalho</FormLabel>
+                  <FormLabel>{t('professionalInformation.workRegime.label')}</FormLabel>
                   <Select
                     onValueChange={field.onChange}
                     defaultValue={field.value}
@@ -159,13 +173,13 @@ export const ProfessionalInformationForm = ({
                   >
                     <FormControl>
                       <SelectTrigger>
-                        <SelectValue placeholder="Selecione o regime de trabalho" />
+                        <SelectValue placeholder={t('professionalInformation.workRegime.placeholder')} />
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
                       {workRegimes.map((regime) => (
                         <SelectItem key={regime.value} value={regime.value}>
-                          {regime.label}
+                          {t(`professionalInformation.workRegime.options.${regime.value}`)}
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -180,7 +194,7 @@ export const ProfessionalInformationForm = ({
               name="tax_declaration_method"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Como declara IR</FormLabel>
+                  <FormLabel>{t('professionalInformation.taxDeclarationMethod.label')}</FormLabel>
                   <Select
                     onValueChange={field.onChange}
                     defaultValue={field.value}
@@ -188,13 +202,13 @@ export const ProfessionalInformationForm = ({
                   >
                     <FormControl>
                       <SelectTrigger>
-                        <SelectValue placeholder="Selecione o método de declaração" />
+                        <SelectValue placeholder={t('professionalInformation.taxDeclarationMethod.placeholder')} />
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
                       {taxDeclarationMethods.map((method) => (
                         <SelectItem key={method.value} value={method.value}>
-                          {method.label}
+                          {t(`professionalInformation.taxDeclarationMethod.options.${method.value}`)}
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -208,7 +222,7 @@ export const ProfessionalInformationForm = ({
 
         {isEditing && (
           <div className="flex justify-end">
-            <Button type="submit">Salvar Alterações</Button>
+            <Button type="submit">{t('common.save')}</Button>
           </div>
         )}
       </form>

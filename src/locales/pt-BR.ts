@@ -990,4 +990,143 @@ export const ptBR = {
     confirmPasswordPlaceholder: 'Digite novamente sua nova senha',
     passwordChanged: 'Senha alterada com sucesso',
   },
+  familyStructure: {
+    title: 'Estrutura Familiar',
+    maritalStatus: {
+      label: 'Estado Civil',
+      placeholder: 'Selecione o estado civil',
+      options: {
+        single: 'Solteiro',
+        total_separation: 'Separação Total',
+        partial_community: 'Comunhão Parcial',
+        total_community: 'Comunhão Total'
+      }
+    },
+    spouse: {
+      name: {
+        label: 'Nome do Cônjuge'
+      },
+      birthDate: {
+        label: 'Data de Nascimento do Cônjuge',
+        placeholder: 'dd/mm/aaaa'
+      }
+    },
+    children: {
+      title: 'Filhos',
+      add: 'Adicionar Filho',
+      name: {
+        label: 'Nome',
+        required: 'Nome é obrigatório'
+      },
+      birthDate: {
+        label: 'Data de Nascimento',
+        required: 'Data de nascimento é obrigatória',
+        placeholder: 'dd/mm/aaaa'
+      },
+      age: 'Idade: {{age}} anos',
+      remove: 'Remover filho'
+    },
+    messages: {
+      success: 'Estrutura familiar atualizada com sucesso',
+      error: 'Falha ao atualizar estrutura familiar',
+      validation: {
+        children: 'Todos os filhos devem ter nome e data de nascimento preenchidos'
+      }
+    }
+  },
+  professionalInformation: {
+    title: 'Informações Profissionais',
+    occupation: {
+      label: 'Profissão',
+      placeholder: 'Sua profissão',
+      required: 'Profissão é obrigatória'
+    },
+    workDescription: {
+      label: 'O que faz',
+      placeholder: 'Descrição das suas atividades profissionais',
+      required: 'Descrição do trabalho é obrigatória'
+    },
+    workLocation: {
+      label: 'Onde trabalha',
+      placeholder: 'Local de trabalho',
+      required: 'Local de trabalho é obrigatório'
+    },
+    workRegime: {
+      label: 'Regime de trabalho',
+      placeholder: 'Selecione o regime de trabalho',
+      required: 'Regime de trabalho é obrigatório',
+      options: {
+        pj: 'PJ',
+        clt: 'CLT',
+        public_servant: 'Funcionário Público'
+      }
+    },
+    taxDeclarationMethod: {
+      label: 'Como declara IR',
+      placeholder: 'Selecione o método de declaração',
+      required: 'Método de declaração de IR é obrigatório',
+      options: {
+        simplified: 'Simplificado',
+        complete: 'Completo',
+        exempt: 'Não Declara'
+      }
+    },
+    messages: {
+      success: 'Informações profissionais atualizadas com sucesso',
+      error: 'Falha ao atualizar informações profissionais'
+    }
+  },
+  investmentPolicy: {
+    title: 'Política de Investimento',
+    lifeStage: {
+      label: 'Momento de Vida',
+      options: {
+        accumulation: 'Acumulação de Patrimônio',
+        enjoyment: 'Usufruto de Patrimônio',
+        consolidation: 'Consolidação'
+      }
+    },
+    hobbies: {
+      label: 'Hobbies'
+    },
+    objectives: {
+      label: 'Objetivos de Investimento'
+    },
+    insurance: {
+      hasInsurance: 'Possui Seguro',
+      hasHealthPlan: 'Possui Plano de Saúde'
+    },
+    messages: {
+      success: 'Política de investimento atualizada com sucesso',
+      error: 'Falha ao atualizar política de investimento'
+    }
+  },
+  budget: {
+    title: 'Orçamento',
+    messages: {
+      success: 'Orçamento atualizado com sucesso',
+      error: 'Falha ao atualizar orçamento'
+    }
+  },
+  patrimonial: {
+    title: 'Situação Patrimonial',
+    messages: {
+      success: 'Situação patrimonial atualizada com sucesso',
+      error: 'Falha ao atualizar situação patrimonial'
+    }
+  },
+  life: {
+    title: 'Vida',
+    messages: {
+      success: 'Informações de vida atualizadas com sucesso',
+      error: 'Falha ao atualizar informações de vida'
+    }
+  },
+  investmentPreferences: {
+    title: 'Preferências de Investimento',
+    messages: {
+      success: 'Preferências de investimento atualizadas com sucesso',
+      error: 'Falha ao atualizar preferências de investimento'
+    }
+  },
 };

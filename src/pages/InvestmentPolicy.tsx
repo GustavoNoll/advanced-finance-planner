@@ -23,8 +23,9 @@ const defaultEmptyPolicy = {
   investment_preferences: [{}],
   professional_information: [{}],
   family_structures: [{}],
+  patrimonial_situations: [{}],
+  life_information: [{}],
   budgets: [{}],
-  assets: []
 };
 
 const InvestmentPolicy = ({
@@ -40,7 +41,8 @@ const InvestmentPolicy = ({
     queryFn: async () => {
       if (!clientId) return defaultEmptyPolicy;
 
-      const { data, error } = await supabase
+      // First try to fetch existing policy
+      const { data: existingPolicy, error: fetchError } = await supabase
         .from('investment_policies')
         .select(`
           *,
@@ -48,24 +50,47 @@ const InvestmentPolicy = ({
           professional_information (*),
           family_structures (*, children (*)),
           budgets (*),
-          assets (*)
+          patrimonial_situations (*),
+          life_information (*)
         `)
         .eq('profile_id', clientId)
+        .maybeSingle();
+
+      if (fetchError) {
+        console.error('Error fetching investment policy:', fetchError);
+        return defaultEmptyPolicy;
+      }
+
+      // If policy exists, return it
+      if (existingPolicy) {
+        console.log('existingPolicy', existingPolicy);
+        return {
+          ...defaultEmptyPolicy,
+          ...existingPolicy,
+          investment_preferences: existingPolicy?.investment_preferences || [{}],
+          professional_information: existingPolicy?.professional_information || [{}],
+          family_structures: existingPolicy?.family_structures || [{}],
+          budgets: existingPolicy?.budgets || [{}],
+          patrimonial_situations: existingPolicy?.patrimonial_situations || [{}],
+          life_information: existingPolicy?.life_information || [{}],
+        };
+      }
+
+      // If no policy exists, create a new one
+      const { data: newPolicy, error: createError } = await supabase
+        .from('investment_policies')
+        .insert([{ profile_id: clientId }])
+        .select()
         .single();
 
-      if (error) {
-        console.error('Error fetching investment policy:', error);
+      if (createError) {
+        console.error('Error creating investment policy:', createError);
         return defaultEmptyPolicy;
       }
 
       return {
         ...defaultEmptyPolicy,
-        ...data,
-        investment_preferences: data?.investment_preferences || [{}],
-        professional_information: data?.professional_information || [{}],
-        family_structures: data?.family_structures || [{}],
-        budgets: data?.budgets || [{}],
-        assets: data?.assets || []
+        ...newPolicy,
       };
     },
     enabled: !!clientId,
@@ -82,26 +107,27 @@ const InvestmentPolicy = ({
   return (
     <div className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8 py-8">
       <div className="space-y-8">
-        <Card>
+        <Card>  
           <CardHeader>
-            <CardTitle>Professional Information</CardTitle>
+            <CardTitle>{t('professionalInformation.title')}</CardTitle>
           </CardHeader>
           <CardContent>
             <ProfessionalInformationForm
-              initialData={policy?.professional_information?.[0] || {}}
+              initialData={policy?.professional_information || {}}
               isEditing={!!brokerProfile}
               policyId={policy?.id}
+              clientId={clientId}
             />
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader>
-            <CardTitle>Família</CardTitle>
+            <CardTitle>{t('familyStructure.title')}</CardTitle>
           </CardHeader>
           <CardContent>
             <FamilyStructureForm
-              initialData={policy?.family_structures?.[0] || {}}
+              initialData={policy?.family_structures || {}}
               isEditing={!!brokerProfile}
               policyId={policy?.id}
             />
@@ -110,11 +136,11 @@ const InvestmentPolicy = ({
 
         <Card>
           <CardHeader>
-            <CardTitle>Orçamento</CardTitle>
+            <CardTitle>{t('budget.title')}</CardTitle>
           </CardHeader>
           <CardContent>
             <BudgetForm
-              initialData={policy?.budgets?.[0] || {}}
+              initialData={policy?.budgets || {}}
               isEditing={!!brokerProfile}
               policyId={policy?.id}
             />
@@ -123,11 +149,11 @@ const InvestmentPolicy = ({
 
         <Card>
           <CardHeader>
-            <CardTitle>Situação patrimonial</CardTitle>
+            <CardTitle>{t('patrimonial.title')}</CardTitle>
           </CardHeader>
           <CardContent>
             <PatrimonialForm
-              initialData={policy?.patrimonial_situation || {}}
+              initialData={policy?.patrimonial_situations || {}}
               isEditing={!!brokerProfile}
               policyId={policy?.id}
             />
@@ -136,7 +162,7 @@ const InvestmentPolicy = ({
 
         <Card>
           <CardHeader>
-            <CardTitle>Vida</CardTitle>
+            <CardTitle>{t('life.title')}</CardTitle>
           </CardHeader>
           <CardContent>
             <LifeForm
@@ -149,17 +175,16 @@ const InvestmentPolicy = ({
 
         <Card>
           <CardHeader>
-            <CardTitle>Investimentos</CardTitle>
+            <CardTitle>{t('investmentPreferences.title')}</CardTitle>
           </CardHeader>
           <CardContent>
             <InvestmentPreferencesForm
-              initialData={policy?.investment_preferences?.[0] || {}}
+              initialData={policy?.investment_preferences || {}}
               isEditing={!!brokerProfile}
               policyId={policy?.id}
             />
           </CardContent>
         </Card>
-
       </div>
     </div>
   );
