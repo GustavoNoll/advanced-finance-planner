@@ -553,7 +553,7 @@ const Index = () => {
       <header className="bg-white/95 backdrop-blur-md border-b sticky top-0 z-50 shadow-lg">
         <div className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8 py-4">
           <div className="flex items-center justify-between">
-            <div className="w-1/3">
+            <div className="flex items-center gap-4">
               {brokerProfile && (
                 <Link to="/broker-dashboard">
                   <Button variant="ghost" className="text-gray-600 hover:text-blue-600 transition-colors">
@@ -561,18 +561,31 @@ const Index = () => {
                   </Button>
                 </Link>
               )}
-            </div>
-
-            <div className="flex flex-col items-center w-1/3">
-              <Logo variant="minimal" className="mb-2" />
+              <Logo variant="minimal" className="h-6" />
               {clientProfile && (
-                <div className="flex flex-col items-center">
-                  <p className="text-sm text-gray-500 font-medium">{clientProfile.name}</p>
-                </div>
+                <p className="text-sm text-gray-700 font-medium hidden sm:block">{clientProfile.name}</p>
               )}
             </div>
 
-            <div className="flex justify-end w-1/3 gap-2">
+            <div className="flex items-center gap-4">
+              <div className="flex space-x-1 bg-gray-100 p-1 rounded-lg">
+                <Button
+                  variant="ghost"
+                  className="px-3 py-1 text-sm font-medium text-blue-600 bg-white rounded-md shadow-sm"
+                >
+                  {t('dashboard.navigation.finances')}
+                </Button>
+                <Button
+                  variant="ghost"
+                  className="px-3 py-1 text-sm font-medium text-gray-500 hover:text-gray-700 rounded-md"
+                  disabled
+                >
+                  {t('dashboard.navigation.investmentPolicy')}
+                </Button>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2">
               {brokerProfile && (
                 <Button 
                   variant="ghost" 
@@ -581,7 +594,7 @@ const Index = () => {
                   className="flex items-center gap-1 text-gray-600 hover:text-blue-600 transition-colors"
                 >
                   <Share2 className="h-4 w-4" />
-                  <span>{t('brokerDashboard.shareWithClient')}</span>
+                  <span className="hidden sm:inline">{t('brokerDashboard.shareWithClient')}</span>
                 </Button>
               )}
               <Button 

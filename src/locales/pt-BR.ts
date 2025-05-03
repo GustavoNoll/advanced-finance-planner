@@ -118,6 +118,10 @@ export const ptBR = {
   },
   dashboard: {
     title: "Portfólio de Investimentos",
+    navigation: {
+      finances: "Finanças",
+      investmentPolicy: "Política de Investimento"
+    },
     highlights: {
       startToInvest: "Você já deveria estar investindo!",
       title: "Destaques",
