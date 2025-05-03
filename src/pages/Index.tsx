@@ -5,11 +5,12 @@ import { useAuth } from "@/components/auth/AuthProvider";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
 import { toast } from "@/components/ui/use-toast";
-import { useEffect, useCallback } from "react";
+import { useEffect, useCallback, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Spinner } from "@/components/ui/spinner";
 import { Logo } from '@/components/ui/logo';
 import Finances from './Finances';
+import InvestmentPolicy from './InvestmentPolicy';
 
 const Index = () => {
   const { user } = useAuth();
@@ -17,6 +18,7 @@ const Index = () => {
   const params = useParams();
   const clientId = params.id || user?.id;
   const { t } = useTranslation();
+  const [activeView, setActiveView] = useState<'finances' | 'policies'>('finances');
 
   const handleLogout = useCallback(async () => {
     try {
@@ -56,7 +58,6 @@ const Index = () => {
     enabled: !!clientId,
   });
 
-  // Combine as queries de profile em uma única consulta
   const { data: profiles, isLoading: isProfilesLoading } = useQuery({
     queryKey: ['profiles', user?.id, clientId],
     queryFn: async () => {
@@ -111,8 +112,16 @@ const Index = () => {
         handleLogout();
         return;
       }
+
+      // Set active view based on URL
+      const path = window.location.pathname;
+      if (path.includes('investment-policy')) {
+        setActiveView('policies');
+      } else {
+        setActiveView('finances');
+      }
     }
-  }, [investmentPlan, brokerProfile, isInvestmentPlanLoading, isProfilesLoading, navigate, params.id]);
+  }, [investmentPlan, brokerProfile, isInvestmentPlanLoading, isProfilesLoading, navigate, params.id, handleLogout, t]);
 
   const handleShareClient = () => {
     const clientLoginUrl = `${window.location.origin}/client-login/${clientId}`;
@@ -154,14 +163,27 @@ const Index = () => {
               <div className="flex space-x-1 bg-gray-100 p-1 rounded-lg">
                 <Button
                   variant="ghost"
-                  className="px-3 py-1 text-sm font-medium text-blue-600 bg-white rounded-md shadow-sm"
+                  className={`px-3 py-1 text-sm font-medium rounded-md ${
+                    activeView === 'finances'
+                      ? 'text-blue-600 bg-white shadow-sm'
+                      : 'text-gray-500 hover:text-gray-700'
+                  }`}
+                  onClick={() => {
+                    setActiveView('finances');
+                  }}
                 >
                   {t('dashboard.navigation.finances')}
                 </Button>
                 <Button
                   variant="ghost"
-                  className="px-3 py-1 text-sm font-medium text-gray-500 hover:text-gray-700 rounded-md"
-                  disabled
+                  className={`px-3 py-1 text-sm font-medium rounded-md ${
+                    activeView === 'policies'
+                      ? 'text-blue-600 bg-white shadow-sm'
+                      : 'text-gray-500 hover:text-gray-700'
+                  }`}
+                  onClick={() => {
+                    setActiveView('policies');
+                  }}
                 >
                   {t('dashboard.navigation.investmentPolicy')}
                 </Button>
@@ -193,14 +215,25 @@ const Index = () => {
         </div>
       </header>
 
-      <Finances
-        clientId={clientId}
-        clientProfile={clientProfile}
-        brokerProfile={brokerProfile}
-        investmentPlan={investmentPlan}
-        onLogout={handleLogout}
-        onShareClient={handleShareClient}
-      />
+      {activeView === 'finances' && (
+        <Finances
+          clientId={clientId}
+          clientProfile={clientProfile}
+          brokerProfile={brokerProfile}
+          investmentPlan={investmentPlan}
+          onLogout={handleLogout}
+          onShareClient={handleShareClient}
+        />
+      )}
+
+      {activeView === 'policies' && (
+        <InvestmentPolicy
+          clientId={clientId}
+          clientProfile={clientProfile}
+          brokerProfile={brokerProfile}
+          investmentPlan={investmentPlan}
+        />
+      )}
     </div>
   );
 };
