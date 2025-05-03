@@ -130,24 +130,30 @@ export const PatrimonialForm = ({
   const handleSubmit = async (data: PatrimonialFormValues) => {
     if (!policyId) return;
 
-    const { error } = await supabase
-      .from('patrimonial_situations')
-      .upsert([{ ...data, policy_id: policyId }]);
+    try {
+      const { error } = await supabase
+        .from('patrimonial_situations')
+        .upsert([{ ...data, policy_id: policyId }], {
+          onConflict: 'policy_id',
+          ignoreDuplicates: false
+        })
+        .select()
+        .single();
 
-    if (error) {
+      if (error) throw error;
+
+      toast({
+        title: 'Sucesso',
+        description: 'Situação patrimonial atualizada com sucesso',
+      });
+    } catch (error) {
       console.error('Error updating patrimonial situation:', error);
       toast({
         title: 'Erro',
         description: 'Falha ao atualizar situação patrimonial',
         variant: 'destructive',
       });
-      return;
     }
-
-    toast({
-      title: 'Sucesso',
-      description: 'Situação patrimonial atualizada com sucesso',
-    });
   };
 
   const renderAssetFields = (

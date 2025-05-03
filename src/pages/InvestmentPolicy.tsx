@@ -11,6 +11,19 @@ import { PatrimonialForm } from '@/components/investment-policy/PatrimonialForm'
 import { LifeForm } from '@/components/investment-policy/LifeForm';
 import { InvestmentPlan } from '@/types/financial';
 import { Profile } from '@/types/financial';
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
+import { 
+  ChevronDown, 
+  UserCircle2, 
+  Users, 
+  Wallet, 
+  Building2, 
+  HeartPulse, 
+  LineChart,
+  X
+} from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { useState, useRef, useEffect } from 'react';
 
 interface InvestmentPolicyProps {
   clientId?: string;
@@ -35,6 +48,23 @@ const InvestmentPolicy = ({
   investmentPlan,
 }: InvestmentPolicyProps) => {
   const { t } = useTranslation();
+  const [openSection, setOpenSection] = useState<string | null>(null);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+  const sectionRefs = useRef<{ [key: string]: HTMLDivElement | null }>({});
+
+  const scrollToSection = (sectionId: string) => {
+    const element = sectionRefs.current[sectionId];
+    if (element) {
+      const y = element.getBoundingClientRect().top + window.scrollY - 24; // 24px de offset
+      window.scrollTo({ top: y, behavior: 'smooth' });
+    }
+  };
+
+  const handleSectionSelect = (sectionId: string) => {
+    const isOpening = openSection !== sectionId;
+    setOpenSection(isOpening ? sectionId : null);
+    if (isOpening) scrollToSection(sectionId);
+  };
 
   const { data: policy, isLoading } = useQuery({
     queryKey: ['investmentPolicy', clientId],
@@ -104,87 +134,157 @@ const InvestmentPolicy = ({
     );
   }
 
+  const sections = [
+    {
+      id: 'professional-information',
+      title: t('investmentPolicy.sections.professionalInformation'),
+      icon: UserCircle2,
+      color: 'bg-blue-500/10 text-blue-500'
+    },
+    {
+      id: 'family-structure',
+      title: t('investmentPolicy.sections.familyStructure'),
+      icon: Users,
+      color: 'bg-purple-500/10 text-purple-500'
+    },
+    {
+      id: 'budget',
+      title: t('investmentPolicy.sections.budget'),
+      icon: Wallet,
+      color: 'bg-green-500/10 text-green-500'
+    },
+    {
+      id: 'patrimonial',
+      title: t('investmentPolicy.sections.patrimonial'),
+      icon: Building2,
+      color: 'bg-orange-500/10 text-orange-500'
+    },
+    {
+      id: 'life',
+      title: t('investmentPolicy.sections.life'),
+      icon: HeartPulse,
+      color: 'bg-red-500/10 text-red-500'
+    },
+    {
+      id: 'investment-preferences',
+      title: t('investmentPolicy.sections.investmentPreferences'),
+      icon: LineChart,
+      color: 'bg-indigo-500/10 text-indigo-500'
+    }
+  ];
+
   return (
-    <div className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8 py-8">
-      <div className="space-y-8">
-        <Card>  
-          <CardHeader>
-            <CardTitle>{t('professionalInformation.title')}</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <ProfessionalInformationForm
-              initialData={policy?.professional_information || {}}
-              isEditing={!!brokerProfile}
-              policyId={policy?.id}
-              clientId={clientId}
-            />
-          </CardContent>
-        </Card>
+    <div className="flex h-screen">
+      {/* Quick Selection Sidebar */}
+      <div className={`${isSidebarOpen ? 'w-64' : 'w-0'} transition-all duration-300 bg-background border-r`}>
+        <div className="p-4">
+          <div className="flex items-center justify-between mb-6">
+            <h2 className="text-lg font-semibold">{t('investmentPolicy.quickAccess')}</h2>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => setIsSidebarOpen(false)}
+              className="md:hidden"
+            >
+              <X className="h-4 w-4" />
+            </Button>
+          </div>
+          <div className="space-y-2">
+            {sections.map((section) => (
+              <Button
+                key={section.id}
+                variant={openSection === section.id ? 'secondary' : 'ghost'}
+                className={`w-full justify-start gap-2 ${section.color}`}
+                onClick={() => handleSectionSelect(section.id)}
+              >
+                <section.icon className="h-4 w-4" />
+                {section.title}
+              </Button>
+            ))}
+          </div>
+        </div>
+      </div>
 
-        <Card>
-          <CardHeader>
-            <CardTitle>{t('familyStructure.title')}</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <FamilyStructureForm
-              initialData={policy?.family_structures || {}}
-              isEditing={!!brokerProfile}
-              policyId={policy?.id}
-            />
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle>{t('budget.title')}</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <BudgetForm
-              initialData={policy?.budgets || {}}
-              isEditing={!!brokerProfile}
-              policyId={policy?.id}
-            />
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle>{t('patrimonial.title')}</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <PatrimonialForm
-              initialData={policy?.patrimonial_situations || {}}
-              isEditing={!!brokerProfile}
-              policyId={policy?.id}
-            />
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle>{t('life.title')}</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <LifeForm
-              initialData={policy?.life_information || {}}
-              isEditing={!!brokerProfile}
-              policyId={policy?.id}
-            />
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle>{t('investmentPreferences.title')}</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <InvestmentPreferencesForm
-              initialData={policy?.investment_preferences || {}}
-              isEditing={!!brokerProfile}
-              policyId={policy?.id}
-            />
-          </CardContent>
-        </Card>
+      {/* Main Content */}
+      <div className="flex-1 overflow-auto">
+        <div className="h-full px-4 sm:px-6 lg:px-8 py-8">
+          <div className="grid grid-cols-1 gap-6 max-w-4xl mx-auto">
+            <Accordion 
+              type="single"
+              collapsible
+              className="w-full space-y-4"
+              value={openSection || ''}
+              onValueChange={(sectionId) => setOpenSection(sectionId || null)}
+            >
+              {sections.map((section) => (
+                <AccordionItem 
+                  key={section.id} 
+                  value={section.id} 
+                  className="border rounded-lg"
+                >
+                  <div ref={(el) => (sectionRefs.current[section.id] = el)}>
+                    <AccordionTrigger className="px-6 py-4 hover:no-underline">
+                      <div className="flex items-center justify-between w-full">
+                        <div className="flex items-center gap-3">
+                          <div className={`p-2 rounded-lg ${section.color}`}>
+                            <section.icon className="h-5 w-5" />
+                          </div>
+                          <CardTitle className="text-lg font-semibold">{section.title}</CardTitle>
+                        </div>
+                        <ChevronDown className="h-4 w-4 shrink-0 transition-transform duration-200" />
+                      </div>
+                    </AccordionTrigger>
+                    <AccordionContent className="px-6 pb-4">
+                      {section.id === 'professional-information' && (
+                        <ProfessionalInformationForm
+                          initialData={policy?.professional_information || {}}
+                          isEditing={!!brokerProfile}
+                          policyId={policy?.id}
+                          clientId={clientId}
+                        />
+                      )}
+                      {section.id === 'family-structure' && (
+                        <FamilyStructureForm
+                          initialData={policy?.family_structures || {}}
+                          isEditing={!!brokerProfile}
+                          policyId={policy?.id}
+                        />
+                      )}
+                      {section.id === 'budget' && (
+                        <BudgetForm
+                          initialData={policy?.budgets || {}}
+                          isEditing={!!brokerProfile}
+                          policyId={policy?.id}
+                        />
+                      )}
+                      {section.id === 'patrimonial' && (
+                        <PatrimonialForm
+                          initialData={policy?.patrimonial_situations || {}}
+                          isEditing={!!brokerProfile}
+                          policyId={policy?.id}
+                        />
+                      )}
+                      {section.id === 'life' && (
+                        <LifeForm
+                          initialData={policy?.life_information || {}}
+                          isEditing={!!brokerProfile}
+                          policyId={policy?.id}
+                        />
+                      )}
+                      {section.id === 'investment-preferences' && (
+                        <InvestmentPreferencesForm
+                          initialData={policy?.investment_preferences || {}}
+                          isEditing={!!brokerProfile}
+                          policyId={policy?.id}
+                        />
+                      )}
+                    </AccordionContent>
+                  </div>
+                </AccordionItem>
+              ))}
+            </Accordion>
+          </div>
+        </div>
       </div>
     </div>
   );

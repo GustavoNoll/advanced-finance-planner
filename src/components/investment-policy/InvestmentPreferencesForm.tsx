@@ -135,24 +135,30 @@ export const InvestmentPreferencesForm = ({
   const handleSubmit = async (data: InvestmentPreferencesFormValues) => {
     if (!policyId) return;
 
-    const { error } = await supabase
-      .from('investment_preferences')
-      .upsert([{ ...data, policy_id: policyId }]);
+    try {
+      const { error } = await supabase
+        .from('investment_preferences')
+        .upsert([{ ...data, policy_id: policyId }], {
+          onConflict: 'policy_id',
+          ignoreDuplicates: false
+        })
+        .select()
+        .single();
 
-    if (error) {
+      if (error) throw error;
+
+      toast({
+        title: 'Sucesso',
+        description: 'Preferências de investimento atualizadas com sucesso',
+      });
+    } catch (error) {
       console.error('Error updating investment preferences:', error);
       toast({
         title: 'Erro',
         description: 'Falha ao atualizar preferências de investimento',
         variant: 'destructive',
       });
-      return;
     }
-
-    toast({
-      title: 'Sucesso',
-      description: 'Preferências de investimento atualizadas com sucesso',
-    });
   };
 
   return (

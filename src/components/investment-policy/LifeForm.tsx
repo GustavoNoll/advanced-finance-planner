@@ -88,24 +88,30 @@ export const LifeForm = ({
   const handleSubmit = async (data: LifeFormValues) => {
     if (!policyId) return;
 
-    const { error } = await supabase
-      .from('life_information')
-      .upsert([{ ...data, policy_id: policyId }]);
+    try {
+      const { error } = await supabase
+        .from('life_information')
+        .upsert([{ ...data, policy_id: policyId }], {
+          onConflict: 'policy_id',
+          ignoreDuplicates: false
+        })
+        .select()
+        .single();
 
-    if (error) {
+      if (error) throw error;
+
+      toast({
+        title: 'Sucesso',
+        description: 'Informações de vida atualizadas com sucesso',
+      });
+    } catch (error) {
       console.error('Error updating life information:', error);
       toast({
         title: 'Erro',
         description: 'Falha ao atualizar informações de vida',
         variant: 'destructive',
       });
-      return;
     }
-
-    toast({
-      title: 'Sucesso',
-      description: 'Informações de vida atualizadas com sucesso',
-    });
   };
 
   return (

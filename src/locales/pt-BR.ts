@@ -411,6 +411,9 @@ export const ptBR = {
     showing: 'Mostrando',
     of: 'de',
     items: 'itens',
+    view: 'Visualizar',
+    minimize: 'Minimizar',
+    maximize: 'Maximizar',
   },
   createClient: {
     title: "Criar Novo Cliente",
@@ -1078,6 +1081,15 @@ export const ptBR = {
   },
   investmentPolicy: {
     title: 'Política de Investimento',
+    quickAccess: 'Acesso Rápido',
+    sections: {
+      professionalInformation: 'Informações Profissionais',
+      familyStructure: 'Estrutura Familiar',
+      budget: 'Orçamento',
+      patrimonial: 'Situação Patrimonial',
+      life: 'Informações de Vida',
+      investmentPreferences: 'Preferências de Investimento'
+    },
     lifeStage: {
       label: 'Momento de Vida',
       options: {
@@ -1132,7 +1144,7 @@ export const ptBR = {
     }
   },
   patrimonial: {
-    title: 'Situação Patrimonial',
+    title: 'Patrimônio',
     messages: {
       success: 'Situação patrimonial atualizada com sucesso',
       error: 'Falha ao atualizar situação patrimonial'
