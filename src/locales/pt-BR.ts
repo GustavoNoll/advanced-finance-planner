@@ -1103,9 +1103,32 @@ export const ptBR = {
   },
   budget: {
     title: 'Orçamento',
+    incomes: {
+      title: 'Rendas',
+      add: 'Adicionar Renda',
+      remove: 'Remover renda',
+      description: 'Descrição',
+      amount: 'Valor',
+      empty: 'Nenhuma renda cadastrada'
+    },
+    expenses: {
+      title: 'Gastos',
+      add: 'Adicionar Gasto',
+      remove: 'Remover gasto',
+      description: 'Descrição',
+      amount: 'Valor',
+      empty: 'Nenhum gasto cadastrado'
+    },
+    other: {
+      title: 'Outros',
+      bonus: 'Bônus',
+      dividends: 'Dividendos',
+      savings: 'Poupança'
+    },
     messages: {
       success: 'Orçamento atualizado com sucesso',
-      error: 'Falha ao atualizar orçamento'
+      error: 'Falha ao atualizar orçamento',
+      loadError: 'Falha ao carregar orçamento'
     }
   },
   patrimonial: {
