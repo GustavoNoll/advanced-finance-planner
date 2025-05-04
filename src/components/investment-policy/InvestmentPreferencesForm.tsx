@@ -15,6 +15,7 @@ import { capitalizeFirstLetter } from '@/utils/string';
 import { useTranslation } from 'react-i18next';
 import { useState } from 'react';
 
+
 const investmentPreferencesSchema = z.object({
   target_return_review: z.string().optional(),
   max_bond_maturity: z.string().optional(),
@@ -88,15 +89,6 @@ const fundLiquidity = [
   { value: 'd_plus_90', label: 'D+90' },
 ];
 
-const acceptableLoss = [
-  { value: '0', label: 'Sem perdas' },
-  { value: '5', label: '5%' },
-  { value: '10', label: '10%' },
-  { value: '15', label: '15%' },
-  { value: '20', label: '20%' },
-  { value: '25', label: '25%' },
-];
-
 const realEstateFundModes = [
   { value: 'direct_portfolio', label: 'Carteira de Fundos' },
   { value: 'fofs_consolidation', label: 'Consolidação em FoFs' },
@@ -113,6 +105,16 @@ export const InvestmentPreferencesForm = ({
   const { t } = useTranslation();
   const queryClient = useQueryClient();
   const [isEditMode, setIsEditMode] = useState(false);
+
+  const acceptableLoss = [
+    { value: '0', label: t('investmentPreferences.options.acceptableLoss.no_loss') },
+    { value: '5', label: t('investmentPreferences.options.acceptableLoss.five_percent') },
+    { value: '10', label: t('investmentPreferences.options.acceptableLoss.ten_percent') },
+    { value: '15', label: t('investmentPreferences.options.acceptableLoss.fifteen_percent') },
+    { value: '20', label: t('investmentPreferences.options.acceptableLoss.twenty_percent') },
+    { value: '25', label: t('investmentPreferences.options.acceptableLoss.twenty_five_percent') },
+  ];
+
   const form = useForm<InvestmentPreferencesFormValues>({
     resolver: zodResolver(investmentPreferencesSchema),
     defaultValues: initialData || {
@@ -470,7 +472,7 @@ export const InvestmentPreferencesForm = ({
                         <SelectContent>
                           {acceptableLoss.map((loss) => (
                             <SelectItem key={loss.value} value={loss.value}>
-                              {t(`investmentPreferences.options.acceptableLoss.${loss.value === '0' ? 'noLoss' : loss.value + 'Percent'}`)}
+                              {loss.label}
                             </SelectItem>
                           ))}
                         </SelectContent>
@@ -586,7 +588,7 @@ export const InvestmentPreferencesForm = ({
               </div>
               <div className="space-y-4">
                 {platformsFields.map((field, index) => (
-                  <div key={field.id} className="flex items-end gap-4">
+                  <div key={field.id} className="flex items-center gap-4">
                     <FormField
                       control={form.control}
                       name={`platforms_used.${index}.name`}
@@ -610,7 +612,7 @@ export const InvestmentPreferencesForm = ({
                         variant="ghost"
                         size="icon"
                         onClick={() => removePlatform(index)}
-                        className="self-center"
+                        className="mt-6"
                         aria-label={t('investmentPreferences.form.remove')}
                       >
                         <Trash2 className="h-4 w-4" />

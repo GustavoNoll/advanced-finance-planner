@@ -301,7 +301,7 @@ export const BudgetForm = ({
                   <p className="text-sm text-muted-foreground">{t('budget.incomes.empty')}</p>
                 ) : (
                   incomeFields.map((field, index) => (
-                    <div key={field.id} className="grid grid-cols-[1fr_1fr_auto] gap-4 items-end border-l-4 border-green-500 pl-4">
+                    <div key={field.id} className="grid grid-cols-[1fr_1fr_auto] gap-4 items-center border-l-4 border-green-500 pl-4">
                       <FormField
                         control={form.control}
                         name={`incomes.${index}.description`}
@@ -345,7 +345,7 @@ export const BudgetForm = ({
                           variant="ghost"
                           size="icon"
                           onClick={() => removeIncome(index)}
-                          className="self-center text-green-600 hover:text-green-700 hover:bg-green-50"
+                          className="text-green-600 hover:text-green-700 hover:bg-green-50 mt-6"
                           aria-label={t('budget.incomes.remove')}
                         >
                           <Trash2 className="h-4 w-4" />
@@ -378,7 +378,7 @@ export const BudgetForm = ({
                   <p className="text-sm text-muted-foreground">{t('budget.expenses.empty')}</p>
                 ) : (
                   expenseFields.map((field, index) => (
-                    <div key={field.id} className="grid grid-cols-[1fr_1fr_auto] gap-4 items-end border-l-4 border-red-500 pl-4">
+                    <div key={field.id} className="grid grid-cols-[1fr_1fr_auto] gap-4 items-center border-l-4 border-red-500 pl-4">
                       <FormField
                         control={form.control}
                         name={`expenses.${index}.description`}
@@ -422,7 +422,7 @@ export const BudgetForm = ({
                           variant="ghost"
                           size="icon"
                           onClick={() => removeExpense(index)}
-                          className="self-center text-red-600 hover:text-red-700 hover:bg-red-50"
+                          className="text-red-600 hover:text-red-700 hover:bg-red-50 mt-6"
                           aria-label={t('budget.expenses.remove')}
                         >
                           <Trash2 className="h-4 w-4" />

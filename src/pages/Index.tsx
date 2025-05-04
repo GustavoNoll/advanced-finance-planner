@@ -121,7 +121,7 @@ const Index = () => {
         setActiveView('finances');
       }
     }
-  }, [investmentPlan, brokerProfile, isInvestmentPlanLoading, isProfilesLoading, navigate, params.id, handleLogout, t]);
+  }, [investmentPlan, brokerProfile, isInvestmentPlanLoading, isProfilesLoading, params.id, handleLogout, t]);
 
   const handleShareClient = () => {
     const clientLoginUrl = `${window.location.origin}/client-login/${clientId}`;
@@ -147,11 +147,13 @@ const Index = () => {
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
               {brokerProfile && (
-                <Link to="/broker-dashboard">
-                  <Button variant="ghost" className="text-gray-600 hover:text-blue-600 transition-colors">
-                    <ArrowLeft className="h-4 w-4" />
-                  </Button>
-                </Link>
+                <Button 
+                  variant="ghost" 
+                  onClick={() => navigate('/broker-dashboard')}
+                  className="text-gray-600 hover:text-blue-600 transition-colors"
+                >
+                  <ArrowLeft className="h-4 w-4" />
+                </Button>
               )}
               <Logo variant="minimal" className="h-6" />
               {clientProfile && (
