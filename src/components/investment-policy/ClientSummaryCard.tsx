@@ -63,7 +63,7 @@ export function ClientSummaryCard({ clientProfile, policy }: ClientSummaryCardPr
           <div className="flex flex-col gap-1 mb-2">
             <div className="flex items-center gap-3">
               <UserCircle2 className="h-8 w-8 text-slate-500" />
-              <span className="font-bold text-slate-600 text-xl tracking-tight">{t('clientSummary.personalInfo')}: {riskProfileLabel}</span>
+              <span className="font-bold text-slate-600 text-xl tracking-tight">{t('clientSummary.predominantProfile')}: {riskProfileLabel}</span>
             </div>
           </div>
           <div>

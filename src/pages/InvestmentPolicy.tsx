@@ -60,18 +60,36 @@ const InvestmentPolicy = ({
   const sectionRefs = useRef<{ [key: string]: HTMLDivElement | null }>({});
   const isBrokerProfile = !!brokerProfile;
 
-  const scrollToSection = (sectionId: string) => {
-    const element = sectionRefs.current[sectionId];
-    if (element) {
-      const y = element.getBoundingClientRect().top + window.scrollY - 24; // 24px de offset
-      window.scrollTo({ top: y, behavior: 'smooth' });
+  useEffect(() => {
+    if (openSection) {
+      // Wait for the next frame to ensure DOM updates are complete
+      requestAnimationFrame(() => {
+        const element = sectionRefs.current[openSection];
+        if (element) {
+          // Get the position relative to the viewport
+          const rect = element.getBoundingClientRect();
+          // Calculate the scroll position
+          const scrollPosition = rect.top + window.scrollY - 100; // 100px offset for header and spacing
+          
+          // Use scrollIntoView for better browser compatibility
+          element.scrollIntoView({
+            behavior: 'smooth',
+            block: 'start'
+          });
+          
+          // Additional scroll adjustment if needed
+          window.scrollTo({
+            top: scrollPosition,
+            behavior: 'smooth'
+          });
+        }
+      });
     }
-  };
+  }, [openSection]);
 
   const handleSectionSelect = (sectionId: string) => {
     const isOpening = openSection !== sectionId;
     setOpenSection(isOpening ? sectionId : null);
-    if (isOpening) scrollToSection(sectionId);
   };
 
   const { data: policy, isLoading } = useQuery({
@@ -184,7 +202,7 @@ const InvestmentPolicy = ({
   return (
     <div className="flex h-screen">
       {/* Quick Selection Sidebar */}
-      <div className={`group relative ${isSidebarOpen ? 'w-16' : 'w-0'} transition-all duration-300 bg-background border-r hover:w-64`}>
+      <div className={`group fixed left-0 top-0 h-screen ${isSidebarOpen ? 'w-16' : 'w-0'} transition-all duration-300 bg-background border-r hover:w-64 pt-16`}>
         <div className="p-2">
           <div className="flex items-center justify-between mb-6">
             <Button
@@ -213,7 +231,7 @@ const InvestmentPolicy = ({
       </div>
 
       {/* Main Content */}
-      <div className="flex-1 overflow-auto">
+      <div className={`flex-1 overflow-auto ${isSidebarOpen ? 'ml-16' : 'ml-0'} transition-all duration-300`}>
         <div className="h-full px-4 sm:px-6 lg:px-8 py-8">
           
           <div className="grid grid-cols-1 gap-6 max-w-4xl mx-auto">
@@ -234,7 +252,7 @@ const InvestmentPolicy = ({
                 <AccordionItem 
                   key={section.id} 
                   value={section.id} 
-                  className="border rounded-lg"
+                  className="border rounded-lg scroll-mt-24"
                 >
                   <div ref={(el) => (sectionRefs.current[section.id] = el)}>
                     <AccordionTrigger className="px-6 py-4 hover:no-underline">

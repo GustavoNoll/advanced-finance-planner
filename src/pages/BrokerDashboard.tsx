@@ -15,6 +15,7 @@ import { UserProfileInvestment, BrokerProfile } from '@/types/broker-dashboard';
 import { Logo } from '@/components/ui/logo';
 import { Avatar } from '@/components/ui/avatar-initial';
 import { useAuth } from '@/components/auth/AuthProvider';
+import { Spinner } from '@/components/ui/spinner';
 
 interface WealthDistribution {
   range: string;
@@ -96,6 +97,7 @@ export const BrokerDashboard = () => {
   const [searchResults, setSearchResults] = useState<UserProfileInvestment[]>([]);
   const [isSearching, setIsSearching] = useState(false);
   const [isBroker, setIsBroker] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   const navigate = useNavigate();
   const { toast } = useToast();
   const { t } = useTranslation();
@@ -133,86 +135,61 @@ export const BrokerDashboard = () => {
     }
   });
 
+  // Combined initialization effect
   useEffect(() => {
-    checkBrokerStatus();
-  }, [user]);
-
-  const checkBrokerStatus = async () => {
-    if (!user) {
-      navigate('/login');
-      return;
-    }
-
-    try {
-      const { data: profile, error } = await supabase
-        .from('profiles')
-        .select('is_broker, id, name')
-        .eq('id', user.id)
-        .single();
-
-      if (error) throw error;
-
-      if (!profile?.is_broker) {
-        toast({
-          title: t('common.error'),
-          description: t('brokerDashboard.messages.error.unauthorized'),
-          variant: "destructive",
-        });
-        navigate('/');
+    const initializeDashboard = async () => {
+      setIsLoading(true);
+      if (!user) {
+        navigate('/login');
         return;
       }
 
-      setIsBroker(true);
-      setCurrentBroker(profile.id);
-      setBrokerProfile(profile);
-      fetchInitialUsers();
-    } catch (error) {
-      console.error('Error checking broker status:', error);
-      toast({
-        title: t('common.error'),
-        description: error instanceof Error ? error.message : String(error),
-        variant: "destructive",
-      });
-      navigate('/login');
-    }
-  };
-
-  useEffect(() => {
-    const getCurrentBroker = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (user) {
-        setCurrentBroker(user.id);
-        
-        // Fetch broker profile
-        const { data: brokerData, error: brokerError } = await supabase
+      try {
+        const { data: profile, error } = await supabase
           .from('profiles')
-          .select('id, name')
+          .select('is_broker, id, name')
           .eq('id', user.id)
           .single();
 
-        if (brokerError) {
-          console.error('Error fetching broker profile:', brokerError);
+        if (error) throw error;
+
+        if (!profile?.is_broker) {
+          toast({
+            title: t('common.error'),
+            description: t('brokerDashboard.messages.error.unauthorized'),
+            variant: "destructive",
+          });
+          navigate('/');
           return;
         }
 
-        setBrokerProfile(brokerData);
+        setIsBroker(true);
+        setCurrentBroker(profile.id);
+        setBrokerProfile(profile);
+        await fetchInitialUsers();
+      } catch (error) {
+        console.error('Error initializing dashboard:', error);
+        toast({
+          title: t('common.error'),
+          description: error instanceof Error ? error.message : String(error),
+          variant: "destructive",
+        });
+        navigate('/login');
+      } finally {
+        setIsLoading(false);
       }
     };
-    getCurrentBroker();
-  }, []);
 
-  useEffect(() => {
-    if (currentBroker) {
-      fetchInitialUsers();
-    }
-  }, [currentBroker]);
+    initializeDashboard();
+  }, [user, navigate, toast, t]);
 
+  // Debounced search effect
   useEffect(() => {
     const debounceTimeout = setTimeout(() => {
       if (currentBroker) {
         handleSearch();
       }
-    }, 300); // 300ms delay
+    }, 300);
 
     return () => clearTimeout(debounceTimeout);
   }, [searchQuery, currentBroker]);
@@ -448,8 +425,12 @@ export const BrokerDashboard = () => {
     }
   };
 
-  if (!isBroker) {
-    return null;
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <Spinner />
+      </div>
+    );
   }
 
   return (

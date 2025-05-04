@@ -1298,22 +1298,22 @@ export const ptBR = {
     },
     options: {
       investmentModes: {
-        directStocks: 'Ações Diretas',
+        direct_stocks: 'Ações Diretas',
         etfs: 'ETFs',
-        stockFunds: 'Fundos de Ações'
+        stock_funds: 'Fundos de Ações'
       },
       targetReturns: {
-        ipcaPlus1: 'IPCA + 1%',
-        ipcaPlus2: 'IPCA + 2%',
-        ipcaPlus3: 'IPCA + 3%',
-        ipcaPlus4: 'IPCA + 4%',
-        ipcaPlus5: 'IPCA + 5%',
-        ipcaPlus6: 'IPCA + 6%',
-        ipcaPlus7: 'IPCA + 7%',
-        ipcaPlus8: 'IPCA + 8%',
-        ipcaPlus9: 'IPCA + 9%',
-        ipcaPlus10: 'IPCA + 10%',
-        ipcaPlus11: 'IPCA + 11%'
+        ipca_plus_1: 'IPCA + 1%',
+        ipca_plus_2: 'IPCA + 2%',
+        ipca_plus_3: 'IPCA + 3%',
+        ipca_plus_4: 'IPCA + 4%',
+        ipca_plus_5: 'IPCA + 5%',
+        ipca_plus_6: 'IPCA + 6%',
+        ipca_plus_7: 'IPCA + 7%',
+        ipca_plus_8: 'IPCA + 8%',
+        ipca_plus_9: 'IPCA + 9%',
+        ipca_plus_10: 'IPCA + 10%',
+        ipca_plus_11: 'IPCA + 11%'
       },
       reviewPeriods: {
         monthly: 'Mensal',
@@ -1322,39 +1322,41 @@ export const ptBR = {
         annual: 'Anual'
       },
       bondMaturities: {
-        shortTerm: 'Curto Prazo (< 2 anos)',
-        mediumTerm: 'Médio Prazo (2-5 anos)',
-        longTerm: 'Longo Prazo (> 5 anos)'
+        short_term: 'Curto Prazo (< 2 anos)',
+        medium_term: 'Médio Prazo (2-5 anos)',
+        long_term: 'Longo Prazo (> 5 anos)'
       },
       fgcFeelings: {
-        veryComfortable: 'Muito Confortável',
+        very_comfortable: 'Muito Confortável',
         comfortable: 'Confortável',
         neutral: 'Neutro',
         uncomfortable: 'Desconfortável',
-        veryUncomfortable: 'Muito Desconfortável'
+        very_uncomfortable: 'Muito Desconfortável'
       },
       fundLiquidity: {
+        d_plus_0: 'Sem prazo',
         daily: 'Diário',
-        dPlus1: 'D+1',
-        dPlus2: 'D+2',
-        dPlus30: 'D+30',
-        dPlus90: 'D+90'
+        d_plus_1: 'D+1',
+        d_plus_2: 'D+2',
+        d_plus_30: 'D+30',
+        d_plus_90: 'D+90'
       },
       acceptableLoss: {
-        noLoss: 'Sem perdas',
-        fivePercent: '5%',
-        tenPercent: '10%',
-        fifteenPercent: '15%',
-        twentyPercent: '20%',
-        twentyFivePercent: '25%'
+        no_loss: 'Sem perdas',
+        five_percent: '5%',
+        ten_percent: '10%',
+        fifteen_percent: '15%',
+        twenty_percent: '20%',
+        twenty_five_percent: '25%'
       },
       realEstateFundModes: {
-        directPortfolio: 'Carteira de Fundos',
-        fofsConsolidation: 'Consolidação em FoFs'
+        direct_portfolio: 'Carteira de Fundos',
+        fofs_consolidation: 'Consolidação em FoFs'
       }
     }
   },
   clientSummary: {
+    predominantProfile: 'Perfil Predominante',
     personalInfo: 'Informações Pessoais',
     name: 'Nome',
     age: 'Idade',

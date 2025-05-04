@@ -295,7 +295,7 @@ export const LifeForm = ({
               </div>
               <div className="space-y-4">
                 {hobbiesFields.map((field, index) => (
-                  <div key={field.id} className="flex items-end gap-4">
+                  <div key={field.id} className="flex items-center gap-4">
                     <FormField
                       control={form.control}
                       name={`hobbies.${index}.name`}
@@ -317,7 +317,7 @@ export const LifeForm = ({
                       variant="ghost"
                       size="icon"
                       onClick={() => removeHobby(index)}
-                      className="self-center"
+                      className="mt-6"
                       aria-label={t('common.delete')}
                     >
                       <Trash2 className="h-4 w-4" />
@@ -343,7 +343,7 @@ export const LifeForm = ({
               </div>
               <div className="space-y-4">
                 {objectivesFields.map((field, index) => (
-                  <div key={field.id} className="flex items-end gap-4">
+                  <div key={field.id} className="flex items-center gap-4">
                     <FormField
                       control={form.control}
                       name={`objectives.${index}.name`}
@@ -365,7 +365,7 @@ export const LifeForm = ({
                       variant="ghost"
                       size="icon"
                       onClick={() => removeObjective(index)}
-                      className="self-center"
+                      className="mt-6"
                       aria-label={t('common.delete')}
                     >
                       <Trash2 className="h-4 w-4" />
@@ -392,7 +392,7 @@ export const LifeForm = ({
               <div className="space-y-4">
                 {insurancesFields.map((field, index) => (
                   <div key={field.id} className="flex flex-col gap-4 p-4 border rounded-lg">
-                    <div className="flex items-end gap-4">
+                    <div className="flex items-center gap-4">
                       <FormField
                         control={form.control}
                         name={`insurances.${index}.type`}
@@ -414,7 +414,7 @@ export const LifeForm = ({
                         variant="ghost"
                         size="icon"
                         onClick={() => removeInsurance(index)}
-                        className="self-center"
+                        className="mt-6"
                         aria-label={t('common.delete')}
                       >
                         <Trash2 className="h-4 w-4" />
