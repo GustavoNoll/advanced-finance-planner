@@ -10,6 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { supabase } from '@/lib/supabase';
 import { toast } from '@/components/ui/use-toast';
 import { useTranslation } from 'react-i18next';
+import { useQueryClient } from '@tanstack/react-query';
 
 const professionalInformationSchema = z.object({
   occupation: z.string().min(1, 'Profissão é obrigatória'),
@@ -29,7 +30,7 @@ interface ProfessionalInformationFormProps {
   initialData?: ProfessionalInformationFormValues;
   isEditing?: boolean;
   policyId?: string;
-  clientId: string;
+  clientId?: string;
 }
 
 const workRegimes = [
@@ -50,6 +51,7 @@ export const ProfessionalInformationForm = ({
   policyId,
   clientId,
 }: ProfessionalInformationFormProps) => {
+  const queryClient = useQueryClient();
   const { t } = useTranslation();
   const form = useForm<ProfessionalInformationFormValues>({
     resolver: zodResolver(professionalInformationSchema),
@@ -81,6 +83,8 @@ export const ProfessionalInformationForm = ({
         );
 
       if (error) throw error;
+
+      if (clientId) queryClient.invalidateQueries({ queryKey: ['investmentPolicy', clientId] });
 
       toast({
         title: t('common.success'),

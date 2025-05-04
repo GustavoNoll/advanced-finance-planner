@@ -12,6 +12,8 @@ import { toast } from '@/components/ui/use-toast';
 import { Plus, Trash2, Calendar as CalendarIcon } from 'lucide-react';
 import { format, parse } from "date-fns";
 import { useTranslation } from 'react-i18next';
+import { useQueryClient } from '@tanstack/react-query';
+import { capitalizeFirstLetter } from '@/utils/string';
 
 const familyStructureSchema = z.object({
   marital_status: z.string().optional(),
@@ -30,6 +32,7 @@ interface FamilyStructureFormProps {
   initialData?: FamilyStructureFormValues;
   isEditing?: boolean;
   policyId?: string;
+  clientId?: string;
 }
 
 const maritalStatuses = [
@@ -127,8 +130,10 @@ export const FamilyStructureForm = ({
   initialData,
   isEditing = false,
   policyId,
+  clientId,
 }: FamilyStructureFormProps) => {
   const { t } = useTranslation();
+  const queryClient = useQueryClient();
   const [children, setChildren] = useState<{ name?: string; birth_date?: Date }[]>(
     initialData?.children?.map(child => ({
       ...child,
@@ -205,6 +210,8 @@ export const FamilyStructureForm = ({
           if (insertError) throw insertError;
         }
       }
+
+      if (clientId) queryClient.invalidateQueries({ queryKey: ['investmentPolicy', clientId] });
 
       toast({
         title: t('common.success'),
@@ -284,7 +291,7 @@ export const FamilyStructureForm = ({
                   <FormControl>
                     <Input
                       value={field.value}
-                      onChange={field.onChange}
+                      onChange={(e) => field.onChange(capitalizeFirstLetter(e.target.value))}
                       disabled={!isEditing}
                     />
                   </FormControl>
@@ -339,7 +346,7 @@ export const FamilyStructureForm = ({
                     <FormLabel className="text-base mb-1">{t('familyStructure.children.name.label')}</FormLabel>
                     <Input
                       value={child.name}
-                      onChange={(e) => updateChild(index, 'name', e.target.value)}
+                      onChange={(e) => updateChild(index, 'name', capitalizeFirstLetter(e.target.value))}
                       disabled={!isEditing}
                       className="h-10 text-base px-3 py-2"
                     />

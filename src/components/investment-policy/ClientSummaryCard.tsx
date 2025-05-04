@@ -35,7 +35,7 @@ export function ClientSummaryCard({ clientProfile, policy }: ClientSummaryCardPr
 
   // Family
   const family = policy?.family_structures || {};
-  const maritalStatus = family?.marital_status || '-';
+  const maritalStatus = family?.marital_status;
   const children = family?.children || [];
 
   // Objectives
@@ -49,7 +49,7 @@ export function ClientSummaryCard({ clientProfile, policy }: ClientSummaryCardPr
   // Risk Profile
   const riskProfileValue = policy?.investment_preferences?.risk_profile;
   const riskProfileLabel =
-    RISK_PROFILES.BRL.find((p) => p.value === riskProfileValue)?.label || 'Não informado';
+    RISK_PROFILES.BRL.find((p) => p.value === riskProfileValue)?.label || t('clientSummary.noData');
 
   function formatCurrency(value: number) {
     return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value);
@@ -63,31 +63,31 @@ export function ClientSummaryCard({ clientProfile, policy }: ClientSummaryCardPr
           <div className="flex flex-col gap-1 mb-2">
             <div className="flex items-center gap-3">
               <UserCircle2 className="h-7 w-7 text-pink-600" />
-              <span className="font-bold text-pink-700 text-xl tracking-tight">Perfil predominante: {riskProfileLabel}</span>
+              <span className="font-bold text-pink-700 text-xl tracking-tight">{t('clientSummary.personalInfo')}: {riskProfileLabel}</span>
             </div>
           </div>
           <div>
-            <div className="font-bold text-lg mb-3 border-b-2 border-pink-200 pb-1">Informações Pessoais</div>
-            <div className="mb-1"><span className="font-bold">Nome:</span> {clientProfile.name}</div>
-            <div className="mb-1"><span className="font-bold">Profissão:</span> {policy?.professional_information?.occupation || '-'}</div>
-            <div className="mb-1"><span className="font-bold">Idade:</span> {calculateAge(clientProfile.birth_date)} anos</div>
-            <div className="mb-1"><span className="font-bold">Estado civil:</span> {t(`familyStructure.maritalStatus.options.${maritalStatus}`) || '-'}</div>
-            <div className="mb-1"><span className="font-bold">Filhos:</span> {children.length > 0 ? children.length : 'Nenhum'}</div>
+            <div className="font-bold text-lg mb-3 border-b-2 border-pink-200 pb-1">{t('clientSummary.personalInfo')}</div>
+            <div className="mb-1"><span className="font-bold">{t('clientSummary.name')}:</span> {clientProfile.name}</div>
+            <div className="mb-1"><span className="font-bold">{t('clientSummary.occupation')}:</span> {policy?.professional_information?.occupation || '-'}</div>
+            <div className="mb-1"><span className="font-bold">{t('clientSummary.age')}:</span> {calculateAge(clientProfile.birth_date)} {t('clientSummary.years')}</div>
+            <div className="mb-1"><span className="font-bold">{t('clientSummary.maritalStatus')}:</span> {maritalStatus ? t(`familyStructure.maritalStatus.options.${maritalStatus}`) : '-'}</div>
+            <div className="mb-1"><span className="font-bold">{t('clientSummary.children')}:</span> {children.length > 0 ? children.length : t('clientSummary.noChildren')}</div>
           </div>
           <div>
-            <div className="font-bold text-lg mb-3 border-b-2 border-pink-200 pb-1">Momento de vida</div>
+            <div className="font-bold text-lg mb-3 border-b-2 border-pink-200 pb-1">{t('investmentPolicy.lifeStage.label')}</div>
             <ul className="space-y-1">
               <li className="flex items-center gap-2">
                 <span className={lifeStage === 'accumulation' ? 'text-pink-700' : 'text-gray-300'}>▸</span>
-                <span className={lifeStage === 'accumulation' ? 'font-bold' : 'text-gray-500'}>Construir patrimônio</span>
+                <span className={lifeStage === 'accumulation' ? 'font-bold' : 'text-gray-500'}>{t('investmentPolicy.lifeStage.options.accumulation')}</span>
               </li>
               <li className="flex items-center gap-2">
                 <span className={lifeStage === 'consolidation' ? 'text-pink-700' : 'text-gray-300'}>▸</span>
-                <span className={lifeStage === 'consolidation' ? 'font-bold' : 'text-gray-500'}>Consolidar patrimônio</span>
+                <span className={lifeStage === 'consolidation' ? 'font-bold' : 'text-gray-500'}>{t('investmentPolicy.lifeStage.options.consolidation')}</span>
               </li>
               <li className="flex items-center gap-2">
                 <span className={lifeStage === 'enjoyment' ? 'text-pink-700' : 'text-gray-300'}>▸</span>
-                <span className={lifeStage === 'enjoyment' ? 'font-bold' : 'text-gray-500'}>Usufruir do patrimônio</span>
+                <span className={lifeStage === 'enjoyment' ? 'font-bold' : 'text-gray-500'}>{t('investmentPolicy.lifeStage.options.enjoyment')}</span>
               </li>
             </ul>
           </div>
@@ -97,26 +97,26 @@ export function ClientSummaryCard({ clientProfile, policy }: ClientSummaryCardPr
           <div>
             <div className="flex items-center gap-2 mb-2">
               <Briefcase className="h-5 w-5 text-pink-600" />
-              <div className="font-bold text-lg tracking-tight">Situação Patrimonial</div>
+              <div className="font-bold text-lg tracking-tight">{t('patrimonial.title')}</div>
             </div>
             <div className="text-2xl font-bold mb-3 text-gray-800">{formatCurrency(totalPatrimony)}</div>
             <div className="space-y-1 text-sm">
-              <div className="flex justify-between"><span>Investimentos</span><span>{formatCurrency(investments + liquidInvestments + participations)}</span></div>
-              <div className="flex justify-between"><span>Imóveis</span><span>{formatCurrency(properties)}</span></div>
-              <div className="flex justify-between"><span>Carros</span><span>{formatCurrency(vehicles)}</span></div>
-              <div className="flex justify-between"><span>Bens de Valor</span><span>{formatCurrency(valuableGoods)}</span></div>
-              <div className="flex justify-between"><span>Outros</span><span>{formatCurrency(0)}</span></div>
+              <div className="flex justify-between"><span>{t('clientSummary.investments')}</span><span>{formatCurrency(investments + liquidInvestments + participations)}</span></div>
+              <div className="flex justify-between"><span>{t('clientSummary.properties')}</span><span>{formatCurrency(properties)}</span></div>
+              <div className="flex justify-between"><span>{t('clientSummary.vehicles')}</span><span>{formatCurrency(vehicles)}</span></div>
+              <div className="flex justify-between"><span>{t('clientSummary.valuableGoods')}</span><span>{formatCurrency(valuableGoods)}</span></div>
+              <div className="flex justify-between"><span>{t('clientSummary.other')}</span><span>{formatCurrency(0)}</span></div>
             </div>
           </div>
           <div>
             <div className="flex items-center gap-2 mb-2">
               <PiggyBank className="h-5 w-5 text-pink-600" />
-              <div className="font-bold text-lg tracking-tight">Orçamento</div>
+              <div className="font-bold text-lg tracking-tight">{t('budget.title')}</div>
             </div>
             <div className="flex flex-col gap-1 text-sm">
-              <div className="flex items-center gap-2"><span className="font-bold">Renda:</span> {formatCurrency(income)}</div>
-              <div className="flex items-center gap-2"><span className="font-bold">Gastos:</span> {formatCurrency(expenses)}</div>
-              <div className="flex items-center gap-2"><span className="font-bold">Poupança:</span> {formatCurrency(savings)}</div>
+              <div className="flex items-center gap-2"><span className="font-bold">{t('clientSummary.income')}:</span> {formatCurrency(income)}</div>
+              <div className="flex items-center gap-2"><span className="font-bold">{t('clientSummary.expense')}:</span> {formatCurrency(expenses)}</div>
+              <div className="flex items-center gap-2"><span className="font-bold">{t('clientSummary.savings')}:</span> {formatCurrency(savings)}</div>
             </div>
           </div>
         </div>
@@ -125,10 +125,10 @@ export function ClientSummaryCard({ clientProfile, policy }: ClientSummaryCardPr
           <div>
             <div className="flex items-center gap-2 mb-2">
               <Briefcase className="h-5 w-5 text-pink-600" />
-              <div className="font-bold text-lg tracking-tight">Objetivos Financeiros</div>
+              <div className="font-bold text-lg tracking-tight">{t('financialGoals.title')}</div>
             </div>
             {objectives.length === 0 ? (
-              <div className="text-gray-400">Nenhum objetivo cadastrado</div>
+              <div className="text-gray-400">{t('clientSummary.noObjectives')}</div>
             ) : (
               <ul className="space-y-4">
                 {objectives.map((obj, idx: number) => (
@@ -142,18 +142,18 @@ export function ClientSummaryCard({ clientProfile, policy }: ClientSummaryCardPr
           <div>
             <div className="flex items-center gap-2 mb-2">
               <ShieldCheck className="h-5 w-5 text-pink-600" />
-              <div className="font-bold text-lg tracking-tight">Seguros</div>
+              <div className="font-bold text-lg tracking-tight">{t('clientSummary.insuranceCoverage')}</div>
             </div>
             {insurances.length === 0 ? (
-              <div className="text-gray-400">Nenhum seguro cadastrado</div>
+              <div className="text-gray-400">{t('clientSummary.noInsurance')}</div>
             ) : (
               <>
-                <div className="mb-1 text-sm">Total: {insurances.length}</div>
+                <div className="mb-1 text-sm">{t('clientSummary.total')}: {insurances.length}</div>
                 <ul className="space-y-1">
                   {insurances.map((insurance, idx: number) => (
                     <li key={idx} className="flex flex-col text-sm rounded bg-pink-50 px-2 py-1 mb-1">
-                      <span><span className="font-bold">Tipo:</span> {insurance.type}</span>
-                      <span><span className="font-bold">Seguradora:</span> {insurance.company}</span>
+                      <span><span className="font-bold">{t('clientSummary.insuranceType')}:</span> {insurance.type}</span>
+                      <span><span className="font-bold">{t('clientSummary.insuranceCompany')}:</span> {insurance.company}</span>
                     </li>
                   ))}
                 </ul>
@@ -161,13 +161,13 @@ export function ClientSummaryCard({ clientProfile, policy }: ClientSummaryCardPr
             )}
           </div>
           <div>
-            <div className="font-bold text-lg mb-2">Informações</div>
+            <div className="font-bold text-lg mb-2">{t('clientSummary.information')}</div>
             {Array.isArray(info) && info.length > 0 ? (
               <ul className="list-disc ml-5 space-y-1">
                 {info.map((i: string, idx: number) => <li key={idx}>{i}</li>)}
               </ul>
             ) : (
-              <div className="text-gray-400">Nenhuma informação adicional</div>
+              <div className="text-gray-400">{t('clientSummary.noData')}</div>
             )}
           </div>
         </div>

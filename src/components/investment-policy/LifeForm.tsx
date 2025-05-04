@@ -6,11 +6,12 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { supabase } from '@/lib/supabase';
 import { toast } from '@/components/ui/use-toast';
 import { Plus, Trash2 } from 'lucide-react';
-import { Separator } from '@/components/ui/separator';
+import { useQueryClient } from '@tanstack/react-query';
+import { capitalizeFirstLetter } from '@/utils/string';
+import { useTranslation } from 'react-i18next';
 
 const hobbySchema = z.object({
   name: z.string(),
@@ -39,6 +40,7 @@ interface LifeFormProps {
   initialData?: LifeFormValues;
   isEditing?: boolean;
   policyId?: string;
+  clientId?: string;
 }
 
 const defaultEmptyHobby = {
@@ -59,7 +61,10 @@ export const LifeForm = ({
   initialData,
   isEditing = false,
   policyId,
+  clientId,
 }: LifeFormProps) => {
+  const { t } = useTranslation();
+  const queryClient = useQueryClient();
   const form = useForm<LifeFormValues>({
     resolver: zodResolver(lifeSchema),
     defaultValues: initialData || {
@@ -100,15 +105,17 @@ export const LifeForm = ({
 
       if (error) throw error;
 
+      if (clientId) queryClient.invalidateQueries({ queryKey: ['investmentPolicy', clientId] });
+
       toast({
-        title: 'Sucesso',
-        description: 'Informações de vida atualizadas com sucesso',
+        title: t('common.success'),
+        description: t('life.messages.success'),
       });
     } catch (error) {
       console.error('Error updating life information:', error);
       toast({
-        title: 'Erro',
-        description: 'Falha ao atualizar informações de vida',
+        title: t('common.error'),
+        description: t('life.messages.error'),
         variant: 'destructive',
       });
     }
@@ -120,7 +127,7 @@ export const LifeForm = ({
         {/* Life Stage Section */}
         <Card>
           <CardHeader>
-            <CardTitle>Momento de Vida</CardTitle>
+            <CardTitle>{t('investmentPolicy.lifeStage.label')}</CardTitle>
           </CardHeader>
           <CardContent>
             <FormField
@@ -140,7 +147,7 @@ export const LifeForm = ({
                           <RadioGroupItem value="accumulation" />
                         </FormControl>
                         <FormLabel className="font-normal">
-                          Acumulação de Patrimônio
+                          {t('investmentPolicy.lifeStage.options.accumulation')}
                         </FormLabel>
                       </FormItem>
                       <FormItem className="flex items-center space-x-3 space-y-0">
@@ -148,7 +155,7 @@ export const LifeForm = ({
                           <RadioGroupItem value="enjoyment" />
                         </FormControl>
                         <FormLabel className="font-normal">
-                          Usufruto de Patrimônio
+                          {t('investmentPolicy.lifeStage.options.enjoyment')}
                         </FormLabel>
                       </FormItem>
                       <FormItem className="flex items-center space-x-3 space-y-0">
@@ -156,7 +163,7 @@ export const LifeForm = ({
                           <RadioGroupItem value="consolidation" />
                         </FormControl>
                         <FormLabel className="font-normal">
-                          Consolidação
+                          {t('investmentPolicy.lifeStage.options.consolidation')}
                         </FormLabel>
                       </FormItem>
                     </RadioGroup>
@@ -171,7 +178,7 @@ export const LifeForm = ({
         {/* Hobbies Section */}
         <Card>
           <CardHeader>
-            <CardTitle>Hobbies</CardTitle>
+            <CardTitle>{t('investmentPolicy.hobbies.label')}</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
@@ -182,9 +189,13 @@ export const LifeForm = ({
                     name={`hobbies.${index}.name`}
                     render={({ field }) => (
                       <FormItem className="flex-1">
-                        <FormLabel>Nome do Hobbie</FormLabel>
+                        <FormLabel>{t('clientSummary.hobbies')}</FormLabel>
                         <FormControl>
-                          <Input {...field} disabled={!isEditing} />
+                          <Input 
+                            {...field} 
+                            disabled={!isEditing}
+                            onChange={(e) => field.onChange(capitalizeFirstLetter(e.target.value))}
+                          />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -197,7 +208,7 @@ export const LifeForm = ({
                       size="icon"
                       onClick={() => removeHobby(index)}
                       className="self-center"
-                      aria-label="Remover hobbie"
+                      aria-label={t('common.delete')}
                     >
                       <Trash2 className="h-4 w-4" />
                     </Button>
@@ -212,7 +223,7 @@ export const LifeForm = ({
                   onClick={() => appendHobby(defaultEmptyHobby)}
                 >
                   <Plus className="h-4 w-4 mr-2" />
-                  Adicionar Hobbie
+                  {t('common.add')} {t('clientSummary.hobbies')}
                 </Button>
               )}
             </div>
@@ -222,7 +233,7 @@ export const LifeForm = ({
         {/* Objectives Section */}
         <Card>
           <CardHeader>
-            <CardTitle>Objetivos</CardTitle>
+            <CardTitle>{t('investmentPolicy.objectives.label')}</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
@@ -233,9 +244,13 @@ export const LifeForm = ({
                     name={`objectives.${index}.name`}
                     render={({ field }) => (
                       <FormItem className="flex-1">
-                        <FormLabel>Nome do Objetivo</FormLabel>
+                        <FormLabel>{t('clientSummary.lifeObjectives')}</FormLabel>
                         <FormControl>
-                          <Input {...field} disabled={!isEditing} />
+                          <Input 
+                            {...field} 
+                            disabled={!isEditing}
+                            onChange={(e) => field.onChange(capitalizeFirstLetter(e.target.value))}
+                          />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -248,7 +263,7 @@ export const LifeForm = ({
                       size="icon"
                       onClick={() => removeObjective(index)}
                       className="self-center"
-                      aria-label="Remover objetivo"
+                      aria-label={t('common.delete')}
                     >
                       <Trash2 className="h-4 w-4" />
                     </Button>
@@ -263,7 +278,7 @@ export const LifeForm = ({
                   onClick={() => appendObjective(defaultEmptyObjective)}
                 >
                   <Plus className="h-4 w-4 mr-2" />
-                  Adicionar Objetivo
+                  {t('common.add')} {t('clientSummary.lifeObjectives')}
                 </Button>
               )}
             </div>
@@ -273,7 +288,7 @@ export const LifeForm = ({
         {/* Insurance Section */}
         <Card>
           <CardHeader>
-            <CardTitle>Seguros</CardTitle>
+            <CardTitle>{t('investmentPolicy.insurance.hasInsurance')}</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="space-y-4">
@@ -285,9 +300,13 @@ export const LifeForm = ({
                       name={`insurances.${index}.type`}
                       render={({ field }) => (
                         <FormItem className="flex-1">
-                          <FormLabel>Tipo de Seguro</FormLabel>
+                          <FormLabel>{t('clientSummary.insuranceType')}</FormLabel>
                           <FormControl>
-                            <Input {...field} placeholder="Ex: Vida, Casa, Auto" disabled={!isEditing} />
+                            <Input 
+                              {...field} 
+                              disabled={!isEditing}
+                              onChange={(e) => field.onChange(capitalizeFirstLetter(e.target.value))}
+                            />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -300,7 +319,7 @@ export const LifeForm = ({
                         size="icon"
                         onClick={() => removeInsurance(index)}
                         className="self-center"
-                        aria-label="Remover seguro"
+                        aria-label={t('common.delete')}
                       >
                         <Trash2 className="h-4 w-4" />
                       </Button>
@@ -311,9 +330,13 @@ export const LifeForm = ({
                     name={`insurances.${index}.company`}
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Seguradora</FormLabel>
+                        <FormLabel>{t('clientSummary.insuranceCompany')}</FormLabel>
                         <FormControl>
-                          <Input {...field} disabled={!isEditing} />
+                          <Input 
+                            {...field} 
+                            disabled={!isEditing}
+                            onChange={(e) => field.onChange(capitalizeFirstLetter(e.target.value))}
+                          />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -324,7 +347,7 @@ export const LifeForm = ({
                     name={`insurances.${index}.last_review_date`}
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Última revisão</FormLabel>
+                        <FormLabel>{t('clientSummary.lastReview')}</FormLabel>
                         <FormControl>
                           <Input type="date" {...field} disabled={!isEditing} />
                         </FormControl>
@@ -342,7 +365,7 @@ export const LifeForm = ({
                   onClick={() => appendInsurance(defaultEmptyInsurance)}
                 >
                   <Plus className="h-4 w-4 mr-2" />
-                  Adicionar Seguro
+                  {t('common.add')} {t('investmentPolicy.insurance.hasInsurance')}
                 </Button>
               )}
             </div>
@@ -351,7 +374,7 @@ export const LifeForm = ({
 
         {isEditing && (
           <div className="flex justify-end">
-            <Button type="submit">Salvar Alterações</Button>
+            <Button type="submit">{t('common.save')}</Button>
           </div>
         )}
       </form>

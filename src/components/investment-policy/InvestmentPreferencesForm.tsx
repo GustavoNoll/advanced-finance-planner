@@ -10,6 +10,9 @@ import { supabase } from '@/lib/supabase';
 import { toast } from '@/components/ui/use-toast';
 import { Plus, Trash2 } from 'lucide-react';
 import { RISK_PROFILES } from '@/constants/riskProfiles';
+import { useQueryClient } from '@tanstack/react-query';
+import { capitalizeFirstLetter } from '@/utils/string';
+import { useTranslation } from 'react-i18next';
 
 const investmentPreferencesSchema = z.object({
   target_return_review: z.string().optional(),
@@ -32,6 +35,7 @@ interface InvestmentPreferencesFormProps {
   initialData?: InvestmentPreferencesFormValues;
   isEditing?: boolean;
   policyId?: string;
+  clientId?: string;
 }
 
 const investmentModes = [
@@ -103,7 +107,10 @@ export const InvestmentPreferencesForm = ({
   initialData,
   isEditing = false,
   policyId,
+  clientId,
 }: InvestmentPreferencesFormProps) => {
+  const { t } = useTranslation();
+  const queryClient = useQueryClient();
   const form = useForm<InvestmentPreferencesFormValues>({
     resolver: zodResolver(investmentPreferencesSchema),
     defaultValues: initialData || {
@@ -152,6 +159,8 @@ export const InvestmentPreferencesForm = ({
 
       if (error) throw error;
 
+      if (clientId) queryClient.invalidateQueries({ queryKey: ['investmentPolicy', clientId] });
+      
       toast({
         title: 'Sucesso',
         description: 'Preferências de investimento atualizadas com sucesso',
@@ -179,7 +188,7 @@ export const InvestmentPreferencesForm = ({
                 name="risk_profile"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Perfil de Investimento</FormLabel>
+                    <FormLabel>{t('investmentPreferences.form.riskProfile')}</FormLabel>
                     <FormControl>
                       <Select
                         value={field.value}
@@ -187,7 +196,7 @@ export const InvestmentPreferencesForm = ({
                         disabled={!isEditing}
                       >
                         <SelectTrigger>
-                          <SelectValue placeholder="Selecione o perfil" />
+                          <SelectValue placeholder={t('investmentPreferences.form.selectMode')} />
                         </SelectTrigger>
                         <SelectContent>
                           {riskProfiles.map((profile) => (
@@ -208,7 +217,7 @@ export const InvestmentPreferencesForm = ({
                 name="target_return_review"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Revisão de Meta</FormLabel>
+                    <FormLabel>{t('investmentPreferences.form.targetReturnReview')}</FormLabel>
                     <FormControl>
                       <Select
                         value={field.value}
@@ -216,12 +225,12 @@ export const InvestmentPreferencesForm = ({
                         disabled={!isEditing}
                       >
                         <SelectTrigger>
-                          <SelectValue placeholder="Selecione o período" />
+                          <SelectValue placeholder={t('investmentPreferences.form.selectPeriod')} />
                         </SelectTrigger>
                         <SelectContent>
                           {reviewPeriods.map((period) => (
                             <SelectItem key={period.value} value={period.value}>
-                              {period.label}
+                              {t(`investmentPreferences.options.reviewPeriods.${period.value}`)}
                             </SelectItem>
                           ))}
                         </SelectContent>
@@ -237,7 +246,7 @@ export const InvestmentPreferencesForm = ({
                 name="max_bond_maturity"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Prazos máximos dos títulos da carteira</FormLabel>
+                    <FormLabel>{t('investmentPreferences.form.maxBondMaturity')}</FormLabel>
                     <FormControl>
                       <Select
                         value={field.value}
@@ -245,12 +254,12 @@ export const InvestmentPreferencesForm = ({
                         disabled={!isEditing}
                       >
                         <SelectTrigger>
-                          <SelectValue placeholder="Selecione o prazo" />
+                          <SelectValue placeholder={t('investmentPreferences.form.selectMaturity')} />
                         </SelectTrigger>
                         <SelectContent>
                           {bondMaturities.map((maturity) => (
                             <SelectItem key={maturity.value} value={maturity.value}>
-                              {maturity.label}
+                              {t(`investmentPreferences.options.bondMaturities.${maturity.value}`)}
                             </SelectItem>
                           ))}
                         </SelectContent>
@@ -266,7 +275,7 @@ export const InvestmentPreferencesForm = ({
                 name="fgc_event_feeling"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Como você se sentiria em um evento de FGC?</FormLabel>
+                    <FormLabel>{t('investmentPreferences.form.fgcEventFeeling')}</FormLabel>
                     <FormControl>
                       <Select
                         value={field.value}
@@ -274,12 +283,12 @@ export const InvestmentPreferencesForm = ({
                         disabled={!isEditing}
                       >
                         <SelectTrigger>
-                          <SelectValue placeholder="Selecione sua sensação" />
+                          <SelectValue placeholder={t('investmentPreferences.form.selectFeeling')} />
                         </SelectTrigger>
                         <SelectContent>
                           {fgcFeelings.map((feeling) => (
                             <SelectItem key={feeling.value} value={feeling.value}>
-                              {feeling.label}
+                              {t(`investmentPreferences.options.fgcFeelings.${feeling.value}`)}
                             </SelectItem>
                           ))}
                         </SelectContent>
@@ -295,7 +304,7 @@ export const InvestmentPreferencesForm = ({
                 name="max_fund_liquidity"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Prazo máximo de liquidez dos fundos (D+X)</FormLabel>
+                    <FormLabel>{t('investmentPreferences.form.maxFundLiquidity')}</FormLabel>
                     <FormControl>
                       <Select
                         value={field.value}
@@ -303,12 +312,12 @@ export const InvestmentPreferencesForm = ({
                         disabled={!isEditing}
                       >
                         <SelectTrigger>
-                          <SelectValue placeholder="Selecione o prazo" />
+                          <SelectValue placeholder={t('investmentPreferences.form.selectLiquidity')} />
                         </SelectTrigger>
                         <SelectContent>
                           {fundLiquidity.map((liquidity) => (
                             <SelectItem key={liquidity.value} value={liquidity.value}>
-                              {liquidity.label}
+                              {t(`investmentPreferences.options.fundLiquidity.${liquidity.value}`)}
                             </SelectItem>
                           ))}
                         </SelectContent>
@@ -324,7 +333,7 @@ export const InvestmentPreferencesForm = ({
                 name="max_acceptable_loss"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Máxima perda aceitável</FormLabel>
+                    <FormLabel>{t('investmentPreferences.form.maxAcceptableLoss')}</FormLabel>
                     <FormControl>
                       <Select
                         value={field.value}
@@ -332,12 +341,12 @@ export const InvestmentPreferencesForm = ({
                         disabled={!isEditing}
                       >
                         <SelectTrigger>
-                          <SelectValue placeholder="Selecione a perda" />
+                          <SelectValue placeholder={t('investmentPreferences.form.selectLoss')} />
                         </SelectTrigger>
                         <SelectContent>
                           {acceptableLoss.map((loss) => (
                             <SelectItem key={loss.value} value={loss.value}>
-                              {loss.label}
+                              {t(`investmentPreferences.options.acceptableLoss.${loss.value === '0' ? 'noLoss' : loss.value + 'Percent'}`)}
                             </SelectItem>
                           ))}
                         </SelectContent>
@@ -353,7 +362,7 @@ export const InvestmentPreferencesForm = ({
                 name="target_return_ipca_plus"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Meta de Retorno (IPCA+X)</FormLabel>
+                    <FormLabel>{t('investmentPreferences.form.targetReturnIpcaPlus')}</FormLabel>
                     <FormControl>
                       <Select
                         value={field.value}
@@ -361,12 +370,12 @@ export const InvestmentPreferencesForm = ({
                         disabled={!isEditing}
                       >
                         <SelectTrigger>
-                          <SelectValue placeholder="Selecione o retorno" />
+                          <SelectValue placeholder={t('investmentPreferences.form.selectReturn')} />
                         </SelectTrigger>
                         <SelectContent>
                           {targetReturns.map((return_) => (
                             <SelectItem key={return_.value} value={return_.value}>
-                              {return_.label}
+                              {t(`investmentPreferences.options.targetReturns.${return_.value}`)}
                             </SelectItem>
                           ))}
                         </SelectContent>
@@ -382,7 +391,7 @@ export const InvestmentPreferencesForm = ({
                 name="stock_investment_mode"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Modalidade de investimento em ações</FormLabel>
+                    <FormLabel>{t('investmentPreferences.form.stockInvestmentMode')}</FormLabel>
                     <FormControl>
                       <Select
                         value={field.value}
@@ -390,12 +399,12 @@ export const InvestmentPreferencesForm = ({
                         disabled={!isEditing}
                       >
                         <SelectTrigger>
-                          <SelectValue placeholder="Selecione a modalidade" />
+                          <SelectValue placeholder={t('investmentPreferences.form.selectMode')} />
                         </SelectTrigger>
                         <SelectContent>
                           {investmentModes.map((mode) => (
                             <SelectItem key={mode.value} value={mode.value}>
-                              {mode.label}
+                              {t(`investmentPreferences.options.investmentModes.${mode.value}`)}
                             </SelectItem>
                           ))}
                         </SelectContent>
@@ -411,7 +420,7 @@ export const InvestmentPreferencesForm = ({
                 name="real_estate_funds_mode"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Fundos imobiliários diretos ou FoFs</FormLabel>
+                    <FormLabel>{t('investmentPreferences.form.realEstateFundsMode')}</FormLabel>
                     <FormControl>
                       <Select
                         value={field.value}
@@ -419,12 +428,12 @@ export const InvestmentPreferencesForm = ({
                         disabled={!isEditing}
                       >
                         <SelectTrigger>
-                          <SelectValue placeholder="Selecione a modalidade" />
+                          <SelectValue placeholder={t('investmentPreferences.form.selectMode')} />
                         </SelectTrigger>
                         <SelectContent>
                           {realEstateFundModes.map((mode) => (
                             <SelectItem key={mode.value} value={mode.value}>
-                              {mode.label}
+                              {t(`investmentPreferences.options.realEstateFundModes.${mode.value}`)}
                             </SelectItem>
                           ))}
                         </SelectContent>
@@ -438,7 +447,7 @@ export const InvestmentPreferencesForm = ({
 
             <div className="space-y-4">
               <div className="flex justify-between items-center">
-                <h3 className="text-lg font-semibold">Plataformas utilizadas</h3>
+                <h3 className="text-lg font-semibold">{t('investmentPreferences.form.platformsUsed')}</h3>
                 {isEditing && (
                   <Button
                     type="button"
@@ -447,7 +456,7 @@ export const InvestmentPreferencesForm = ({
                     onClick={() => appendPlatform({ name: '' })}
                   >
                     <Plus className="h-4 w-4 mr-2" />
-                    Adicionar Plataforma
+                    {t('investmentPreferences.form.addPlatform')}
                   </Button>
                 )}
               </div>
@@ -459,9 +468,13 @@ export const InvestmentPreferencesForm = ({
                       name={`platforms_used.${index}.name`}
                       render={({ field }) => (
                         <FormItem className="flex-1">
-                          <FormLabel>Plataforma {index + 1}</FormLabel>
+                          <FormLabel>{t('investmentPreferences.form.platform')} {index + 1}</FormLabel>
                           <FormControl>
-                            <Input {...field} disabled={!isEditing} />
+                            <Input 
+                              {...field} 
+                              disabled={!isEditing}
+                              onChange={(e) => field.onChange(capitalizeFirstLetter(e.target.value))}
+                            />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -474,7 +487,7 @@ export const InvestmentPreferencesForm = ({
                         size="icon"
                         onClick={() => removePlatform(index)}
                         className="self-center"
-                        aria-label="Remover plataforma"
+                        aria-label={t('investmentPreferences.form.remove')}
                       >
                         <Trash2 className="h-4 w-4" />
                       </Button>
@@ -486,7 +499,7 @@ export const InvestmentPreferencesForm = ({
 
             <div className="space-y-4">
               <div className="flex justify-between items-center">
-                <h3 className="text-lg font-semibold">Restrição de ativos</h3>
+                <h3 className="text-lg font-semibold">{t('investmentPreferences.form.assetRestrictions')}</h3>
                 {isEditing && (
                   <Button
                     type="button"
@@ -495,7 +508,7 @@ export const InvestmentPreferencesForm = ({
                     onClick={() => appendRestriction({ name: '' })}
                   >
                     <Plus className="h-4 w-4 mr-2" />
-                    Adicionar Restrição
+                    {t('investmentPreferences.form.addRestriction')}
                   </Button>
                 )}
               </div>
@@ -507,9 +520,13 @@ export const InvestmentPreferencesForm = ({
                       name={`asset_restrictions.${index}.name`}
                       render={({ field }) => (
                         <FormItem className="flex-1">
-                          <FormLabel>Restrição {index + 1}</FormLabel>
+                          <FormLabel>{t('investmentPreferences.form.restriction')} {index + 1}</FormLabel>
                           <FormControl>
-                            <Input {...field} disabled={!isEditing} />
+                            <Input 
+                              {...field} 
+                              disabled={!isEditing}
+                              onChange={(e) => field.onChange(capitalizeFirstLetter(e.target.value))}
+                            />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -522,7 +539,7 @@ export const InvestmentPreferencesForm = ({
                         size="icon"
                         onClick={() => removeRestriction(index)}
                         className="self-center"
-                        aria-label="Remover restrição"
+                        aria-label={t('investmentPreferences.form.remove')}
                       >
                         <Trash2 className="h-4 w-4" />
                       </Button>
@@ -534,7 +551,7 @@ export const InvestmentPreferencesForm = ({
 
             <div className="space-y-4">
               <div className="flex justify-between items-center">
-                <h3 className="text-lg font-semibold">Exposição em área de interesse</h3>
+                <h3 className="text-lg font-semibold">{t('investmentPreferences.form.areasOfInterest')}</h3>
                 {isEditing && (
                   <Button
                     type="button"
@@ -543,7 +560,7 @@ export const InvestmentPreferencesForm = ({
                     onClick={() => appendInterest({ name: '' })}
                   >
                     <Plus className="h-4 w-4 mr-2" />
-                    Adicionar Interesse
+                    {t('investmentPreferences.form.addInterest')}
                   </Button>
                 )}
               </div>
@@ -555,9 +572,13 @@ export const InvestmentPreferencesForm = ({
                       name={`areas_of_interest.${index}.name`}
                       render={({ field }) => (
                         <FormItem className="flex-1">
-                          <FormLabel>Interesse {index + 1}</FormLabel>
+                          <FormLabel>{t('investmentPreferences.form.interest')} {index + 1}</FormLabel>
                           <FormControl>
-                            <Input {...field} disabled={!isEditing} />
+                            <Input 
+                              {...field} 
+                              disabled={!isEditing}
+                              onChange={(e) => field.onChange(capitalizeFirstLetter(e.target.value))}
+                            />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -570,7 +591,7 @@ export const InvestmentPreferencesForm = ({
                         size="icon"
                         onClick={() => removeInterest(index)}
                         className="self-center"
-                        aria-label="Remover interesse"
+                        aria-label={t('investmentPreferences.form.remove')}
                       >
                         <Trash2 className="h-4 w-4" />
                       </Button>
@@ -584,7 +605,7 @@ export const InvestmentPreferencesForm = ({
 
         {isEditing && (
           <div className="flex justify-end">
-            <Button type="submit">Salvar Alterações</Button>
+            <Button type="submit">{t('common.save')}</Button>
           </div>
         )}
       </form>

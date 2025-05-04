@@ -86,4 +86,46 @@ export default {
       health: "Health",
     },
   },
+  professionalInformation: {
+    title: 'Professional Information',
+    occupation: {
+      label: 'Occupation',
+      placeholder: 'Your occupation',
+      required: 'Occupation is required'
+    },
+    workDescription: {
+      label: 'What you do',
+      placeholder: 'Description of your professional activities',
+      required: 'Work description is required'
+    },
+    workLocation: {
+      label: 'Where you work',
+      placeholder: 'Work location',
+      required: 'Work location is required'
+    },
+    workRegime: {
+      label: 'Work regime',
+      placeholder: 'Select work regime',
+      required: 'Work regime is required',
+      options: {
+        pj: 'PJ',
+        clt: 'CLT',
+        public_servant: 'Public Servant'
+      }
+    },
+    taxDeclarationMethod: {
+      label: 'How you declare taxes',
+      placeholder: 'Select declaration method',
+      required: 'Tax declaration method is required',
+      options: {
+        simplified: 'Simplified',
+        complete: 'Complete',
+        exempt: 'Exempt'
+      }
+    },
+    messages: {
+      success: 'Professional information updated successfully',
+      error: 'Failed to update professional information'
+    }
+  },
 }; 

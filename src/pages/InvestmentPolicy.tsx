@@ -256,6 +256,7 @@ const InvestmentPolicy = ({
                           initialData={policy?.family_structures || {}}
                           isEditing={!!brokerProfile}
                           policyId={policy?.id}
+                          clientId={clientId}
                         />
                       )}
                       {section.id === 'budget' && (
@@ -263,6 +264,7 @@ const InvestmentPolicy = ({
                           initialData={policy?.budgets || {}}
                           isEditing={!!brokerProfile}
                           policyId={policy?.id}
+                          clientId={clientId}
                         />
                       )}
                       {section.id === 'patrimonial' && (
@@ -270,6 +272,7 @@ const InvestmentPolicy = ({
                           initialData={policy?.patrimonial_situations || {}}
                           isEditing={!!brokerProfile}
                           policyId={policy?.id}
+                          clientId={clientId}
                         />
                       )}
                       {section.id === 'life' && (
@@ -277,6 +280,7 @@ const InvestmentPolicy = ({
                           initialData={policy?.life_information || {}}
                           isEditing={!!brokerProfile}
                           policyId={policy?.id}
+                          clientId={clientId}
                         />
                       )}
                       {section.id === 'investment-preferences' && (
@@ -284,6 +288,7 @@ const InvestmentPolicy = ({
                           initialData={policy?.investment_preferences || {}}
                           isEditing={!!brokerProfile}
                           policyId={policy?.id}
+                          clientId={clientId}
                         />
                       )}
                     </AccordionContent>

@@ -11,6 +11,9 @@ import { supabase } from '@/lib/supabase';
 import { toast } from '@/components/ui/use-toast';
 import { Plus, Trash2 } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
+import { useQueryClient } from '@tanstack/react-query';
+import { capitalizeFirstLetter } from '@/utils/string';
+import { useTranslation } from 'react-i18next';
 
 const assetSchema = z.object({
   name: z.string(),
@@ -44,6 +47,7 @@ interface PatrimonialFormProps {
   initialData?: PatrimonialFormValues;
   isEditing?: boolean;
   policyId?: string;
+  clientId?: string;
 }
 
 const defaultEmptyAsset: AssetType = {
@@ -58,7 +62,10 @@ export const PatrimonialForm = ({
   initialData,
   isEditing = false,
   policyId,
+  clientId,
 }: PatrimonialFormProps) => {
+  const { t } = useTranslation();
+  const queryClient = useQueryClient();
   const form = useForm<PatrimonialFormValues>({
     resolver: zodResolver(patrimonialSchema),
     defaultValues: initialData || {
@@ -142,15 +149,17 @@ export const PatrimonialForm = ({
 
       if (error) throw error;
 
+      if (clientId) queryClient.invalidateQueries({ queryKey: ['investmentPolicy', clientId] });
+
       toast({
-        title: 'Sucesso',
-        description: 'Situação patrimonial atualizada com sucesso',
+        title: t('common.success'),
+        description: t('patrimonial.messages.success'),
       });
     } catch (error) {
       console.error('Error updating patrimonial situation:', error);
       toast({
-        title: 'Erro',
-        description: 'Falha ao atualizar situação patrimonial',
+        title: t('common.error'),
+        description: t('patrimonial.messages.error'),
         variant: 'destructive',
       });
     }
@@ -165,7 +174,7 @@ export const PatrimonialForm = ({
   ) => (
     <div className="space-y-4">
       <div className="flex justify-between items-center">
-        <h3 className="text-lg font-semibold">{title}</h3>
+        <h3 className="text-lg font-semibold">{t(`patrimonial.form.${title}.title`)}</h3>
         {isEditing && (
           <Button
             type="button"
@@ -174,13 +183,13 @@ export const PatrimonialForm = ({
             onClick={() => append()}
           >
             <Plus className="h-4 w-4 mr-2" />
-            Adicionar
+            {t(`patrimonial.form.${title}.add`)}
           </Button>
         )}
       </div>
 
       {fields.length === 0 ? (
-        <p className="text-sm text-muted-foreground">Nenhum item cadastrado</p>
+        <p className="text-sm text-muted-foreground">{t(`patrimonial.form.${title}.empty`)}</p>
       ) : (
         fields.map((field, index) => (
           <Card key={field.id}>
@@ -191,12 +200,13 @@ export const PatrimonialForm = ({
                   name={`${basePath}.${index}.name` as FieldPath<PatrimonialFormValues>}
                   render={({ field: formField }) => (
                     <FormItem>
-                      <FormLabel>Nome</FormLabel>
+                      <FormLabel>{t(`patrimonial.form.${title}.name`)}</FormLabel>
                       <FormControl>
                         <Input 
                           {...formField} 
                           value={formField.value as string}
-                          disabled={!isEditing} 
+                          disabled={!isEditing}
+                          onChange={(e) => formField.onChange(capitalizeFirstLetter(e.target.value))}
                         />
                       </FormControl>
                       <FormMessage />
@@ -209,7 +219,7 @@ export const PatrimonialForm = ({
                   name={`${basePath}.${index}.value` as FieldPath<PatrimonialFormValues>}
                   render={({ field: formField }) => (
                     <FormItem>
-                      <FormLabel>Valor</FormLabel>
+                      <FormLabel>{t(`patrimonial.form.${title}.value`)}</FormLabel>
                       <FormControl>
                         <CurrencyInput
                           value={formField.value as number}
@@ -229,12 +239,13 @@ export const PatrimonialForm = ({
                   name={`${basePath}.${index}.location` as FieldPath<PatrimonialFormValues>}
                   render={({ field: formField }) => (
                     <FormItem>
-                      <FormLabel>Local</FormLabel>
+                      <FormLabel>{t(`patrimonial.form.${title}.location`)}</FormLabel>
                       <FormControl>
                         <Input 
                           {...formField} 
                           value={formField.value as string}
-                          disabled={!isEditing} 
+                          disabled={!isEditing}
+                          onChange={(e) => formField.onChange(capitalizeFirstLetter(e.target.value))}
                         />
                       </FormControl>
                       <FormMessage />
@@ -247,12 +258,13 @@ export const PatrimonialForm = ({
                   name={`${basePath}.${index}.country` as FieldPath<PatrimonialFormValues>}
                   render={({ field: formField }) => (
                     <FormItem>
-                      <FormLabel>País</FormLabel>
+                      <FormLabel>{t(`patrimonial.form.${title}.country`)}</FormLabel>
                       <FormControl>
                         <Input 
                           {...formField} 
                           value={formField.value as string}
-                          disabled={!isEditing} 
+                          disabled={!isEditing}
+                          onChange={(e) => formField.onChange(capitalizeFirstLetter(e.target.value))}
                         />
                       </FormControl>
                       <FormMessage />
@@ -265,12 +277,13 @@ export const PatrimonialForm = ({
                   name={`${basePath}.${index}.description` as FieldPath<PatrimonialFormValues>}
                   render={({ field: formField }) => (
                     <FormItem className="col-span-2">
-                      <FormLabel>Descrição</FormLabel>
+                      <FormLabel>{t(`patrimonial.form.${title}.description`)}</FormLabel>
                       <FormControl>
                         <Textarea 
                           {...formField} 
                           value={formField.value as string}
-                          disabled={!isEditing} 
+                          disabled={!isEditing}
+                          onChange={(e) => formField.onChange(capitalizeFirstLetter(e.target.value))}
                         />
                       </FormControl>
                       <FormMessage />
@@ -287,7 +300,7 @@ export const PatrimonialForm = ({
                     size="icon"
                     onClick={() => remove(index)}
                     className="self-center"
-                    aria-label="Remover item"
+                    aria-label={t(`patrimonial.form.${title}.remove`)}
                   >
                     <Trash2 className="h-4 w-4" />
                   </Button>
@@ -306,7 +319,7 @@ export const PatrimonialForm = ({
         {/* Investments Section */}
         <Card>
           <CardHeader>
-            <CardTitle>Investimentos</CardTitle>
+            <CardTitle>{t('patrimonial.form.investments.title')}</CardTitle>
           </CardHeader>
           <CardContent className="space-y-6">
             {renderAssetFields(
@@ -314,7 +327,7 @@ export const PatrimonialForm = ({
               () => appendInvestmentProperty(defaultEmptyAsset),
               removeInvestmentProperty,
               'investments.properties',
-              'Imóveis'
+              'investments.properties'
             )}
 
             <Separator />
@@ -324,7 +337,7 @@ export const PatrimonialForm = ({
               () => appendLiquidInvestment(defaultEmptyAsset),
               removeLiquidInvestment,
               'investments.liquid_investments',
-              'Investimentos Líquidos'
+              'investments.liquid_investments'
             )}
 
             <Separator />
@@ -334,7 +347,7 @@ export const PatrimonialForm = ({
               () => appendParticipation(defaultEmptyAsset),
               removeParticipation,
               'investments.participations',
-              'Participações'
+              'investments.participations'
             )}
           </CardContent>
         </Card>
@@ -342,7 +355,7 @@ export const PatrimonialForm = ({
         {/* Personal Assets Section */}
         <Card>
           <CardHeader>
-            <CardTitle>Patrimônio Pessoal</CardTitle>
+            <CardTitle>{t('patrimonial.form.personal_assets.title')}</CardTitle>
           </CardHeader>
           <CardContent className="space-y-6">
             {renderAssetFields(
@@ -350,7 +363,7 @@ export const PatrimonialForm = ({
               () => appendPersonalProperty(defaultEmptyAsset),
               removePersonalProperty,
               'personal_assets.properties',
-              'Imóveis'
+              'personal_assets.properties'
             )}
 
             <Separator />
@@ -360,7 +373,7 @@ export const PatrimonialForm = ({
               () => appendVehicle(defaultEmptyAsset),
               removeVehicle,
               'personal_assets.vehicles',
-              'Veículos'
+              'personal_assets.vehicles'
             )}
 
             <Separator />
@@ -370,7 +383,7 @@ export const PatrimonialForm = ({
               () => appendValuableGood(defaultEmptyAsset),
               removeValuableGood,
               'personal_assets.valuable_goods',
-              'Bens de Valor'
+              'personal_assets.valuable_goods'
             )}
           </CardContent>
         </Card>
@@ -378,7 +391,7 @@ export const PatrimonialForm = ({
         {/* Liabilities Section */}
         <Card>
           <CardHeader>
-            <CardTitle>Passivos</CardTitle>
+            <CardTitle>{t('patrimonial.form.liabilities.title')}</CardTitle>
           </CardHeader>
           <CardContent className="space-y-6">
             {renderAssetFields(
@@ -386,7 +399,7 @@ export const PatrimonialForm = ({
               () => appendFinancing(defaultEmptyAsset),
               removeFinancing,
               'liabilities.financing',
-              'Financiamentos'
+              'liabilities.financing'
             )}
 
             <Separator />
@@ -396,14 +409,14 @@ export const PatrimonialForm = ({
               () => appendDebt(defaultEmptyAsset),
               removeDebt,
               'liabilities.debts',
-              'Dívidas'
+              'liabilities.debts'
             )}
           </CardContent>
         </Card>
 
         {isEditing && (
           <div className="flex justify-end">
-            <Button type="submit">Salvar Alterações</Button>
+            <Button type="submit">{t('common.save')}</Button>
           </div>
         )}
       </form>

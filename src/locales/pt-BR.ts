@@ -1144,7 +1144,111 @@ export const ptBR = {
     }
   },
   patrimonial: {
-    title: 'Patrimônio',
+    title: 'Situação Patrimonial',
+    form: {
+      name: 'Nome',
+      value: 'Valor (R$)',
+      location: 'Localização',
+      country: 'País',
+      description: 'Descrição',
+      investments: {
+        title: 'Investimentos',
+        properties: {
+          title: 'Imóveis',
+          name: 'Nome do Imóvel',
+          value: 'Valor (R$)',
+          location: 'Localização',
+          country: 'País',
+          description: 'Descrição',
+          add: 'Adicionar Imóvel',
+          remove: 'Remover Imóvel',
+          empty: 'Nenhum imóvel cadastrado'
+        },
+        liquid_investments: {
+          title: 'Investimentos Líquidos',
+          name: 'Nome do Investimento',
+          value: 'Valor (R$)',
+          location: 'Localização',
+          country: 'País',
+          description: 'Descrição',
+          add: 'Adicionar Investimento',
+          remove: 'Remover Investimento',
+          empty: 'Nenhum investimento cadastrado'
+        },
+        participations: {
+          title: 'Participações Societárias',
+          name: 'Nome da Participação',
+          value: 'Valor (R$)',
+          location: 'Localização',
+          country: 'País',
+          description: 'Descrição',
+          add: 'Adicionar Participação',
+          remove: 'Remover Participação',
+          empty: 'Nenhuma participação cadastrada'
+        }
+      },
+      personal_assets: {
+        title: 'Bens Pessoais',
+        properties: {
+          title: 'Imóveis',
+          name: 'Nome do Imóvel',
+          value: 'Valor (R$)',
+          location: 'Localização',
+          country: 'País',
+          description: 'Descrição',
+          add: 'Adicionar Imóvel',
+          remove: 'Remover Imóvel',
+          empty: 'Nenhum imóvel cadastrado'
+        },
+        vehicles: {
+          title: 'Veículos',
+          name: 'Nome do Veículo',
+          value: 'Valor (R$)',
+          location: 'Localização',
+          country: 'País',
+          description: 'Descrição',
+          add: 'Adicionar Veículo',
+          remove: 'Remover Veículo',
+          empty: 'Nenhum veículo cadastrado'
+        },
+        valuable_goods: {
+          title: 'Bens de Valor',
+          name: 'Nome do Bem',
+          value: 'Valor (R$)',
+          location: 'Localização',
+          country: 'País',
+          description: 'Descrição',
+          add: 'Adicionar Bem',
+          remove: 'Remover Bem',
+          empty: 'Nenhum bem cadastrado'
+        }
+      },
+      liabilities: {
+        title: 'Passivos',
+        financing: {
+          title: 'Financiamentos',
+          name: 'Nome do Financiamento',
+          value: 'Valor (R$)',
+          location: 'Localização',
+          country: 'País',
+          description: 'Descrição',
+          add: 'Adicionar Financiamento',
+          remove: 'Remover Financiamento',
+          empty: 'Nenhum financiamento cadastrado'
+        },
+        debts: {
+          title: 'Dívidas',
+          name: 'Nome da Dívida',
+          value: 'Valor (R$)',
+          location: 'Localização',
+          country: 'País',
+          description: 'Descrição',
+          add: 'Adicionar Dívida',
+          remove: 'Remover Dívida',
+          empty: 'Nenhuma dívida cadastrada'
+        }
+      }
+    },
     messages: {
       success: 'Situação patrimonial atualizada com sucesso',
       error: 'Falha ao atualizar situação patrimonial'
@@ -1162,6 +1266,91 @@ export const ptBR = {
     messages: {
       success: 'Preferências de investimento atualizadas com sucesso',
       error: 'Falha ao atualizar preferências de investimento'
+    },
+    form: {
+      riskProfile: 'Perfil de Investimento',
+      targetReturnReview: 'Revisão de Meta',
+      maxBondMaturity: 'Prazos máximos dos títulos da carteira',
+      fgcEventFeeling: 'Como você se sentiria em um evento de FGC?',
+      maxFundLiquidity: 'Prazo máximo de liquidez dos fundos (D+X)',
+      maxAcceptableLoss: 'Máxima perda aceitável',
+      targetReturnIpcaPlus: 'Meta de Retorno (IPCA+X)',
+      stockInvestmentMode: 'Modalidade de investimento em ações',
+      realEstateFundsMode: 'Fundos imobiliários diretos ou FoFs',
+      platformsUsed: 'Plataformas utilizadas',
+      assetRestrictions: 'Restrição de ativos',
+      areasOfInterest: 'Exposição em área de interesse',
+      selectPeriod: 'Selecione o período',
+      selectMaturity: 'Selecione o prazo',
+      selectFeeling: 'Selecione sua sensação',
+      selectLiquidity: 'Selecione o prazo',
+      selectLoss: 'Selecione a perda',
+      selectReturn: 'Selecione o retorno',
+      selectMode: 'Selecione a modalidade',
+      addPlatform: 'Adicionar Plataforma',
+      addRestriction: 'Adicionar Restrição',
+      addInterest: 'Adicionar Interesse',
+      platform: 'Plataforma',
+      restriction: 'Restrição',
+      interest: 'Interesse',
+      remove: 'Remover'
+    },
+    options: {
+      investmentModes: {
+        directStocks: 'Ações Diretas',
+        etfs: 'ETFs',
+        stockFunds: 'Fundos de Ações'
+      },
+      targetReturns: {
+        ipcaPlus1: 'IPCA + 1%',
+        ipcaPlus2: 'IPCA + 2%',
+        ipcaPlus3: 'IPCA + 3%',
+        ipcaPlus4: 'IPCA + 4%',
+        ipcaPlus5: 'IPCA + 5%',
+        ipcaPlus6: 'IPCA + 6%',
+        ipcaPlus7: 'IPCA + 7%',
+        ipcaPlus8: 'IPCA + 8%',
+        ipcaPlus9: 'IPCA + 9%',
+        ipcaPlus10: 'IPCA + 10%',
+        ipcaPlus11: 'IPCA + 11%'
+      },
+      reviewPeriods: {
+        monthly: 'Mensal',
+        quarterly: 'Trimestral',
+        semiannual: 'Semestral',
+        annual: 'Anual'
+      },
+      bondMaturities: {
+        shortTerm: 'Curto Prazo (< 2 anos)',
+        mediumTerm: 'Médio Prazo (2-5 anos)',
+        longTerm: 'Longo Prazo (> 5 anos)'
+      },
+      fgcFeelings: {
+        veryComfortable: 'Muito Confortável',
+        comfortable: 'Confortável',
+        neutral: 'Neutro',
+        uncomfortable: 'Desconfortável',
+        veryUncomfortable: 'Muito Desconfortável'
+      },
+      fundLiquidity: {
+        daily: 'Diário',
+        dPlus1: 'D+1',
+        dPlus2: 'D+2',
+        dPlus30: 'D+30',
+        dPlus90: 'D+90'
+      },
+      acceptableLoss: {
+        noLoss: 'Sem perdas',
+        fivePercent: '5%',
+        tenPercent: '10%',
+        fifteenPercent: '15%',
+        twentyPercent: '20%',
+        twentyFivePercent: '25%'
+      },
+      realEstateFundModes: {
+        directPortfolio: 'Carteira de Fundos',
+        fofsConsolidation: 'Consolidação em FoFs'
+      }
     }
   },
   clientSummary: {
@@ -1209,6 +1398,19 @@ export const ptBR = {
     noChildren: 'Sem filhos',
     noInsurance: 'Sem seguros cadastrados',
     noObjectives: 'Sem objetivos cadastrados',
-    noHobbies: 'Sem hobbies cadastrados'
+    noHobbies: 'Sem hobbies cadastrados',
+    investments: 'Investimentos',
+    properties: 'Imóveis',
+    vehicles: 'Carros',
+    valuableGoods: 'Bens de Valor',
+    other: 'Outros',
+    total: 'Total',
+    information: 'Informações',
+    riskProfile: {
+      conservative: 'Conservador',
+      moderate: 'Moderado',
+      aggressive: 'Arrojado',
+      notInformed: 'Não informado'
+    }
   },
 };

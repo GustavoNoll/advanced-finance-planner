@@ -13,6 +13,7 @@ import { Separator } from '@/components/ui/separator';
 import { useTranslation } from 'react-i18next';
 import { useEffect } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
+import { capitalizeFirstLetter } from '@/utils/string';
 
 const incomeSchema = z.object({
   description: z.string().min(1, 'Descrição é obrigatória'),
@@ -124,7 +125,9 @@ export const BudgetForm = ({
         description: t('budget.messages.success'),
       });
 
-      if (clientId) queryClient.invalidateQueries({ queryKey: ['investmentPolicy', clientId] });
+      if (clientId) {
+        queryClient.invalidateQueries({ queryKey: ['investmentPolicy', clientId] });
+      }
     } catch (error) {
       console.error('Error updating budget:', error);
       toast({
@@ -133,10 +136,6 @@ export const BudgetForm = ({
         variant: 'destructive',
       });
     }
-  };
-
-  const parseInputValue = (value: string) => {
-    return parseFloat(value.replace(/[^\d,]/g, '').replace(',', '.')) || 0;
   };
 
   return (
@@ -177,7 +176,12 @@ export const BudgetForm = ({
                           <FormItem>
                             <FormLabel className="text-green-600">{t('budget.incomes.description')}</FormLabel>
                             <FormControl>
-                              <Input {...field} disabled={!isEditing} className="border-green-200 focus:border-green-500" />
+                              <Input 
+                                {...field} 
+                                disabled={!isEditing} 
+                                className="border-green-200 focus:border-green-500"
+                                onChange={(e) => field.onChange(capitalizeFirstLetter(e.target.value))}
+                              />
                             </FormControl>
                             <FormMessage />
                           </FormItem>
@@ -249,7 +253,12 @@ export const BudgetForm = ({
                           <FormItem>
                             <FormLabel className="text-red-600">{t('budget.expenses.description')}</FormLabel>
                             <FormControl>
-                              <Input {...field} disabled={!isEditing} className="border-red-200 focus:border-red-500" />
+                              <Input 
+                                {...field} 
+                                disabled={!isEditing} 
+                                className="border-red-200 focus:border-red-500"
+                                onChange={(e) => field.onChange(capitalizeFirstLetter(e.target.value))}
+                              />
                             </FormControl>
                             <FormMessage />
                           </FormItem>
