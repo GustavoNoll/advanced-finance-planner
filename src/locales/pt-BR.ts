@@ -118,6 +118,10 @@ export const ptBR = {
   },
   dashboard: {
     title: "Portfólio de Investimentos",
+    navigation: {
+      finances: "Finanças",
+      investmentPolicy: "Política de Investimento"
+    },
     highlights: {
       startToInvest: "Você já deveria estar investindo!",
       title: "Destaques",
@@ -355,6 +359,7 @@ export const ptBR = {
     loading: "Verificando permissões..."
   },
   common: {
+    notInformed: "Não informado",
     every: "a cada",
     change: "Alterar",
     selectMonth: "Selecione o mês",
@@ -407,6 +412,9 @@ export const ptBR = {
     showing: 'Mostrando',
     of: 'de',
     items: 'itens',
+    view: 'Visualizar',
+    minimize: 'Minimizar',
+    maximize: 'Maximizar',
   },
   createClient: {
     title: "Criar Novo Cliente",
@@ -985,5 +993,425 @@ export const ptBR = {
     confirmPassword: 'Confirmar Senha',
     confirmPasswordPlaceholder: 'Digite novamente sua nova senha',
     passwordChanged: 'Senha alterada com sucesso',
+  },
+  familyStructure: {
+    title: 'Estrutura Familiar',
+    maritalStatus: {
+      label: 'Estado Civil',
+      placeholder: 'Selecione o estado civil',
+      options: {
+        single: 'Solteiro',
+        total_separation: 'Separação Total',
+        partial_community: 'Comunhão Parcial',
+        total_community: 'Comunhão Total'
+      }
+    },
+    spouse: {
+      name: {
+        label: 'Nome do Cônjuge'
+      },
+      birthDate: {
+        label: 'Data de Nascimento do Cônjuge',
+        placeholder: 'dd/mm/aaaa'
+      }
+    },
+    children: {
+      title: 'Filhos',
+      add: 'Adicionar Filho',
+      name: {
+        label: 'Nome',
+        required: 'Nome é obrigatório'
+      },
+      birthDate: {
+        label: 'Data de Nascimento',
+        required: 'Data de nascimento é obrigatória',
+        placeholder: 'dd/mm/aaaa'
+      },
+      age: 'Idade: {{age}} anos',
+      remove: 'Remover filho'
+    },
+    messages: {
+      success: 'Estrutura familiar atualizada com sucesso',
+      error: 'Falha ao atualizar estrutura familiar',
+      validation: {
+        children: 'Todos os filhos devem ter nome e data de nascimento preenchidos'
+      }
+    }
+  },
+  professionalInformation: {
+    title: 'Informações Profissionais',
+    occupation: {
+      label: 'Profissão',
+      placeholder: 'Sua profissão',
+      required: 'Profissão é obrigatória'
+    },
+    workDescription: {
+      label: 'O que faz',
+      placeholder: 'Descrição das suas atividades profissionais',
+      required: 'Descrição do trabalho é obrigatória'
+    },
+    workLocation: {
+      label: 'Onde trabalha',
+      placeholder: 'Local de trabalho',
+      required: 'Local de trabalho é obrigatório'
+    },
+    workRegime: {
+      label: 'Regime de trabalho',
+      placeholder: 'Selecione o regime de trabalho',
+      required: 'Regime de trabalho é obrigatório',
+      options: {
+        pj: 'PJ',
+        clt: 'CLT',
+        public_servant: 'Funcionário Público'
+      }
+    },
+    taxDeclarationMethod: {
+      label: 'Como declara IR',
+      placeholder: 'Selecione o método de declaração',
+      required: 'Método de declaração de IR é obrigatório',
+      options: {
+        simplified: 'Simplificado',
+        complete: 'Completo',
+        exempt: 'Não Declara'
+      }
+    },
+    messages: {
+      success: 'Informações profissionais atualizadas com sucesso',
+      error: 'Falha ao atualizar informações profissionais'
+    }
+  },
+  investmentPolicy: {
+    title: 'Política de Investimento',
+    quickAccess: 'Acesso Rápido',
+    sections: {
+      professionalInformation: 'Informações Profissionais',
+      familyStructure: 'Estrutura Familiar',
+      budget: 'Orçamento',
+      patrimonial: 'Situação Patrimonial',
+      life: 'Informações de Vida',
+      investmentPreferences: 'Preferências de Investimento'
+    },
+    lifeStage: {
+      label: 'Momento de Vida',
+      options: {
+        accumulation: 'Acumulação de Patrimônio',
+        enjoyment: 'Usufruto de Patrimônio',
+        consolidation: 'Consolidação'
+      }
+    },
+    hobbies: {
+      label: 'Hobbies'
+    },
+    objectives: {
+      label: 'Objetivos de Investimento'
+    },
+    insurance: {
+      hasInsurance: 'Possui Seguro',
+      hasHealthPlan: 'Possui Plano de Saúde'
+    },
+    messages: {
+      success: 'Política de investimento atualizada com sucesso',
+      error: 'Falha ao atualizar política de investimento'
+    }
+  },
+  budget: {
+    title: 'Orçamento',
+    incomes: {
+      title: 'Rendas',
+      add: 'Adicionar Renda',
+      remove: 'Remover renda',
+      description: 'Descrição',
+      amount: 'Valor',
+      empty: 'Nenhuma renda cadastrada'
+    },
+    expenses: {
+      title: 'Gastos',
+      add: 'Adicionar Gasto',
+      remove: 'Remover gasto',
+      description: 'Descrição',
+      amount: 'Valor',
+      empty: 'Nenhum gasto cadastrado'
+    },
+    other: {
+      title: 'Outros',
+      bonus: 'Bônus',
+      dividends: 'Dividendos',
+      savings: 'Poupança'
+    },
+    messages: {
+      success: 'Orçamento atualizado com sucesso',
+      error: 'Falha ao atualizar orçamento',
+      loadError: 'Falha ao carregar orçamento'
+    }
+  },
+  patrimonial: {
+    title: 'Situação Patrimonial',
+    form: {
+      name: 'Nome',
+      value: 'Valor (R$)',
+      location: 'Localização',
+      country: 'País',
+      description: 'Descrição',
+      investments: {
+        title: 'Investimentos',
+        properties: {
+          title: 'Imóveis',
+          name: 'Nome do Imóvel',
+          value: 'Valor (R$)',
+          location: 'Localização',
+          country: 'País',
+          description: 'Descrição',
+          add: 'Adicionar Imóvel',
+          remove: 'Remover Imóvel',
+          empty: 'Nenhum imóvel cadastrado'
+        },
+        liquid_investments: {
+          title: 'Investimentos Líquidos',
+          name: 'Nome do Investimento',
+          value: 'Valor (R$)',
+          location: 'Localização',
+          country: 'País',
+          description: 'Descrição',
+          add: 'Adicionar Investimento',
+          remove: 'Remover Investimento',
+          empty: 'Nenhum investimento cadastrado'
+        },
+        participations: {
+          title: 'Participações Societárias',
+          name: 'Nome da Participação',
+          value: 'Valor (R$)',
+          location: 'Localização',
+          country: 'País',
+          description: 'Descrição',
+          add: 'Adicionar Participação',
+          remove: 'Remover Participação',
+          empty: 'Nenhuma participação cadastrada'
+        }
+      },
+      personal_assets: {
+        title: 'Bens Pessoais',
+        properties: {
+          title: 'Imóveis',
+          name: 'Nome do Imóvel',
+          value: 'Valor (R$)',
+          location: 'Localização',
+          country: 'País',
+          description: 'Descrição',
+          add: 'Adicionar Imóvel',
+          remove: 'Remover Imóvel',
+          empty: 'Nenhum imóvel cadastrado'
+        },
+        vehicles: {
+          title: 'Veículos',
+          name: 'Nome do Veículo',
+          value: 'Valor (R$)',
+          location: 'Localização',
+          country: 'País',
+          description: 'Descrição',
+          add: 'Adicionar Veículo',
+          remove: 'Remover Veículo',
+          empty: 'Nenhum veículo cadastrado'
+        },
+        valuable_goods: {
+          title: 'Bens de Valor',
+          name: 'Nome do Bem',
+          value: 'Valor (R$)',
+          location: 'Localização',
+          country: 'País',
+          description: 'Descrição',
+          add: 'Adicionar Bem',
+          remove: 'Remover Bem',
+          empty: 'Nenhum bem cadastrado'
+        }
+      },
+      liabilities: {
+        title: 'Passivos',
+        financing: {
+          title: 'Financiamentos',
+          name: 'Nome do Financiamento',
+          value: 'Valor (R$)',
+          location: 'Localização',
+          country: 'País',
+          description: 'Descrição',
+          add: 'Adicionar Financiamento',
+          remove: 'Remover Financiamento',
+          empty: 'Nenhum financiamento cadastrado'
+        },
+        debts: {
+          title: 'Dívidas',
+          name: 'Nome da Dívida',
+          value: 'Valor (R$)',
+          location: 'Localização',
+          country: 'País',
+          description: 'Descrição',
+          add: 'Adicionar Dívida',
+          remove: 'Remover Dívida',
+          empty: 'Nenhuma dívida cadastrada'
+        }
+      }
+    },
+    messages: {
+      success: 'Situação patrimonial atualizada com sucesso',
+      error: 'Falha ao atualizar situação patrimonial'
+    }
+  },
+  life: {
+    title: 'Vida',
+    messages: {
+      success: 'Informações de vida atualizadas com sucesso',
+      error: 'Falha ao atualizar informações de vida'
+    }
+  },
+  investmentPreferences: {
+    title: 'Preferências de Investimento',
+    messages: {
+      success: 'Preferências de investimento atualizadas com sucesso',
+      error: 'Falha ao atualizar preferências de investimento'
+    },
+    form: {
+      riskProfile: 'Perfil de Investimento',
+      targetReturnReview: 'Revisão de Meta',
+      maxBondMaturity: 'Prazos máximos dos títulos da carteira',
+      fgcEventFeeling: 'Como você se sentiria em um evento de FGC?',
+      maxFundLiquidity: 'Prazo máximo de liquidez dos fundos (D+X)',
+      maxAcceptableLoss: 'Máxima perda aceitável',
+      targetReturnIpcaPlus: 'Meta de Retorno (IPCA+X)',
+      stockInvestmentMode: 'Modalidade de investimento em ações',
+      realEstateFundsMode: 'Fundos imobiliários diretos ou FoFs',
+      platformsUsed: 'Plataformas utilizadas',
+      assetRestrictions: 'Restrição de ativos',
+      areasOfInterest: 'Exposição em área de interesse',
+      selectPeriod: 'Selecione o período',
+      selectMaturity: 'Selecione o prazo',
+      selectFeeling: 'Selecione sua sensação',
+      selectLiquidity: 'Selecione o prazo',
+      selectLoss: 'Selecione a perda',
+      selectReturn: 'Selecione o retorno',
+      selectMode: 'Selecione a modalidade',
+      addPlatform: 'Adicionar Plataforma',
+      addRestriction: 'Adicionar Restrição',
+      addInterest: 'Adicionar Interesse',
+      platform: 'Plataforma',
+      restriction: 'Restrição',
+      interest: 'Interesse',
+      remove: 'Remover'
+    },
+    options: {
+      investmentModes: {
+        directStocks: 'Ações Diretas',
+        etfs: 'ETFs',
+        stockFunds: 'Fundos de Ações'
+      },
+      targetReturns: {
+        ipcaPlus1: 'IPCA + 1%',
+        ipcaPlus2: 'IPCA + 2%',
+        ipcaPlus3: 'IPCA + 3%',
+        ipcaPlus4: 'IPCA + 4%',
+        ipcaPlus5: 'IPCA + 5%',
+        ipcaPlus6: 'IPCA + 6%',
+        ipcaPlus7: 'IPCA + 7%',
+        ipcaPlus8: 'IPCA + 8%',
+        ipcaPlus9: 'IPCA + 9%',
+        ipcaPlus10: 'IPCA + 10%',
+        ipcaPlus11: 'IPCA + 11%'
+      },
+      reviewPeriods: {
+        monthly: 'Mensal',
+        quarterly: 'Trimestral',
+        semiannual: 'Semestral',
+        annual: 'Anual'
+      },
+      bondMaturities: {
+        shortTerm: 'Curto Prazo (< 2 anos)',
+        mediumTerm: 'Médio Prazo (2-5 anos)',
+        longTerm: 'Longo Prazo (> 5 anos)'
+      },
+      fgcFeelings: {
+        veryComfortable: 'Muito Confortável',
+        comfortable: 'Confortável',
+        neutral: 'Neutro',
+        uncomfortable: 'Desconfortável',
+        veryUncomfortable: 'Muito Desconfortável'
+      },
+      fundLiquidity: {
+        daily: 'Diário',
+        dPlus1: 'D+1',
+        dPlus2: 'D+2',
+        dPlus30: 'D+30',
+        dPlus90: 'D+90'
+      },
+      acceptableLoss: {
+        noLoss: 'Sem perdas',
+        fivePercent: '5%',
+        tenPercent: '10%',
+        fifteenPercent: '15%',
+        twentyPercent: '20%',
+        twentyFivePercent: '25%'
+      },
+      realEstateFundModes: {
+        directPortfolio: 'Carteira de Fundos',
+        fofsConsolidation: 'Consolidação em FoFs'
+      }
+    }
+  },
+  clientSummary: {
+    personalInfo: 'Informações Pessoais',
+    name: 'Nome',
+    age: 'Idade',
+    years: 'anos',
+    email: 'E-mail',
+    professionalInfo: 'Informações Profissionais',
+    occupation: 'Profissão',
+    workRegime: 'Regime de Trabalho',
+    taxDeclaration: 'Declaração de IR',
+    familyInfo: 'Informações Familiares',
+    maritalStatus: 'Estado Civil',
+    spouse: 'Cônjuge',
+    children: 'Filhos',
+    childrenCount: 'filhos',
+    financialOverview: 'Visão Financeira',
+    totalIncome: 'Renda Total',
+    totalExpenses: 'Despesas Totais',
+    savingsRate: 'Taxa de Poupança',
+    investmentPreferences: 'Preferências de Investimento',
+    targetReturn: 'Retorno Alvo',
+    maxLoss: 'Perda Máxima Aceitável',
+    investmentMode: 'Modalidade de Investimento',
+    lifeObjectives: 'Objetivos de Vida',
+    insuranceCoverage: 'Cobertura de Seguros',
+    workDescription: 'Descrição do Trabalho',
+    workLocation: 'Local de Trabalho',
+    spouseName: 'Nome do Cônjuge',
+    spouseAge: 'Idade do Cônjuge',
+    childName: 'Nome do Filho',
+    childAge: 'Idade do Filho',
+    income: 'Renda',
+    expense: 'Despesa',
+    bonus: 'Bônus',
+    dividends: 'Dividendos',
+    savings: 'Poupança',
+    lifeStage: 'Momento de Vida',
+    hobbies: 'Hobbies',
+    insuranceType: 'Tipo de Seguro',
+    insuranceCompany: 'Seguradora',
+    lastReview: 'Última Revisão',
+    noData: 'Sem dados disponíveis',
+    noChildren: 'Sem filhos',
+    noInsurance: 'Sem seguros cadastrados',
+    noObjectives: 'Sem objetivos cadastrados',
+    noHobbies: 'Sem hobbies cadastrados',
+    investments: 'Investimentos',
+    properties: 'Imóveis',
+    vehicles: 'Carros',
+    valuableGoods: 'Bens de Valor',
+    other: 'Outros',
+    total: 'Total',
+    information: 'Informações',
+    riskProfile: {
+      conservative: 'Conservador',
+      moderate: 'Moderado',
+      aggressive: 'Arrojado',
+      notInformed: 'Não informado'
+    }
   },
 };

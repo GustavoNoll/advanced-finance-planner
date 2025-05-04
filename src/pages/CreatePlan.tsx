@@ -49,7 +49,6 @@ export const CreatePlan = () => {
 
   useEffect(() => {
     if (isCalculationReady(formData) && birthDate) {
-      console.log('Calculating future values...');
       setCalculations(calculateFutureValues(formData, birthDate));
       console.log('Calculations:', calculations);
     }

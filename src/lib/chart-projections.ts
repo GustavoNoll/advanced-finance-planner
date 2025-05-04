@@ -58,8 +58,7 @@ export function generateProjectionData(
   const endAge = getEndAge(investmentPlan);
   const goalsForChart = processGoals(goals);
   const eventsForChart = processEvents(events);
-  console.log('goalsForChart', goalsForChart);
-  console.log('eventsForChart', eventsForChart);
+
   const birthDate = new Date(profile.birth_date);
   const birthYear = birthDate.getFullYear();
   

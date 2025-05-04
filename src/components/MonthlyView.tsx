@@ -344,8 +344,6 @@ export const MonthlyView = ({
 
   const calculateAccumulatedReturns = (data: ReturnType<typeof processRecordsForChart>) => {
     if (data.length === 0) return [];
-    console.log("calculating accumulated returns")
-    console.log(data.length)
     const processedData = data.map((record, index, array) => {
       const startIndex = timeWindow === 0 ? 0 : Math.max(0, array.length - timeWindow );
       const relevantData = array.slice(startIndex, index + 1);
@@ -421,7 +419,6 @@ export const MonthlyView = ({
   );
 
   const accumulatedReturns = useMemo(() => {
-    console.log("calculating accumulated returns");
     return calculateAccumulatedReturns(chartDataToUse);
   }, [chartDataToUse]);
 

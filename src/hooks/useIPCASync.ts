@@ -23,8 +23,6 @@ export const useIPCASync = (clientId: string | undefined, records: FinancialReco
       if (!clientId || !records?.length || !investmentPlan) {
         return { count: 0, updates: [] };
       }
-
-      console.log('syncIPCA', clientId, records, investmentPlan);
       
       try {
         // Find the oldest record's date
@@ -106,7 +104,6 @@ export const useIPCASync = (clientId: string | undefined, records: FinancialReco
       }
     },
     onSuccess: (result) => {
-      console.log('syncIPCA onSuccess', result);
       if (!result) return;
       
       // Update the records in the query cache
