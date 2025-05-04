@@ -12,6 +12,7 @@ import { Plus, Trash2 } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
 import { useTranslation } from 'react-i18next';
 import { useEffect } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 
 const incomeSchema = z.object({
   description: z.string().min(1, 'Descrição é obrigatória'),
@@ -37,12 +38,14 @@ interface BudgetFormProps {
   initialData?: BudgetFormValues;
   isEditing?: boolean;
   policyId?: string;
+  clientId?: string;
 }
 
 export const BudgetForm = ({
   initialData,
   isEditing = false,
   policyId,
+  clientId,
 }: BudgetFormProps) => {
   const { t } = useTranslation();
   const form = useForm<BudgetFormValues>({
@@ -65,6 +68,8 @@ export const BudgetForm = ({
     control: form.control,
     name: 'expenses',
   });
+
+  const queryClient = useQueryClient();
 
   useEffect(() => {
     const loadBudget = async () => {
@@ -118,6 +123,8 @@ export const BudgetForm = ({
         title: t('common.success'),
         description: t('budget.messages.success'),
       });
+
+      if (clientId) queryClient.invalidateQueries({ queryKey: ['investmentPolicy', clientId] });
     } catch (error) {
       console.error('Error updating budget:', error);
       toast({

@@ -9,6 +9,7 @@ import { Input } from '@/components/ui/input';
 import { supabase } from '@/lib/supabase';
 import { toast } from '@/components/ui/use-toast';
 import { Plus, Trash2 } from 'lucide-react';
+import { RISK_PROFILES } from '@/constants/riskProfiles';
 
 const investmentPreferencesSchema = z.object({
   target_return_review: z.string().optional(),
@@ -22,6 +23,7 @@ const investmentPreferencesSchema = z.object({
   platforms_used: z.array(z.object({ name: z.string() })),
   asset_restrictions: z.array(z.object({ name: z.string() })),
   areas_of_interest: z.array(z.object({ name: z.string() })),
+  risk_profile: z.enum(['CONS', 'MOD', 'ARROJ', 'AGRESSIVO']).optional(),
 });
 
 type InvestmentPreferencesFormValues = z.infer<typeof investmentPreferencesSchema>;
@@ -95,6 +97,8 @@ const realEstateFundModes = [
   { value: 'fofs_consolidation', label: 'Consolidação em FoFs' },
 ];
 
+const riskProfiles = RISK_PROFILES.BRL;
+
 export const InvestmentPreferencesForm = ({
   initialData,
   isEditing = false,
@@ -103,6 +107,7 @@ export const InvestmentPreferencesForm = ({
   const form = useForm<InvestmentPreferencesFormValues>({
     resolver: zodResolver(investmentPreferencesSchema),
     defaultValues: initialData || {
+      risk_profile: undefined,
       target_return_review: '',
       max_bond_maturity: '',
       fgc_event_feeling: '',
@@ -169,6 +174,35 @@ export const InvestmentPreferencesForm = ({
           </CardHeader>
           <CardContent className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <FormField
+                control={form.control}
+                name="risk_profile"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Perfil de Investimento</FormLabel>
+                    <FormControl>
+                      <Select
+                        value={field.value}
+                        onValueChange={field.onChange}
+                        disabled={!isEditing}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Selecione o perfil" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {riskProfiles.map((profile) => (
+                            <SelectItem key={profile.value} value={profile.value}>
+                              {profile.label}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
               <FormField
                 control={form.control}
                 name="target_return_review"

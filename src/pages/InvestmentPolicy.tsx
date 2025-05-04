@@ -24,6 +24,7 @@ import {
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useState, useRef, useEffect } from 'react';
+import { ClientSummaryCard } from '@/components/investment-policy/ClientSummaryCard';
 
 interface InvestmentPolicyProps {
   clientId?: string;
@@ -208,7 +209,14 @@ const InvestmentPolicy = ({
       {/* Main Content */}
       <div className="flex-1 overflow-auto">
         <div className="h-full px-4 sm:px-6 lg:px-8 py-8">
+          
           <div className="grid grid-cols-1 gap-6 max-w-4xl mx-auto">
+            <ClientSummaryCard 
+              clientProfile={clientProfile} 
+              investmentPlan={investmentPlan}
+              policy={policy}
+            />
+
             <Accordion 
               type="single"
               collapsible
