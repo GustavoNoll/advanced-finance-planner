@@ -25,6 +25,12 @@ import {
 import { Button } from '@/components/ui/button';
 import { useState, useRef, useEffect } from 'react';
 import { ClientSummaryCard } from '@/components/investment-policy/ClientSummaryCard';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 interface InvestmentPolicyProps {
   clientId?: string;
@@ -178,10 +184,9 @@ const InvestmentPolicy = ({
   return (
     <div className="flex h-screen">
       {/* Quick Selection Sidebar */}
-      <div className={`${isSidebarOpen ? 'w-64' : 'w-0'} transition-all duration-300 bg-background border-r`}>
-        <div className="p-4">
+      <div className={`group relative ${isSidebarOpen ? 'w-16' : 'w-0'} transition-all duration-300 bg-background border-r hover:w-64`}>
+        <div className="p-2">
           <div className="flex items-center justify-between mb-6">
-            <h2 className="text-lg font-semibold">{t('investmentPolicy.quickAccess')}</h2>
             <Button
               variant="ghost"
               size="icon"
@@ -196,11 +201,11 @@ const InvestmentPolicy = ({
               <Button
                 key={section.id}
                 variant={openSection === section.id ? 'secondary' : 'ghost'}
-                className={`w-full justify-start gap-2 ${section.color}`}
+                className={`w-full transition-all duration-300 ${section.color} group-hover:justify-start group-hover:gap-2 justify-center`}
                 onClick={() => handleSectionSelect(section.id)}
               >
                 <section.icon className="h-4 w-4" />
-                {section.title}
+                <span className="hidden group-hover:inline whitespace-nowrap">{section.title}</span>
               </Button>
             ))}
           </div>
