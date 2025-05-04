@@ -8,10 +8,11 @@ import { Input } from '@/components/ui/input';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { supabase } from '@/lib/supabase';
 import { toast } from '@/components/ui/use-toast';
-import { Plus, Trash2 } from 'lucide-react';
+import { Plus, Trash2, Pencil } from 'lucide-react';
 import { useQueryClient } from '@tanstack/react-query';
 import { capitalizeFirstLetter } from '@/utils/string';
 import { useTranslation } from 'react-i18next';
+import { useState } from 'react';
 
 const hobbySchema = z.object({
   name: z.string(),
@@ -65,6 +66,7 @@ export const LifeForm = ({
 }: LifeFormProps) => {
   const { t } = useTranslation();
   const queryClient = useQueryClient();
+  const [isEditMode, setIsEditMode] = useState(false);
   const form = useForm<LifeFormValues>({
     resolver: zodResolver(lifeSchema),
     defaultValues: initialData || {
@@ -111,6 +113,8 @@ export const LifeForm = ({
         title: t('common.success'),
         description: t('life.messages.success'),
       });
+
+      setIsEditMode(false);
     } catch (error) {
       console.error('Error updating life information:', error);
       toast({
@@ -121,87 +125,191 @@ export const LifeForm = ({
     }
   };
 
-  return (
+  const renderReadOnlyView = () => {
+    const lifeStage = form.getValues('life_stage');
+    const hobbies = form.getValues('hobbies') || [];
+    const objectives = form.getValues('objectives') || [];
+    const insurances = form.getValues('insurances') || [];
+
+    return (
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between">
+          <CardTitle>{t('investmentPolicy.lifeStage.label')}</CardTitle>
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => setIsEditMode(true)}
+            className="flex items-center gap-2"
+          >
+            <Pencil className="h-4 w-4" />
+            {t('common.edit')}
+          </Button>
+        </CardHeader>
+        <CardContent className="space-y-6">
+          {/* Life Stage Section */}
+          <div className="space-y-4">
+            <h3 className="text-lg font-semibold">{t('investmentPolicy.lifeStage.label')}</h3>
+            <p className="font-medium">{lifeStage ? t(`investmentPolicy.lifeStage.options.${lifeStage}`) : t('common.notInformed')}</p>
+          </div>
+
+          {/* Hobbies Section */}
+          <div className="space-y-4">
+            <h3 className="text-lg font-semibold">{t('investmentPolicy.hobbies.label')}</h3>
+            {hobbies.length === 0 ? (
+              <p className="text-sm text-muted-foreground">{t('common.notInformed')}</p>
+            ) : (
+              <div className="space-y-2">
+                {hobbies.map((hobby, index) => (
+                  <div key={index} className="flex items-center gap-2">
+                    <p className="font-medium">{hobby.name}</p>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* Objectives Section */}
+          <div className="space-y-4">
+            <h3 className="text-lg font-semibold">{t('investmentPolicy.objectives.label')}</h3>
+            {objectives.length === 0 ? (
+              <p className="text-sm text-muted-foreground">{t('common.notInformed')}</p>
+            ) : (
+              <div className="space-y-2">
+                {objectives.map((objective, index) => (
+                  <div key={index} className="flex items-center gap-2">
+                    <p className="font-medium">{objective.name}</p>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* Insurance Section */}
+          <div className="space-y-4">
+            <h3 className="text-lg font-semibold">{t('investmentPolicy.insurance.hasInsurance')}</h3>
+            {insurances.length === 0 ? (
+              <p className="text-sm text-muted-foreground">{t('common.notInformed')}</p>
+            ) : (
+              <div className="space-y-4">
+                {insurances.map((insurance, index) => (
+                  <div key={index} className="flex flex-col gap-2 p-4 border rounded-lg">
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <p className="text-sm text-muted-foreground">{t('clientSummary.insuranceType')}</p>
+                        <p className="font-medium">{insurance.type}</p>
+                      </div>
+                      <div>
+                        <p className="text-sm text-muted-foreground">{t('clientSummary.insuranceCompany')}</p>
+                        <p className="font-medium">{insurance.company}</p>
+                      </div>
+                      <div>
+                        <p className="text-sm text-muted-foreground">{t('clientSummary.lastReview')}</p>
+                        <p className="font-medium">{insurance.last_review_date}</p>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </CardContent>
+      </Card>
+    );
+  };
+
+  const renderFormView = () => (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
-        {/* Life Stage Section */}
         <Card>
-          <CardHeader>
+          <CardHeader className="flex flex-row items-center justify-between">
             <CardTitle>{t('investmentPolicy.lifeStage.label')}</CardTitle>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setIsEditMode(false)}
+            >
+              {t('common.cancel')}
+            </Button>
           </CardHeader>
           <CardContent>
-            <FormField
-              control={form.control}
-              name="life_stage"
-              render={({ field }) => (
-                <FormItem>
-                  <FormControl>
-                    <RadioGroup
-                      onValueChange={field.onChange}
-                      defaultValue={field.value}
-                      className="flex flex-col space-y-1"
-                      disabled={!isEditing}
-                    >
-                      <FormItem className="flex items-center space-x-3 space-y-0">
-                        <FormControl>
-                          <RadioGroupItem value="accumulation" />
-                        </FormControl>
-                        <FormLabel className="font-normal">
-                          {t('investmentPolicy.lifeStage.options.accumulation')}
-                        </FormLabel>
-                      </FormItem>
-                      <FormItem className="flex items-center space-x-3 space-y-0">
-                        <FormControl>
-                          <RadioGroupItem value="enjoyment" />
-                        </FormControl>
-                        <FormLabel className="font-normal">
-                          {t('investmentPolicy.lifeStage.options.enjoyment')}
-                        </FormLabel>
-                      </FormItem>
-                      <FormItem className="flex items-center space-x-3 space-y-0">
-                        <FormControl>
-                          <RadioGroupItem value="consolidation" />
-                        </FormControl>
-                        <FormLabel className="font-normal">
-                          {t('investmentPolicy.lifeStage.options.consolidation')}
-                        </FormLabel>
-                      </FormItem>
-                    </RadioGroup>
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-          </CardContent>
-        </Card>
-
-        {/* Hobbies Section */}
-        <Card>
-          <CardHeader>
-            <CardTitle>{t('investmentPolicy.hobbies.label')}</CardTitle>
-          </CardHeader>
-          <CardContent>
+            {/* Life Stage Section */}
             <div className="space-y-4">
-              {hobbiesFields.map((field, index) => (
-                <div key={field.id} className="flex items-end gap-4">
-                  <FormField
-                    control={form.control}
-                    name={`hobbies.${index}.name`}
-                    render={({ field }) => (
-                      <FormItem className="flex-1">
-                        <FormLabel>{t('clientSummary.hobbies')}</FormLabel>
-                        <FormControl>
-                          <Input 
-                            {...field} 
-                            disabled={!isEditing}
-                            onChange={(e) => field.onChange(capitalizeFirstLetter(e.target.value))}
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  {isEditing && (
+              <FormField
+                control={form.control}
+                name="life_stage"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormControl>
+                      <RadioGroup
+                        onValueChange={field.onChange}
+                        defaultValue={field.value}
+                        className="flex flex-col space-y-1"
+                      >
+                        <FormItem className="flex items-center space-x-3 space-y-0">
+                          <FormControl>
+                            <RadioGroupItem value="accumulation" />
+                          </FormControl>
+                          <FormLabel className="font-normal">
+                            {t('investmentPolicy.lifeStage.options.accumulation')}
+                          </FormLabel>
+                        </FormItem>
+                        <FormItem className="flex items-center space-x-3 space-y-0">
+                          <FormControl>
+                            <RadioGroupItem value="enjoyment" />
+                          </FormControl>
+                          <FormLabel className="font-normal">
+                            {t('investmentPolicy.lifeStage.options.enjoyment')}
+                          </FormLabel>
+                        </FormItem>
+                        <FormItem className="flex items-center space-x-3 space-y-0">
+                          <FormControl>
+                            <RadioGroupItem value="consolidation" />
+                          </FormControl>
+                          <FormLabel className="font-normal">
+                            {t('investmentPolicy.lifeStage.options.consolidation')}
+                          </FormLabel>
+                        </FormItem>
+                      </RadioGroup>
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+
+            {/* Hobbies Section */}
+            <div className="space-y-4 mt-6">
+              <div className="flex justify-between items-center">
+                <h3 className="text-lg font-semibold">{t('investmentPolicy.hobbies.label')}</h3>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => appendHobby(defaultEmptyHobby)}
+                >
+                  <Plus className="h-4 w-4 mr-2" />
+                  {t('common.add')} {t('clientSummary.hobbies')}
+                </Button>
+              </div>
+              <div className="space-y-4">
+                {hobbiesFields.map((field, index) => (
+                  <div key={field.id} className="flex items-end gap-4">
+                    <FormField
+                      control={form.control}
+                      name={`hobbies.${index}.name`}
+                      render={({ field }) => (
+                        <FormItem className="flex-1">
+                          <FormLabel>{t('clientSummary.hobbies')}</FormLabel>
+                          <FormControl>
+                            <Input 
+                              {...field} 
+                              onChange={(e) => field.onChange(capitalizeFirstLetter(e.target.value))}
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
                     <Button
                       type="button"
                       variant="ghost"
@@ -212,51 +320,44 @@ export const LifeForm = ({
                     >
                       <Trash2 className="h-4 w-4" />
                     </Button>
-                  )}
-                </div>
-              ))}
-              {isEditing && (
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Objectives Section */}
+            <div className="space-y-4 mt-6">
+              <div className="flex justify-between items-center">
+                <h3 className="text-lg font-semibold">{t('investmentPolicy.objectives.label')}</h3>
                 <Button
                   type="button"
                   variant="outline"
                   size="sm"
-                  onClick={() => appendHobby(defaultEmptyHobby)}
+                  onClick={() => appendObjective(defaultEmptyObjective)}
                 >
                   <Plus className="h-4 w-4 mr-2" />
-                  {t('common.add')} {t('clientSummary.hobbies')}
+                  {t('common.add')} {t('clientSummary.lifeObjectives')}
                 </Button>
-              )}
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Objectives Section */}
-        <Card>
-          <CardHeader>
-            <CardTitle>{t('investmentPolicy.objectives.label')}</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              {objectivesFields.map((field, index) => (
-                <div key={field.id} className="flex items-end gap-4">
-                  <FormField
-                    control={form.control}
-                    name={`objectives.${index}.name`}
-                    render={({ field }) => (
-                      <FormItem className="flex-1">
-                        <FormLabel>{t('clientSummary.lifeObjectives')}</FormLabel>
-                        <FormControl>
-                          <Input 
-                            {...field} 
-                            disabled={!isEditing}
-                            onChange={(e) => field.onChange(capitalizeFirstLetter(e.target.value))}
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  {isEditing && (
+              </div>
+              <div className="space-y-4">
+                {objectivesFields.map((field, index) => (
+                  <div key={field.id} className="flex items-end gap-4">
+                    <FormField
+                      control={form.control}
+                      name={`objectives.${index}.name`}
+                      render={({ field }) => (
+                        <FormItem className="flex-1">
+                          <FormLabel>{t('clientSummary.lifeObjectives')}</FormLabel>
+                          <FormControl>
+                            <Input 
+                              {...field} 
+                              onChange={(e) => field.onChange(capitalizeFirstLetter(e.target.value))}
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
                     <Button
                       type="button"
                       variant="ghost"
@@ -267,52 +368,45 @@ export const LifeForm = ({
                     >
                       <Trash2 className="h-4 w-4" />
                     </Button>
-                  )}
-                </div>
-              ))}
-              {isEditing && (
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Insurance Section */}
+            <div className="space-y-4 mt-6">
+              <div className="flex justify-between items-center">
+                <h3 className="text-lg font-semibold">{t('investmentPolicy.insurance.hasInsurance')}</h3>
                 <Button
                   type="button"
                   variant="outline"
                   size="sm"
-                  onClick={() => appendObjective(defaultEmptyObjective)}
+                  onClick={() => appendInsurance(defaultEmptyInsurance)}
                 >
                   <Plus className="h-4 w-4 mr-2" />
-                  {t('common.add')} {t('clientSummary.lifeObjectives')}
+                  {t('common.add')} {t('investmentPolicy.insurance.hasInsurance')}
                 </Button>
-              )}
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Insurance Section */}
-        <Card>
-          <CardHeader>
-            <CardTitle>{t('investmentPolicy.insurance.hasInsurance')}</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="space-y-4">
-              {insurancesFields.map((field, index) => (
-                <div key={field.id} className="flex flex-col gap-4 p-4 border rounded-lg">
-                  <div className="flex items-end gap-4">
-                    <FormField
-                      control={form.control}
-                      name={`insurances.${index}.type`}
-                      render={({ field }) => (
-                        <FormItem className="flex-1">
-                          <FormLabel>{t('clientSummary.insuranceType')}</FormLabel>
-                          <FormControl>
-                            <Input 
-                              {...field} 
-                              disabled={!isEditing}
-                              onChange={(e) => field.onChange(capitalizeFirstLetter(e.target.value))}
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    {isEditing && (
+              </div>
+              <div className="space-y-4">
+                {insurancesFields.map((field, index) => (
+                  <div key={field.id} className="flex flex-col gap-4 p-4 border rounded-lg">
+                    <div className="flex items-end gap-4">
+                      <FormField
+                        control={form.control}
+                        name={`insurances.${index}.type`}
+                        render={({ field }) => (
+                          <FormItem className="flex-1">
+                            <FormLabel>{t('clientSummary.insuranceType')}</FormLabel>
+                            <FormControl>
+                              <Input 
+                                {...field} 
+                                onChange={(e) => field.onChange(capitalizeFirstLetter(e.target.value))}
+                              />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
                       <Button
                         type="button"
                         variant="ghost"
@@ -323,61 +417,49 @@ export const LifeForm = ({
                       >
                         <Trash2 className="h-4 w-4" />
                       </Button>
-                    )}
+                    </div>
+                    <FormField
+                      control={form.control}
+                      name={`insurances.${index}.company`}
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>{t('clientSummary.insuranceCompany')}</FormLabel>
+                          <FormControl>
+                            <Input 
+                              {...field} 
+                              onChange={(e) => field.onChange(capitalizeFirstLetter(e.target.value))}
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={form.control}
+                      name={`insurances.${index}.last_review_date`}
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>{t('clientSummary.lastReview')}</FormLabel>
+                          <FormControl>
+                            <Input type="date" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
                   </div>
-                  <FormField
-                    control={form.control}
-                    name={`insurances.${index}.company`}
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>{t('clientSummary.insuranceCompany')}</FormLabel>
-                        <FormControl>
-                          <Input 
-                            {...field} 
-                            disabled={!isEditing}
-                            onChange={(e) => field.onChange(capitalizeFirstLetter(e.target.value))}
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={form.control}
-                    name={`insurances.${index}.last_review_date`}
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>{t('clientSummary.lastReview')}</FormLabel>
-                        <FormControl>
-                          <Input type="date" {...field} disabled={!isEditing} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </div>
-              ))}
-              {isEditing && (
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={() => appendInsurance(defaultEmptyInsurance)}
-                >
-                  <Plus className="h-4 w-4 mr-2" />
-                  {t('common.add')} {t('investmentPolicy.insurance.hasInsurance')}
-                </Button>
-              )}
+                ))}
+              </div>
             </div>
           </CardContent>
         </Card>
 
-        {isEditing && (
-          <div className="flex justify-end">
-            <Button type="submit">{t('common.save')}</Button>
-          </div>
-        )}
+        <div className="flex justify-end">
+          <Button type="submit">{t('common.save')}</Button>
+        </div>
       </form>
     </Form>
   );
+
+  return isEditMode ? renderFormView() : renderReadOnlyView();
 }; 

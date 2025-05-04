@@ -11,11 +11,13 @@ import { supabase } from '@/lib/supabase';
 import { toast } from '@/components/ui/use-toast';
 import { useTranslation } from 'react-i18next';
 import { useQueryClient } from '@tanstack/react-query';
+import { useState } from 'react';
+import { Pencil } from 'lucide-react';
 
 const professionalInformationSchema = z.object({
   occupation: z.string().min(1, 'Profissão é obrigatória'),
-  work_description: z.string().min(1, 'Descrição do trabalho é obrigatória'),
-  work_location: z.string().min(1, 'Local de trabalho é obrigatório'),
+  work_description: z.string().optional(),
+  work_location: z.string().optional(),
   work_regime: z.enum(['pj', 'clt', 'public_servant'], {
     required_error: 'Regime de trabalho é obrigatório',
   }),
@@ -53,6 +55,7 @@ export const ProfessionalInformationForm = ({
 }: ProfessionalInformationFormProps) => {
   const queryClient = useQueryClient();
   const { t } = useTranslation();
+  const [isEditMode, setIsEditMode] = useState(false);
   const form = useForm<ProfessionalInformationFormValues>({
     resolver: zodResolver(professionalInformationSchema),
     defaultValues: {
@@ -90,6 +93,8 @@ export const ProfessionalInformationForm = ({
         title: t('common.success'),
         description: t('professionalInformation.messages.success'),
       });
+
+      setIsEditMode(false);
     } catch (error) {
       console.error('Error updating professional information:', error);
       toast({
@@ -100,11 +105,70 @@ export const ProfessionalInformationForm = ({
     }
   };
 
-  return (
+  const renderReadOnlyView = () => {
+    const values = form.getValues();
+    
+    return (
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between">
+          <CardTitle>{t('professionalInformation.title')}</CardTitle>
+          {isEditing && (
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setIsEditMode(true)}
+              className="flex items-center gap-2"
+            >
+              <Pencil className="h-4 w-4" />
+              {t('common.edit')}
+            </Button>
+          )}
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <p className="text-sm text-muted-foreground">{t('professionalInformation.occupation.label')}</p>
+              <p className="font-medium">{values.occupation || t('common.notInformed')}</p>
+            </div>
+            <div>
+              <p className="text-sm text-muted-foreground">{t('professionalInformation.workLocation.label')}</p>
+              <p className="font-medium">{values.work_location || t('common.notInformed')}</p>
+            </div>
+            <div>
+              <p className="text-sm text-muted-foreground">{t('professionalInformation.workRegime.label')}</p>
+              <p className="font-medium">
+                {values.work_regime ? t(`professionalInformation.workRegime.options.${values.work_regime}`) : t('common.notInformed')}
+              </p>
+            </div>
+            <div>
+              <p className="text-sm text-muted-foreground">{t('professionalInformation.taxDeclarationMethod.label')}</p>
+              <p className="font-medium">
+                {values.tax_declaration_method ? t(`professionalInformation.taxDeclarationMethod.options.${values.tax_declaration_method}`) : t('common.notInformed')}
+              </p>
+            </div>
+          </div>
+          <div>
+            <p className="text-sm text-muted-foreground">{t('professionalInformation.workDescription.label')}</p>
+            <p className="font-medium">{values.work_description || t('common.notInformed')}</p>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  };
+
+  const renderFormView = () => (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
         <Card>
-          <CardHeader>
+          <CardHeader className="flex flex-row items-center justify-between">
+            <CardTitle>{t('professionalInformation.title')}</CardTitle>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setIsEditMode(false)}
+            >
+              {t('common.cancel')}
+            </Button>
           </CardHeader>
           <CardContent className="space-y-4">
             <FormField
@@ -224,12 +288,12 @@ export const ProfessionalInformationForm = ({
           </CardContent>
         </Card>
 
-        {isEditing && (
-          <div className="flex justify-end">
-            <Button type="submit">{t('common.save')}</Button>
-          </div>
-        )}
+        <div className="flex justify-end">
+          <Button type="submit">{t('common.save')}</Button>
+        </div>
       </form>
     </Form>
   );
+
+  return isEditMode ? renderFormView() : renderReadOnlyView();
 }; 

@@ -359,6 +359,7 @@ export const ptBR = {
     loading: "Verificando permissões..."
   },
   common: {
+    notInformed: "Não informado",
     every: "a cada",
     change: "Alterar",
     selectMonth: "Selecione o mês",

@@ -8,11 +8,12 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Input } from '@/components/ui/input';
 import { supabase } from '@/lib/supabase';
 import { toast } from '@/components/ui/use-toast';
-import { Plus, Trash2 } from 'lucide-react';
+import { Plus, Trash2, Pencil } from 'lucide-react';
 import { RISK_PROFILES } from '@/constants/riskProfiles';
 import { useQueryClient } from '@tanstack/react-query';
 import { capitalizeFirstLetter } from '@/utils/string';
 import { useTranslation } from 'react-i18next';
+import { useState } from 'react';
 
 const investmentPreferencesSchema = z.object({
   target_return_review: z.string().optional(),
@@ -111,6 +112,7 @@ export const InvestmentPreferencesForm = ({
 }: InvestmentPreferencesFormProps) => {
   const { t } = useTranslation();
   const queryClient = useQueryClient();
+  const [isEditMode, setIsEditMode] = useState(false);
   const form = useForm<InvestmentPreferencesFormValues>({
     resolver: zodResolver(investmentPreferencesSchema),
     defaultValues: initialData || {
@@ -165,6 +167,8 @@ export const InvestmentPreferencesForm = ({
         title: 'Sucesso',
         description: 'Preferências de investimento atualizadas com sucesso',
       });
+
+      setIsEditMode(false);
     } catch (error) {
       console.error('Error updating investment preferences:', error);
       toast({
@@ -175,11 +179,129 @@ export const InvestmentPreferencesForm = ({
     }
   };
 
-  return (
+  const getLabelForValue = (value: string, options: { value: string; label: string }[]) => {
+    return options.find(option => option.value === value)?.label || value;
+  };
+
+  const renderReadOnlyView = () => {
+    const values = form.getValues();
+    
+    const getDisplayValue = (value: string | undefined, options: { value: string; label: string }[]) => {
+      if (!value) return t('common.notInformed');
+      const option = options.find(opt => opt.value === value);
+      return option ? option.label : t('common.notInformed');
+    };
+    
+    return (
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between">
+          <CardTitle>{t('investmentPreferences.title')}</CardTitle>
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => setIsEditMode(true)}
+            className="flex items-center gap-2"
+          >
+            <Pencil className="h-4 w-4" />
+            {t('common.edit')}
+          </Button>
+        </CardHeader>
+        <CardContent className="space-y-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <p className="text-sm text-muted-foreground">{t('investmentPreferences.form.riskProfile')}</p>
+              <p className="font-medium">{getDisplayValue(values.risk_profile, riskProfiles)}</p>
+            </div>
+            <div>
+              <p className="text-sm text-muted-foreground">{t('investmentPreferences.form.targetReturnReview')}</p>
+              <p className="font-medium">{getDisplayValue(values.target_return_review, reviewPeriods)}</p>
+            </div>
+            <div>
+              <p className="text-sm text-muted-foreground">{t('investmentPreferences.form.maxBondMaturity')}</p>
+              <p className="font-medium">{getDisplayValue(values.max_bond_maturity, bondMaturities)}</p>
+            </div>
+            <div>
+              <p className="text-sm text-muted-foreground">{t('investmentPreferences.form.fgcEventFeeling')}</p>
+              <p className="font-medium">{getDisplayValue(values.fgc_event_feeling, fgcFeelings)}</p>
+            </div>
+            <div>
+              <p className="text-sm text-muted-foreground">{t('investmentPreferences.form.maxFundLiquidity')}</p>
+              <p className="font-medium">{getDisplayValue(values.max_fund_liquidity, fundLiquidity)}</p>
+            </div>
+            <div>
+              <p className="text-sm text-muted-foreground">{t('investmentPreferences.form.maxAcceptableLoss')}</p>
+              <p className="font-medium">{getDisplayValue(values.max_acceptable_loss, acceptableLoss)}</p>
+            </div>
+            <div>
+              <p className="text-sm text-muted-foreground">{t('investmentPreferences.form.targetReturnIpcaPlus')}</p>
+              <p className="font-medium">{getDisplayValue(values.target_return_ipca_plus, targetReturns)}</p>
+            </div>
+            <div>
+              <p className="text-sm text-muted-foreground">{t('investmentPreferences.form.stockInvestmentMode')}</p>
+              <p className="font-medium">{getDisplayValue(values.stock_investment_mode, investmentModes)}</p>
+            </div>
+            <div>
+              <p className="text-sm text-muted-foreground">{t('investmentPreferences.form.realEstateFundsMode')}</p>
+              <p className="font-medium">{getDisplayValue(values.real_estate_funds_mode, realEstateFundModes)}</p>
+            </div>
+          </div>
+
+          <div className="space-y-4">
+            <h3 className="text-lg font-semibold">{t('investmentPreferences.form.platformsUsed')}</h3>
+            {(!values.platforms_used || values.platforms_used.length === 0) ? (
+              <p className="text-sm text-muted-foreground">{t('common.notInformed')}</p>
+            ) : (
+              <div className="space-y-2">
+                {values.platforms_used.map((platform, index) => (
+                  <p key={index} className="font-medium">{platform.name || t('common.notInformed')}</p>
+                ))}
+              </div>
+            )}
+          </div>
+
+          <div className="space-y-4">
+            <h3 className="text-lg font-semibold">{t('investmentPreferences.form.assetRestrictions')}</h3>
+            {(!values.asset_restrictions || values.asset_restrictions.length === 0) ? (
+              <p className="text-sm text-muted-foreground">{t('common.notInformed')}</p>
+            ) : (
+              <div className="space-y-2">
+                {values.asset_restrictions.map((restriction, index) => (
+                  <p key={index} className="font-medium">{restriction.name || t('common.notInformed')}</p>
+                ))}
+              </div>
+            )}
+          </div>
+
+          <div className="space-y-4">
+            <h3 className="text-lg font-semibold">{t('investmentPreferences.form.areasOfInterest')}</h3>
+            {(!values.areas_of_interest || values.areas_of_interest.length === 0) ? (
+              <p className="text-sm text-muted-foreground">{t('common.notInformed')}</p>
+            ) : (
+              <div className="space-y-2">
+                {values.areas_of_interest.map((interest, index) => (
+                  <p key={index} className="font-medium">{interest.name || t('common.notInformed')}</p>
+                ))}
+              </div>
+            )}
+          </div>
+        </CardContent>
+      </Card>
+    );
+  };
+
+  const renderFormView = () => (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
         <Card>
-          <CardHeader>
+          <CardHeader className="flex flex-row items-center justify-between">
+            <CardTitle>{t('investmentPreferences.title')}</CardTitle>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setIsEditMode(false)}
+            >
+              {t('common.cancel')}
+            </Button>
           </CardHeader>
           <CardContent className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -193,7 +315,7 @@ export const InvestmentPreferencesForm = ({
                       <Select
                         value={field.value}
                         onValueChange={field.onChange}
-                        disabled={!isEditing}
+                        disabled={!isEditMode}
                       >
                         <SelectTrigger>
                           <SelectValue placeholder={t('investmentPreferences.form.selectMode')} />
@@ -222,7 +344,7 @@ export const InvestmentPreferencesForm = ({
                       <Select
                         value={field.value}
                         onValueChange={field.onChange}
-                        disabled={!isEditing}
+                        disabled={!isEditMode}
                       >
                         <SelectTrigger>
                           <SelectValue placeholder={t('investmentPreferences.form.selectPeriod')} />
@@ -251,7 +373,7 @@ export const InvestmentPreferencesForm = ({
                       <Select
                         value={field.value}
                         onValueChange={field.onChange}
-                        disabled={!isEditing}
+                        disabled={!isEditMode}
                       >
                         <SelectTrigger>
                           <SelectValue placeholder={t('investmentPreferences.form.selectMaturity')} />
@@ -280,7 +402,7 @@ export const InvestmentPreferencesForm = ({
                       <Select
                         value={field.value}
                         onValueChange={field.onChange}
-                        disabled={!isEditing}
+                        disabled={!isEditMode}
                       >
                         <SelectTrigger>
                           <SelectValue placeholder={t('investmentPreferences.form.selectFeeling')} />
@@ -309,7 +431,7 @@ export const InvestmentPreferencesForm = ({
                       <Select
                         value={field.value}
                         onValueChange={field.onChange}
-                        disabled={!isEditing}
+                        disabled={!isEditMode}
                       >
                         <SelectTrigger>
                           <SelectValue placeholder={t('investmentPreferences.form.selectLiquidity')} />
@@ -338,7 +460,7 @@ export const InvestmentPreferencesForm = ({
                       <Select
                         value={field.value}
                         onValueChange={field.onChange}
-                        disabled={!isEditing}
+                        disabled={!isEditMode}
                       >
                         <SelectTrigger>
                           <SelectValue placeholder={t('investmentPreferences.form.selectLoss')} />
@@ -367,7 +489,7 @@ export const InvestmentPreferencesForm = ({
                       <Select
                         value={field.value}
                         onValueChange={field.onChange}
-                        disabled={!isEditing}
+                        disabled={!isEditMode}
                       >
                         <SelectTrigger>
                           <SelectValue placeholder={t('investmentPreferences.form.selectReturn')} />
@@ -396,7 +518,7 @@ export const InvestmentPreferencesForm = ({
                       <Select
                         value={field.value}
                         onValueChange={field.onChange}
-                        disabled={!isEditing}
+                        disabled={!isEditMode}
                       >
                         <SelectTrigger>
                           <SelectValue placeholder={t('investmentPreferences.form.selectMode')} />
@@ -425,7 +547,7 @@ export const InvestmentPreferencesForm = ({
                       <Select
                         value={field.value}
                         onValueChange={field.onChange}
-                        disabled={!isEditing}
+                        disabled={!isEditMode}
                       >
                         <SelectTrigger>
                           <SelectValue placeholder={t('investmentPreferences.form.selectMode')} />
@@ -448,7 +570,7 @@ export const InvestmentPreferencesForm = ({
             <div className="space-y-4">
               <div className="flex justify-between items-center">
                 <h3 className="text-lg font-semibold">{t('investmentPreferences.form.platformsUsed')}</h3>
-                {isEditing && (
+                {isEditMode && (
                   <Button
                     type="button"
                     variant="outline"
@@ -472,7 +594,7 @@ export const InvestmentPreferencesForm = ({
                           <FormControl>
                             <Input 
                               {...field} 
-                              disabled={!isEditing}
+                              disabled={!isEditMode}
                               onChange={(e) => field.onChange(capitalizeFirstLetter(e.target.value))}
                             />
                           </FormControl>
@@ -480,7 +602,7 @@ export const InvestmentPreferencesForm = ({
                         </FormItem>
                       )}
                     />
-                    {isEditing && (
+                    {isEditMode && (
                       <Button
                         type="button"
                         variant="ghost"
@@ -500,7 +622,7 @@ export const InvestmentPreferencesForm = ({
             <div className="space-y-4">
               <div className="flex justify-between items-center">
                 <h3 className="text-lg font-semibold">{t('investmentPreferences.form.assetRestrictions')}</h3>
-                {isEditing && (
+                {isEditMode && (
                   <Button
                     type="button"
                     variant="outline"
@@ -524,7 +646,7 @@ export const InvestmentPreferencesForm = ({
                           <FormControl>
                             <Input 
                               {...field} 
-                              disabled={!isEditing}
+                              disabled={!isEditMode}
                               onChange={(e) => field.onChange(capitalizeFirstLetter(e.target.value))}
                             />
                           </FormControl>
@@ -532,7 +654,7 @@ export const InvestmentPreferencesForm = ({
                         </FormItem>
                       )}
                     />
-                    {isEditing && (
+                    {isEditMode && (
                       <Button
                         type="button"
                         variant="ghost"
@@ -552,7 +674,7 @@ export const InvestmentPreferencesForm = ({
             <div className="space-y-4">
               <div className="flex justify-between items-center">
                 <h3 className="text-lg font-semibold">{t('investmentPreferences.form.areasOfInterest')}</h3>
-                {isEditing && (
+                {isEditMode && (
                   <Button
                     type="button"
                     variant="outline"
@@ -576,7 +698,7 @@ export const InvestmentPreferencesForm = ({
                           <FormControl>
                             <Input 
                               {...field} 
-                              disabled={!isEditing}
+                              disabled={!isEditMode}
                               onChange={(e) => field.onChange(capitalizeFirstLetter(e.target.value))}
                             />
                           </FormControl>
@@ -584,7 +706,7 @@ export const InvestmentPreferencesForm = ({
                         </FormItem>
                       )}
                     />
-                    {isEditing && (
+                    {isEditMode && (
                       <Button
                         type="button"
                         variant="ghost"
@@ -603,12 +725,12 @@ export const InvestmentPreferencesForm = ({
           </CardContent>
         </Card>
 
-        {isEditing && (
-          <div className="flex justify-end">
-            <Button type="submit">{t('common.save')}</Button>
-          </div>
-        )}
+        <div className="flex justify-end">
+          <Button type="submit">{t('common.save')}</Button>
+        </div>
       </form>
     </Form>
   );
+
+  return isEditMode ? renderFormView() : renderReadOnlyView();
 }; 

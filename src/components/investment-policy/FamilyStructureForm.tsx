@@ -9,7 +9,7 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { supabase } from '@/lib/supabase';
 import { toast } from '@/components/ui/use-toast';
-import { Plus, Trash2, Calendar as CalendarIcon } from 'lucide-react';
+import { Plus, Trash2, Calendar as CalendarIcon, Pencil } from 'lucide-react';
 import { format, parse } from "date-fns";
 import { useTranslation } from 'react-i18next';
 import { useQueryClient } from '@tanstack/react-query';
@@ -134,6 +134,7 @@ export const FamilyStructureForm = ({
 }: FamilyStructureFormProps) => {
   const { t } = useTranslation();
   const queryClient = useQueryClient();
+  const [isEditMode, setIsEditMode] = useState(false);
   const [children, setChildren] = useState<{ name?: string; birth_date?: Date }[]>(
     initialData?.children?.map(child => ({
       ...child,
@@ -246,11 +247,101 @@ export const FamilyStructureForm = ({
     setChildren(newChildren);
   };
 
-  return (
+  const renderReadOnlyView = () => {
+    const maritalStatus = form.getValues('marital_status');
+    const spouseName = form.getValues('spouse_name');
+    const spouseBirthDate = form.getValues('spouse_birth_date');
+
+    return (
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between">
+          <CardTitle>{t('familyStructure.title')}</CardTitle>
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => setIsEditMode(true)}
+            className="flex items-center gap-2"
+          >
+            <Pencil className="h-4 w-4" />
+            {t('common.edit')}
+          </Button>
+        </CardHeader>
+        <CardContent className="space-y-6">
+          <div className="space-y-4">
+            <div>
+              <p className="text-sm text-muted-foreground">{t('familyStructure.maritalStatus.label')}</p>
+              <p className="font-medium">
+                {maritalStatus ? t(`familyStructure.maritalStatus.options.${maritalStatus}`) : t('common.notInformed')}
+              </p>
+            </div>
+
+            {maritalStatus && maritalStatus !== 'single' && (
+              <>
+                <div>
+                  <p className="text-sm text-muted-foreground">{t('familyStructure.spouse.name.label')}</p>
+                  <p className="font-medium">{spouseName || t('common.notInformed')}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">{t('familyStructure.spouse.birthDate.label')}</p>
+                  <p className="font-medium">
+                    {spouseBirthDate ? format(spouseBirthDate, 'dd/MM/yyyy') : t('common.notInformed')}
+                    {spouseBirthDate && (
+                      <span className="text-sm text-muted-foreground ml-2">
+                        ({t('familyStructure.children.age', { age: calculateAge(spouseBirthDate) ?? 'N/A' })})
+                      </span>
+                    )}
+                  </p>
+                </div>
+              </>
+            )}
+
+            <div className="space-y-4">
+              <h3 className="text-lg font-semibold">{t('familyStructure.children.title')}</h3>
+              {children.length === 0 ? (
+                <p className="text-sm text-muted-foreground">{t('familyStructure.children.empty')}</p>
+              ) : (
+                <div className="space-y-4">
+                  {children.map((child, index) => (
+                    <div key={index} className="grid grid-cols-[1fr_1fr] gap-4 items-end">
+                      <div>
+                        <p className="text-sm text-muted-foreground">{t('familyStructure.children.name.label')}</p>
+                        <p className="font-medium">{child.name || t('common.notInformed')}</p>
+                      </div>
+                      <div>
+                        <p className="text-sm text-muted-foreground">{t('familyStructure.children.birthDate.label')}</p>
+                        <p className="font-medium">
+                          {child.birth_date ? format(child.birth_date, 'dd/MM/yyyy') : t('common.notInformed')}
+                          {child.birth_date && (
+                            <span className="text-sm text-muted-foreground ml-2">
+                              ({t('familyStructure.children.age', { age: calculateAge(child.birth_date) ?? 'N/A' })})
+                            </span>
+                          )}
+                        </p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  };
+
+  const renderFormView = () => (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
         <Card>
-          <CardHeader>
+          <CardHeader className="flex flex-row items-center justify-between">
+            <CardTitle>{t('familyStructure.title')}</CardTitle>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setIsEditMode(false)}
+            >
+              {t('common.cancel')}
+            </Button>
           </CardHeader>
           <CardContent className="space-y-4">
             <FormField
@@ -390,4 +481,6 @@ export const FamilyStructureForm = ({
       </form>
     </Form>
   );
+
+  return isEditMode ? renderFormView() : renderReadOnlyView();
 }; 
