@@ -52,6 +52,7 @@ const InvestmentPolicy = ({
   const [openSection, setOpenSection] = useState<string | null>(null);
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const sectionRefs = useRef<{ [key: string]: HTMLDivElement | null }>({});
+  const isBrokerProfile = !!brokerProfile;
 
   const scrollToSection = (sectionId: string) => {
     const element = sectionRefs.current[sectionId];
@@ -246,7 +247,7 @@ const InvestmentPolicy = ({
                       {section.id === 'professional-information' && (
                         <ProfessionalInformationForm
                           initialData={policy?.professional_information || {}}
-                          isEditing={!!brokerProfile}
+                          isEditing={isBrokerProfile}
                           policyId={policy?.id}
                           clientId={clientId}
                         />
@@ -254,7 +255,7 @@ const InvestmentPolicy = ({
                       {section.id === 'family-structure' && (
                         <FamilyStructureForm
                           initialData={policy?.family_structures || {}}
-                          isEditing={!!brokerProfile}
+                          isEditing={isBrokerProfile}
                           policyId={policy?.id}
                           clientId={clientId}
                         />
@@ -262,7 +263,7 @@ const InvestmentPolicy = ({
                       {section.id === 'budget' && (
                         <BudgetForm
                           initialData={policy?.budgets || {}}
-                          isEditing={!!brokerProfile}
+                          isEditing={isBrokerProfile}
                           policyId={policy?.id}
                           clientId={clientId}
                         />
@@ -270,7 +271,7 @@ const InvestmentPolicy = ({
                       {section.id === 'patrimonial' && (
                         <PatrimonialForm
                           initialData={policy?.patrimonial_situations || {}}
-                          isEditing={!!brokerProfile}
+                          isEditing={isBrokerProfile}
                           policyId={policy?.id}
                           clientId={clientId}
                         />
@@ -278,7 +279,7 @@ const InvestmentPolicy = ({
                       {section.id === 'life' && (
                         <LifeForm
                           initialData={policy?.life_information || {}}
-                          isEditing={!!brokerProfile}
+                          isEditing={isBrokerProfile}
                           policyId={policy?.id}
                           clientId={clientId}
                         />
@@ -286,7 +287,7 @@ const InvestmentPolicy = ({
                       {section.id === 'investment-preferences' && (
                         <InvestmentPreferencesForm
                           initialData={policy?.investment_preferences || {}}
-                          isEditing={!!brokerProfile}
+                          isEditing={isBrokerProfile}
                           policyId={policy?.id}
                           clientId={clientId}
                         />

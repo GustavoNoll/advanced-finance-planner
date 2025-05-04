@@ -135,15 +135,17 @@ export const LifeForm = ({
       <Card>
         <CardHeader className="flex flex-row items-center justify-between">
           <CardTitle>{t('investmentPolicy.lifeStage.label')}</CardTitle>
-          <Button
-            type="button"
-            variant="outline"
-            onClick={() => setIsEditMode(true)}
-            className="flex items-center gap-2"
-          >
-            <Pencil className="h-4 w-4" />
-            {t('common.edit')}
-          </Button>
+          {isEditing && (
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setIsEditMode(true)}
+              className="flex items-center gap-2"
+            >
+              <Pencil className="h-4 w-4" />
+              {t('common.edit')}
+            </Button>
+          )}
         </CardHeader>
         <CardContent className="space-y-6">
           {/* Life Stage Section */}

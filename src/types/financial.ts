@@ -182,7 +182,6 @@ export interface Policy {
     hobbies?: Array<{ name: string }>;
     objectives?: Array<{ name: string }>;
     insurances?: Array<{ type: string; company: string; last_review_date: string }>;
-    info?: string[];
   };
   professional_information?: {
     occupation?: string;
