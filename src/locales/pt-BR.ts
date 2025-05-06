@@ -1293,8 +1293,25 @@ export const ptBR = {
       addInterest: 'Adicionar Interesse',
       platform: 'Plataforma',
       restriction: 'Restrição',
-      interest: 'Interesse',
-      remove: 'Remover'
+      interest: 'Remover',
+      remove: 'Remover',
+      assetAllocations: 'Alocação de Ativos',
+      totalAllocation: 'Total',
+      selectAllocation: 'Selecione a alocação',
+      allocation: {
+        fixed_income_opportunities: 'Renda Fixa - Oportunidades',
+        fixed_income_post_fixed: 'Renda Fixa - Pós Fixado',
+        fixed_income_inflation: 'Renda Fixa - Inflação',
+        fixed_income_pre_fixed: 'Renda Fixa - Pré Fixado',
+        multimarket: 'Multimercado',
+        real_estate: 'Imobiliário',
+        stocks: 'Ações',
+        stocks_long_biased: 'Ações - Long Biased',
+        private_equity: 'Private Equity',
+        foreign_fixed_income: 'Exterior - Renda Fixa',
+        foreign_variable_income: 'Exterior - Renda Variável',
+        crypto: 'Criptoativos'
+      }
     },
     options: {
       investmentModes: {
