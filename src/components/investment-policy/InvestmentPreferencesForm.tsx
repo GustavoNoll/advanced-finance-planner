@@ -1,4 +1,5 @@
-import { useForm, useFieldArray } from 'react-hook-form';
+import React from 'react';
+import { useForm, useFieldArray, useWatch } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { Button } from '@/components/ui/button';
@@ -10,11 +11,14 @@ import { supabase } from '@/lib/supabase';
 import { toast } from '@/components/ui/use-toast';
 import { Plus, Trash2, Pencil } from 'lucide-react';
 import { RISK_PROFILES } from '@/constants/riskProfiles';
+import { DEFAULT_ASSET_ALLOCATIONS, ASSET_CLASS_LABELS } from '@/constants/assetAllocations';
 import { useQueryClient } from '@tanstack/react-query';
 import { capitalizeFirstLetter } from '@/utils/string';
 import { useTranslation } from 'react-i18next';
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
+import { cn } from '@/lib/utils';
 
+type AssetAllocationValue = number | string;
 
 const investmentPreferencesSchema = z.object({
   target_return_review: z.string().optional(),
@@ -29,12 +33,22 @@ const investmentPreferencesSchema = z.object({
   asset_restrictions: z.array(z.object({ name: z.string() })),
   areas_of_interest: z.array(z.object({ name: z.string() })),
   risk_profile: z.enum(['CONS', 'MOD', 'ARROJ', 'AGRESSIVO']).optional(),
+  asset_allocations: z.record(z.number().min(0).max(100)).refine(
+    (allocations) => {
+      const total = Object.values(allocations).reduce((sum, value) => sum + value, 0);
+      return total === 100;
+    },
+    {
+      message: 'A soma das alocações deve ser igual a 100%',
+    }
+  ),
 });
 
 type InvestmentPreferencesFormValues = z.infer<typeof investmentPreferencesSchema>;
 
 interface InvestmentPreferencesFormProps {
   initialData?: InvestmentPreferencesFormValues;
+  assetAllocations?: Record<string, number>;
   isEditing?: boolean;
   policyId?: string;
   clientId?: string;
@@ -96,8 +110,37 @@ const realEstateFundModes = [
 
 const riskProfiles = RISK_PROFILES.BRL;
 
+const ASSET_CATEGORIES = {
+  fixed_income: {
+    title: 'Renda Fixa',
+    assets: [
+      'fixed_income_opportunities',
+      'fixed_income_post_fixed',
+      'fixed_income_inflation',
+      'fixed_income_pre_fixed',
+    ],
+  },
+  multimarket: {
+    title: 'Multimercado',
+    assets: ['multimarket'],
+  },
+  real_estate: {
+    title: 'Imobiliário',
+    assets: ['real_estate'],
+  },
+  stocks: {
+    title: 'Ações',
+    assets: ['stocks', 'stocks_long_biased', 'private_equity'],
+  },
+  foreign_crypto: {
+    title: 'Exterior/Cripto',
+    assets: ['foreign_fixed_income', 'foreign_variable_income', 'crypto'],
+  },
+} as const;
+
 export const InvestmentPreferencesForm = ({
   initialData,
+  assetAllocations,
   isEditing = false,
   policyId,
   clientId,
@@ -105,6 +148,7 @@ export const InvestmentPreferencesForm = ({
   const { t } = useTranslation();
   const queryClient = useQueryClient();
   const [isEditMode, setIsEditMode] = useState(false);
+  const [totalAllocation, setTotalAllocation] = useState(0);
 
   const acceptableLoss = [
     { value: '0', label: t('investmentPreferences.options.acceptableLoss.no_loss') },
@@ -117,19 +161,9 @@ export const InvestmentPreferencesForm = ({
 
   const form = useForm<InvestmentPreferencesFormValues>({
     resolver: zodResolver(investmentPreferencesSchema),
-    defaultValues: initialData || {
-      risk_profile: undefined,
-      target_return_review: '',
-      max_bond_maturity: '',
-      fgc_event_feeling: '',
-      max_fund_liquidity: '',
-      max_acceptable_loss: '',
-      target_return_ipca_plus: '',
-      stock_investment_mode: '',
-      real_estate_funds_mode: '',
-      platforms_used: [{ name: '' }],
-      asset_restrictions: [{ name: '' }],
-      areas_of_interest: [{ name: '' }],
+    defaultValues: {
+      ...initialData,
+      asset_allocations: assetAllocations || {},
     },
   });
 
@@ -148,20 +182,89 @@ export const InvestmentPreferencesForm = ({
     name: 'areas_of_interest',
   });
 
+  // Watch risk profile changes to update allocations
+  const riskProfile = useWatch({
+    control: form.control,
+    name: 'risk_profile',
+  });
+
+  // Track if this is the initial load
+  const isInitialLoad = useRef(true);
+
+  useEffect(() => {
+    if (riskProfile && DEFAULT_ASSET_ALLOCATIONS[riskProfile]) {
+      // On initial load, only set if no allocations exist
+      if (isInitialLoad.current) {
+        const currentAllocations = form.getValues('asset_allocations');
+        if (!currentAllocations || Object.keys(currentAllocations).length === 0) {
+          form.setValue('asset_allocations', DEFAULT_ASSET_ALLOCATIONS[riskProfile], {
+            shouldValidate: true,
+            shouldDirty: true,
+            shouldTouch: true,
+          });
+        }
+        isInitialLoad.current = false;
+      } else {
+        // On subsequent changes, always set default allocations
+        form.setValue('asset_allocations', DEFAULT_ASSET_ALLOCATIONS[riskProfile], {
+          shouldValidate: true,
+          shouldDirty: true,
+          shouldTouch: true,
+        });
+      }
+    }
+  }, [riskProfile, form]);
+
+  // Watch allocation changes to calculate total
+  const allocations = useWatch({
+    control: form.control,
+    name: 'asset_allocations',
+  });
+
+  useEffect(() => {
+    const total = Object.values(allocations || {}).reduce((sum, value) => {
+      const numValue = typeof value === 'string' ? parseFloat(value) || 0 : value;
+      return sum + numValue;
+    }, 0);
+    setTotalAllocation(total);
+  }, [allocations]);
+
   const handleSubmit = async (data: InvestmentPreferencesFormValues) => {
     if (!policyId) return;
 
     try {
-      const { error } = await supabase
+      // Update investment preferences (without asset allocations)
+      const { asset_allocations, ...preferencesData } = data;
+      
+      const { error: preferencesError } = await supabase
         .from('investment_preferences')
-        .upsert([{ ...data, policy_id: policyId }], {
+        .upsert([{ 
+          ...preferencesData,
+          policy_id: policyId,
+        }], {
           onConflict: 'policy_id',
           ignoreDuplicates: false
         })
         .select()
         .single();
 
-      if (error) throw error;
+      if (preferencesError) throw preferencesError;
+
+      // Update asset allocations
+      const allocationEntries = Object.entries(asset_allocations).map(([asset_class, allocation]) => ({
+        policy_id: policyId,
+        asset_class,
+        allocation: typeof allocation === 'string' ? 0 : allocation,
+      }));
+
+      const { error: allocationsError } = await supabase
+        .from('asset_allocations')
+        .upsert(allocationEntries, {
+          onConflict: 'policy_id,asset_class',
+          ignoreDuplicates: false
+        });
+
+      if (allocationsError) throw allocationsError;
 
       if (clientId) queryClient.invalidateQueries({ queryKey: ['investmentPolicy', clientId] });
       
@@ -181,10 +284,6 @@ export const InvestmentPreferencesForm = ({
     }
   };
 
-  const getLabelForValue = (value: string, options: { value: string; label: string }[]) => {
-    return options.find(option => option.value === value)?.label || value;
-  };
-
   const renderReadOnlyView = () => {
     const values = form.getValues();
     
@@ -193,7 +292,7 @@ export const InvestmentPreferencesForm = ({
       const option = options.find(opt => opt.value === value);
       return option ? option.label : t('common.notInformed');
     };
-    
+
     return (
       <Card>
         <CardHeader className="flex flex-row items-center justify-between">
@@ -210,12 +309,42 @@ export const InvestmentPreferencesForm = ({
             </Button>
           )}
         </CardHeader>
-        <CardContent className="space-y-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <CardContent className="space-y-8">
+          {/* Perfil e Alocação de Ativos */}
+          <div className="space-y-6">
             <div>
               <p className="text-sm text-muted-foreground">{t('investmentPreferences.form.riskProfile')}</p>
               <p className="font-medium">{getDisplayValue(values.risk_profile, riskProfiles)}</p>
             </div>
+
+            {/* Detailed breakdown by category and asset */}
+            <div className="space-y-6">
+              {Object.entries(ASSET_CATEGORIES).map(([category, { title, assets }]) => {
+                const visibleAssets = assets.filter(
+                  assetKey => (values.asset_allocations?.[assetKey] ?? 0) > 0
+                );
+                if (visibleAssets.length === 0) return null;
+                return (
+                  <div key={category} className="mb-6">
+                    <h4 className="font-semibold text-base text-gray-700 mb-2">
+                      {t(`investmentPreferences.categories.${category}`, { defaultValue: title })}
+                    </h4>
+                    <div className="grid grid-cols-2 gap-x-8 gap-y-1">
+                      {visibleAssets.map(assetKey => (
+                        <React.Fragment key={assetKey}>
+                          <span className="text-gray-600">{t(`investmentPreferences.assets.${assetKey}`, { defaultValue: ASSET_CLASS_LABELS[assetKey] })}</span>
+                          <span className="text-right font-medium">{(values.asset_allocations?.[assetKey] ?? 0).toFixed(2)}%</span>
+                        </React.Fragment>
+                      ))}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Outras Preferências */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <p className="text-sm text-muted-foreground">{t('investmentPreferences.form.targetReturnReview')}</p>
               <p className="font-medium">{getDisplayValue(values.target_return_review, reviewPeriods)}</p>
@@ -307,37 +436,118 @@ export const InvestmentPreferencesForm = ({
               {t('common.cancel')}
             </Button>
           </CardHeader>
-          <CardContent className="space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <FormField
-                control={form.control}
-                name="risk_profile"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>{t('investmentPreferences.form.riskProfile')}</FormLabel>
-                    <FormControl>
-                      <Select
-                        value={field.value}
-                        onValueChange={field.onChange}
-                        disabled={!isEditMode}
-                      >
-                        <SelectTrigger>
-                          <SelectValue placeholder={t('investmentPreferences.form.selectMode')} />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {riskProfiles.map((profile) => (
-                            <SelectItem key={profile.value} value={profile.value}>
-                              {profile.label}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+          <CardContent className="space-y-8">
+            {/* Perfil e Alocação de Ativos */}
+            <div className="space-y-6">
+              <div>
+                <FormField
+                  control={form.control}
+                  name="risk_profile"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>{t('investmentPreferences.form.riskProfile')}</FormLabel>
+                      <FormControl>
+                        <Select
+                          value={field.value}
+                          onValueChange={field.onChange}
+                          disabled={!isEditMode}
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder={t('investmentPreferences.form.selectMode')} />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {riskProfiles.map((profile) => (
+                              <SelectItem key={profile.value} value={profile.value}>
+                                {profile.label}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
 
+              {/* Detailed breakdown by category and asset */}
+              <div className="space-y-6">
+                <div className="flex justify-between items-center">
+                  <h3 className="text-lg font-semibold">{t('investmentPreferences.form.assetAllocations')}</h3>
+                  <div className={cn(
+                    "text-sm font-medium",
+                    totalAllocation !== 100 ? "text-destructive" : "text-muted-foreground"
+                  )}>
+                    {t('investmentPreferences.form.totalAllocation')}: {totalAllocation.toFixed(2)}%
+                  </div>
+                </div>
+
+                {Object.entries(ASSET_CATEGORIES).map(([category, { title, assets }]) => {
+                  const visibleAssets = assets.filter(
+                    assetKey => (form.getValues('asset_allocations')?.[assetKey] ?? 0) > 0
+                  );
+                  if (visibleAssets.length === 0) return null;
+                  return (
+                    <div key={category} className="mb-6">
+                      <h4 className="font-semibold text-base text-gray-700 mb-2">
+                        {t(`investmentPreferences.categories.${category}`, { defaultValue: title })}
+                      </h4>
+                      <div className="grid grid-cols-2 gap-x-8 gap-y-4">
+                        {visibleAssets.map(assetKey => (
+                          <FormField
+                            key={assetKey}
+                            control={form.control}
+                            name={`asset_allocations.${assetKey}`}
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel className="text-gray-600">
+                                  {t(`investmentPreferences.assets.${assetKey}`, { defaultValue: ASSET_CLASS_LABELS[assetKey] })}
+                                </FormLabel>
+                                <FormControl>
+                                  <div className="relative">
+                                    <Input
+                                      type="number"
+                                      step="0.01"
+                                      min="0"
+                                      max="100"
+                                      {...field}
+                                      value={field.value === 0 ? '0' : field.value || ''}
+                                      onChange={(e) => {
+                                        const value = e.target.value;
+                                        const numValue = value === '' ? 0 : parseFloat(value);
+                                        if (!isNaN(numValue) && numValue >= 0 && numValue <= 100) {
+                                          field.onChange(numValue);
+                                          form.trigger(`asset_allocations.${assetKey}`);
+                                        }
+                                      }}
+                                      disabled={!isEditMode}
+                                      className="pr-16"
+                                    />
+                                    <div className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">
+                                      %
+                                    </div>
+                                  </div>
+                                </FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                        ))}
+                      </div>
+                    </div>
+                  );
+                })}
+
+                {totalAllocation !== 100 && (
+                  <p className="text-sm text-destructive mt-2">
+                    A soma das alocações deve ser igual a 100% (atual: {totalAllocation.toFixed(2)}%)
+                  </p>
+                )}
+              </div>
+            </div>
+
+            {/* Outras Preferências */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <FormField
                 control={form.control}
                 name="target_return_review"
@@ -730,7 +940,15 @@ export const InvestmentPreferencesForm = ({
         </Card>
 
         <div className="flex justify-end">
-          <Button type="submit">{t('common.save')}</Button>
+          <Button 
+            type="submit" 
+            disabled={totalAllocation !== 100}
+            className={cn(
+              totalAllocation !== 100 && "opacity-50 cursor-not-allowed"
+            )}
+          >
+            {t('common.save')}
+          </Button>
         </div>
       </form>
     </Form>

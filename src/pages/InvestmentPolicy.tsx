@@ -25,12 +25,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { useState, useRef, useEffect } from 'react';
 import { ClientSummaryCard } from '@/components/investment-policy/ClientSummaryCard';
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
+import { InvestmentPreferencesSummaryCard } from '@/components/investment-policy/InvestmentPreferencesSummaryCard';
 
 interface InvestmentPolicyProps {
   clientId?: string;
@@ -107,19 +102,22 @@ const InvestmentPolicy = ({
           family_structures (*, children (*)),
           budgets (*),
           patrimonial_situations (*),
-          life_information (*)
+          life_information (*),
+          asset_allocations (*)
         `)
         .eq('profile_id', clientId)
         .maybeSingle();
 
       if (fetchError) {
-        console.error('Error fetching investment policy:', fetchError);
         return defaultEmptyPolicy;
       }
 
       // If policy exists, return it
       if (existingPolicy) {
-        console.log('existingPolicy', existingPolicy);
+        const assetAllocations = existingPolicy.asset_allocations?.reduce((acc, curr) => ({
+          ...acc,
+          [curr.asset_class]: curr.allocation
+        }), {}) || {};
         return {
           ...defaultEmptyPolicy,
           ...existingPolicy,
@@ -129,6 +127,7 @@ const InvestmentPolicy = ({
           budgets: existingPolicy?.budgets || [{}],
           patrimonial_situations: existingPolicy?.patrimonial_situations || [{}],
           life_information: existingPolicy?.life_information || [{}],
+          asset_allocations: assetAllocations,
         };
       }
 
@@ -240,6 +239,10 @@ const InvestmentPolicy = ({
               investmentPlan={investmentPlan}
               policy={policy}
             />
+            <InvestmentPreferencesSummaryCard
+              assetAllocations={policy?.asset_allocations || {}}
+              preferences={policy?.investment_preferences || {}}
+            />
 
             <Accordion 
               type="single"
@@ -310,6 +313,7 @@ const InvestmentPolicy = ({
                       {section.id === 'investment-preferences' && (
                         <InvestmentPreferencesForm
                           initialData={policy?.investment_preferences || {}}
+                          assetAllocations={policy?.asset_allocations || {}}
                           isEditing={isBrokerProfile}
                           policyId={policy?.id}
                           clientId={clientId}
