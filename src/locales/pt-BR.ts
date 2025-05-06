@@ -1266,7 +1266,17 @@ export const ptBR = {
     title: 'Preferências de Investimento',
     messages: {
       success: 'Preferências de investimento atualizadas com sucesso',
-      error: 'Falha ao atualizar preferências de investimento'
+      error: 'Falha ao atualizar preferências de investimento',
+      toast: {
+        success: {
+          title: 'Sucesso',
+          description: 'Preferências de investimento atualizadas com sucesso'
+        },
+        error: {
+          title: 'Erro',
+          description: 'Falha ao atualizar preferências de investimento'
+        }
+      }
     },
     form: {
       riskProfile: 'Perfil de Investimento',
@@ -1311,6 +1321,10 @@ export const ptBR = {
         foreign_fixed_income: 'Exterior - Renda Fixa',
         foreign_variable_income: 'Exterior - Renda Variável',
         crypto: 'Criptoativos'
+      },
+      allocationValidation: {
+        totalMustBe100: 'A soma das alocações deve ser igual a 100%',
+        currentTotal: 'atual: {{total}}%'
       }
     },
     options: {
