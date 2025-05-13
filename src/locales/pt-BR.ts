@@ -816,7 +816,7 @@ export const ptBR = {
   auth: {
     brokerInactive: "Corretor inativo. Entre em contato com o suporte para mais informações.",
     clientLogin: "Acesso do Cliente",
-    brokerLogin: "Acesso do Corretor",
+    brokerLogin: "Login",
     password: "Senha",
     enterPassword: "Digite sua senha",
     login: "Entrar",
