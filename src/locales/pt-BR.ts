@@ -119,7 +119,7 @@ export const ptBR = {
   dashboard: {
     title: "Portfólio de Investimentos",
     navigation: {
-      finances: "Finanças",
+      planning: "Planejamento",
       investmentPolicy: "Política de Investimento"
     },
     highlights: {
@@ -737,8 +737,10 @@ export const ptBR = {
       assetValue: "Valor do bem",
       goalMonth: "Mês do objetivo",
       goalYear: "Ano do objetivo",
-      isInstallment: "Parcelado?",
-      installmentProject: "Parcelado?",
+      paymentMode: "Forma de Pagamento",
+      noPaymentMode: "Sem parcelamento",
+      installmentMode: "Parcelar valor",
+      repeatMode: "Repetir valor",
       selectInstallments: "Selecione o número de parcelas",
       installmentCount: "Número de parcelas",
       installmentInterval: "Intervalo entre parcelas (meses)"
@@ -1040,6 +1042,16 @@ export const ptBR = {
   },
   professionalInformation: {
     title: 'Informações Profissionais',
+    name: {
+      label: 'Nome',
+      placeholder: 'Seu nome completo',
+      required: 'Nome é obrigatório'
+    },
+    birthDate: {
+      label: 'Data de Nascimento',
+      placeholder: 'Sua data de nascimento',
+      required: 'Data de nascimento é obrigatória'
+    },
     occupation: {
       label: 'Profissão',
       placeholder: 'Sua profissão',
@@ -1084,11 +1096,12 @@ export const ptBR = {
     title: 'Política de Investimento',
     quickAccess: 'Acesso Rápido',
     sections: {
+      personalInformation: 'Informações Pessoais',
       professionalInformation: 'Informações Profissionais',
       familyStructure: 'Estrutura Familiar',
       budget: 'Orçamento',
-      patrimonial: 'Situação Patrimonial',
-      life: 'Informações de Vida',
+      patrimonial: 'Patrimonial',
+      life: 'Vida',
       investmentPreferences: 'Preferências de Investimento'
     },
     lifeStage: {
@@ -1445,6 +1458,23 @@ export const ptBR = {
       moderate: 'Moderado',
       aggressive: 'Arrojado',
       notInformed: 'Não informado'
+    }
+  },
+  personalInformation: {
+    title: 'Informações Pessoais',
+    name: {
+      label: 'Nome',
+      placeholder: 'Seu nome completo',
+      required: 'Nome é obrigatório'
+    },
+    birthDate: {
+      label: 'Data de Nascimento',
+      placeholder: 'Sua data de nascimento',
+      required: 'Data de nascimento é obrigatória'
+    },
+    messages: {
+      success: 'Informações pessoais atualizadas com sucesso',
+      error: 'Falha ao atualizar informações pessoais'
     }
   },
 };

@@ -9,6 +9,7 @@ import { FamilyStructureForm } from '@/components/investment-policy/FamilyStruct
 import { BudgetForm } from '@/components/investment-policy/BudgetForm';
 import { PatrimonialForm } from '@/components/investment-policy/PatrimonialForm';
 import { LifeForm } from '@/components/investment-policy/LifeForm';
+import { PersonalInformationForm } from '@/components/investment-policy/PersonalInformationForm';
 import { InvestmentPlan } from '@/types/financial';
 import { Profile } from '@/types/financial';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
@@ -20,7 +21,8 @@ import {
   Building2, 
   HeartPulse, 
   LineChart,
-  X
+  X,
+  User
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useState, useRef, useEffect } from 'react';
@@ -161,6 +163,12 @@ const InvestmentPolicy = ({
 
   const sections = [
     {
+      id: 'personal-information',
+      title: t('investmentPolicy.sections.personalInformation'),
+      icon: User,
+      color: 'bg-cyan-500/10 text-cyan-500'
+    },
+    {
       id: 'professional-information',
       title: t('investmentPolicy.sections.professionalInformation'),
       icon: UserCircle2,
@@ -270,12 +278,18 @@ const InvestmentPolicy = ({
                       </div>
                     </AccordionTrigger>
                     <AccordionContent className="px-6 pb-4">
+                      {section.id === 'personal-information' && (
+                        <PersonalInformationForm
+                          initialData={clientProfile}
+                          isEditing={isBrokerProfile}
+                          clientId={clientId}
+                        />
+                      )}
                       {section.id === 'professional-information' && (
                         <ProfessionalInformationForm
                           initialData={policy?.professional_information || {}}
                           isEditing={isBrokerProfile}
                           policyId={policy?.id}
-                          clientId={clientId}
                         />
                       )}
                       {section.id === 'family-structure' && (

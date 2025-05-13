@@ -79,7 +79,7 @@ export interface Goal {
   asset_value: number;
   month: MonthNumber;
   year: number;
-  installment_project: boolean;
+  payment_mode: 'none' | 'installment' | 'repeat';
   installment_count?: number;
   installment_interval?: number;
   name: string;
@@ -121,7 +121,7 @@ export type BaseFormValues = {
   year: string;
   icon: string;
   asset_value: string;
-  installment_project: boolean;
+  payment_mode: 'none' | 'installment' | 'repeat';
   installment_count?: string;
   installment_interval?: string;
 };

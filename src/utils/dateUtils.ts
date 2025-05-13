@@ -1,3 +1,6 @@
+import { format, parse } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
+
 /**
  * Rounds up a date to the next month if not on the first day
  * @param date - The date to round up
@@ -52,4 +55,36 @@ export function calculateFinalAge(birthDate: Date, endDate: Date): number {
     age--;
   }
   return age;
+}
+
+/**
+ * Formats a date according to the locale
+ * @param date - The date to format
+ * @param formatStr - The format string (defaults to 'dd/MM/yyyy')
+ * @returns The formatted date string
+ */
+export function formatDateByLocale(date: Date | string | null | undefined, formatStr: string = 'dd/MM/yyyy'): string {
+  if (!date) return '';
+  
+  const dateObj = typeof date === 'string' ? new Date(date) : date;
+  if (!(dateObj instanceof Date) || isNaN(dateObj.getTime())) return '';
+  
+  return format(dateObj, formatStr, { locale: ptBR });
+}
+
+/**
+ * Parses a date string according to the locale
+ * @param dateStr - The date string to parse
+ * @param formatStr - The format string (defaults to 'dd/MM/yyyy')
+ * @returns The parsed Date object or null if invalid
+ */
+export function parseDateByLocale(dateStr: string, formatStr: string = 'dd/MM/yyyy'): Date | null {
+  if (!dateStr) return null;
+  
+  try {
+    const parsedDate = parse(dateStr, formatStr, new Date(), { locale: ptBR });
+    return isNaN(parsedDate.getTime()) ? null : parsedDate;
+  } catch (error) {
+    return null;
+  }
 } 

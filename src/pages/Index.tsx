@@ -1,4 +1,4 @@
-import { ArrowLeft, LogOut, Share2, User } from "lucide-react";
+import { ArrowLeft, LogOut, Share2, User, Key } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { useAuth } from "@/components/auth/AuthProvider";
@@ -18,7 +18,7 @@ const Index = () => {
   const params = useParams();
   const clientId = params.id || user?.id;
   const { t } = useTranslation();
-  const [activeView, setActiveView] = useState<'finances' | 'policies'>('finances');
+  const [activeView, setActiveView] = useState<'finances' | 'policies'>('policies');
 
   const handleLogout = useCallback(async () => {
     try {
@@ -166,19 +166,6 @@ const Index = () => {
                 <Button
                   variant="ghost"
                   className={`px-3 py-1 text-sm font-medium rounded-md ${
-                    activeView === 'finances'
-                      ? 'text-blue-600 bg-white shadow-sm'
-                      : 'text-gray-500 hover:text-gray-700'
-                  }`}
-                  onClick={() => {
-                    setActiveView('finances');
-                  }}
-                >
-                  {t('dashboard.navigation.finances')}
-                </Button>
-                <Button
-                  variant="ghost"
-                  className={`px-3 py-1 text-sm font-medium rounded-md ${
                     activeView === 'policies'
                       ? 'text-blue-600 bg-white shadow-sm'
                       : 'text-gray-500 hover:text-gray-700'
@@ -188,6 +175,19 @@ const Index = () => {
                   }}
                 >
                   {t('dashboard.navigation.investmentPolicy')}
+                </Button>
+                <Button
+                  variant="ghost"
+                  className={`px-3 py-1 text-sm font-medium rounded-md ${
+                    activeView === 'finances'
+                      ? 'text-blue-600 bg-white shadow-sm'
+                      : 'text-gray-500 hover:text-gray-700'
+                  }`}
+                  onClick={() => {
+                    setActiveView('finances');
+                  }}
+                >
+                  {t('dashboard.navigation.planning')}
                 </Button>
               </div>
             </div>
@@ -204,6 +204,15 @@ const Index = () => {
                   <span className="hidden sm:inline">{t('brokerDashboard.shareWithClient')}</span>
                 </Button>
               )}
+              <Button 
+                variant="ghost" 
+                size="sm"
+                onClick={() => navigate(`/client-profile/${clientId}`)}
+                className="flex items-center gap-1 text-gray-600 hover:text-blue-600 transition-colors"
+              >
+                <Key className="h-4 w-4" />
+                <span className="hidden sm:inline">{t('clientProfile.buttons.changePassword')}</span>
+              </Button>
               <Button 
                 variant="ghost" 
                 size="sm"

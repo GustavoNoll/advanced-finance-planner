@@ -16,10 +16,6 @@ const ClientProfile = () => {
   const params = useParams();
   const clientId = params.id || user?.id;
   
-  const [isEditing, setIsEditing] = useState(false);
-  const [showPasswordForm, setShowPasswordForm] = useState(false);
-  const [fullName, setFullName] = useState('');
-  const [birthDate, setBirthDate] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
 
@@ -38,19 +34,11 @@ const ClientProfile = () => {
     return '';
   };
 
-  const { data: profile, refetch: refetchProfile } = useQuery({
+  const { data: profile } = useQuery({
     queryKey: ['profile', clientId],
     queryFn: async () => {
       if (!clientId) return null;
 
-      // Get user email using the admin API
-      const { data: { user: userData }, error: userError } = await supabase.auth.admin.getUserById(clientId);
-
-      if (userError) {
-        console.error('Error fetching user email:', userError);
-      }
-
-      // Then get the profile data
       const { data, error } = await supabase
         .from('profiles')
         .select('*')
@@ -62,9 +50,7 @@ const ClientProfile = () => {
         return null;
       }
 
-      setFullName(data.name || '');
-      setBirthDate(data.birth_date || '');
-      return { ...data, email: userData?.email };
+      return data;
     },
     enabled: !!clientId,
   });
@@ -90,32 +76,6 @@ const ClientProfile = () => {
     },
     enabled: !!user?.id,
   });
-
-  const handleUpdateProfile = async () => {
-    try {
-      const { error } = await supabase
-        .from('profiles')
-        .update({
-          name: fullName,
-          birth_date: birthDate,
-        })
-        .eq('id', clientId);
-
-      if (error) throw error;
-
-      toast({
-        title: t('clientProfile.messages.profileUpdateSuccess'),
-      });
-      setIsEditing(false);
-      refetchProfile();
-    } catch (error) {
-      console.error('Error updating profile:', error);
-      toast({
-        title: t('clientProfile.messages.profileUpdateError'),
-        variant: "destructive",
-      });
-    }
-  };
 
   const handlePasswordChange = async () => {
     if (newPassword !== confirmPassword) {
@@ -181,120 +141,53 @@ const ClientProfile = () => {
         </div>
 
         <div className="bg-white rounded-xl shadow-sm p-6 space-y-8">
-          <h1 className="text-2xl font-semibold text-gray-900">{t('clientProfile.title')}</h1>
+          <h1 className="text-2xl font-semibold text-gray-900">Troca de Senha</h1>
 
-          <div className="space-y-6">
-            <div>
-              <h2 className="text-lg font-medium mb-4">{t('clientProfile.profileSection')}</h2>
-              <div className="space-y-4">
+          {canEdit && (
+            <div className="bg-white rounded-lg shadow-sm border border-gray-100 p-6">
+              <div className="space-y-6">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    {t('clientProfile.fullName')}
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    {t('clientProfile.newPassword')}
                   </label>
                   <Input
-                    value={fullName}
-                    onChange={(e) => setFullName(e.target.value)}
-                    disabled={!isEditing || !canEdit}
+                    type="password"
+                    value={newPassword}
+                    onChange={(e) => setNewPassword(e.target.value)}
+                    className="h-12 rounded-lg border-gray-200 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    {t('clientProfile.birthDate')}
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    {t('clientProfile.confirmPassword')}
                   </label>
                   <Input
-                    type="date"
-                    value={birthDate}
-                    onChange={(e) => setBirthDate(e.target.value)}
-                    disabled={!isEditing || !canEdit}
+                    type="password"
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    className="h-12 rounded-lg border-gray-200 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
                   />
                 </div>
 
-                {canEdit && (
-                  !isEditing ? (
-                    <div className="flex justify-center gap-4">
-                      <Button 
-                        onClick={() => setIsEditing(true)}
-                        className="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white"
-                      >
-                        {t('clientProfile.buttons.editPersonalData')}
-                      </Button>
-                      <Button 
-                        onClick={() => setShowPasswordForm(!showPasswordForm)}
-                        variant="outline"
-                        className="px-6 py-2 text-gray-700 hover:bg-gray-50"
-                      >
-                        {t('clientProfile.buttons.changePassword')}
-                      </Button>
-                    </div>
-                  ) : (
-                    <div className="flex gap-3 justify-end pt-4 border-t border-gray-100">
-                      <Button 
-                        variant="outline" 
-                        onClick={() => setIsEditing(false)}
-                        className="px-6 py-2 text-gray-700 hover:bg-gray-50"
-                      >
-                        {t('clientProfile.buttons.cancel')}
-                      </Button>
-                      <Button 
-                        onClick={handleUpdateProfile}
-                        className="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white"
-                      >
-                        {t('clientProfile.buttons.save')}
-                      </Button>
-                    </div>
-                  )
+                {!isPasswordValid && (
+                  <div className="text-sm text-red-500 text-center">
+                    {getPasswordErrorMessage()}
+                  </div>
                 )}
+
+                <div className="flex justify-center pt-4 border-t border-gray-100">
+                  <Button 
+                    onClick={handlePasswordChange}
+                    className="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white disabled:opacity-50 disabled:cursor-not-allowed"
+                    disabled={!isPasswordValid}
+                  >
+                    {t('clientProfile.buttons.changePassword')}
+                  </Button>
+                </div>
               </div>
             </div>
-
-            {showPasswordForm && canEdit && (
-              <div className="bg-white rounded-lg shadow-sm border border-gray-100 p-6">
-                <h2 className="text-lg font-medium text-gray-900 mb-6">{t('clientProfile.passwordSection')}</h2>
-                <div className="space-y-6">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      {t('clientProfile.newPassword')}
-                    </label>
-                    <Input
-                      type="password"
-                      value={newPassword}
-                      onChange={(e) => setNewPassword(e.target.value)}
-                      className="h-12 rounded-lg border-gray-200 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      {t('clientProfile.confirmPassword')}
-                    </label>
-                    <Input
-                      type="password"
-                      value={confirmPassword}
-                      onChange={(e) => setConfirmPassword(e.target.value)}
-                      className="h-12 rounded-lg border-gray-200 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
-                    />
-                  </div>
-
-                  {!isPasswordValid && (
-                    <div className="text-sm text-red-500 text-center">
-                      {getPasswordErrorMessage()}
-                    </div>
-                  )}
-
-                  <div className="flex justify-center pt-4 border-t border-gray-100">
-                    <Button 
-                      onClick={handlePasswordChange}
-                      className="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white disabled:opacity-50 disabled:cursor-not-allowed"
-                      disabled={!isPasswordValid}
-                    >
-                      {t('clientProfile.buttons.changePassword')}
-                    </Button>
-                  </div>
-                </div>
-              </div>
-            )}
-          </div>
+          )}
         </div>
       </div>
     </div>

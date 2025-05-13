@@ -450,7 +450,7 @@ const Finances = ({
   return (
     <>
       <div className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8 py-6">
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-4">
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
           <Link 
             to={`/financial-records${clientId ? `/${clientId}` : ''}`} 
             state={{ records: allFinancialRecords }}
@@ -522,19 +522,6 @@ const Finances = ({
                   )}
                 </div>
                 <span className="text-sm font-medium text-gray-700 whitespace-nowrap">{t('dashboard.buttons.events')}</span>
-              </div>
-            </Button>
-          </Link>
-
-          <Link to={`/client-profile/${clientId}`}>
-            <Button 
-              variant="outline"
-              size="lg"
-              className="w-full h-14 flex flex-col items-center justify-center gap-1 bg-gradient-to-br from-white/95 via-slate-50/90 to-blue-50/80 backdrop-blur-sm hover:from-blue-50/95 hover:via-blue-100/90 hover:to-blue-200/80 shadow-md hover:shadow-xl transition-all duration-200 border border-gray-100/50 rounded-xl"
-            >
-              <div className="flex items-center gap-2">
-                <User className="h-4 w-4 text-blue-600" />
-                <span className="text-sm font-medium text-gray-700 whitespace-nowrap">{t('dashboard.buttons.clientInfo')}</span>
               </div>
             </Button>
           </Link>
