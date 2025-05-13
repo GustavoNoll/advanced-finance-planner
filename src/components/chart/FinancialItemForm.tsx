@@ -21,6 +21,7 @@ import { cn } from "@/lib/utils";
 import { Input } from "@/components/ui/input";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { FinancialItemFormValues } from "@/types/financial";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 
 const createSchema = (type: 'goal' | 'event') => {
   const baseFields = {
@@ -29,7 +30,7 @@ const createSchema = (type: 'goal' | 'event') => {
     year: z.string().min(1, "Ano é obrigatório"),
     icon: z.enum(['other']),
     asset_value: z.string().min(1, "Valor é obrigatório"),
-    installment_project: z.boolean().default(false),
+    payment_mode: z.enum(['none', 'installment', 'repeat']).default('none'),
     installment_count: z.string().optional(),
     installment_interval: z.string().optional(),
   };
@@ -80,7 +81,7 @@ export const FinancialItemForm = ({
       month: initialValues?.month || '',
       year: initialValues?.year || '',
       type,
-      installment_project: false,
+      payment_mode: initialValues?.payment_mode || 'none',
       installment_count: '',
       installment_interval: initialValues?.installment_interval?.toString() || '1',
     },
@@ -96,7 +97,7 @@ export const FinancialItemForm = ({
       month: initialValues?.month || '',
       year: initialValues?.year || '',
       type: newType,
-      installment_project: false,
+      payment_mode: 'none',
       installment_count: '',
       installment_interval: '1',
     });
@@ -307,25 +308,50 @@ export const FinancialItemForm = ({
         <div className="flex flex-col space-y-4">
           <FormField
             control={form.control}
-            name="installment_project"
+            name="payment_mode"
             render={({ field }) => (
-              <FormItem className="flex flex-row items-start space-x-3 space-y-0">
+              <FormItem className="space-y-3">
+                <FormLabel className="text-sm font-medium">
+                  {t('financialGoals.form.paymentMode')}
+                </FormLabel>
                 <FormControl>
-                  <Checkbox
-                    checked={field.value}
-                    onCheckedChange={field.onChange}
-                  />
+                  <RadioGroup
+                    onValueChange={field.onChange}
+                    defaultValue={field.value}
+                    className="flex flex-col space-y-1"
+                  >
+                    <FormItem className="flex items-center space-x-3 space-y-0">
+                      <FormControl>
+                        <RadioGroupItem value="none" />
+                      </FormControl>
+                      <FormLabel className="font-normal">
+                        {t('financialGoals.form.noPaymentMode')}
+                      </FormLabel>
+                    </FormItem>
+                    <FormItem className="flex items-center space-x-3 space-y-0">
+                      <FormControl>
+                        <RadioGroupItem value="installment" />
+                      </FormControl>
+                      <FormLabel className="font-normal">
+                        {t('financialGoals.form.installmentMode')}
+                      </FormLabel>
+                    </FormItem>
+                    <FormItem className="flex items-center space-x-3 space-y-0">
+                      <FormControl>
+                        <RadioGroupItem value="repeat" />
+                      </FormControl>
+                      <FormLabel className="font-normal">
+                        {t('financialGoals.form.repeatMode')}
+                      </FormLabel>
+                    </FormItem>
+                  </RadioGroup>
                 </FormControl>
-                <div className="space-y-1 leading-none">
-                  <FormLabel className="text-sm font-medium">
-                    {t('financialGoals.form.installmentProject')}
-                  </FormLabel>
-                </div>
+                <FormMessage />
               </FormItem>
             )}
           />
 
-          {(form.watch('installment_project') as boolean) && (
+          {(form.watch('payment_mode') === 'installment' || form.watch('payment_mode') === 'repeat') && (
             <>
               <FormField
                 control={form.control}

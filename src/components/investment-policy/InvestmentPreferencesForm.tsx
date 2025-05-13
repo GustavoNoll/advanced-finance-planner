@@ -269,16 +269,16 @@ export const InvestmentPreferencesForm = ({
       if (clientId) queryClient.invalidateQueries({ queryKey: ['investmentPolicy', clientId] });
       
       toast({
-        title: 'Sucesso',
-        description: 'Preferências de investimento atualizadas com sucesso',
+        title: t('investmentPreferences.messages.toast.success.title'),
+        description: t('investmentPreferences.messages.toast.success.description'),
       });
 
       setIsEditMode(false);
     } catch (error) {
       console.error('Error updating investment preferences:', error);
       toast({
-        title: 'Erro',
-        description: 'Falha ao atualizar preferências de investimento',
+        title: t('investmentPreferences.messages.toast.error.title'),
+        description: t('investmentPreferences.messages.toast.error.description'),
         variant: 'destructive',
       });
     }
@@ -540,7 +540,7 @@ export const InvestmentPreferencesForm = ({
 
                 {totalAllocation !== 100 && (
                   <p className="text-sm text-destructive mt-2">
-                    A soma das alocações deve ser igual a 100% (atual: {totalAllocation.toFixed(2)}%)
+                    {t('investmentPreferences.form.allocationValidation.totalMustBe100')} ({t('investmentPreferences.form.allocationValidation.currentTotal', { total: totalAllocation.toFixed(2) })})
                   </p>
                 )}
               </div>

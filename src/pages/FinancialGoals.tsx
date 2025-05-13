@@ -51,9 +51,9 @@ const FinancialGoals = () => {
           month: parseInt(values.month),
           year: parseInt(values.year),
           status: 'pending',
-          installment_project: values.installment_project,
+          payment_mode: values.payment_mode,
           installment_count: values.installment_count ? parseInt(values.installment_count) : null,
-          installment_interval: values.installment_project ? parseInt(values.installment_interval || '1') : null,
+          installment_interval: values.installment_interval ? parseInt(values.installment_interval) : null,
         },
       ]);
 
