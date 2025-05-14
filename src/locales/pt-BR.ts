@@ -363,6 +363,7 @@ export const ptBR = {
   },
   common: {
     perYear: "por ano",
+    perMonth: "por mês",
     notInformed: "Não informado",
     every: "a cada",
     change: "Alterar",
