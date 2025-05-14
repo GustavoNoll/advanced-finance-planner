@@ -110,33 +110,79 @@ const FinancialRecords = () => {
   const [showSuccessAnimation, setShowSuccessAnimation] = useState(false);
   const [animationPosition, setAnimationPosition] = useState<{ top: number; left: number } | null>(null);
   const [updatedRecordIds, setUpdatedRecordIds] = useState<string[]>([]);
-  const [brokerProfile, setBrokerProfile] = useState<{ is_broker: boolean } | null>(null);
+  const [brokerProfile, setBrokerProfile] = useState<{ is_broker: boolean; id: string } | null>(null);
+  const [isAuthorized, setIsAuthorized] = useState<boolean>(true);
+  const [isValidating, setIsValidating] = useState<boolean>(true);
 
   useEffect(() => {
     const fetchProfile = async () => {
       if (!user?.id) return;
       
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('is_broker')
-        .eq('id', user.id)
-        .single();
+      try {
+        const { data, error } = await supabase
+          .from('profiles')
+          .select('is_broker, id')
+          .eq('id', user.id)
+          .single();
 
-      if (error) {
-        console.error('Error fetching profile:', error);
-        return;
+        if (error) {
+          console.error('Error fetching profile:', error);
+          return;
+        }
+
+        setBrokerProfile(data);
+        
+        // If user is a broker and trying to access client data (not their own)
+        if (data.is_broker && clientId !== user.id) {
+          // Fetch client profile to check broker_id
+          const { data: clientProfile, error: clientError } = await supabase
+            .from('profiles')
+            .select('broker_id')
+            .eq('id', clientId)
+            .single();
+            
+          if (clientError) {
+            console.error('Error fetching client profile:', clientError);
+            // Handle not found client
+            if (clientError.code === 'PGRST116') {
+              setIsAuthorized(false);
+              toast({
+                title: t('dashboard.messages.errors.unauthorizedAccess'),
+                description: t('dashboard.messages.errors.clientNotAssociated'),
+                variant: "destructive",
+              });
+              navigate('/broker-dashboard');
+            }
+            return;
+          }
+          
+          // Check if client belongs to this broker
+          if (clientProfile.broker_id !== user.id) {
+            setIsAuthorized(false);
+            toast({
+              title: t('dashboard.messages.errors.unauthorizedAccess'),
+              description: t('dashboard.messages.errors.clientNotAssociated'),
+              variant: "destructive",
+            });
+            navigate('/broker-dashboard');
+            return;
+          }
+        }
+        
+        setIsValidating(false);
+      } catch (error) {
+        console.error('Error in authorization check:', error);
+        setIsValidating(false);
       }
-
-      setBrokerProfile(data);
     };
 
     fetchProfile();
-  }, [user?.id]);
+  }, [user?.id, clientId, navigate, t]);
 
   const { data: records, isLoading: recordsLoading } = useQuery({
     queryKey: ['financialRecords', clientId],
     queryFn: async () => {
-      if (!clientId) return [];
+      if (!clientId || !isAuthorized) return [];
       
       if (initialRecords.length > 0) {
         return initialRecords;
@@ -153,14 +199,14 @@ const FinancialRecords = () => {
       return data || [];
     },
     initialData: initialRecords,
-    enabled: !!clientId,
+    enabled: !!clientId && !isValidating && isAuthorized,
     staleTime: 0,
   });
 
   const { data: investmentPlan } = useQuery({
     queryKey: ['investmentPlan', clientId],
     queryFn: async () => {
-      if (!clientId) return null;
+      if (!clientId || !isAuthorized) return null;
       
       const { data, error } = await supabase
         .from('investment_plans')
@@ -175,7 +221,7 @@ const FinancialRecords = () => {
 
       return data;
     },
-    enabled: !!clientId,
+    enabled: !!clientId && !isValidating && isAuthorized,
   });
 
   const refreshIndex = () => {
@@ -604,6 +650,19 @@ const FinancialRecords = () => {
   const handleEdit = (recordId: number) => {
     setEditingRecordId(editingRecordId === recordId ? null : recordId);
   };
+
+  if (isValidating) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <Spinner size="lg" />
+        <p className="ml-3 text-gray-500">{t('common.loading')}</p>
+      </div>
+    );
+  }
+
+  if (!isAuthorized) {
+    return null; // Already redirected in useEffect
+  }
 
   if (recordsLoading) {
     return (

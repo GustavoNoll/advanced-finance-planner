@@ -202,7 +202,10 @@ export const ptBR = {
       },
       errors: {
         fetchPlan: "Erro ao buscar plano de investimento",
-        fetchProfile: "Erro ao buscar perfil do corretor"
+        fetchProfile: "Erro ao buscar perfil do corretor",
+        unauthorizedAccess: "Acesso não autorizado",
+        clientNotAssociated: "Este cliente não está associado ao seu perfil de corretor",
+        validationFailed: "Falha na validação de acesso"
       }
     },
     loading: "Carregando...",

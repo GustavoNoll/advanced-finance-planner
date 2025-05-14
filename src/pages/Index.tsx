@@ -90,9 +90,23 @@ const Index = () => {
 
   useEffect(() => {
     if (!isInvestmentPlanLoading && !isProfilesLoading) { 
+      // If user is a broker but not viewing a client, redirect to broker dashboard
       if (brokerProfile && !params.id) {
         navigate('/broker-dashboard');
         return;
+      }
+      
+      // If viewing a client profile as a broker, verify client belongs to this broker
+      if (brokerProfile && clientProfile && clientId !== user?.id) {
+        if (clientProfile.broker_id !== user?.id) {
+          toast({
+            title: t('dashboard.messages.errors.unauthorizedAccess'),
+            description: t('dashboard.messages.errors.clientNotAssociated'),
+            variant: "destructive",
+          });
+          navigate('/broker-dashboard');
+          return;
+        }
       }
       
       if (!investmentPlan) {
@@ -121,7 +135,7 @@ const Index = () => {
         setActiveView('finances');
       }
     }
-  }, [investmentPlan, brokerProfile, isInvestmentPlanLoading, isProfilesLoading, params.id, handleLogout, t]);
+  }, [investmentPlan, brokerProfile, clientProfile, isInvestmentPlanLoading, isProfilesLoading, params.id, handleLogout, t, user?.id, clientId, navigate]);
 
   const handleShareClient = () => {
     const clientLoginUrl = `${window.location.origin}/client-login/${clientId}`;
