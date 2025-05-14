@@ -874,7 +874,7 @@ export const ExpenseChart = ({
                     {value < 0 && '-'}{formatCurrency(Math.abs(value), investmentPlan?.currency as CurrencyCode)}
                   </span>
                   <span className="text-xs text-gray-500">
-                    {t('expenseChart.lifetimeIncome')}: {formatCurrency(value / (investmentPlan.expected_return/100), investmentPlan?.currency as CurrencyCode)}/{t('common.perYear')}
+                    {t('expenseChart.lifetimeIncome')}: {formatCurrency((value * (investmentPlan.expected_return/100))/12, investmentPlan?.currency as CurrencyCode)}/{t('common.perMonth')}
                   </span>
                 </div>
               </div>
