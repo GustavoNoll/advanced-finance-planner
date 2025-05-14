@@ -13,6 +13,38 @@ export const EventCard = ({ event, currency, onDelete, onToggleStatus }: {
 }) => {
   const { t } = useTranslation();
   
+  const renderPaymentInfo = () => {
+    if (event.payment_mode === 'none') {
+      return null;
+    }
+
+    if (event.payment_mode === 'installment' && event.installment_count) {
+      return (
+        <span className="text-sm text-gray-500 ml-2">
+          ({event.installment_count}x de {formatCurrency(Math.abs(event.asset_value) / event.installment_count, currency)}
+          {event.installment_interval && event.installment_interval > 1 && (
+            <span> {t('common.every')} {event.installment_interval} {t('common.months')}</span>
+          )}
+          )
+        </span>
+      );
+    }
+
+    if (event.payment_mode === 'repeat' && event.installment_count) {
+      return (
+        <span className="text-sm text-gray-500 ml-2">
+          ({event.installment_count}x de {formatCurrency(Math.abs(event.asset_value), currency)}
+          {event.installment_interval && event.installment_interval > 1 && (
+            <span> {t('common.every')} {event.installment_interval} {t('common.months')}</span>
+          )}
+          )
+        </span>
+      );
+    }
+
+    return null;
+  };
+
   const getEventIcon = () => {
     const iconColor = event.asset_value >= 0 ? 'text-green-600' : 'text-red-600';
     switch (event.icon) {
@@ -46,15 +78,7 @@ export const EventCard = ({ event, currency, onDelete, onToggleStatus }: {
             </p>
             <p className={`font-medium ${event.asset_value >= 0 ? 'text-green-600' : 'text-red-600'}`}>
               {event.asset_value >= 0 ? '+' : ''}{formatCurrency(event.asset_value, currency)}
-              {event.installment_project && event.installment_count && (
-                <span className="text-sm text-gray-500 ml-2">
-                  ({event.installment_count}x de {formatCurrency(event.asset_value / event.installment_count, currency)}
-                  {event.installment_interval && event.installment_interval > 1 && (
-                    <span> a cada {event.installment_interval} meses</span>
-                  )}
-                  )
-                </span>
-              )}
+              {renderPaymentInfo()}
             </p>
           </div>
         </div>

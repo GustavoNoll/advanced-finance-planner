@@ -41,7 +41,7 @@ interface GoalFormValues {
   asset_value: string;
   month: string;
   year: string;
-  installment_project: boolean;
+  payment_mode: 'none' | 'installment' | 'repeat';
   installment_count?: string;
   installment_interval?: string;
 }
@@ -53,7 +53,7 @@ interface EventFormValues {
   asset_value: string;
   month: string;
   year: string;
-  installment_project: boolean;
+  payment_mode: 'none' | 'installment' | 'repeat';
   installment_count?: string;
   installment_interval?: string;
 }
@@ -131,9 +131,9 @@ export const ExpenseChart = ({
           asset_value: parseFloat(values.asset_value.replace(/[^\d.,]/g, '').replace(',', '.')),
           month: parseInt(values.month),
           year: parseInt(values.year),
-          installment_project: values.installment_project,
-          installment_count: values.installment_project ? parseInt(values.installment_count || "0") : null,
-          installment_interval: values.installment_project ? parseInt(values.installment_interval || "1") : null,
+          payment_mode: values.payment_mode,
+          installment_count: values.payment_mode === 'installment' || values.payment_mode === 'repeat' ? parseInt(values.installment_count || "0") : null,
+          installment_interval: values.payment_mode === 'installment' || values.payment_mode === 'repeat' ? parseInt(values.installment_interval || "1") : null,
           status: 'pending',
         },
       ]);
@@ -167,9 +167,9 @@ export const ExpenseChart = ({
           asset_value: amount,
           month: parseInt(values.month),
           year: parseInt(values.year),
-          installment_project: values.installment_project,
-          installment_count: values.installment_project ? parseInt(values.installment_count || "0") : null,
-          installment_interval: values.installment_project ? parseInt(values.installment_interval || "1") : null,
+          payment_mode: values.payment_mode,
+          installment_count: values.payment_mode === 'installment' || values.payment_mode === 'repeat' ? parseInt(values.installment_count || "0") : null,
+          installment_interval: values.payment_mode === 'installment' || values.payment_mode === 'repeat' ? parseInt(values.installment_interval || "1") : null,
           status: 'pending'
         },
       ]);
@@ -524,7 +524,7 @@ export const ExpenseChart = ({
               <div className="text-sm text-gray-600">
                 {t('financialRecords.form.year')}: {goal.year}
               </div>
-              {goal.installment_project && (
+              {goal.payment_mode === 'installment' || goal.payment_mode === 'repeat' && (
                 <>
                   <div className="text-sm text-blue-600 mt-1">
                     {t('financialGoals.form.installmentCount')}: {goal.installment_count}x {goal.installment_interval > 1 ? t('common.every') + ' ' + goal.installment_interval + ' ' + t('common.months') : ''}
@@ -602,7 +602,7 @@ export const ExpenseChart = ({
               <div className="text-sm text-gray-600">
                 {t('financialRecords.form.year')}: {event.year}
               </div>
-              {event.installment_project && event.installment_count && (
+              {event.payment_mode === 'installment' || event.payment_mode === 'repeat' && (
                 <div className="text-sm text-blue-600 mt-1">
                   {t('financialGoals.form.installmentCount')}: {event.installment_count}x {event.installment_interval > 1 ? t('common.every') + ' ' + event.installment_interval + ' ' + t('common.months') : ''}
                 </div>

@@ -6,7 +6,7 @@ export interface ProcessedGoalEvent {
   amount: number;
   month: number;
   year: number;
-  installment_project?: boolean;
+  payment_mode?: 'none' | 'installment' | 'repeat';
   installment_count?: number;
   installment_interval?: number;
   description?: string;
@@ -30,7 +30,7 @@ export function processItem<T extends Goal | ProjectedEvent>(
     name: item.name
   };
 
-  if (!item.installment_project || !item.installment_count) {
+  if (item.payment_mode === 'none' || !item.installment_count) {
     return [baseItem];
   }
 
@@ -44,7 +44,7 @@ export function processItem<T extends Goal | ProjectedEvent>(
       id: item.id,
       type: type,
       year: item.year + yearOffset,
-      installment_project: item.installment_project,
+      payment_mode: item.payment_mode,
       installment_count: item.installment_count,
       installment_interval: item.installment_interval,
       month: month,
