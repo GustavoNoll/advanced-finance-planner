@@ -98,7 +98,7 @@ export interface ProjectedEvent {
   profile_id: string;
   name: string;
   asset_value: number;
-  installment_project: boolean;
+  payment_mode: 'none' | 'installment' | 'repeat';
   installment_count?: number;
   installment_interval?: number;
   icon: 'goal' | 'contribution' | 'other';
@@ -145,7 +145,7 @@ export type ChartFormValues = {
   asset_value: number;
   month: number;
   year: number;
-  installment_project?: boolean;
+  payment_mode?: 'none' | 'installment' | 'repeat';
   installment_count?: number;
 };
 

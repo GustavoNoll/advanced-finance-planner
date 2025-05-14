@@ -81,7 +81,7 @@ export const ChartPointDialog = ({
                 month: selectedPoint.month.toString().padStart(2, '0'),
                 year: selectedPoint.year.toString(),
                 type: formType,
-                installment_project: false,
+                payment_mode: 'none',
                 installment_count: '',
               }}
               currency={currency}
