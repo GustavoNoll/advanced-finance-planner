@@ -115,7 +115,7 @@ export function generateProjectionData(
       const monthlyInflationRate = ipcaRatesMap.has(ipcaKey) 
         ? ipcaRatesMap.get(ipcaKey)! 
         : defaultMonthlyInflationRate;
-      accumulatedInflation = calculateCompoundedRates([accumulatedInflation, monthlyInflationRate]);
+      accumulatedInflation *= (1 + monthlyInflationRate);
       
       // Calculate the monthly return rate based on the expected return and inflation
       const monthlyReturnRate = calculateCompoundedRates([monthlyExpectedReturnRate, monthlyInflationRate]);
