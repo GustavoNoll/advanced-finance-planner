@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useAuth } from "@/components/auth/AuthProvider";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
@@ -7,12 +7,13 @@ import { Input } from "@/components/ui/input";
 import { toast } from "@/components/ui/use-toast";
 import { useTranslation } from "react-i18next";
 import { ArrowLeft } from "lucide-react";
-import { Link, useParams } from "react-router-dom";
+import { Link, useParams, useNavigate } from "react-router-dom";
 import { Spinner } from "@/components/ui/spinner";
 
 const ClientProfile = () => {
   const { user } = useAuth();
   const { t } = useTranslation();
+  const navigate = useNavigate();
   const params = useParams();
   const clientId = params.id || user?.id;
   
@@ -34,7 +35,7 @@ const ClientProfile = () => {
     return '';
   };
 
-  const { data: profile } = useQuery({
+  const { data: profile, isLoading: profileLoading } = useQuery({
     queryKey: ['profile', clientId],
     queryFn: async () => {
       if (!clientId) return null;
@@ -55,7 +56,7 @@ const ClientProfile = () => {
     enabled: !!clientId,
   });
 
-  const { data: brokerProfile } = useQuery({
+  const { data: brokerProfile, isLoading: brokerLoading } = useQuery({
     queryKey: ['brokerProfile', user?.id],
     queryFn: async () => {
       if (!user?.id) return null;
@@ -76,6 +77,21 @@ const ClientProfile = () => {
     },
     enabled: !!user?.id,
   });
+
+  // Validate broker-client relationship
+  useEffect(() => {
+    if (!profileLoading && !brokerLoading && brokerProfile && clientId !== user?.id) {
+      // If the broker is accessing a client profile, validate the relationship
+      if (profile && profile.broker_id !== user?.id) {
+        toast({
+          title: t('dashboard.messages.errors.unauthorizedAccess'),
+          description: t('dashboard.messages.errors.clientNotAssociated'),
+          variant: "destructive",
+        });
+        navigate('/broker-dashboard');
+      }
+    }
+  }, [profile, brokerProfile, profileLoading, brokerLoading, user?.id, clientId, navigate, t]);
 
   const handlePasswordChange = async () => {
     if (newPassword !== confirmPassword) {
@@ -117,7 +133,7 @@ const ClientProfile = () => {
     }
   };
 
-  if (!profile) {
+  if (profileLoading || brokerLoading || !profile) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <Spinner size="lg" />
