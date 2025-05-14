@@ -15,6 +15,8 @@ interface MonthlyProjectionData {
   withdrawal: number;
   isHistorical: boolean;
   balance: number;
+  projected_lifetime_withdrawal: number;
+  planned_lifetime_withdrawal: number;
   retirement: boolean;
   planned_balance: number;
   returns?: number;
@@ -31,7 +33,9 @@ export interface YearlyProjectionData {
   contribution: number;
   withdrawal: number;
   balance: number;
+  projected_lifetime_withdrawal: number;
   planned_balance: number;
+  planned_lifetime_withdrawal: number;
   months?: MonthlyProjectionData[];
   isRetirementTransitionYear?: boolean;
   hasHistoricalData: boolean;
@@ -144,6 +148,8 @@ export function generateProjectionData(
           isHistorical: true,
           retirement: isRetirementAge,
           difference_from_planned_balance: historicalRecord.ending_balance - projectedBalance,
+          projected_lifetime_withdrawal: historicalRecord.ending_balance / (investmentPlan.expected_return/100),
+          planned_lifetime_withdrawal: projectedBalance / (investmentPlan.expected_return/100),
           effectiveRate: monthlyReturnRate,
           ipcaRate: monthlyInflationRate,
           accumulatedInflation: accumulatedInflation
@@ -159,6 +165,8 @@ export function generateProjectionData(
           balance: 0,
           retirement: false,
           planned_balance: projectedBalance,
+          projected_lifetime_withdrawal: currentBalance / (investmentPlan.expected_return/100),
+          planned_lifetime_withdrawal: projectedBalance / (investmentPlan.expected_return/100),
           goalsEventsImpact: 0,
           isHistorical: false,
           effectiveRate: monthlyReturnRate,
@@ -201,6 +209,8 @@ export function generateProjectionData(
           withdrawal,
           balance: currentBalance,
           planned_balance: projectedBalance,
+          projected_lifetime_withdrawal: currentBalance / (investmentPlan.expected_return/100),
+          planned_lifetime_withdrawal: projectedBalance / (investmentPlan.expected_return/100),
           returns: monthlyReturn,
           isHistorical: false,
           difference_from_planned_balance: currentBalance - projectedBalance,
@@ -221,6 +231,8 @@ export function generateProjectionData(
         balance: currentBalance,
         planned_balance: projectedBalance,
         isHistorical: false,
+        projected_lifetime_withdrawal: currentBalance / (investmentPlan.expected_return/100),
+        planned_lifetime_withdrawal: projectedBalance / (investmentPlan.expected_return/100),
         difference_from_planned_balance: currentBalance - projectedBalance,
         goalsEventsImpact,
         retirement: false,
@@ -248,6 +260,8 @@ export function generateProjectionData(
         withdrawal: yearlyWithdrawal,
         balance: lastMonth.balance,
         planned_balance: lastMonth.planned_balance,
+        projected_lifetime_withdrawal: lastMonth.balance / (investmentPlan.expected_return/100),
+        planned_lifetime_withdrawal: lastMonth.planned_balance / (investmentPlan.expected_return/100),
         months: monthlyData,
         isRetirementTransitionYear: age === investmentPlan.final_age,
         hasHistoricalData: monthlyData.some(month => month.isHistorical),
