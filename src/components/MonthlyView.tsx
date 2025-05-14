@@ -757,9 +757,9 @@ export const MonthlyView = ({
                         {data.return >= 0 ? '+' : ''}{formatCurrency(data.return, investmentPlan?.currency as CurrencyCode)}
                       </td>
                       <td className={`p-3 text-right font-medium ${
-                        data.percentage >= 0 ? 'text-green-600' : 'text-red-600'
+                        data.percentage === null ? 'text-gray-600' : data.percentage >= 0 ? 'text-green-600' : 'text-red-600'
                       }`}>
-                        {data.percentage >= 0 ? '+' : ''}{data.percentage.toFixed(2)}%
+                        {data.percentage && data.percentage >= 0 ? '+' : ''}{data.percentage?.toFixed(2) || 0}%
                       </td>
                       <td className="p-3 text-right font-semibold">{formatCurrency(data.endBalance, investmentPlan?.currency as CurrencyCode)}</td>
                       <td className="p-3 text-right font-medium">{data.targetRentability?.toFixed(2)}%</td>
