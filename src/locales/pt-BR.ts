@@ -362,6 +362,7 @@ export const ptBR = {
     loading: "Verificando permissões..."
   },
   common: {
+    perYear: "por ano",
     notInformed: "Não informado",
     every: "a cada",
     change: "Alterar",
@@ -556,7 +557,10 @@ export const ptBR = {
     selectedMonth: "Mês Selecionado",
     selectedYear: "Ano Selecionado",
     showNegativeValues: "Com Valores Negativos",
-    hideNegativeValues: "Sem Valores Negativos"
+    hideNegativeValues: "Sem Valores Negativos",
+    lifetimeIncome: "Renda Vitalícia",
+    projectedLifetimeIncome: "Renda Vitalícia Projetada",
+    plannedLifetimeIncome: "Renda Vitalícia Planejada"
   },
   budgetCategories: {
     categories: {
