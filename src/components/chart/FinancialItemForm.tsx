@@ -82,7 +82,7 @@ export const FinancialItemForm = ({
       year: initialValues?.year || '',
       type,
       payment_mode: initialValues?.payment_mode || 'none',
-      installment_count: '',
+      installment_count: initialValues?.installment_count?.toString() || '',
       installment_interval: initialValues?.installment_interval?.toString() || '1',
     },
   });
