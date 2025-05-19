@@ -751,6 +751,7 @@ export const ptBR = {
       repeatMode: "Repetir valor",
       selectInstallments: "Selecione o número de parcelas",
       installmentCount: "Número de parcelas",
+      repeatCount: "Número de repetições",
       installmentInterval: "Intervalo entre parcelas (meses)"
     },
     labels: {
@@ -793,6 +794,7 @@ export const ptBR = {
       installmentProject: "Parcelado?",
       selectInstallments: "Selecione o número de parcelas",
       installmentCount: "Número de parcelas",
+      repeatCount: "Número de repetições",
       installmentInterval: "Intervalo entre parcelas (meses)",
       eventType: "Tipo do Evento",
       amount: "Valor",

@@ -524,10 +524,10 @@ export const ExpenseChart = ({
               <div className="text-sm text-gray-600">
                 {t('financialRecords.form.year')}: {goal.year}
               </div>
-              {goal.payment_mode === 'installment' || goal.payment_mode === 'repeat' && (
+              {(goal.payment_mode === 'installment' || goal.payment_mode === 'repeat') && (
                 <>
                   <div className="text-sm text-blue-600 mt-1">
-                    {t('financialGoals.form.installmentCount')}: {goal.installment_count}x {goal.installment_interval > 1 ? t('common.every') + ' ' + goal.installment_interval + ' ' + t('common.months') : ''}
+                    {goal.payment_mode === 'installment' ? t('financialGoals.form.installmentCount') : t('events.form.repeatCount')}: {goal.installment_count}x {goal.installment_interval > 1 ? t('common.every') + ' ' + goal.installment_interval + ' ' + t('common.months') : ''}
                   </div>
                 </>
               )}
@@ -602,9 +602,9 @@ export const ExpenseChart = ({
               <div className="text-sm text-gray-600">
                 {t('financialRecords.form.year')}: {event.year}
               </div>
-              {event.payment_mode === 'installment' || event.payment_mode === 'repeat' && (
+              {(event.payment_mode === 'installment' || event.payment_mode === 'repeat') && (
                 <div className="text-sm text-blue-600 mt-1">
-                  {t('financialGoals.form.installmentCount')}: {event.installment_count}x {event.installment_interval > 1 ? t('common.every') + ' ' + event.installment_interval + ' ' + t('common.months') : ''}
+                  {event.payment_mode === 'installment' ? t('financialGoals.form.installmentCount') : t('events.form.repeatCount')}: {event.installment_count}x {event.installment_interval > 1 ? t('common.every') + ' ' + event.installment_interval + ' ' + t('common.months') : ''}
                 </div>
               )}
             </div>
