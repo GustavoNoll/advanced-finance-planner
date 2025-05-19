@@ -48,7 +48,7 @@ export function processItem<T extends Goal | ProjectedEvent>(
       installment_count: item.installment_count,
       installment_interval: item.installment_interval,
       month: month,
-      amount: item.asset_value / item.installment_count,
+      amount: item.payment_mode === 'repeat' ? item.asset_value : item.asset_value / item.installment_count,
       description: `${item.icon} (${index + 1}/${item.installment_count})`
     };
   });
