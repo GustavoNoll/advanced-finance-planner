@@ -1,15 +1,16 @@
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Trash2 } from "lucide-react";
+import { Trash2, Pencil } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { goalIcons } from "@/constants/goals";
 import { Goal } from "@/types/financial";
 import { formatCurrency, CurrencyCode, getCurrencySymbol } from "@/utils/currency";
 
-export const GoalCard = ({ goal, currency, onDelete }: { 
+export const GoalCard = ({ goal, currency, onDelete, onEdit }: { 
   goal: Goal; 
   currency: CurrencyCode;
   onDelete: () => void;
+  onEdit: () => void;
 }) => {
   const { t } = useTranslation();
   const Icon = goalIcons[goal.icon];
@@ -66,14 +67,24 @@ export const GoalCard = ({ goal, currency, onDelete }: {
             </p>
           </div>
         </div>
-        <Button 
-          variant="ghost" 
-          size="sm" 
-          onClick={onDelete}
-          className="hover:bg-red-50 hover:text-red-500 transition-colors"
-        >
-          <Trash2 className="h-4 w-4" />
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            onClick={onEdit}
+            className="hover:bg-blue-50 hover:text-blue-500 transition-colors"
+          >
+            <Pencil className="h-4 w-4" />
+          </Button>
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            onClick={onDelete}
+            className="hover:bg-red-50 hover:text-red-500 transition-colors"
+          >
+            <Trash2 className="h-4 w-4" />
+          </Button>
+        </div>
       </div>
     </Card>
   );

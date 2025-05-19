@@ -1,15 +1,16 @@
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Trash2, CheckCircle, Target, TrendingUp, Calendar } from "lucide-react";
+import { Trash2, CheckCircle, Target, TrendingUp, Calendar, Pencil } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { ProjectedEvent } from "@/types/financial";
 import { formatCurrency, CurrencyCode, getCurrencySymbol } from "@/utils/currency";
 
-export const EventCard = ({ event, currency, onDelete, onToggleStatus }: { 
+export const EventCard = ({ event, currency, onDelete, onToggleStatus, onEdit }: { 
   event: ProjectedEvent; 
   currency: CurrencyCode;
   onDelete: () => void;
   onToggleStatus: () => void;
+  onEdit: () => void;
 }) => {
   const { t } = useTranslation();
   
@@ -94,6 +95,14 @@ export const EventCard = ({ event, currency, onDelete, onToggleStatus }: {
             ) : (
               <Calendar className="h-4 w-4" />
             )}
+          </Button>
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            onClick={onEdit}
+            className="hover:bg-blue-50 hover:text-blue-500 transition-colors"
+          >
+            <Pencil className="h-4 w-4" />
           </Button>
           <Button 
             variant="ghost" 

@@ -11,7 +11,7 @@ import { useTranslation } from "react-i18next";
 import { GoalCard } from '@/components/financial-goals/GoalCard';
 import { FinancialItemForm } from '@/components/chart/FinancialItemForm';
 import { CurrencyCode } from "@/utils/currency";
-import { FinancialItemFormValues } from "@/types/financial";
+import { FinancialItemFormValues, Goal } from "@/types/financial";
 
 const FinancialGoals = () => {
   const { id: userId } = useParams();
@@ -22,6 +22,7 @@ const FinancialGoals = () => {
   const queryClient = useQueryClient();
   const [showAddForm, setShowAddForm] = useState(false);
   const [showCompleted, setShowCompleted] = useState(false);
+  const [editingGoal, setEditingGoal] = useState<Goal | null>(null);
 
   const { data: goals, isLoading } = useQuery({
     queryKey: ["financial-goals", userId],
@@ -70,6 +71,44 @@ const FinancialGoals = () => {
     onError: () => {
       toast({
         title: t("financialGoals.messages.createError"),
+        variant: "destructive",
+      });
+    },
+  });
+
+  const updateGoal = useMutation({
+    mutationFn: async (values: FinancialItemFormValues) => {
+      if (!editingGoal) throw new Error('No goal selected for editing');
+      
+      const assetValue = parseFloat(values.asset_value.replace(/[^\d.,-]/g, '').replace(',', '.'));
+      
+      const { data, error } = await supabase
+        .from("financial_goals")
+        .update({
+          name: values.name,
+          icon: values.icon,
+          asset_value: assetValue,
+          month: parseInt(values.month),
+          year: parseInt(values.year),
+          payment_mode: values.payment_mode,
+          installment_count: values.installment_count ? parseInt(values.installment_count) : null,
+          installment_interval: values.installment_interval ? parseInt(values.installment_interval) : null,
+        })
+        .eq("id", editingGoal.id);
+
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["financial-goals"] });
+      setEditingGoal(null);
+      toast({
+        title: t("financialGoals.messages.updateSuccess"),
+      });
+    },
+    onError: () => {
+      toast({
+        title: t("financialGoals.messages.updateError"),
         variant: "destructive",
       });
     },
@@ -144,15 +183,28 @@ const FinancialGoals = () => {
             </div>
           </Button>
 
-          {showAddForm && (
+          {(showAddForm || editingGoal) && (
             <Card className="p-4 bg-white shadow-sm border border-gray-200">
               <FinancialItemForm
                 type="goal"
-                onSubmit={(values) => createGoal.mutate(values)}
-                onCancel={() => setShowAddForm(false)}
-                isSubmitting={createGoal.isPending}
+                onSubmit={(values) => editingGoal ? updateGoal.mutate(values) : createGoal.mutate(values)}
+                onCancel={() => {
+                  setShowAddForm(false);
+                  setEditingGoal(null);
+                }}
+                isSubmitting={createGoal.isPending || updateGoal.isPending}
                 currency={currency as CurrencyCode}
                 showTypeSelector={false}
+                initialValues={editingGoal ? {
+                  name: editingGoal.name,
+                  icon: editingGoal.icon,
+                  asset_value: editingGoal.asset_value.toString(),
+                  month: editingGoal.month.toString(),
+                  year: editingGoal.year.toString(),
+                  payment_mode: editingGoal.payment_mode,
+                  installment_count: editingGoal.installment_count?.toString() || '',
+                  installment_interval: editingGoal.installment_interval?.toString() || '1',
+                } : undefined}
               />
             </Card>
           )}
@@ -173,6 +225,7 @@ const FinancialGoals = () => {
                     deleteGoal.mutate(goal.id);
                   }
                 }}
+                onEdit={() => setEditingGoal(goal)}
               />
             ))}
           </div>
@@ -198,6 +251,7 @@ const FinancialGoals = () => {
                         deleteGoal.mutate(goal.id);
                       }
                     }}
+                    onEdit={() => setEditingGoal(goal)}
                   />
                 ))}
               </div>

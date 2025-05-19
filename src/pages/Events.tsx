@@ -11,7 +11,7 @@ import { useTranslation } from "react-i18next";
 import { EventCard } from '@/components/events/EventCard';
 import { FinancialItemForm } from '@/components/chart/FinancialItemForm';
 import { CurrencyCode } from "@/utils/currency";
-import { FinancialItemFormValues } from "@/types/financial";
+import { FinancialItemFormValues, ProjectedEvent } from "@/types/financial";
 
 const Events = () => {
   const { id: userId } = useParams();
@@ -22,6 +22,7 @@ const Events = () => {
   const queryClient = useQueryClient();
   const [showAddForm, setShowAddForm] = useState(false);
   const [showCompleted, setShowCompleted] = useState(false);
+  const [editingEvent, setEditingEvent] = useState<ProjectedEvent | null>(null);
 
   const { data: events, isLoading } = useQuery({
     queryKey: ["events", userId],
@@ -52,8 +53,8 @@ const Events = () => {
           year: parseInt(values.year),
           status: 'pending',
           payment_mode: values.payment_mode,
-          installment_count: values.payment_mode === 'installment' || values.payment_mode === 'repeat' ? parseInt(values.installment_count || '0') : null,
-          installment_interval: values.payment_mode === 'installment' || values.payment_mode === 'repeat' ? parseInt(values.installment_interval || '1') : null,
+          installment_count: values.installment_count ? parseInt(values.installment_count) : null,
+          installment_interval: values.installment_interval ? parseInt(values.installment_interval) : null,
         },
       ]);
 
@@ -70,6 +71,44 @@ const Events = () => {
     onError: () => {
       toast({
         title: t("events.messages.createError"),
+        variant: "destructive",
+      });
+    },
+  });
+
+  const updateEvent = useMutation({
+    mutationFn: async (values: FinancialItemFormValues) => {
+      if (!editingEvent) throw new Error('No event selected for editing');
+      
+      const assetValue = parseFloat(values.asset_value.replace(/[^\d.,-]/g, '').replace(',', '.'));
+      
+      const { data, error } = await supabase
+        .from("events")
+        .update({
+          name: values.name,
+          icon: values.icon,
+          asset_value: assetValue,
+          month: parseInt(values.month),
+          year: parseInt(values.year),
+          payment_mode: values.payment_mode,
+          installment_count: values.installment_count ? parseInt(values.installment_count) : null,
+          installment_interval: values.installment_interval ? parseInt(values.installment_interval) : null,
+        })
+        .eq("id", editingEvent.id);
+
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["events"] });
+      setEditingEvent(null);
+      toast({
+        title: t("events.messages.updateSuccess"),
+      });
+    },
+    onError: () => {
+      toast({
+        title: t("events.messages.updateError"),
         variant: "destructive",
       });
     },
@@ -158,15 +197,28 @@ const Events = () => {
             </div>
           </Button>
 
-          {showAddForm && (
+          {(showAddForm || editingEvent) && (
             <Card className="p-4 bg-white shadow-sm border border-gray-200">
               <FinancialItemForm
                 type="event"
-                onSubmit={(values) => createEvent.mutate(values)}
-                onCancel={() => setShowAddForm(false)}
-                isSubmitting={createEvent.isPending}
+                onSubmit={(values) => editingEvent ? updateEvent.mutate(values) : createEvent.mutate(values)}
+                onCancel={() => {
+                  setShowAddForm(false);
+                  setEditingEvent(null);
+                }}
+                isSubmitting={createEvent.isPending || updateEvent.isPending}
                 currency={currency as CurrencyCode}
                 showTypeSelector={false}
+                initialValues={editingEvent ? {
+                  name: editingEvent.name,
+                  icon: editingEvent.icon,
+                  asset_value: editingEvent.asset_value.toString(),
+                  month: editingEvent.month.toString(),
+                  year: editingEvent.year.toString(),
+                  payment_mode: editingEvent.payment_mode,
+                  installment_count: editingEvent.installment_count?.toString() || '',
+                  installment_interval: editingEvent.installment_interval?.toString() || '1',
+                } : undefined}
               />
             </Card>
           )}
@@ -193,6 +245,7 @@ const Events = () => {
                     status: event.status === 'pending' ? 'completed' : 'pending'
                   });
                 }}
+                onEdit={() => setEditingEvent(event)}
               />
             ))}
           </div>
@@ -224,6 +277,7 @@ const Events = () => {
                         status: event.status === 'pending' ? 'completed' : 'pending'
                       });
                     }}
+                    onEdit={() => setEditingEvent(event)}
                   />
                 ))}
               </div>
