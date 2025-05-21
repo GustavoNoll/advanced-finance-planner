@@ -1,6 +1,6 @@
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend, ReferenceLine, Label } from 'recharts';
 import { useTranslation } from "react-i18next";
-import { ChartDataPoint, FinancialRecord, Goal, ProjectedEvent, MonthNumber, InvestmentPlan, Profile } from '@/types/financial';
+import { ChartDataPoint, FinancialRecord, Goal, ProjectedEvent, MonthNumber, InvestmentPlan, Profile, FinancialItemFormValues } from '@/types/financial';
 import { generateChartProjections, YearlyProjectionData } from '@/lib/chart-projections';
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
@@ -12,6 +12,7 @@ import type { ViewBox } from 'recharts/types/util/types';
 import { CurrencyCode, formatCurrency, getCurrencySymbol } from "@/utils/currency";
 import { Switch } from "@/components/ui/switch";
 import { HoverCard, HoverCardContent, HoverCardTrigger } from "@/components/ui/hover-card";
+import { EditFinancialItemDialog } from "@/components/chart/EditFinancialItemDialog";
 
 interface ChartPoint {
   age: string;
@@ -88,6 +89,8 @@ export const ExpenseChart = ({
   const [customRange, setCustomRange] = useState<{ past: number, future: number }>({ past: 1, future: 1 });
   const [selectedPoint, setSelectedPoint] = useState<ChartPoint | null>(null);
   const [showDialog, setShowDialog] = useState(false);
+  const [selectedItem, setSelectedItem] = useState<Goal | ProjectedEvent | null>(null);
+  const [showEditDialog, setShowEditDialog] = useState(false);
   
   // Add query for financial goals
   const { data: goals } = useQuery<Goal[]>({
@@ -102,7 +105,8 @@ export const ExpenseChart = ({
         .order("month", { ascending: true });
 
       if (error) throw error;
-      return data;
+      // add type to each goal
+      return data.map(goal => ({ ...goal, type: 'goal' }));
     },
   });
 
@@ -116,7 +120,8 @@ export const ExpenseChart = ({
         .eq("status", "pending"); 
 
       if (error) throw error;
-      return data;
+      // add type to each event
+      return data.map(event => ({ ...event, type: 'event' }));
     },
   });
 
@@ -186,6 +191,73 @@ export const ExpenseChart = ({
     },
   });
 
+  // Add mutation for updating goals
+  const updateGoal = useMutation({
+    mutationFn: async (values: FinancialItemFormValues) => {
+      const { data, error } = await supabase
+        .from("financial_goals")
+        .update({
+          name: values.name,
+          icon: values.icon,
+          asset_value: parseFloat(values.asset_value.replace(/[^\d.,]/g, '').replace(',', '.')),
+          month: parseInt(values.month),
+          year: parseInt(values.year),
+          payment_mode: values.payment_mode,
+          installment_count: values.payment_mode === 'installment' || values.payment_mode === 'repeat' ? parseInt(values.installment_count || "0") : null,
+          installment_interval: values.payment_mode === 'installment' || values.payment_mode === 'repeat' ? parseInt(values.installment_interval || "1") : null,
+        })
+        .eq('id', selectedItem?.id)
+        .select();
+
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["financial-goals"] });
+      queryClient.invalidateQueries({ queryKey: ["counters"] });
+      setShowEditDialog(false);
+      setSelectedItem(null);
+      onProjectionDataChange?.();
+    },
+  });
+
+  // Add mutation for updating events
+  const updateEvent = useMutation({
+    mutationFn: async (values: FinancialItemFormValues) => {
+      const cleanAmount = values.asset_value
+        .replace(/[R$\s]/g, '')
+        .replace(/\./g, '')
+        .replace(',', '.');
+
+      const amount = parseFloat(cleanAmount);
+
+      const { data, error } = await supabase
+        .from("events")
+        .update({
+          name: values.name,
+          icon: values.icon,
+          asset_value: amount,
+          month: parseInt(values.month),
+          year: parseInt(values.year),
+          payment_mode: values.payment_mode,
+          installment_count: values.payment_mode === 'installment' || values.payment_mode === 'repeat' ? parseInt(values.installment_count || "0") : null,
+          installment_interval: values.payment_mode === 'installment' || values.payment_mode === 'repeat' ? parseInt(values.installment_interval || "1") : null,
+        })
+        .eq('id', selectedItem?.id)
+        .select();
+
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["events"] });
+      queryClient.invalidateQueries({ queryKey: ["counters"] });
+      setShowEditDialog(false);
+      setSelectedItem(null);
+      onProjectionDataChange?.();
+    },
+  });
+
   const handleChartClick = (data: ChartPoint) => {
     setSelectedPoint(data);
     setShowDialog(true);
@@ -194,6 +266,22 @@ export const ExpenseChart = ({
   const handleDialogClose = () => {
     setShowDialog(false);
     setSelectedPoint(null);
+  };
+
+  const handleEditItem = (item: Goal | ProjectedEvent) => {
+    setSelectedItem(item);
+    setShowEditDialog(true);
+  };
+
+  const handleEditSubmit = async (values: FinancialItemFormValues) => {
+    if (!selectedItem) return;
+
+    if (selectedItem.type === 'goal') {
+      await updateGoal.mutateAsync(values);
+    } else if (selectedItem.type === 'event') {
+      await updateEvent.mutateAsync(values);
+    }
+    console.log('error on update', values);
   };
 
   if (!profile || !investmentPlan || !clientId || !allFinancialRecords) {
@@ -487,6 +575,21 @@ export const ExpenseChart = ({
       <g 
         transform={`translate(${x}, ${y})`}
         className="group cursor-pointer"
+        onClick={() => handleEditItem(goal)}
+        onMouseEnter={(e) => {
+          e.stopPropagation();
+          const tooltip = document.querySelector('.recharts-tooltip-wrapper');
+          if (tooltip) {
+            tooltip.setAttribute('style', 'display: none !important');
+          }
+        }}
+        onMouseLeave={(e) => {
+          e.stopPropagation();
+          const tooltip = document.querySelector('.recharts-tooltip-wrapper');
+          if (tooltip) {
+            tooltip.setAttribute('style', 'position: absolute; pointer-events: none; visibility: visible; z-index: 10; transition: visibility 0s linear 0s, opacity 0.3s linear 0s; opacity: 1; top: 0px; left: 0px; transform: translate3d(0px, 0px, 0px);');
+          }
+        }}
       >
         <circle
           cx={0}
@@ -499,18 +602,19 @@ export const ExpenseChart = ({
         <g transform={`translate(${-iconSize/2}, ${-iconSize/2})`} className="transition-transform duration-200 group-hover:scale-110">
           {getIcon()}
         </g>
-        <g transform="translate(0, -60)">
+        <g transform="translate(0, -60)" className="opacity-0 group-hover:opacity-100 transition-opacity duration-200">
           <foreignObject
             x={-100}
             y={100}
             width={200}
-            height={120}
-            style={{ overflow: 'visible' }}
-            className="opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none"
+            height={50}
+            style={{ overflow: 'visible', pointerEvents: 'auto' }}
+            onMouseEnter={e => e.stopPropagation()}
+            onMouseMove={e => e.stopPropagation()}
           >
             <div className="bg-white p-3 rounded-lg shadow-lg border border-gray-200">
               <div className="text-sm font-medium text-blue-600 mb-1">
-                {t('financialGoals.title')}
+                {t('financialGoals.title')}: {goal.name}
               </div>
               <div className="text-lg font-semibold text-red-600 mb-2">
                 {t('common.value')}: {formattedAmount}
@@ -565,6 +669,21 @@ export const ExpenseChart = ({
       <g 
         transform={`translate(${x}, ${y})`}
         className="group cursor-pointer"
+        onClick={() => handleEditItem(event)}
+        onMouseEnter={(e) => {
+          e.stopPropagation();
+          const tooltip = document.querySelector('.recharts-tooltip-wrapper');
+          if (tooltip) {
+            tooltip.setAttribute('style', 'display: none !important');
+          }
+        }}
+        onMouseLeave={(e) => {
+          e.stopPropagation();
+          const tooltip = document.querySelector('.recharts-tooltip-wrapper');
+          if (tooltip) {
+            tooltip.setAttribute('style', 'position: absolute; pointer-events: none; visibility: visible; z-index: 10; transition: visibility 0s linear 0s, opacity 0.3s linear 0s; opacity: 1; top: 0px; left: 0px; transform: translate3d(0px, 0px, 0px);');
+          }
+        }}
       >
         <circle
           cx={0}
@@ -577,18 +696,19 @@ export const ExpenseChart = ({
         <g transform={`translate(${-iconSize/2}, ${-iconSize/2})`} className="transition-transform duration-200 group-hover:scale-110">
           {getIcon()}
         </g>
-        <g transform="translate(0, -60)">
+        <g transform="translate(0, -60)" className="opacity-0 group-hover:opacity-100 transition-opacity duration-200">
           <foreignObject
             x={-100}
             y={100}
             width={200}
             height={120}
-            style={{ overflow: 'visible' }}
-            className="opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none"
+            style={{ overflow: 'visible', pointerEvents: 'auto' }}
+            onMouseEnter={e => e.stopPropagation()}
+            onMouseMove={e => e.stopPropagation()}
           >
             <div className="bg-white p-3 rounded-lg shadow-lg border border-gray-200">
               <div className={`text-sm font-medium ${event.asset_value >= 0 ? 'text-green-600' : 'text-red-600'} mb-1`}>
-                {t('events.title')}
+                {t('events.title')}: {event.name}
               </div>
               <div className={`text-lg font-semibold ${event.asset_value >= 0 ? 'text-green-600' : 'text-red-600'} mb-2`}>
                 {t('common.value')}: {formattedAmount}
@@ -1050,6 +1170,14 @@ export const ExpenseChart = ({
         onSubmitEvent={createEvent.mutateAsync}
         onCancel={handleDialogClose}
         type={'goal'}
+      />
+
+      <EditFinancialItemDialog
+        open={showEditDialog}
+        onOpenChange={setShowEditDialog}
+        item={selectedItem}
+        currency={investmentPlan?.currency as CurrencyCode}
+        onSubmit={handleEditSubmit}
       />
     </div>
   );

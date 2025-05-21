@@ -74,6 +74,7 @@ export type MonthNumber = 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12;
 
 export interface Goal {
   id: string;
+  type?: 'goal'
   profile_id: string;
   icon: 'house' | 'car' | 'travel' | 'family' | 'electronic' | 'education' | 'hobby' | 'professional' | 'health' | 'other';
   asset_value: number;
@@ -95,6 +96,7 @@ export type UpdateGoal = Partial<CreateGoal>;
 
 export interface ProjectedEvent {
   id: string;
+  type?: 'event'
   profile_id: string;
   name: string;
   asset_value: number;
