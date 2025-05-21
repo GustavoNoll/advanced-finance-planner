@@ -3,6 +3,7 @@ import { FinancialItemForm } from "./FinancialItemForm";
 import { FinancialItemFormValues } from "@/types/financial";
 import { CurrencyCode } from "@/utils/currency";
 import { Goal, ProjectedEvent } from "@/types/financial";
+import { useTranslation } from "react-i18next";
 
 interface EditFinancialItemDialogProps {
   open: boolean;
@@ -19,6 +20,7 @@ export const EditFinancialItemDialog = ({
   currency,
   onSubmit,
 }: EditFinancialItemDialogProps) => {
+  const { t } = useTranslation();
   if (!item) return null;
 
   const initialValues: FinancialItemFormValues = {
@@ -39,7 +41,7 @@ export const EditFinancialItemDialog = ({
       <DialogContent className="sm:max-w-[600px]">
         <DialogHeader>
           <DialogTitle>
-            {initialValues.type === 'goal' ? 'Edit Financial Goal' : 'Edit Event'}
+            {initialValues.type === 'goal' ? t('financialGoals.editGoal') : t('events.editEvent')}
           </DialogTitle>
         </DialogHeader>
         <FinancialItemForm
