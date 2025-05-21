@@ -48,6 +48,7 @@ const createSchema = (type: 'goal' | 'event') => {
       type: z.literal('event'),
     });
   }
+  console.log('ERROR');
 };
 
 interface FinancialItemFormProps {
