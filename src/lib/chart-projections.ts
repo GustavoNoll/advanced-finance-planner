@@ -75,8 +75,8 @@ export function generateProjectionData(
   const startYear = planStartDate.getFullYear();
   const startMonth = planStartDate.getMonth() + 1;
   
-  let currentBalance = initialRecords[0]?.ending_balance || investmentPlan.initial_amount;
-  let projectedBalance = investmentPlan.initial_amount;
+  let projectedBalance = initialRecords[0]?.ending_balance || investmentPlan.initial_amount;
+  let plannedBalance = investmentPlan.initial_amount;
   let currentMonthlyDeposit = investmentPlan.monthly_deposit;
   let currentMonthlyWithdrawal = investmentPlan.desired_income;
   
@@ -134,57 +134,60 @@ export function generateProjectionData(
       const historicalKey = `${year}-${currentMonthNumber}`;
       const historicalRecord = historicalRecordsMap.get(historicalKey);
       const isInPast = lastHistoricalRecord ? lastHistoricalRecord > new Date(year, month) : new Date(year, month) < nextMonth;
-        
-      if (historicalRecord) {
-        lastHistoricalRecord = new Date(year, month + 1);
-        projectedBalance = ((projectedBalance) * (1 + monthlyReturnRate) + (currentMonthlyDeposit)) + ((historicalRecord.events_balance || 0) * accumulatedInflation);
-        return {
-          month: currentMonthNumber,
-          contribution: historicalRecord.monthly_contribution > 0 ? historicalRecord.monthly_contribution : 0,
-          withdrawal: historicalRecord.monthly_contribution < 0 ? Math.abs(historicalRecord.monthly_contribution) : 0,
-          balance: historicalRecord.ending_balance,
-          planned_balance: projectedBalance,
-          goalsEventsImpact: historicalRecord.events_balance || 0,
-          isHistorical: true,
-          retirement: isRetirementAge,
-          difference_from_planned_balance: historicalRecord.ending_balance - projectedBalance,
-          projected_lifetime_withdrawal: historicalRecord.ending_balance / (investmentPlan.expected_return/100),
-          planned_lifetime_withdrawal: projectedBalance / (investmentPlan.expected_return/100),
-          effectiveRate: monthlyReturnRate,
-          ipcaRate: monthlyInflationRate,
-          accumulatedInflation: accumulatedInflation
-        };
-      }
-
+      
       if (isInPast) {
-        projectedBalance = (projectedBalance) * (1 + monthlyReturnRate) + (currentMonthlyDeposit);
+        plannedBalance = (plannedBalance) * (1 + monthlyReturnRate) + (currentMonthlyDeposit);
         return {
           month: currentMonthNumber,
           contribution: 0,
           withdrawal: 0,
           balance: 0,
           retirement: false,
-          planned_balance: projectedBalance,
-          projected_lifetime_withdrawal: currentBalance / (investmentPlan.expected_return/100),
-          planned_lifetime_withdrawal: projectedBalance / (investmentPlan.expected_return/100),
+          planned_balance: plannedBalance,
+          projected_lifetime_withdrawal: projectedBalance / (investmentPlan.expected_return/100),
+          planned_lifetime_withdrawal: plannedBalance / (investmentPlan.expected_return/100),
           goalsEventsImpact: 0,
           isHistorical: false,
           effectiveRate: monthlyReturnRate,
-          difference_from_planned_balance: projectedBalance - currentBalance,
+          difference_from_planned_balance: plannedBalance - projectedBalance,
           ipcaRate: monthlyInflationRate,
           accumulatedInflation: accumulatedInflation
         };
       }
 
-      const previousBalance = currentBalance;
-      currentBalance = handleMonthlyGoalsAndEvents(
-        currentBalance,
+      // always update the planned balance with the goals and events
+      plannedBalance = handleMonthlyGoalsAndEvents(
+        plannedBalance,
         year,
         currentMonthNumber - 1,
         accumulatedInflation,
         goalsForChart,
         eventsForChart,
       );
+
+
+      if (historicalRecord) {
+        lastHistoricalRecord = new Date(year, month + 1);
+        plannedBalance = ((plannedBalance) * (1 + monthlyReturnRate) + (currentMonthlyDeposit)) + ((historicalRecord.events_balance || 0) * accumulatedInflation);
+        return {
+          month: currentMonthNumber,
+          contribution: historicalRecord.monthly_contribution > 0 ? historicalRecord.monthly_contribution : 0,
+          withdrawal: historicalRecord.monthly_contribution < 0 ? Math.abs(historicalRecord.monthly_contribution) : 0,
+          balance: historicalRecord.ending_balance,
+          planned_balance: plannedBalance,
+          goalsEventsImpact: historicalRecord.events_balance || 0,
+          isHistorical: true,
+          retirement: isRetirementAge,
+          difference_from_planned_balance: historicalRecord.ending_balance - plannedBalance,
+          projected_lifetime_withdrawal: historicalRecord.ending_balance / (investmentPlan.expected_return/100),
+          planned_lifetime_withdrawal: plannedBalance / (investmentPlan.expected_return/100),
+          effectiveRate: monthlyReturnRate,
+          ipcaRate: monthlyInflationRate,
+          accumulatedInflation: accumulatedInflation
+        };
+      }
+
+      const previousBalance = projectedBalance;
       projectedBalance = handleMonthlyGoalsAndEvents(
         projectedBalance,
         year,
@@ -193,27 +196,27 @@ export function generateProjectionData(
         goalsForChart,
         eventsForChart,
       );
-      const goalsEventsImpact = currentBalance - previousBalance;
+      const goalsEventsImpact = projectedBalance - previousBalance;
 
 
       if (isRetirementAge) {
-        const monthlyReturn = currentBalance * monthlyReturnRate;
+        const monthlyReturn = projectedBalance * monthlyReturnRate;
         const withdrawal = currentMonthlyWithdrawal;
         
-        currentBalance = (currentBalance - withdrawal) * (1 + monthlyReturnRate);
         projectedBalance = (projectedBalance - withdrawal) * (1 + monthlyReturnRate);
+        plannedBalance = (plannedBalance - withdrawal) * (1 + monthlyReturnRate);
 
         return {
           month: currentMonthNumber,
           contribution: 0,
           withdrawal,
-          balance: currentBalance,
-          planned_balance: projectedBalance,
-          projected_lifetime_withdrawal: currentBalance / (investmentPlan.expected_return/100),
-          planned_lifetime_withdrawal: projectedBalance / (investmentPlan.expected_return/100),
+          balance: projectedBalance,
+          planned_balance: plannedBalance,
+          projected_lifetime_withdrawal: projectedBalance / (investmentPlan.expected_return/100),
+          planned_lifetime_withdrawal: plannedBalance / (investmentPlan.expected_return/100),
           returns: monthlyReturn,
           isHistorical: false,
-          difference_from_planned_balance: currentBalance - projectedBalance,
+          difference_from_planned_balance: projectedBalance - plannedBalance,
           goalsEventsImpact,
           retirement: isRetirementAge,
           effectiveRate: monthlyReturnRate,
@@ -222,18 +225,18 @@ export function generateProjectionData(
         };
       }
 
-      currentBalance = (currentBalance) * (1 + monthlyReturnRate) + (currentMonthlyDeposit);
       projectedBalance = (projectedBalance) * (1 + monthlyReturnRate) + (currentMonthlyDeposit);
+      plannedBalance = (plannedBalance) * (1 + monthlyReturnRate) + (currentMonthlyDeposit);
       return {
         month: currentMonthNumber,
         contribution: currentMonthlyDeposit,
         withdrawal: 0,
-        balance: currentBalance,
-        planned_balance: projectedBalance,
+        balance: projectedBalance,
+        planned_balance: plannedBalance,
         isHistorical: false,
-        projected_lifetime_withdrawal: currentBalance / (investmentPlan.expected_return/100),
-        planned_lifetime_withdrawal: projectedBalance / (investmentPlan.expected_return/100),
-        difference_from_planned_balance: currentBalance - projectedBalance,
+        projected_lifetime_withdrawal: projectedBalance / (investmentPlan.expected_return/100),
+        planned_lifetime_withdrawal: plannedBalance / (investmentPlan.expected_return/100),
+        difference_from_planned_balance: projectedBalance - plannedBalance,
         goalsEventsImpact,
         retirement: false,
         monthlyReturnRate,
