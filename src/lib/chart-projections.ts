@@ -135,26 +135,6 @@ export function generateProjectionData(
       const historicalRecord = historicalRecordsMap.get(historicalKey);
       const isInPast = lastHistoricalRecord ? lastHistoricalRecord > new Date(year, month) : new Date(year, month) < nextMonth;
       
-      if (isInPast) {
-        plannedBalance = (plannedBalance) * (1 + monthlyReturnRate) + (currentMonthlyDeposit);
-        return {
-          month: currentMonthNumber,
-          contribution: 0,
-          withdrawal: 0,
-          balance: 0,
-          retirement: false,
-          planned_balance: plannedBalance,
-          projected_lifetime_withdrawal: projectedBalance / (investmentPlan.expected_return/100),
-          planned_lifetime_withdrawal: plannedBalance / (investmentPlan.expected_return/100),
-          goalsEventsImpact: 0,
-          isHistorical: false,
-          effectiveRate: monthlyReturnRate,
-          difference_from_planned_balance: plannedBalance - projectedBalance,
-          ipcaRate: monthlyInflationRate,
-          accumulatedInflation: accumulatedInflation
-        };
-      }
-
       // always update the planned balance with the goals and events
       plannedBalance = handleMonthlyGoalsAndEvents(
         plannedBalance,
@@ -186,6 +166,27 @@ export function generateProjectionData(
           accumulatedInflation: accumulatedInflation
         };
       }
+
+      if (isInPast) {
+        plannedBalance = (plannedBalance) * (1 + monthlyReturnRate) + (currentMonthlyDeposit);
+        return {
+          month: currentMonthNumber,
+          contribution: 0,
+          withdrawal: 0,
+          balance: 0,
+          retirement: false,
+          planned_balance: plannedBalance,
+          projected_lifetime_withdrawal: projectedBalance / (investmentPlan.expected_return/100),
+          planned_lifetime_withdrawal: plannedBalance / (investmentPlan.expected_return/100),
+          goalsEventsImpact: 0,
+          isHistorical: false,
+          effectiveRate: monthlyReturnRate,
+          difference_from_planned_balance: plannedBalance - projectedBalance,
+          ipcaRate: monthlyInflationRate,
+          accumulatedInflation: accumulatedInflation
+        };
+      }
+
 
       const previousBalance = projectedBalance;
       projectedBalance = handleMonthlyGoalsAndEvents(
