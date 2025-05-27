@@ -1,9 +1,9 @@
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Trash2, CheckCircle, Target, TrendingUp, Calendar, Pencil } from "lucide-react";
+import { Trash2, Pencil, CheckCircle, CircleDot, Target, TrendingUp, Calendar } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { ProjectedEvent } from "@/types/financial";
-import { formatCurrency, CurrencyCode, getCurrencySymbol } from "@/utils/currency";
+import { formatCurrency, CurrencyCode } from "@/utils/currency";
 
 export const EventCard = ({ event, currency, onDelete, onToggleStatus, onEdit }: { 
   event: ProjectedEvent; 
@@ -88,13 +88,9 @@ export const EventCard = ({ event, currency, onDelete, onToggleStatus, onEdit }:
             variant="ghost" 
             size="sm" 
             onClick={onToggleStatus}
-            className="hover:bg-green-50 hover:text-green-500 transition-colors"
+            className={`hover:bg-green-50 hover:text-green-500 transition-colors ${event.status === 'completed' ? 'text-green-500' : 'text-gray-400'}`}
           >
-            {event.status === 'completed' ? (
-              <CheckCircle className="h-4 w-4" />
-            ) : (
-              <Calendar className="h-4 w-4" />
-            )}
+            {event.status === 'completed' ? <CheckCircle className="h-4 w-4" /> : <CircleDot className="h-4 w-4" />}
           </Button>
           <Button 
             variant="ghost" 

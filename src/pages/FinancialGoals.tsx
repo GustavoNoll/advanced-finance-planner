@@ -137,6 +137,20 @@ const FinancialGoals = () => {
     },
   });
 
+  const toggleGoalStatus = useMutation({
+    mutationFn: async ({ goalId, status }: { goalId: string; status: 'pending' | 'completed' }) => {
+      const { error } = await supabase
+        .from("financial_goals")
+        .update({ status })
+        .eq("id", goalId);
+
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["financial-goals"] });
+    },
+  });
+
   if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -225,6 +239,12 @@ const FinancialGoals = () => {
                     deleteGoal.mutate(goal.id);
                   }
                 }}
+                onToggleStatus={() => {
+                  toggleGoalStatus.mutate({
+                    goalId: goal.id,
+                    status: goal.status === 'pending' ? 'completed' : 'pending'
+                  });
+                }}
                 onEdit={() => setEditingGoal(goal)}
               />
             ))}
@@ -250,6 +270,12 @@ const FinancialGoals = () => {
                       if (window.confirm(t("common.confirmDelete"))) {
                         deleteGoal.mutate(goal.id);
                       }
+                    }}
+                    onToggleStatus={() => {
+                      toggleGoalStatus.mutate({
+                        goalId: goal.id,
+                        status: goal.status === 'pending' ? 'completed' : 'pending'
+                      });
                     }}
                     onEdit={() => setEditingGoal(goal)}
                   />

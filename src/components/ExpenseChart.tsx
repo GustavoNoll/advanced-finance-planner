@@ -100,7 +100,6 @@ export const ExpenseChart = ({
         .from("financial_goals")
         .select("*")
         .eq("profile_id", clientId)
-        .eq("status", "pending")
         .order("year", { ascending: true })
         .order("month", { ascending: true });
 
@@ -117,7 +116,6 @@ export const ExpenseChart = ({
         .from("events")
         .select("*")
         .eq("profile_id", clientId)
-        .eq("status", "pending"); 
 
       if (error) throw error;
       // add type to each event
@@ -1061,7 +1059,7 @@ export const ExpenseChart = ({
                 }
               });
               
-              if (achievementPoint && goal.status === 'pending') {
+              if (achievementPoint) {
                 acc.push(
                   <ReferenceLine
                     key={`${goal.id}-actual`}
@@ -1100,7 +1098,7 @@ export const ExpenseChart = ({
                 }
               });
 
-              if (achievementPoint && event.status === 'pending') {
+              if (achievementPoint) {
                 acc.push(
                   <ReferenceLine
                     key={event.id}

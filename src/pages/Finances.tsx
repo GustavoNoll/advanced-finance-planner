@@ -262,13 +262,11 @@ const Finances = ({
           .from('financial_goals')
           .select('*', { count: 'exact', head: true })
           .eq('profile_id', clientId)
-          .eq('status', 'pending')
           .or(`year.gt.${currentYear},and(year.eq.${currentYear},month.gte.${currentMonth})`),
         supabase
           .from('events')
           .select('*', { count: 'exact', head: true })
           .eq('profile_id', clientId)
-          .eq('status', 'pending')
       ]);
 
       return {
@@ -286,13 +284,11 @@ const Finances = ({
         supabase
           .from('financial_goals')
           .select('*')
-          .eq('profile_id', clientId)
-          .eq('status', 'pending'),
+          .eq('profile_id', clientId),
         supabase
           .from('events')
           .select('*')
           .eq('profile_id', clientId)
-          .eq('status', 'pending')
       ]);
       return {
         goals: goalsResponse.data || [],
