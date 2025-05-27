@@ -1,4 +1,4 @@
-import { Goal, ProjectedEvent, MonthNumber } from '@/types/financial';
+import { Goal, ProjectedEvent } from '@/types/financial';
 
 export interface ProcessedGoalEvent {
   id: string;
@@ -6,6 +6,7 @@ export interface ProcessedGoalEvent {
   amount: number;
   month: number;
   year: number;
+  status: string;
   payment_mode?: 'none' | 'installment' | 'repeat';
   installment_count?: number;
   installment_interval?: number;
@@ -27,7 +28,8 @@ export function processItem<T extends Goal | ProjectedEvent>(
     year: item.year,
     month: item.month,
     description: item.icon,
-    name: item.name
+    name: item.name,
+    status: item.status
   };
 
   if (item.payment_mode === 'none' || !item.installment_count) {
@@ -49,7 +51,8 @@ export function processItem<T extends Goal | ProjectedEvent>(
       installment_interval: item.installment_interval,
       month: month,
       amount: item.payment_mode === 'repeat' ? item.asset_value : item.asset_value / item.installment_count,
-      description: `${item.icon} (${index + 1}/${item.installment_count})`
+      description: `${item.icon} (${index + 1}/${item.installment_count})`,
+      status: item.status
     };
   });
 }

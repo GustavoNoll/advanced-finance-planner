@@ -12,13 +12,9 @@ import { z } from "zod";
 import { useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 import CurrencyInput from 'react-currency-input-field';
-import { FinancialRecord, MonthNumber, Goal, ProjectedEvent, SelectedGoalsEvents } from '@/types/financial';
+import { FinancialRecord, MonthNumber } from '@/types/financial';
 import { InvestmentPlan } from '@/types/financial';
-import { Checkbox } from "@/components/ui/checkbox";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { Separator } from "@/components/ui/separator";
-import { useQuery } from "@tanstack/react-query";
-import { formatCurrency, CurrencyCode, getCurrencySymbol } from "@/utils/currency";
+import { CurrencyCode, getCurrencySymbol } from "@/utils/currency";
 
 
 const formSchema = z.object({
@@ -30,11 +26,7 @@ const formSchema = z.object({
   monthly_return_rate: z.number(),
   ending_balance: z.number(),
   target_rentability: z.number().optional(),
-  events_balance: z.number().optional(),
-  selected_items: z.object({
-    goals: z.array(z.string()),
-    events: z.array(z.string())
-  })
+  events_balance: z.number().optional()
 })
 .refine((data) => {
   const currentDate = new Date();
@@ -75,13 +67,6 @@ export const AddRecordForm = ({ clientId, onSuccess, editingRecord, investmentPl
   const queryClient = useQueryClient();
   const [ipcaDate, setIpcaDate] = useState<string>('');
   const [isSaving, setIsSaving] = useState(false);
-  const [pendingGoals, setPendingGoals] = useState<Goal[]>([]);
-  const [projectedEvents, setProjectedEvents] = useState<ProjectedEvent[]>([]);
-  const [selectedItems, setSelectedItems] = useState<SelectedGoalsEvents>({
-    goals: [],
-    events: [],
-    totalValue: 0
-  });
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -94,11 +79,7 @@ export const AddRecordForm = ({ clientId, onSuccess, editingRecord, investmentPl
       monthly_return_rate: editingRecord.monthly_return_rate,
       ending_balance: editingRecord.ending_balance,
       target_rentability: editingRecord.target_rentability || 0,
-      events_balance: editingRecord.events_balance || 0,
-      selected_items: {
-        goals: editingRecord.selected_items?.goals || [],
-        events: editingRecord.selected_items?.events || []
-      }
+      events_balance: editingRecord.events_balance || 0
     } : {
       record_year: new Date().getFullYear(),
       record_month: (new Date().getMonth() + 1) as MonthNumber,
@@ -108,36 +89,8 @@ export const AddRecordForm = ({ clientId, onSuccess, editingRecord, investmentPl
       monthly_return_rate: 0,
       ending_balance: 0,
       target_rentability: 0,
-      events_balance: 0,
-      selected_items: {
-        goals: [],
-        events: []
-      }
+      events_balance: 0
     },
-  });
-
-  const { data: goalsAndEvents } = useQuery({
-    queryKey: ['goalsAndEvents', clientId],
-    queryFn: async () => {
-      const [goalsResponse, eventsResponse] = await Promise.all([
-        supabase
-          .from('financial_goals')
-          .select('*')
-          .eq('profile_id', clientId)
-          .eq('status', 'pending'),
-        supabase
-          .from('events')
-          .select('*')
-          .eq('profile_id', clientId)
-          .eq('status', 'projected')
-      ]);
-
-      return {
-        goals: goalsResponse.data || [],
-        events: eventsResponse.data || []
-      };
-    },
-    enabled: !!clientId
   });
 
   useEffect(() => {
@@ -179,38 +132,10 @@ export const AddRecordForm = ({ clientId, onSuccess, editingRecord, investmentPl
 
       fetchInitialData();
     }
-
-    if (goalsAndEvents) {
-      setPendingGoals(goalsAndEvents.goals);
-      setProjectedEvents(goalsAndEvents.events);
-    }
-  }, [clientId, editingRecord, goalsAndEvents]);
-
-  const handleItemSelection = (type: 'goals' | 'events', id: string, value: number, checked: boolean) => {
-    setSelectedItems(prev => {
-      const newItems = { ...prev };
-      
-      if (checked) {
-        newItems[type] = [...prev[type], id];
-        if (type === 'events') {
-          newItems.totalValue += value;
-        }
-      } else {
-        newItems[type] = prev[type].filter(item => item !== id);
-        if (type === 'events') {
-          newItems.totalValue -= value;
-        }
-      }
-
-      form.setValue('events_balance', newItems.totalValue);
-      return newItems;
-    });
-  };
-
+  }, [clientId, editingRecord]);
 
   const handleSubmit = (values: z.infer<typeof formSchema>) => {
     const recordDate = new Date(values.record_year, values.record_month - 1);
-    // Garante que planInitialDate sempre será o dia 1 do mês/ano
     const planInitialDateRaw = new Date(investmentPlan.plan_initial_date);
     const planInitialDate = new Date(planInitialDateRaw.getFullYear(), planInitialDateRaw.getMonth(), 1);
     if (recordDate < planInitialDate) {
@@ -228,21 +153,6 @@ export const AddRecordForm = ({ clientId, onSuccess, editingRecord, investmentPl
     setIsSaving(true);
     
     try {
-      // Update goals and events status
-      if (selectedItems.goals.length > 0) {
-        await supabase
-          .from('financial_goals')
-          .update({ status: 'completed' })
-          .in('id', selectedItems.goals);
-      }
-
-      if (selectedItems.events.length > 0) {
-        await supabase
-          .from('events')
-          .update({ status: 'completed' })
-          .in('id', selectedItems.events);
-      }
-
       const growth_percentage = (((values.ending_balance - values.starting_balance) / values.starting_balance) * 100) || 0;
 
       const recordData = {
@@ -251,10 +161,9 @@ export const AddRecordForm = ({ clientId, onSuccess, editingRecord, investmentPl
         user_id: clientId,
       };
 
-      const { selected_items, ...finalRecordData } = recordData;
+      const { ...finalRecordData } = recordData;
 
       if (editingRecord) {
-
         const { data, error } = await supabase
           .from('user_financial_records')
           .update(finalRecordData)
@@ -274,14 +183,9 @@ export const AddRecordForm = ({ clientId, onSuccess, editingRecord, investmentPl
 
         toast({ title: t('financialRecords.success.updated') });
       } else {
-        const finalRecordDataWithEventsBalance = {
-          ...finalRecordData,
-          events_balance: selectedItems.totalValue
-        };
-
         const { data, error } = await supabase
           .from('user_financial_records')
-          .insert([finalRecordDataWithEventsBalance])
+          .insert([finalRecordData])
           .select()
           .single();
 
@@ -540,79 +444,7 @@ export const AddRecordForm = ({ clientId, onSuccess, editingRecord, investmentPl
         </div>
       </div>
 
-      {!editingRecord ? (
-        <div className="space-y-4">
-          <h3 className="text-lg font-medium text-gray-900">
-            {t('financialRecords.form.goalsAndEvents')}
-          </h3>
-          
-          <ScrollArea className="h-[200px] rounded-lg border border-gray-200 p-4">
-            {pendingGoals.length === 0 && projectedEvents.length === 0 ? (
-              <p className="text-sm text-gray-500">
-                {t('financialRecords.form.noGoalsOrEvents')}
-              </p>
-            ) : (
-              <div className="space-y-4">
-                {pendingGoals.length > 0 && (
-                  <div className="space-y-2">
-                    <h4 className="text-sm font-medium text-gray-700">{t('financialRecords.form.goals')}</h4>
-                    {pendingGoals.map(goal => (
-                      <div key={goal.id} className="flex items-center space-x-2">
-                        <Checkbox
-                          id={`goal-${goal.id}`}
-                          checked={selectedItems.goals.includes(goal.id)}
-                          onCheckedChange={(checked) => 
-                            handleItemSelection('goals', goal.id, goal.asset_value, checked as boolean)
-                          }
-                        />
-                        <label
-                          htmlFor={`goal-${goal.id}`}
-                          className="text-sm leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-                        >
-                          {goal.icon} - {formatCurrency(goal.asset_value, investmentPlan?.currency as CurrencyCode)}
-                        </label>
-                      </div>
-                    ))}
-                  </div>
-                )}
-
-                {pendingGoals.length > 0 && projectedEvents.length > 0 && (
-                  <Separator className="my-2" />
-                )}
-
-                {projectedEvents.length > 0 && (
-                  <div className="space-y-2">
-                    <h4 className="text-sm font-medium text-gray-700">{t('financialRecords.form.events')}</h4>
-                    {projectedEvents.map(event => (
-                      <div key={event.id} className="flex items-center space-x-2">
-                        <Checkbox
-                          id={`event-${event.id}`}
-                          checked={selectedItems.events.includes(event.id)}
-                          onCheckedChange={(checked) => 
-                            handleItemSelection('events', event.id, event.asset_value, checked as boolean)
-                          }
-                        />
-                        <label
-                          htmlFor={`event-${event.id}`}
-                          className="text-sm leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-                        >
-                          {event.name} - {formatCurrency(event.asset_value, investmentPlan?.currency as CurrencyCode)}
-                        </label>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-            )}
-          </ScrollArea>
-
-          {selectedItems.totalValue > 0 && (
-            <p className="text-sm font-medium text-gray-900">
-              {t('financialRecords.form.selectedTotal')}: {formatCurrency(selectedItems.totalValue, investmentPlan?.currency as CurrencyCode)}
-            </p>
-          )}
-        </div>
-      ) : (
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div className="space-y-4">
           <h3 className="text-lg font-medium text-gray-900">{t('financialRecords.form.eventsBalance')}</h3>
           <FormField
@@ -640,7 +472,7 @@ export const AddRecordForm = ({ clientId, onSuccess, editingRecord, investmentPl
             )}
           />
         </div>
-      )}
+      </div>
 
       <div className="flex gap-3 justify-end pt-4 border-t border-gray-100">
         <Button 

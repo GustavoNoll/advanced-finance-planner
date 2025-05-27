@@ -148,7 +148,7 @@ export function generateProjectionData(
 
       if (historicalRecord) {
         lastHistoricalRecord = new Date(year, month + 1);
-        plannedBalance = ((plannedBalance) * (1 + monthlyReturnRate) + (currentMonthlyDeposit)) + ((historicalRecord.events_balance || 0) * accumulatedInflation);
+        plannedBalance = ((plannedBalance) * (1 + monthlyReturnRate) + (currentMonthlyDeposit));
         return {
           month: currentMonthNumber,
           contribution: historicalRecord.monthly_contribution > 0 ? historicalRecord.monthly_contribution : 0,
