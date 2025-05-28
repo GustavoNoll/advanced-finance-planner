@@ -8,7 +8,7 @@ import { Input } from '@/components/ui/input';
 import CurrencyInput from 'react-currency-input-field';
 import { supabase } from '@/lib/supabase';
 import { useToast } from '@/components/ui/use-toast';
-import { Plus, Trash2, Pencil } from 'lucide-react';
+import { Plus, Trash2, Pencil, Info } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
 import { useTranslation } from 'react-i18next';
 import { useEffect, useState } from 'react';
@@ -269,15 +269,8 @@ export const BudgetForm = ({
         <Card>
           <CardHeader className="flex flex-row items-center justify-between">
             <CardTitle>{t('budget.title')}</CardTitle>
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => setIsEditMode(false)}
-            >
-              {t('common.cancel')}
-            </Button>
           </CardHeader>
-          <CardContent className="space-y-4">
+          <CardContent className="space-y-4 pb-24">
             <div className="space-y-6">
               {/* Incomes Section */}
               <div className="space-y-4">
@@ -504,8 +497,22 @@ export const BudgetForm = ({
           </CardContent>
         </Card>
 
-        <div className="flex justify-end">
-          <Button type="submit">{t('common.save')}</Button>
+        {/* Fixed Bottom Action Bar */}
+        <div className="fixed bottom-0 left-0 right-0 z-50 bg-background border-t shadow-lg">
+          <div className="container mx-auto px-4 py-4 flex justify-end items-center gap-4">
+            <span className="text-sm font-medium text-gray-700 flex items-center gap-1">
+              <Info className="w-4 h-4 text-blue-500" />
+              {t('budget.save_changes', 'Salvar alterações em Orçamento')}
+            </span>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setIsEditMode(false)}
+            >
+              {t('common.cancel')}
+            </Button>
+            <Button type="submit">{t('common.save')}</Button>
+          </div>
         </div>
       </form>
     </Form>

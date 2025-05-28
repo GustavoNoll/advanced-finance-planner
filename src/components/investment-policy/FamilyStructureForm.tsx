@@ -9,7 +9,7 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { supabase } from '@/lib/supabase';
 import { toast } from '@/components/ui/use-toast';
-import { Plus, Trash2, Calendar as CalendarIcon, Pencil } from 'lucide-react';
+import { Plus, Trash2, Calendar as CalendarIcon, Pencil, Info } from 'lucide-react';
 import { format, parse } from "date-fns";
 import { useTranslation } from 'react-i18next';
 import { useQueryClient } from '@tanstack/react-query';
@@ -42,20 +42,21 @@ const maritalStatuses = [
   { value: 'total_community'},
 ];
 
-const calculateAge = (birthDate: Date | undefined | null): number | null => {
+const calculateAge = (birthDate: Date | undefined | null): { years: number; months: number } | null => {
   if (!birthDate || !(birthDate instanceof Date) || isNaN(birthDate.getTime())) {
     return null;
   }
 
   const today = new Date();
-  let age = today.getFullYear() - birthDate.getFullYear();
-  const monthDiff = today.getMonth() - birthDate.getMonth();
+  let years = today.getFullYear() - birthDate.getFullYear();
+  let months = today.getMonth() - birthDate.getMonth();
   
-  if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
-    age--;
+  if (months < 0 || (months === 0 && today.getDate() < birthDate.getDate())) {
+    years--;
+    months += 12;
   }
   
-  return age;
+  return { years, months };
 };
 
 const DateInput = ({ 
@@ -135,6 +136,21 @@ export const FamilyStructureForm = ({
   const { t } = useTranslation();
   const queryClient = useQueryClient();
   const [isEditMode, setIsEditMode] = useState(false);
+
+  const formatAge = (age: { years: number; months: number } | null): string => {
+    if (age === null) return 'N/A';
+    
+    if (age.years === 0) {
+      return t('familyStructure.children.age.months', { age: age.months });
+    }
+    
+    if (age.years === 1) {
+      return t('familyStructure.children.age.year');
+    }
+    
+    return t('familyStructure.children.age.years', { age: age.years });
+  };
+
   const [children, setChildren] = useState<{ name?: string; birth_date?: Date }[]>(
     initialData?.children?.map(child => ({
       ...child,
@@ -289,7 +305,7 @@ export const FamilyStructureForm = ({
                     {spouseBirthDate ? format(spouseBirthDate, 'dd/MM/yyyy') : t('common.notInformed')}
                     {spouseBirthDate && (
                       <span className="text-sm text-muted-foreground ml-2">
-                        ({t('familyStructure.children.age', { age: calculateAge(spouseBirthDate) ?? 'N/A' })})
+                        ({formatAge(calculateAge(spouseBirthDate))})
                       </span>
                     )}
                   </p>
@@ -315,7 +331,7 @@ export const FamilyStructureForm = ({
                           {child.birth_date ? format(child.birth_date, 'dd/MM/yyyy') : t('common.notInformed')}
                           {child.birth_date && (
                             <span className="text-sm text-muted-foreground ml-2">
-                              ({t('familyStructure.children.age', { age: calculateAge(child.birth_date) ?? 'N/A' })})
+                              ({formatAge(calculateAge(child.birth_date))})
                             </span>
                           )}
                         </p>
@@ -337,15 +353,8 @@ export const FamilyStructureForm = ({
         <Card>
           <CardHeader className="flex flex-row items-center justify-between">
             <CardTitle>{t('familyStructure.title')}</CardTitle>
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => setIsEditMode(false)}
-            >
-              {t('common.cancel')}
-            </Button>
           </CardHeader>
-          <CardContent className="space-y-4">
+          <CardContent className="space-y-4 pb-24">
             <FormField
               control={form.control}
               name="marital_status"
@@ -409,7 +418,7 @@ export const FamilyStructureForm = ({
                   </FormControl>
                   {field.value && (
                     <p className="text-sm text-muted-foreground">
-                      {t('familyStructure.children.age', { age: calculateAge(field.value) ?? 'N/A' })}
+                      {formatAge(calculateAge(field.value))}
                     </p>
                   )}
                   <FormMessage />
@@ -454,7 +463,7 @@ export const FamilyStructureForm = ({
                       placeholder={t('familyStructure.children.birthDate.placeholder')}
                     />
                     <span className={child.birth_date ? 'text-xs text-muted-foreground block' : 'text-xs text-muted-foreground block opacity-0'}>
-                      {t('familyStructure.children.age', { age: calculateAge(child.birth_date) ?? 'N/A' })}
+                      {formatAge(calculateAge(child.birth_date))}
                     </span>
                   </div>
                   {isEditing && (
@@ -475,11 +484,23 @@ export const FamilyStructureForm = ({
           </CardContent>
         </Card>
 
-        {isEditing && (
-          <div className="flex justify-end">
+        {/* Fixed Bottom Action Bar */}
+        <div className="fixed bottom-0 left-0 right-0 z-50 bg-background border-t shadow-lg">
+          <div className="container mx-auto px-4 py-4 flex justify-end items-center gap-4">
+            <span className="text-sm font-medium text-gray-700 flex items-center gap-1">
+              <Info className="w-4 h-4 text-blue-500" />
+              {t('familyStructure.save_changes', 'Salvar alterações em Estrutura Familiar')}
+            </span>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setIsEditMode(false)}
+            >
+              {t('common.cancel')}
+            </Button>
             <Button type="submit">{t('common.save')}</Button>
           </div>
-        )}
+        </div>
       </form>
     </Form>
   );
