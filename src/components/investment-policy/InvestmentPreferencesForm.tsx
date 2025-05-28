@@ -9,7 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Input } from '@/components/ui/input';
 import { supabase } from '@/lib/supabase';
 import { toast } from '@/components/ui/use-toast';
-import { Plus, Trash2, Pencil } from 'lucide-react';
+import { Plus, Trash2, Pencil, Info } from 'lucide-react';
 import { RISK_PROFILES } from '@/constants/riskProfiles';
 import { DEFAULT_ASSET_ALLOCATIONS, ASSET_CLASS_LABELS } from '@/constants/assetAllocations';
 import { useQueryClient } from '@tanstack/react-query';
@@ -149,6 +149,13 @@ export const InvestmentPreferencesForm = ({
   const queryClient = useQueryClient();
   const [isEditMode, setIsEditMode] = useState(false);
   const [totalAllocation, setTotalAllocation] = useState(0);
+  const initialFormValues = useRef<InvestmentPreferencesFormValues | undefined>(initialData);
+
+  const handleCancelEdit = () => {
+    // Reset form to initial values
+    form.reset(initialFormValues.current);
+    setIsEditMode(false);
+  };
 
   const acceptableLoss = [
     { value: '0', label: t('investmentPreferences.options.acceptableLoss.no_loss') },
@@ -212,6 +219,8 @@ export const InvestmentPreferencesForm = ({
           shouldTouch: true,
         });
       }
+    }else{
+      isInitialLoad.current = false;
     }
   }, [riskProfile, form]);
 
@@ -311,10 +320,20 @@ export const InvestmentPreferencesForm = ({
         </CardHeader>
         <CardContent className="space-y-8">
           {/* Perfil e Alocação de Ativos */}
-          <div className="space-y-6">
-            <div>
-              <p className="text-sm text-muted-foreground">{t('investmentPreferences.form.riskProfile')}</p>
-              <p className="font-medium">{getDisplayValue(values.risk_profile, riskProfiles)}</p>
+          <div className="space-y-6 border-b pb-8">
+            <div className="bg-primary/5 p-6 rounded-lg border">
+              <div className="text-center">
+                <p className="text-lg font-semibold text-primary mb-2">{t('investmentPreferences.form.riskProfile')}</p>
+                <p className={cn(
+                  "text-xl font-bold",
+                  values.risk_profile === 'CONS' && "text-blue-600",
+                  values.risk_profile === 'MOD' && "text-green-600",
+                  values.risk_profile === 'ARROJ' && "text-orange-600",
+                  values.risk_profile === 'AGRESSIVO' && "text-red-600"
+                )}>
+                  {getDisplayValue(values.risk_profile, riskProfiles)}
+                </p>
+              </div>
             </div>
 
             {/* Detailed breakdown by category and asset */}
@@ -325,19 +344,27 @@ export const InvestmentPreferencesForm = ({
                 );
                 if (visibleAssets.length === 0) return null;
                 return (
-                  <div key={category} className="mb-6">
-                    <h4 className="font-semibold text-base text-gray-700 mb-2">
-                      {t(`investmentPreferences.categories.${category}`, { defaultValue: title })}
-                    </h4>
-                    <div className="grid grid-cols-2 gap-x-8 gap-y-1">
-                      {visibleAssets.map(assetKey => (
-                        <React.Fragment key={assetKey}>
-                          <span className="text-gray-600">{t(`investmentPreferences.assets.${assetKey}`, { defaultValue: ASSET_CLASS_LABELS[assetKey] })}</span>
-                          <span className="text-right font-medium">{(values.asset_allocations?.[assetKey] ?? 0).toFixed(2)}%</span>
-                        </React.Fragment>
-                      ))}
-                    </div>
-                  </div>
+                  <Card key={category} className="overflow-hidden">
+                    <CardHeader className="bg-muted/50 py-3">
+                      <CardTitle className="text-base font-semibold">
+                        {t(`investmentPreferences.categories.${category}`, { defaultValue: title })}
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className="p-4">
+                      <div className="grid grid-cols-4 gap-4">
+                        {visibleAssets.map(assetKey => (
+                          <div key={assetKey} className="flex flex-col space-y-0.5">
+                            <span className="text-xs text-muted-foreground">
+                              {t(`investmentPreferences.assets.${assetKey}`, { defaultValue: ASSET_CLASS_LABELS[assetKey] })}
+                            </span>
+                            <span className="text-base font-semibold">
+                              {(values.asset_allocations?.[assetKey] ?? 0).toFixed(2)}%
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    </CardContent>
+                  </Card>
                 );
               })}
             </div>
@@ -428,36 +455,40 @@ export const InvestmentPreferencesForm = ({
         <Card>
           <CardHeader className="flex flex-row items-center justify-between">
             <CardTitle>{t('investmentPreferences.title')}</CardTitle>
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => setIsEditMode(false)}
-            >
-              {t('common.cancel')}
-            </Button>
           </CardHeader>
-          <CardContent className="space-y-8">
+          <CardContent className="space-y-8 pb-24">
             {/* Perfil e Alocação de Ativos */}
-            <div className="space-y-6">
-              <div>
+            <div className="space-y-6 border-b pb-8">
+              <div className="bg-primary/5 p-6 rounded-lg border">
                 <FormField
                   control={form.control}
                   name="risk_profile"
                   render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>{t('investmentPreferences.form.riskProfile')}</FormLabel>
+                    <FormItem className="text-center">
+                      <FormLabel className="text-lg font-semibold text-primary">
+                        {t('investmentPreferences.form.riskProfile')}
+                      </FormLabel>
                       <FormControl>
                         <Select
                           value={field.value}
                           onValueChange={field.onChange}
                           disabled={!isEditMode}
                         >
-                          <SelectTrigger>
+                          <SelectTrigger className="h-12 text-lg">
                             <SelectValue placeholder={t('investmentPreferences.form.selectMode')} />
                           </SelectTrigger>
                           <SelectContent>
                             {riskProfiles.map((profile) => (
-                              <SelectItem key={profile.value} value={profile.value}>
+                              <SelectItem 
+                                key={profile.value} 
+                                value={profile.value}
+                                className={cn(
+                                  profile.value === 'CONS' && "text-blue-600",
+                                  profile.value === 'MOD' && "text-green-600",
+                                  profile.value === 'ARROJ' && "text-orange-600",
+                                  profile.value === 'AGRESSIVO' && "text-red-600"
+                                )}
+                              >
                                 {profile.label}
                               </SelectItem>
                             ))}
@@ -482,25 +513,23 @@ export const InvestmentPreferencesForm = ({
                   </div>
                 </div>
 
-                {Object.entries(ASSET_CATEGORIES).map(([category, { title, assets }]) => {
-                  const visibleAssets = assets.filter(
-                    assetKey => (form.getValues('asset_allocations')?.[assetKey] ?? 0) > 0
-                  );
-                  if (visibleAssets.length === 0) return null;
-                  return (
-                    <div key={category} className="mb-6">
-                      <h4 className="font-semibold text-base text-gray-700 mb-2">
+                {Object.entries(ASSET_CATEGORIES).map(([category, { title, assets }]) => (
+                  <Card key={category} className="overflow-hidden">
+                    <CardHeader className="bg-muted/50 py-3">
+                      <CardTitle className="text-base font-semibold">
                         {t(`investmentPreferences.categories.${category}`, { defaultValue: title })}
-                      </h4>
-                      <div className="grid grid-cols-2 gap-x-8 gap-y-4">
-                        {visibleAssets.map(assetKey => (
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className="p-4">
+                      <div className="grid grid-cols-4 gap-4">
+                        {assets.map(assetKey => (
                           <FormField
                             key={assetKey}
                             control={form.control}
                             name={`asset_allocations.${assetKey}`}
                             render={({ field }) => (
                               <FormItem>
-                                <FormLabel className="text-gray-600">
+                                <FormLabel className="text-sm text-muted-foreground">
                                   {t(`investmentPreferences.assets.${assetKey}`, { defaultValue: ASSET_CLASS_LABELS[assetKey] })}
                                 </FormLabel>
                                 <FormControl>
@@ -534,9 +563,9 @@ export const InvestmentPreferencesForm = ({
                           />
                         ))}
                       </div>
-                    </div>
-                  );
-                })}
+                    </CardContent>
+                  </Card>
+                ))}
 
                 {totalAllocation !== 100 && (
                   <p className="text-sm text-destructive mt-2">
@@ -547,238 +576,241 @@ export const InvestmentPreferencesForm = ({
             </div>
 
             {/* Outras Preferências */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <FormField
-                control={form.control}
-                name="target_return_review"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>{t('investmentPreferences.form.targetReturnReview')}</FormLabel>
-                    <FormControl>
-                      <Select
-                        value={field.value}
-                        onValueChange={field.onChange}
-                        disabled={!isEditMode}
-                      >
-                        <SelectTrigger>
-                          <SelectValue placeholder={t('investmentPreferences.form.selectPeriod')} />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {reviewPeriods.map((period) => (
-                            <SelectItem key={period.value} value={period.value}>
-                              {t(`investmentPreferences.options.reviewPeriods.${period.value}`)}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+            <div className="space-y-8">
+              <h3 className="text-lg font-semibold">{t('investmentPreferences.form.otherPreferences')}</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <FormField
+                  control={form.control}
+                  name="target_return_review"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>{t('investmentPreferences.form.targetReturnReview')}</FormLabel>
+                      <FormControl>
+                        <Select
+                          value={field.value}
+                          onValueChange={field.onChange}
+                          disabled={!isEditMode}
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder={t('investmentPreferences.form.selectPeriod')} />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {reviewPeriods.map((period) => (
+                              <SelectItem key={period.value} value={period.value}>
+                                {t(`investmentPreferences.options.reviewPeriods.${period.value}`)}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
 
-              <FormField
-                control={form.control}
-                name="max_bond_maturity"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>{t('investmentPreferences.form.maxBondMaturity')}</FormLabel>
-                    <FormControl>
-                      <Select
-                        value={field.value}
-                        onValueChange={field.onChange}
-                        disabled={!isEditMode}
-                      >
-                        <SelectTrigger>
-                          <SelectValue placeholder={t('investmentPreferences.form.selectMaturity')} />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {bondMaturities.map((maturity) => (
-                            <SelectItem key={maturity.value} value={maturity.value}>
-                              {t(`investmentPreferences.options.bondMaturities.${maturity.value}`)}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+                <FormField
+                  control={form.control}
+                  name="max_bond_maturity"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>{t('investmentPreferences.form.maxBondMaturity')}</FormLabel>
+                      <FormControl>
+                        <Select
+                          value={field.value}
+                          onValueChange={field.onChange}
+                          disabled={!isEditMode}
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder={t('investmentPreferences.form.selectMaturity')} />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {bondMaturities.map((maturity) => (
+                              <SelectItem key={maturity.value} value={maturity.value}>
+                                {t(`investmentPreferences.options.bondMaturities.${maturity.value}`)}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
 
-              <FormField
-                control={form.control}
-                name="fgc_event_feeling"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>{t('investmentPreferences.form.fgcEventFeeling')}</FormLabel>
-                    <FormControl>
-                      <Select
-                        value={field.value}
-                        onValueChange={field.onChange}
-                        disabled={!isEditMode}
-                      >
-                        <SelectTrigger>
-                          <SelectValue placeholder={t('investmentPreferences.form.selectFeeling')} />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {fgcFeelings.map((feeling) => (
-                            <SelectItem key={feeling.value} value={feeling.value}>
-                              {t(`investmentPreferences.options.fgcFeelings.${feeling.value}`)}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+                <FormField
+                  control={form.control}
+                  name="fgc_event_feeling"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>{t('investmentPreferences.form.fgcEventFeeling')}</FormLabel>
+                      <FormControl>
+                        <Select
+                          value={field.value}
+                          onValueChange={field.onChange}
+                          disabled={!isEditMode}
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder={t('investmentPreferences.form.selectFeeling')} />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {fgcFeelings.map((feeling) => (
+                              <SelectItem key={feeling.value} value={feeling.value}>
+                                {t(`investmentPreferences.options.fgcFeelings.${feeling.value}`)}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
 
-              <FormField
-                control={form.control}
-                name="max_fund_liquidity"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>{t('investmentPreferences.form.maxFundLiquidity')}</FormLabel>
-                    <FormControl>
-                      <Select
-                        value={field.value}
-                        onValueChange={field.onChange}
-                        disabled={!isEditMode}
-                      >
-                        <SelectTrigger>
-                          <SelectValue placeholder={t('investmentPreferences.form.selectLiquidity')} />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {fundLiquidity.map((liquidity) => (
-                            <SelectItem key={liquidity.value} value={liquidity.value}>
-                              {t(`investmentPreferences.options.fundLiquidity.${liquidity.value}`)}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+                <FormField
+                  control={form.control}
+                  name="max_fund_liquidity"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>{t('investmentPreferences.form.maxFundLiquidity')}</FormLabel>
+                      <FormControl>
+                        <Select
+                          value={field.value}
+                          onValueChange={field.onChange}
+                          disabled={!isEditMode}
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder={t('investmentPreferences.form.selectLiquidity')} />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {fundLiquidity.map((liquidity) => (
+                              <SelectItem key={liquidity.value} value={liquidity.value}>
+                                {t(`investmentPreferences.options.fundLiquidity.${liquidity.value}`)}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
 
-              <FormField
-                control={form.control}
-                name="max_acceptable_loss"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>{t('investmentPreferences.form.maxAcceptableLoss')}</FormLabel>
-                    <FormControl>
-                      <Select
-                        value={field.value}
-                        onValueChange={field.onChange}
-                        disabled={!isEditMode}
-                      >
-                        <SelectTrigger>
-                          <SelectValue placeholder={t('investmentPreferences.form.selectLoss')} />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {acceptableLoss.map((loss) => (
-                            <SelectItem key={loss.value} value={loss.value}>
-                              {loss.label}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+                <FormField
+                  control={form.control}
+                  name="max_acceptable_loss"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>{t('investmentPreferences.form.maxAcceptableLoss')}</FormLabel>
+                      <FormControl>
+                        <Select
+                          value={field.value}
+                          onValueChange={field.onChange}
+                          disabled={!isEditMode}
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder={t('investmentPreferences.form.selectLoss')} />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {acceptableLoss.map((loss) => (
+                              <SelectItem key={loss.value} value={loss.value}>
+                                {loss.label}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
 
-              <FormField
-                control={form.control}
-                name="target_return_ipca_plus"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>{t('investmentPreferences.form.targetReturnIpcaPlus')}</FormLabel>
-                    <FormControl>
-                      <Select
-                        value={field.value}
-                        onValueChange={field.onChange}
-                        disabled={!isEditMode}
-                      >
-                        <SelectTrigger>
-                          <SelectValue placeholder={t('investmentPreferences.form.selectReturn')} />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {targetReturns.map((return_) => (
-                            <SelectItem key={return_.value} value={return_.value}>
-                              {t(`investmentPreferences.options.targetReturns.${return_.value}`)}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+                <FormField
+                  control={form.control}
+                  name="target_return_ipca_plus"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>{t('investmentPreferences.form.targetReturnIpcaPlus')}</FormLabel>
+                      <FormControl>
+                        <Select
+                          value={field.value}
+                          onValueChange={field.onChange}
+                          disabled={!isEditMode}
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder={t('investmentPreferences.form.selectReturn')} />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {targetReturns.map((return_) => (
+                              <SelectItem key={return_.value} value={return_.value}>
+                                {t(`investmentPreferences.options.targetReturns.${return_.value}`)}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
 
-              <FormField
-                control={form.control}
-                name="stock_investment_mode"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>{t('investmentPreferences.form.stockInvestmentMode')}</FormLabel>
-                    <FormControl>
-                      <Select
-                        value={field.value}
-                        onValueChange={field.onChange}
-                        disabled={!isEditMode}
-                      >
-                        <SelectTrigger>
-                          <SelectValue placeholder={t('investmentPreferences.form.selectMode')} />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {investmentModes.map((mode) => (
-                            <SelectItem key={mode.value} value={mode.value}>
-                              {t(`investmentPreferences.options.investmentModes.${mode.value}`)}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+                <FormField
+                  control={form.control}
+                  name="stock_investment_mode"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>{t('investmentPreferences.form.stockInvestmentMode')}</FormLabel>
+                      <FormControl>
+                        <Select
+                          value={field.value}
+                          onValueChange={field.onChange}
+                          disabled={!isEditMode}
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder={t('investmentPreferences.form.selectMode')} />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {investmentModes.map((mode) => (
+                              <SelectItem key={mode.value} value={mode.value}>
+                                {t(`investmentPreferences.options.investmentModes.${mode.value}`)}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
 
-              <FormField
-                control={form.control}
-                name="real_estate_funds_mode"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>{t('investmentPreferences.form.realEstateFundsMode')}</FormLabel>
-                    <FormControl>
-                      <Select
-                        value={field.value}
-                        onValueChange={field.onChange}
-                        disabled={!isEditMode}
-                      >
-                        <SelectTrigger>
-                          <SelectValue placeholder={t('investmentPreferences.form.selectMode')} />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {realEstateFundModes.map((mode) => (
-                            <SelectItem key={mode.value} value={mode.value}>
-                              {t(`investmentPreferences.options.realEstateFundModes.${mode.value}`)}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+                <FormField
+                  control={form.control}
+                  name="real_estate_funds_mode"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>{t('investmentPreferences.form.realEstateFundsMode')}</FormLabel>
+                      <FormControl>
+                        <Select
+                          value={field.value}
+                          onValueChange={field.onChange}
+                          disabled={!isEditMode}
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder={t('investmentPreferences.form.selectMode')} />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {realEstateFundModes.map((mode) => (
+                              <SelectItem key={mode.value} value={mode.value}>
+                                {t(`investmentPreferences.options.realEstateFundModes.${mode.value}`)}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
             </div>
 
             <div className="space-y-4">
@@ -939,16 +971,30 @@ export const InvestmentPreferencesForm = ({
           </CardContent>
         </Card>
 
-        <div className="flex justify-end">
-          <Button 
-            type="submit" 
-            disabled={totalAllocation !== 100}
-            className={cn(
-              totalAllocation !== 100 && "opacity-50 cursor-not-allowed"
-            )}
-          >
-            {t('common.save')}
-          </Button>
+        {/* Fixed Bottom Action Bar */}
+        <div className="fixed bottom-0 left-0 right-0 z-50 bg-background border-t shadow-lg">
+          <div className="container mx-auto px-4 py-4 flex justify-end items-center gap-4">
+            <span className="text-sm font-medium text-gray-700 flex items-center gap-1">
+              <Info className="w-4 h-4 text-blue-500" />
+              {t('investmentPreferences.save_changes', 'Salvar alterações em Preferências de Investimento')}
+            </span>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={handleCancelEdit}
+            >
+              {t('common.cancel')}
+            </Button>
+            <Button 
+              type="submit" 
+              disabled={totalAllocation !== 100}
+              className={cn(
+                totalAllocation !== 100 && "opacity-50 cursor-not-allowed"
+              )}
+            >
+              {t('common.save')}
+            </Button>
+          </div>
         </div>
       </form>
     </Form>

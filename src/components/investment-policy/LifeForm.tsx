@@ -8,7 +8,7 @@ import { Input } from '@/components/ui/input';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { supabase } from '@/lib/supabase';
 import { toast } from '@/components/ui/use-toast';
-import { Plus, Trash2, Pencil } from 'lucide-react';
+import { Plus, Trash2, Pencil, Info } from 'lucide-react';
 import { useQueryClient } from '@tanstack/react-query';
 import { capitalizeFirstLetter } from '@/utils/string';
 import { useTranslation } from 'react-i18next';
@@ -225,15 +225,8 @@ export const LifeForm = ({
         <Card>
           <CardHeader className="flex flex-row items-center justify-between">
             <CardTitle>{t('investmentPolicy.lifeStage.label')}</CardTitle>
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => setIsEditMode(false)}
-            >
-              {t('common.cancel')}
-            </Button>
           </CardHeader>
-          <CardContent>
+          <CardContent className="pb-24">
             {/* Life Stage Section */}
             <div className="space-y-4">
               <FormField
@@ -456,8 +449,22 @@ export const LifeForm = ({
           </CardContent>
         </Card>
 
-        <div className="flex justify-end">
-          <Button type="submit">{t('common.save')}</Button>
+        {/* Fixed Bottom Action Bar */}
+        <div className="fixed bottom-0 left-0 right-0 z-50 bg-background border-t shadow-lg">
+          <div className="container mx-auto px-4 py-4 flex justify-end items-center gap-4">
+            <span className="text-sm font-medium text-gray-700 flex items-center gap-1">
+              <Info className="w-4 h-4 text-blue-500" />
+              {t('life.save_changes', 'Salvar alterações em Vida')}
+            </span>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setIsEditMode(false)}
+            >
+              {t('common.cancel')}
+            </Button>
+            <Button type="submit">{t('common.save')}</Button>
+          </div>
         </div>
       </form>
     </Form>

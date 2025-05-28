@@ -420,6 +420,7 @@ export const ptBR = {
     view: 'Visualizar',
     minimize: 'Minimizar',
     maximize: 'Maximizar',
+    save_changes: 'Salvar alterações',
   },
   createClient: {
     title: "Criar Novo Cliente",
@@ -1175,6 +1176,7 @@ export const ptBR = {
   },
   patrimonial: {
     title: 'Situação Patrimonial',
+    save_changes: 'Salvar alterações em Situação Patrimonial',
     form: {
       name: 'Nome',
       value: 'Valor (R$)',
@@ -1183,6 +1185,7 @@ export const ptBR = {
       description: 'Descrição',
       investments: {
         title: 'Investimentos',
+        description: 'Cadastre seus investimentos, incluindo imóveis, investimentos líquidos e participações societárias',
         properties: {
           title: 'Imóveis',
           name: 'Nome do Imóvel',
@@ -1219,6 +1222,7 @@ export const ptBR = {
       },
       personal_assets: {
         title: 'Bens Pessoais',
+        description: 'Cadastre seus bens pessoais, incluindo imóveis, veículos e bens de valor',
         properties: {
           title: 'Imóveis',
           name: 'Nome do Imóvel',
@@ -1255,6 +1259,7 @@ export const ptBR = {
       },
       liabilities: {
         title: 'Passivos',
+        description: 'Cadastre seus passivos, incluindo financiamentos e dívidas',
         financing: {
           title: 'Financiamentos',
           name: 'Nome do Financiamento',
@@ -1332,13 +1337,14 @@ export const ptBR = {
       addInterest: 'Adicionar Interesse',
       platform: 'Plataforma',
       restriction: 'Restrição',
-      interest: 'Remover',
+      interest: 'Interesse',
       remove: 'Remover',
       assetAllocations: 'Alocação de Ativos',
       totalAllocation: 'Total',
       selectAllocation: 'Selecione a alocação',
+      otherPreferences: 'Outras Preferências',
       allocation: {
-        fixed_income_opportunities: 'Renda Fixa - Oportunidades',
+        fixed_income_opportunities: 'Renda Fixa - Oport.',
         fixed_income_post_fixed: 'Renda Fixa - Pós Fixado',
         fixed_income_inflation: 'Renda Fixa - Inflação',
         fixed_income_pre_fixed: 'Renda Fixa - Pré Fixado',
@@ -1355,6 +1361,27 @@ export const ptBR = {
         totalMustBe100: 'A soma das alocações deve ser igual a 100%',
         currentTotal: 'atual: {{total}}%'
       }
+    },
+    categories: {
+      fixed_income: 'Renda Fixa',
+      multimarket: 'Multimercado',
+      real_estate: 'Imobiliário',
+      stocks: 'Ações',
+      foreign_crypto: 'Exterior/Cripto'
+    },
+    assets: {
+      fixed_income_opportunities: 'Renda Fixa - Oport.',
+      fixed_income_post_fixed: 'Renda Fixa - Pós Fixado',
+      fixed_income_inflation: 'Renda Fixa - Inflação',
+      fixed_income_pre_fixed: 'Renda Fixa - Pré Fixado',
+      multimarket: 'Multimercado',
+      real_estate: 'Imobiliário',
+      stocks: 'Ações',
+      stocks_long_biased: 'Ações - Long Biased',
+      private_equity: 'Private Equity',
+      foreign_fixed_income: 'Exterior - Renda Fixa',
+      foreign_variable_income: 'Exterior - Renda Variável',
+      crypto: 'Criptoativos'
     },
     options: {
       investmentModes: {
@@ -1394,7 +1421,6 @@ export const ptBR = {
         very_uncomfortable: 'Muito Desconfortável'
       },
       fundLiquidity: {
-        d_plus_0: 'Sem prazo',
         daily: 'Diário',
         d_plus_1: 'D+1',
         d_plus_2: 'D+2',
