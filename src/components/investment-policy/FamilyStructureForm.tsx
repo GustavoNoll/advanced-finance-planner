@@ -42,20 +42,21 @@ const maritalStatuses = [
   { value: 'total_community'},
 ];
 
-const calculateAge = (birthDate: Date | undefined | null): number | null => {
+const calculateAge = (birthDate: Date | undefined | null): { years: number; months: number } | null => {
   if (!birthDate || !(birthDate instanceof Date) || isNaN(birthDate.getTime())) {
     return null;
   }
 
   const today = new Date();
-  let age = today.getFullYear() - birthDate.getFullYear();
-  const monthDiff = today.getMonth() - birthDate.getMonth();
+  let years = today.getFullYear() - birthDate.getFullYear();
+  let months = today.getMonth() - birthDate.getMonth();
   
-  if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
-    age--;
+  if (months < 0 || (months === 0 && today.getDate() < birthDate.getDate())) {
+    years--;
+    months += 12;
   }
   
-  return age;
+  return { years, months };
 };
 
 const DateInput = ({ 
@@ -135,6 +136,21 @@ export const FamilyStructureForm = ({
   const { t } = useTranslation();
   const queryClient = useQueryClient();
   const [isEditMode, setIsEditMode] = useState(false);
+
+  const formatAge = (age: { years: number; months: number } | null): string => {
+    if (age === null) return 'N/A';
+    
+    if (age.years === 0) {
+      return t('familyStructure.children.age.months', { age: age.months });
+    }
+    
+    if (age.years === 1) {
+      return t('familyStructure.children.age.year');
+    }
+    
+    return t('familyStructure.children.age.years', { age: age.years });
+  };
+
   const [children, setChildren] = useState<{ name?: string; birth_date?: Date }[]>(
     initialData?.children?.map(child => ({
       ...child,
@@ -289,7 +305,7 @@ export const FamilyStructureForm = ({
                     {spouseBirthDate ? format(spouseBirthDate, 'dd/MM/yyyy') : t('common.notInformed')}
                     {spouseBirthDate && (
                       <span className="text-sm text-muted-foreground ml-2">
-                        ({t('familyStructure.children.age', { age: calculateAge(spouseBirthDate) ?? 'N/A' })})
+                        ({formatAge(calculateAge(spouseBirthDate))})
                       </span>
                     )}
                   </p>
@@ -315,7 +331,7 @@ export const FamilyStructureForm = ({
                           {child.birth_date ? format(child.birth_date, 'dd/MM/yyyy') : t('common.notInformed')}
                           {child.birth_date && (
                             <span className="text-sm text-muted-foreground ml-2">
-                              ({t('familyStructure.children.age', { age: calculateAge(child.birth_date) ?? 'N/A' })})
+                              ({formatAge(calculateAge(child.birth_date))})
                             </span>
                           )}
                         </p>
@@ -409,7 +425,7 @@ export const FamilyStructureForm = ({
                   </FormControl>
                   {field.value && (
                     <p className="text-sm text-muted-foreground">
-                      {t('familyStructure.children.age', { age: calculateAge(field.value) ?? 'N/A' })}
+                      {formatAge(calculateAge(field.value))}
                     </p>
                   )}
                   <FormMessage />
@@ -454,7 +470,7 @@ export const FamilyStructureForm = ({
                       placeholder={t('familyStructure.children.birthDate.placeholder')}
                     />
                     <span className={child.birth_date ? 'text-xs text-muted-foreground block' : 'text-xs text-muted-foreground block opacity-0'}>
-                      {t('familyStructure.children.age', { age: calculateAge(child.birth_date) ?? 'N/A' })}
+                      {formatAge(calculateAge(child.birth_date))}
                     </span>
                   </div>
                   {isEditing && (

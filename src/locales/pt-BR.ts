@@ -1041,7 +1041,11 @@ export const ptBR = {
         required: 'Data de nascimento é obrigatória',
         placeholder: 'dd/mm/aaaa'
       },
-      age: 'Idade: {{age}} anos',
+      age: {
+        years: '{{age}} anos',
+        months: '{{age}} meses',
+        year: '1 ano'
+      },
       remove: 'Remover filho'
     },
     messages: {
