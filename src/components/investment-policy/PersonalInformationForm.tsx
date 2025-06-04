@@ -115,7 +115,7 @@ export const PersonalInformationForm = ({
           <div>
             <p className="text-sm text-muted-foreground">{t('personalInformation.birthDate.label')}</p>
             <p className="font-medium">
-              {currentData.birth_date ? formatDateByLocale(currentData.birth_date) : t('common.notInformed')}
+              {currentData.birth_date ? formatDateByLocale(parseDateByLocale(currentData.birth_date, 'yyyy-MM-dd')) : t('common.notInformed')}
             </p>
           </div>
         </div>
