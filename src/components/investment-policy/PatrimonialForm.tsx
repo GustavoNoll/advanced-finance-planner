@@ -29,6 +29,7 @@ const patrimonialSchema = z.object({
     properties: z.array(assetSchema),
     liquid_investments: z.array(assetSchema),
     participations: z.array(assetSchema),
+    emergency_reserve: z.array(assetSchema),
   }),
   personal_assets: z.object({
     properties: z.array(assetSchema),
@@ -75,6 +76,7 @@ export const PatrimonialForm = ({
         properties: [defaultEmptyAsset],
         liquid_investments: [defaultEmptyAsset],
         participations: [defaultEmptyAsset],
+        emergency_reserve: [defaultEmptyAsset],
       },
       personal_assets: {
         properties: [defaultEmptyAsset],
@@ -104,6 +106,12 @@ export const PatrimonialForm = ({
   const { fields: participationsFields, append: appendParticipation, remove: removeParticipation } = useFieldArray({
     control: form.control,
     name: 'investments.participations',
+  });
+
+  // Emergency Reserve
+  const { fields: emergencyReserveFields, append: appendEmergencyReserve, remove: removeEmergencyReserve } = useFieldArray({
+    control: form.control,
+    name: 'investments.emergency_reserve',
   });
 
   // Personal Properties
@@ -333,6 +341,7 @@ export const PatrimonialForm = ({
         properties: [],
         liquid_investments: [],
         participations: [],
+        emergency_reserve: [],
       },
       personal_assets: {
         properties: [],
@@ -466,6 +475,41 @@ export const PatrimonialForm = ({
                     <div className="col-span-2">
                       <p className="text-sm text-blue-600">{t('patrimonial.form.investments.participations.description')}</p>
                       <p className="font-medium">{participation.description || 'Não informado'}</p>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+
+            <Separator className="my-6" />
+
+            {/* Emergency Reserve */}
+            <div className="space-y-4">
+              <h4 className="text-md font-medium text-black">{t('patrimonial.form.investments.emergency_reserve.title')}</h4>
+              {(!values.investments?.emergency_reserve || values.investments.emergency_reserve.length === 0) ? (
+                <p className="text-sm">{t('patrimonial.form.investments.emergency_reserve.empty')}</p>
+              ) : (
+                values.investments.emergency_reserve.map((reserve, index) => (
+                  <div key={index} className="grid grid-cols-1 md:grid-cols-2 gap-4 border-l-4 border-blue-500 pl-4 bg-white rounded-r-lg p-4">
+                    <div>
+                      <p className="text-sm text-blue-600">{t('patrimonial.form.investments.emergency_reserve.name')}</p>
+                      <p className="font-medium">{reserve.name || 'Não informado'}</p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-blue-600">{t('patrimonial.form.investments.emergency_reserve.value')}</p>
+                      <p className="font-medium">{formatCurrency(reserve.value)}</p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-blue-600">{t('patrimonial.form.investments.emergency_reserve.location')}</p>
+                      <p className="font-medium">{reserve.location || 'Não informado'}</p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-blue-600">{t('patrimonial.form.investments.emergency_reserve.country')}</p>
+                      <p className="font-medium">{reserve.country || 'Não informado'}</p>
+                    </div>
+                    <div className="col-span-2">
+                      <p className="text-sm text-blue-600">{t('patrimonial.form.investments.emergency_reserve.description')}</p>
+                      <p className="font-medium">{reserve.description || 'Não informado'}</p>
                     </div>
                   </div>
                 ))
@@ -707,6 +751,17 @@ export const PatrimonialForm = ({
                 removeParticipation,
                 'investments.participations',
                 'investments.participations',
+                'blue'
+              )}
+
+              <Separator className="my-6" />
+
+              {renderAssetFields(
+                emergencyReserveFields,
+                () => appendEmergencyReserve(defaultEmptyAsset),
+                removeEmergencyReserve,
+                'investments.emergency_reserve',
+                'investments.emergency_reserve',
                 'blue'
               )}
             </div>

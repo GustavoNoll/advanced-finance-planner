@@ -161,6 +161,7 @@ export interface Policy {
       properties?: Array<{ name: string; value: number; location?: string; description?: string; country?: string }>;
       liquid_investments?: Array<{ name: string; value: number; location?: string; description?: string; country?: string }>;
       participations?: Array<{ name: string; value: number; location?: string; description?: string; country?: string }>;
+      emergency_reserve?: Array<{ name: string; value: number; location?: string; description?: string; country?: string }>;
     };
     personal_assets?: {
       properties?: Array<{ name: string; value: number; location?: string; description?: string; country?: string }>;

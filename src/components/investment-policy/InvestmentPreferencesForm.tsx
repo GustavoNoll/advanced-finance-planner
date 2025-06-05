@@ -60,31 +60,11 @@ const investmentModes = [
   { value: 'stock_funds', label: 'Fundos de Ações' },
 ];
 
-const targetReturns = [
-  { value: 'ipca_plus_1', label: 'IPCA + 1%' },
-  { value: 'ipca_plus_2', label: 'IPCA + 2%' },
-  { value: 'ipca_plus_3', label: 'IPCA + 3%' },
-  { value: 'ipca_plus_4', label: 'IPCA + 4%' },
-  { value: 'ipca_plus_5', label: 'IPCA + 5%' },
-  { value: 'ipca_plus_6', label: 'IPCA + 6%' },
-  { value: 'ipca_plus_7', label: 'IPCA + 7%' },
-  { value: 'ipca_plus_8', label: 'IPCA + 8%' },
-  { value: 'ipca_plus_9', label: 'IPCA + 9%' },
-  { value: 'ipca_plus_10', label: 'IPCA + 10%' },
-  { value: 'ipca_plus_11', label: 'IPCA + 11%' },
-];
-
 const reviewPeriods = [
   { value: 'monthly', label: 'Mensal' },
   { value: 'quarterly', label: 'Trimestral' },
   { value: 'semiannual', label: 'Semestral' },
   { value: 'annual', label: 'Anual' },
-];
-
-const bondMaturities = [
-  { value: 'short_term', label: 'Curto Prazo (< 2 anos)' },
-  { value: 'medium_term', label: 'Médio Prazo (2-5 anos)' },
-  { value: 'long_term', label: 'Longo Prazo (> 5 anos)' },
 ];
 
 const fgcFeelings = [
@@ -137,6 +117,16 @@ const ASSET_CATEGORIES = {
     assets: ['foreign_fixed_income', 'foreign_variable_income', 'crypto'],
   },
 } as const;
+
+const bondMaturities = Array.from({ length: 10 }, (_, i) => ({
+  value: `${i + 1}`,
+  label: `${i + 1} ${i === 0 ? 'ano' : 'anos'}`
+}));
+
+const targetReturns = Array.from({ length: 6 }, (_, i) => ({
+  value: `${i + 3}`,
+  label: `IPCA + ${i + 3}%`
+}));
 
 export const InvestmentPreferencesForm = ({
   initialData,
@@ -626,7 +616,7 @@ export const InvestmentPreferencesForm = ({
                           <SelectContent>
                             {bondMaturities.map((maturity) => (
                               <SelectItem key={maturity.value} value={maturity.value}>
-                                {t(`investmentPreferences.options.bondMaturities.${maturity.value}`)}
+                                {maturity.label}
                               </SelectItem>
                             ))}
                           </SelectContent>
@@ -742,7 +732,7 @@ export const InvestmentPreferencesForm = ({
                           <SelectContent>
                             {targetReturns.map((return_) => (
                               <SelectItem key={return_.value} value={return_.value}>
-                                {t(`investmentPreferences.options.targetReturns.${return_.value}`)}
+                                {return_.label}
                               </SelectItem>
                             ))}
                           </SelectContent>
