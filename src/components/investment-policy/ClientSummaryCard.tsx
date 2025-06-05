@@ -19,10 +19,11 @@ export function ClientSummaryCard({ clientProfile, policy }: ClientSummaryCardPr
   const investments = patrimonial?.investments?.properties?.reduce((acc: number, i: { value: number }) => acc + (i.value || 0), 0) || 0;
   const liquidInvestments = patrimonial?.investments?.liquid_investments?.reduce((acc: number, i: { value: number }) => acc + (i.value || 0), 0) || 0;
   const participations = patrimonial?.investments?.participations?.reduce((acc: number, i: { value: number }) => acc + (i.value || 0), 0) || 0;
+  const emergencyReserve = patrimonial?.investments?.emergency_reserve?.reduce((acc: number, i: { value: number }) => acc + (i.value || 0), 0) || 0;
   const properties = patrimonial?.personal_assets?.properties?.reduce((acc: number, i: { value: number }) => acc + (i.value || 0), 0) || 0;
   const vehicles = patrimonial?.personal_assets?.vehicles?.reduce((acc: number, i: { value: number }) => acc + (i.value || 0), 0) || 0;
   const valuableGoods = patrimonial?.personal_assets?.valuable_goods?.reduce((acc: number, i: { value: number }) => acc + (i.value || 0), 0) || 0;
-  const totalPatrimony = investments + liquidInvestments + participations + properties + vehicles + valuableGoods;
+  const totalPatrimony = investments + liquidInvestments + participations + emergencyReserve + properties + vehicles + valuableGoods;
 
   // Budget
   const budget = policy?.budgets || {};
@@ -120,6 +121,10 @@ export function ClientSummaryCard({ clientProfile, policy }: ClientSummaryCardPr
               <div className="flex justify-between items-center py-2 px-3 rounded-lg hover:bg-indigo-50/50 transition-colors">
                 <span className="text-slate-500">{t('clientSummary.investments')}</span>
                 <span className="font-semibold text-indigo-700">{formatCurrency(investments + liquidInvestments + participations)}</span>
+              </div>
+              <div className="flex justify-between items-center py-2 px-3 rounded-lg hover:bg-indigo-50/50 transition-colors">
+                <span className="text-slate-500">{t('clientSummary.emergencyReserve')}</span>
+                <span className="font-semibold text-indigo-700">{formatCurrency(emergencyReserve)}</span>
               </div>
               <div className="flex justify-between items-center py-2 px-3 rounded-lg hover:bg-indigo-50/50 transition-colors">
                 <span className="text-slate-500">{t('clientSummary.properties')}</span>

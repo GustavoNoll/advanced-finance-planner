@@ -1185,7 +1185,7 @@ export const ptBR = {
       description: 'Descrição',
       investments: {
         title: 'Investimentos',
-        description: 'Cadastre seus investimentos, incluindo imóveis, investimentos líquidos e participações societárias',
+        description: 'Cadastre seus investimentos, incluindo imóveis, investimentos líquidos, participações societárias e reserva de emergência',
         properties: {
           title: 'Imóveis',
           name: 'Nome do Imóvel',
@@ -1218,6 +1218,17 @@ export const ptBR = {
           add: 'Adicionar Participação',
           remove: 'Remover Participação',
           empty: 'Nenhuma participação cadastrada'
+        },
+        emergency_reserve: {
+          title: 'Reserva de Emergência',
+          name: 'Nome da Reserva',
+          value: 'Valor (R$)',
+          location: 'Localização',
+          country: 'País',
+          description: 'Descrição',
+          add: 'Adicionar Reserva',
+          remove: 'Remover Reserva',
+          empty: 'Nenhuma reserva cadastrada'
         }
       },
       personal_assets: {
@@ -1442,6 +1453,7 @@ export const ptBR = {
     }
   },
   clientSummary: {
+    emergencyReserve: 'Reserva de Emergência',
     predominantProfile: 'Perfil Predominante',
     personalInfo: 'Informações Pessoais',
     name: 'Nome',
@@ -1518,5 +1530,16 @@ export const ptBR = {
       success: 'Informações pessoais atualizadas com sucesso',
       error: 'Falha ao atualizar informações pessoais'
     }
+  },
+  address: {
+    cep: 'CEP',
+    street: 'Rua',
+    number: 'Número',
+    complement: 'Complemento',
+    neighborhood: 'Bairro',
+    city: 'Cidade',
+    state: 'Estado',
+    cep_not_found: 'CEP não encontrado',
+    cep_error: 'Erro ao buscar CEP',
   },
 };

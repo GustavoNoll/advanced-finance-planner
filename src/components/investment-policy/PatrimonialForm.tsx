@@ -1,4 +1,4 @@
-import { useForm, useFieldArray, FieldPath } from 'react-hook-form';
+import { useForm, useFieldArray, FieldPath  } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { Button } from '@/components/ui/button';
@@ -15,11 +15,23 @@ import { useQueryClient } from '@tanstack/react-query';
 import { capitalizeFirstLetter } from '@/utils/string';
 import { useTranslation } from 'react-i18next';
 import { useState } from 'react';
+import { AddressInput } from '@/components/address/AddressInput';
 
 const assetSchema = z.object({
   name: z.string(),
   value: z.number(),
-  location: z.string(),
+  location: z.union([
+    z.object({
+      cep: z.string(),
+      street: z.string(),
+      number: z.string(),
+      complement: z.string().optional(),
+      neighborhood: z.string(),
+      city: z.string(),
+      state: z.string(),
+    }),
+    z.string()
+  ]),
   description: z.string(),
   country: z.string(),
 });
@@ -29,6 +41,7 @@ const patrimonialSchema = z.object({
     properties: z.array(assetSchema),
     liquid_investments: z.array(assetSchema),
     participations: z.array(assetSchema),
+    emergency_reserve: z.array(assetSchema),
   }),
   personal_assets: z.object({
     properties: z.array(assetSchema),
@@ -59,6 +72,22 @@ const defaultEmptyAsset: AssetType = {
   country: '',
 };
 
+const defaultEmptyPropertyAsset: AssetType = {
+  name: '',
+  value: 0,
+  location: {
+    cep: '',
+    street: '',
+    number: '',
+    complement: '',
+    neighborhood: '',
+    city: '',
+    state: '',
+  },
+  description: '',
+  country: '',
+};
+
 export const PatrimonialForm = ({
   initialData,
   isEditing = false,
@@ -75,6 +104,7 @@ export const PatrimonialForm = ({
         properties: [defaultEmptyAsset],
         liquid_investments: [defaultEmptyAsset],
         participations: [defaultEmptyAsset],
+        emergency_reserve: [defaultEmptyAsset],
       },
       personal_assets: {
         properties: [defaultEmptyAsset],
@@ -104,6 +134,12 @@ export const PatrimonialForm = ({
   const { fields: participationsFields, append: appendParticipation, remove: removeParticipation } = useFieldArray({
     control: form.control,
     name: 'investments.participations',
+  });
+
+  // Emergency Reserve
+  const { fields: emergencyReserveFields, append: appendEmergencyReserve, remove: removeEmergencyReserve } = useFieldArray({
+    control: form.control,
+    name: 'investments.emergency_reserve',
   });
 
   // Personal Properties
@@ -177,13 +213,38 @@ export const PatrimonialForm = ({
     }).format(value);
   };
 
+  const formatAddress = (location: string | {
+    street?: string;
+    number?: string;
+    complement?: string;
+    neighborhood?: string;
+    city?: string;
+    state?: string;
+    cep?: string;
+  } | null | undefined) => {
+    if (!location) return 'Não informado';
+    if (typeof location === 'string') return location;
+    
+    const parts = [
+      location.street,
+      location.number,
+      location.complement,
+      location.neighborhood,
+      location.city,
+      location.state,
+      location.cep
+    ].filter(Boolean);
+    return parts.join(', ') || 'Não informado';
+  };
+
   const renderAssetFields = (
     fields: Record<"id", string>[],
     append: () => void,
     remove: (index: number) => void,
     basePath: string,
     title: string,
-    color: string
+    color: string,
+    isProperty: boolean = false
   ) => (
     <div className="space-y-4">
       <div className="flex justify-between items-center">
@@ -248,24 +309,37 @@ export const PatrimonialForm = ({
                   )}
                 />
 
-                <FormField
-                  control={form.control}
-                  name={`${basePath}.${index}.location` as FieldPath<PatrimonialFormValues>}
-                  render={({ field: formField }) => (
-                    <FormItem>
-                      <FormLabel className={`text-${color}-600`}>{t(`patrimonial.form.${title}.location`)}</FormLabel>
-                      <FormControl>
-                        <Input 
-                          {...formField} 
-                          value={formField.value as string}
-                          disabled={!isEditing}
-                          onChange={(e) => formField.onChange(capitalizeFirstLetter(e.target.value))}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+                {isProperty ? (
+                  <div className="col-span-2">
+                    <h4 className="text-md font-medium mb-4">{t(`patrimonial.form.${title}.location`)}</h4>
+                    <AddressInput
+                      control={form.control}
+                      setValue={form.setValue}
+                      name={`${basePath}.${index}.location`}
+                      disabled={!isEditing}
+                      color={color}
+                    />
+                  </div>
+                ) : (
+                  <FormField
+                    control={form.control}
+                    name={`${basePath}.${index}.location` as FieldPath<PatrimonialFormValues>}
+                    render={({ field: formField }) => (
+                      <FormItem>
+                        <FormLabel className={`text-${color}-600`}>{t(`patrimonial.form.${title}.address.name`)}</FormLabel>
+                        <FormControl>
+                          <Input 
+                            {...formField} 
+                            value={formField.value as string}
+                            disabled={!isEditing}
+                            onChange={(e) => formField.onChange(capitalizeFirstLetter(e.target.value))}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                )}
 
                 <FormField
                   control={form.control}
@@ -333,6 +407,7 @@ export const PatrimonialForm = ({
         properties: [],
         liquid_investments: [],
         participations: [],
+        emergency_reserve: [],
       },
       personal_assets: {
         properties: [],
@@ -387,7 +462,7 @@ export const PatrimonialForm = ({
                     </div>
                     <div>
                       <p className="text-sm text-blue-600">{t('patrimonial.form.investments.properties.location')}</p>
-                      <p className="font-medium">{property.location || 'Não informado'}</p>
+                      <p className="font-medium">{formatAddress(property.location)}</p>
                     </div>
                     <div>
                       <p className="text-sm text-blue-600">{t('patrimonial.form.investments.properties.country')}</p>
@@ -422,7 +497,7 @@ export const PatrimonialForm = ({
                     </div>
                     <div>
                       <p className="text-sm text-blue-600">{t('patrimonial.form.investments.liquid_investments.location')}</p>
-                      <p className="font-medium">{investment.location || 'Não informado'}</p>
+                      <p className="font-medium">{formatAddress(investment.location)}</p>
                     </div>
                     <div>
                       <p className="text-sm text-blue-600">{t('patrimonial.form.investments.liquid_investments.country')}</p>
@@ -457,7 +532,7 @@ export const PatrimonialForm = ({
                     </div>
                     <div>
                       <p className="text-sm text-blue-600">{t('patrimonial.form.investments.participations.location')}</p>
-                      <p className="font-medium">{participation.location || 'Não informado'}</p>
+                      <p className="font-medium">{formatAddress(participation.location)}</p>
                     </div>
                     <div>
                       <p className="text-sm text-blue-600">{t('patrimonial.form.investments.participations.country')}</p>
@@ -466,6 +541,41 @@ export const PatrimonialForm = ({
                     <div className="col-span-2">
                       <p className="text-sm text-blue-600">{t('patrimonial.form.investments.participations.description')}</p>
                       <p className="font-medium">{participation.description || 'Não informado'}</p>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+
+            <Separator className="my-6" />
+
+            {/* Emergency Reserve */}
+            <div className="space-y-4">
+              <h4 className="text-md font-medium text-black">{t('patrimonial.form.investments.emergency_reserve.title')}</h4>
+              {(!values.investments?.emergency_reserve || values.investments.emergency_reserve.length === 0) ? (
+                <p className="text-sm">{t('patrimonial.form.investments.emergency_reserve.empty')}</p>
+              ) : (
+                values.investments.emergency_reserve.map((reserve, index) => (
+                  <div key={index} className="grid grid-cols-1 md:grid-cols-2 gap-4 border-l-4 border-blue-500 pl-4 bg-white rounded-r-lg p-4">
+                    <div>
+                      <p className="text-sm text-blue-600">{t('patrimonial.form.investments.emergency_reserve.name')}</p>
+                      <p className="font-medium">{reserve.name || 'Não informado'}</p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-blue-600">{t('patrimonial.form.investments.emergency_reserve.value')}</p>
+                      <p className="font-medium">{formatCurrency(reserve.value)}</p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-blue-600">{t('patrimonial.form.investments.emergency_reserve.location')}</p>
+                      <p className="font-medium">{formatAddress(reserve.location)}</p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-blue-600">{t('patrimonial.form.investments.emergency_reserve.country')}</p>
+                      <p className="font-medium">{reserve.country || 'Não informado'}</p>
+                    </div>
+                    <div className="col-span-2">
+                      <p className="text-sm text-blue-600">{t('patrimonial.form.investments.emergency_reserve.description')}</p>
+                      <p className="font-medium">{reserve.description || 'Não informado'}</p>
                     </div>
                   </div>
                 ))
@@ -498,7 +608,7 @@ export const PatrimonialForm = ({
                     </div>
                     <div>
                       <p className="text-sm text-green-600">{t('patrimonial.form.personal_assets.properties.location')}</p>
-                      <p className="font-medium">{property.location || 'Não informado'}</p>
+                      <p className="font-medium">{formatAddress(property.location)}</p>
                     </div>
                     <div>
                       <p className="text-sm text-green-600">{t('patrimonial.form.personal_assets.properties.country')}</p>
@@ -533,7 +643,7 @@ export const PatrimonialForm = ({
                     </div>
                     <div>
                       <p className="text-sm text-green-600">{t('patrimonial.form.personal_assets.vehicles.location')}</p>
-                      <p className="font-medium">{vehicle.location || 'Não informado'}</p>
+                      <p className="font-medium">{formatAddress(vehicle.location)}</p>
                     </div>
                     <div>
                       <p className="text-sm text-green-600">{t('patrimonial.form.personal_assets.vehicles.country')}</p>
@@ -568,7 +678,7 @@ export const PatrimonialForm = ({
                     </div>
                     <div>
                       <p className="text-sm text-green-600">{t('patrimonial.form.personal_assets.valuable_goods.location')}</p>
-                      <p className="font-medium">{good.location || 'Não informado'}</p>
+                      <p className="font-medium">{formatAddress(good.location)}</p>
                     </div>
                     <div>
                       <p className="text-sm text-green-600">{t('patrimonial.form.personal_assets.valuable_goods.country')}</p>
@@ -609,7 +719,7 @@ export const PatrimonialForm = ({
                     </div>
                     <div>
                       <p className="text-sm text-red-600">{t('patrimonial.form.liabilities.financing.location')}</p>
-                      <p className="font-medium">{financing.location || 'Não informado'}</p>
+                      <p className="font-medium">{formatAddress(financing.location)}</p>
                     </div>
                     <div>
                       <p className="text-sm text-red-600">{t('patrimonial.form.liabilities.financing.country')}</p>
@@ -644,7 +754,7 @@ export const PatrimonialForm = ({
                     </div>
                     <div>
                       <p className="text-sm text-red-600">{t('patrimonial.form.liabilities.debts.location')}</p>
-                      <p className="font-medium">{debt.location || 'Não informado'}</p>
+                      <p className="font-medium">{formatAddress(debt.location)}</p>
                     </div>
                     <div>
                       <p className="text-sm text-red-600">{t('patrimonial.form.liabilities.debts.country')}</p>
@@ -681,11 +791,12 @@ export const PatrimonialForm = ({
 
               {renderAssetFields(
                 investmentPropertiesFields,
-                () => appendInvestmentProperty(defaultEmptyAsset),
+                () => appendInvestmentProperty(defaultEmptyPropertyAsset),
                 removeInvestmentProperty,
                 'investments.properties',
                 'investments.properties',
-                'blue'
+                'blue',
+                true
               )}
 
               <Separator className="my-6" />
@@ -709,6 +820,17 @@ export const PatrimonialForm = ({
                 'investments.participations',
                 'blue'
               )}
+
+              <Separator className="my-6" />
+
+              {renderAssetFields(
+                emergencyReserveFields,
+                () => appendEmergencyReserve(defaultEmptyAsset),
+                removeEmergencyReserve,
+                'investments.emergency_reserve',
+                'investments.emergency_reserve',
+                'blue'
+              )}
             </div>
 
             {/* Personal Assets Section */}
@@ -720,11 +842,12 @@ export const PatrimonialForm = ({
 
               {renderAssetFields(
                 personalPropertiesFields,
-                () => appendPersonalProperty(defaultEmptyAsset),
+                () => appendPersonalProperty(defaultEmptyPropertyAsset),
                 removePersonalProperty,
                 'personal_assets.properties',
                 'personal_assets.properties',
-                'green'
+                'green',
+                true
               )}
 
               <Separator className="my-6" />

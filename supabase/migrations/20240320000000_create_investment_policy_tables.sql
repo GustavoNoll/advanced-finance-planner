@@ -61,7 +61,8 @@ CREATE TABLE patrimonial_situations (
     investments JSONB DEFAULT '{
         "properties": [],
         "liquid_investments": [],
-        "participations": []
+        "participations": [],
+        "emergency_reserve": []
     }'::jsonb,
     personal_assets JSONB DEFAULT '{
         "properties": [],
