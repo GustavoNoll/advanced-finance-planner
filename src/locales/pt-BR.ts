@@ -1531,4 +1531,15 @@ export const ptBR = {
       error: 'Falha ao atualizar informações pessoais'
     }
   },
+  address: {
+    cep: 'CEP',
+    street: 'Rua',
+    number: 'Número',
+    complement: 'Complemento',
+    neighborhood: 'Bairro',
+    city: 'Cidade',
+    state: 'Estado',
+    cep_not_found: 'CEP não encontrado',
+    cep_error: 'Erro ao buscar CEP',
+  },
 };
