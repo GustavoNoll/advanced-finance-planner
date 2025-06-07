@@ -562,7 +562,12 @@ export const ptBR = {
     hideNegativeValues: "Sem Valores Negativos",
     lifetimeIncome: "Renda Vitalícia",
     projectedLifetimeIncome: "Renda Vitalícia Projetada",
-    plannedLifetimeIncome: "Renda Vitalícia Planejada"
+    plannedLifetimeIncome: "Renda Vitalícia Planejada",
+    advancedOptions: "Opções Avançadas",
+    valueType: "Tipo de Valor",
+    display: "Exibição",
+    noNegativeValues: "Sem Valores Negativos",
+    advancedOptionsHelp: "Valores nominais mostram o valor bruto ao longo do tempo, sem ajuste pela inflação. Valores reais mostram o poder de compra real ao longo do tempo, ajustando pela inflação."
   },
   budgetCategories: {
     categories: {

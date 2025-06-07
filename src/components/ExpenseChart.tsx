@@ -1,4 +1,3 @@
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend, ReferenceLine, Label } from 'recharts';
 import { useTranslation } from "react-i18next";
 import { ChartDataPoint, FinancialRecord, Goal, ProjectedEvent, MonthNumber, InvestmentPlan, Profile, FinancialItemFormValues } from '@/types/financial';
 import { generateChartProjections, YearlyProjectionData } from '@/lib/chart-projections';
@@ -7,12 +6,14 @@ import { supabase } from "@/lib/supabase";
 import { useState } from "react";
 import { calculateCompoundedRates, yearlyReturnRateToMonthlyReturnRate } from '@/lib/financial-math';
 import { ChartPointDialog } from "@/components/chart/ChartPointDialog";
-import { TrendingUp, Car, Home, Plane, GraduationCap, User, AlertCircle, Calendar, Users, Laptop, BookOpen, Briefcase, Heart, Target, Banknote, Info, HelpCircle } from "lucide-react";
+import { TrendingUp, HelpCircle } from "lucide-react";
 import type { ViewBox } from 'recharts/types/util/types';
-import { CurrencyCode, formatCurrency, getCurrencySymbol } from "@/utils/currency";
+import { CurrencyCode } from "@/utils/currency";
 import { Switch } from "@/components/ui/switch";
 import { HoverCard, HoverCardContent, HoverCardTrigger } from "@/components/ui/hover-card";
 import { EditFinancialItemDialog } from "@/components/chart/EditFinancialItemDialog";
+import PatrimonialProjectionChart from "./monthlyData"
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogClose } from "@/components/ui/dialog"
 
 interface ChartPoint {
   age: string;
@@ -62,16 +63,6 @@ interface EventFormValues {
 interface IconProps {
   viewBox?: ViewBox;
 }
-
-const isCartesianViewBox = (viewBox: ViewBox | undefined): viewBox is { x: number; y: number } => {
-  return (
-    viewBox !== undefined &&
-    'x' in viewBox &&
-    'y' in viewBox &&
-    typeof viewBox.x === 'number' &&
-    typeof viewBox.y === 'number'
-  );
-};
 
 /**
  * Obtém os dados brutos do gráfico, usando projeções se disponíveis ou gerando-as.
@@ -338,6 +329,7 @@ export const ExpenseChart = ({
   const [showDialog, setShowDialog] = useState(false);
   const [selectedItem, setSelectedItem] = useState<Goal | ProjectedEvent | null>(null);
   const [showEditDialog, setShowEditDialog] = useState(false);
+  const [showAdvancedOptions, setShowAdvancedOptions] = useState(false);
   
   // Add query for financial goals
   const { data: goals } = useQuery<Goal[]>({
@@ -355,7 +347,6 @@ export const ExpenseChart = ({
       return data.map(goal => ({ ...goal, type: 'goal' }));
     },
   });
-  console.log('goals', goals);
 
   const { data: events } = useQuery<ProjectedEvent[]>({
     queryKey: ["events", clientId],
@@ -504,11 +495,6 @@ export const ExpenseChart = ({
     },
   });
 
-  const handleChartClick = (data: ChartPoint) => {
-    setSelectedPoint(data);
-    setShowDialog(true);
-  };
-
   const handleDialogClose = () => {
     setShowDialog(false);
     setSelectedPoint(null);
@@ -603,203 +589,6 @@ export const ExpenseChart = ({
 
   const offset = colorOffset();
 
-  const renderGoalIcon = (props: IconProps, goal?: Goal) => {
-    if (!isCartesianViewBox(props.viewBox) || !goal) return null;
-    
-    const { viewBox: { x, y } } = props;
-    const iconSize = 20;
-    
-    const getIcon = () => {
-      switch (goal.icon) {
-        case 'house':
-          return <Home size={iconSize} className="text-red-500 group-hover:text-red-600 transition-colors" />;
-        case 'car':
-          return <Car size={iconSize} className="text-red-500 group-hover:text-red-600 transition-colors" />;
-        case 'travel':
-          return <Plane size={iconSize} className="text-red-500 group-hover:text-red-600 transition-colors" />;
-        case 'family':
-          return <Users size={iconSize} className="text-red-500 group-hover:text-red-600 transition-colors" />;
-        case 'electronic':
-          return <Laptop size={iconSize} className="text-red-500 group-hover:text-red-600 transition-colors" />;
-        case 'education':
-          return <GraduationCap size={iconSize} className="text-red-500 group-hover:text-red-600 transition-colors" />;
-        case 'hobby':
-          return <BookOpen size={iconSize} className="text-red-500 group-hover:text-red-600 transition-colors" />;
-        case 'professional':
-          return <Briefcase size={iconSize} className="text-red-500 group-hover:text-red-600 transition-colors" />;
-        case 'health':
-          return <Heart size={iconSize} className="text-red-500 group-hover:text-red-600 transition-colors" />;
-        default:
-          return <Target size={iconSize} className="text-red-500 group-hover:text-red-600 transition-colors" />;
-      }
-    };
-
-    const formattedAmount = formatCurrency(goal.asset_value, investmentPlan?.currency as CurrencyCode);
-    const monthName = new Date(0, goal.month - 1).toLocaleString('pt-BR', { month: 'long' });
-
-    return (
-      <g 
-        transform={`translate(${x}, ${y})`}
-        className="group cursor-pointer"
-        onClick={() => handleEditItem(goal)}
-        onMouseEnter={(e) => {
-          e.stopPropagation();
-          const tooltip = document.querySelector('.recharts-tooltip-wrapper');
-          if (tooltip) {
-            tooltip.setAttribute('style', 'display: none !important');
-          }
-        }}
-        onMouseLeave={(e) => {
-          e.stopPropagation();
-          const tooltip = document.querySelector('.recharts-tooltip-wrapper');
-          if (tooltip) {
-            tooltip.setAttribute('style', 'position: absolute; pointer-events: none; visibility: visible; z-index: 10; transition: visibility 0s linear 0s, opacity 0.3s linear 0s; opacity: 1; top: 0px; left: 0px; transform: translate3d(0px, 0px, 0px);');
-          }
-        }}
-      >
-        <circle
-          cx={0}
-          cy={0}
-          r={iconSize/2 + 4}
-          fill="white"
-          opacity="0.8"
-          className="shadow-sm group-hover:shadow-md transition-all"
-        />
-        <g transform={`translate(${-iconSize/2}, ${-iconSize/2})`} className="transition-transform duration-200 group-hover:scale-110">
-          {getIcon()}
-        </g>
-        <g transform="translate(0, -60)" className="opacity-0 group-hover:opacity-100 transition-opacity duration-200">
-          <foreignObject
-            x={-100}
-            y={100}
-            width={200}
-            height={50}
-            style={{ overflow: 'visible', pointerEvents: 'auto' }}
-            onMouseEnter={e => e.stopPropagation()}
-            onMouseMove={e => e.stopPropagation()}
-          >
-            <div className="bg-white p-3 rounded-lg shadow-lg border border-gray-200">
-              <div className="text-sm font-medium text-blue-600 mb-1">
-                {t('financialGoals.title')}: {goal.name}
-              </div>
-              <div className="text-lg font-semibold text-red-600 mb-2">
-                {t('common.value')}: {formattedAmount}
-              </div>
-              <div className="text-sm text-gray-600 mb-1">
-                {t(`financialGoals.icons.${goal.icon}`)}
-              </div>
-              <div className="text-sm text-gray-600">
-                {t('monthlyView.table.headers.month')}: {monthName}
-              </div>
-              <div className="text-sm text-gray-600">
-                {t('financialRecords.form.year')}: {goal.year}
-              </div>
-              {(goal.payment_mode === 'installment' || goal.payment_mode === 'repeat') && (
-                <>
-                  <div className="text-sm text-blue-600 mt-1">
-                    {goal.payment_mode === 'installment' ? t('financialGoals.form.installmentCount') : t('events.form.repeatCount')}: {goal.installment_count}x {goal.installment_interval > 1 ? t('common.every') + ' ' + goal.installment_interval + ' ' + t('common.months') : ''}
-                  </div>
-                </>
-              )}
-            </div>
-          </foreignObject>
-        </g>
-      </g>
-    );
-  };
-
-  const renderEventIcon = (props: IconProps, event?: ProjectedEvent) => {
-    if (!isCartesianViewBox(props.viewBox) || !event) return null;
-    
-    const { viewBox: { x, y } } = props;
-    const iconSize = 20;
-    
-    // Determine icon color based on asset value
-    const iconColor = event.asset_value >= 0 ? 'text-green-500 group-hover:text-green-600' : 'text-red-500 group-hover:text-red-600';
-    
-    const getIcon = () => {
-      switch (event.icon) {
-        case 'goal':
-          return <Target size={iconSize} className={`${iconColor} transition-colors`} />;
-        case 'contribution':
-          return <Banknote size={iconSize} className={`${iconColor} transition-colors`} />;
-        default:
-          return <Calendar size={iconSize} className={`${iconColor} transition-colors`} />;
-      }
-    };
-
-    const formattedAmount = formatCurrency(event.asset_value, investmentPlan?.currency as CurrencyCode);
-    const monthName = new Date(0, event.month - 1).toLocaleString('pt-BR', { month: 'long' });
-
-    return (
-      <g 
-        transform={`translate(${x}, ${y})`}
-        className="group cursor-pointer"
-        onClick={() => handleEditItem(event)}
-        onMouseEnter={(e) => {
-          e.stopPropagation();
-          const tooltip = document.querySelector('.recharts-tooltip-wrapper');
-          if (tooltip) {
-            tooltip.setAttribute('style', 'display: none !important');
-          }
-        }}
-        onMouseLeave={(e) => {
-          e.stopPropagation();
-          const tooltip = document.querySelector('.recharts-tooltip-wrapper');
-          if (tooltip) {
-            tooltip.setAttribute('style', 'position: absolute; pointer-events: none; visibility: visible; z-index: 10; transition: visibility 0s linear 0s, opacity 0.3s linear 0s; opacity: 1; top: 0px; left: 0px; transform: translate3d(0px, 0px, 0px);');
-          }
-        }}
-      >
-        <circle
-          cx={0}
-          cy={0}
-          r={iconSize/2 + 4}
-          fill="white"
-          opacity="0.8"
-          className="shadow-sm group-hover:shadow-md transition-all"
-        />
-        <g transform={`translate(${-iconSize/2}, ${-iconSize/2})`} className="transition-transform duration-200 group-hover:scale-110">
-          {getIcon()}
-        </g>
-        <g transform="translate(0, -60)" className="opacity-0 group-hover:opacity-100 transition-opacity duration-200">
-          <foreignObject
-            x={-100}
-            y={100}
-            width={200}
-            height={120}
-            style={{ overflow: 'visible', pointerEvents: 'auto' }}
-            onMouseEnter={e => e.stopPropagation()}
-            onMouseMove={e => e.stopPropagation()}
-          >
-            <div className="bg-white p-3 rounded-lg shadow-lg border border-gray-200">
-              <div className={`text-sm font-medium ${event.asset_value >= 0 ? 'text-green-600' : 'text-red-600'} mb-1`}>
-                {t('events.title')}: {event.name}
-              </div>
-              <div className={`text-lg font-semibold ${event.asset_value >= 0 ? 'text-green-600' : 'text-red-600'} mb-2`}>
-                {t('common.value')}: {formattedAmount}
-              </div>
-              <div className="text-sm text-gray-600 mb-1">
-                {event.name}
-              </div>
-              <div className="text-sm text-gray-600">
-                {t('monthlyView.table.headers.month')}: {monthName}
-              </div>
-              <div className="text-sm text-gray-600">
-                {t('financialRecords.form.year')}: {event.year}
-              </div>
-              {(event.payment_mode === 'installment' || event.payment_mode === 'repeat') && (
-                <div className="text-sm text-blue-600 mt-1">
-                  {event.payment_mode === 'installment' ? t('financialGoals.form.installmentCount') : t('events.form.repeatCount')}: {event.installment_count}x {event.installment_interval > 1 ? t('common.every') + ' ' + event.installment_interval + ' ' + t('common.months') : ''}
-                </div>
-              )}
-            </div>
-          </foreignObject>
-        </g>
-      </g>
-    );
-  };
-
   return (
     <div className="space-y-4">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-4">
@@ -809,56 +598,55 @@ export const ExpenseChart = ({
         </h2>
         
         <div className="flex flex-wrap items-center gap-4">
-          {/* Inflation adjustment toggle */}
-          <div className="inline-flex items-center gap-2">
-            <div className="flex items-center gap-2">
-              <span className="text-sm font-medium text-gray-600">{t('expenseChart.nominalValues')}</span>
-              <Switch
-                checked={showRealValues}
-                onCheckedChange={setShowRealValues}
-                className="data-[state=checked]:bg-blue-400"
-              />
-              <span className="text-sm font-medium text-gray-600">{t('expenseChart.realValues')}</span>
-            </div>
+          <Dialog open={showAdvancedOptions} onOpenChange={setShowAdvancedOptions}>
+            <DialogContent className="max-w-md">
+              <DialogHeader>
+                <DialogTitle>{t('expenseChart.advancedOptions')}</DialogTitle>
+              </DialogHeader>
+              <div className="space-y-6 py-2">
+                <div>
+                  <div className="flex items-center gap-1 mb-2">
+                    <div className="text-xs font-semibold text-gray-500 uppercase tracking-wider">{t('expenseChart.valueType')}</div>
+                    <HoverCard>
+                      <HoverCardTrigger asChild>
+                        <button className="text-gray-400 hover:text-gray-600 transition-colors" tabIndex={-1} type="button">
+                          <HelpCircle className="w-4 h-4" />
+                        </button>
+                      </HoverCardTrigger>
+                      <HoverCardContent className="max-w-xs">
+                        <p className="text-sm text-gray-600">
+                          {t('expenseChart.advancedOptionsHelp')}
+                        </p>
+                      </HoverCardContent>
+                    </HoverCard>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm font-medium text-gray-700">{showRealValues ? t('expenseChart.realValues') : t('expenseChart.nominalValues')}</span>
+                    <Switch
+                      checked={showRealValues}
+                      onCheckedChange={setShowRealValues}
+                    />
+                  </div>
+                </div>
+                <div>
+                  <div className="text-xs font-semibold text-gray-500 mb-2 uppercase tracking-wider">{t('expenseChart.display')}</div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm font-medium text-gray-700">{t('expenseChart.noNegativeValues')}</span>
+                    <Switch
+                      checked={!showNegativeValues}
+                      onCheckedChange={v => setShowNegativeValues(!v)}
+                    />
+                  </div>
+                </div>
+              </div>
+              <DialogFooter>
+                <DialogClose asChild>
+                  <button className="px-4 py-2 rounded bg-gray-100 text-gray-700 hover:bg-gray-200 text-sm font-medium" type="button">{t('common.cancel')}</button>
+                </DialogClose>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
 
-            <HoverCard>
-              <HoverCardTrigger asChild>
-                <button className="text-gray-400 hover:text-gray-600 transition-colors">
-                  <HelpCircle className="w-4 h-4" />
-                </button>
-              </HoverCardTrigger>
-              <HoverCardContent className="max-w-xs">
-                <p className="text-sm text-gray-600">
-                  {showRealValues 
-                    ? t('expenseChart.realValuesTooltip')
-                    : t('expenseChart.nominalValuesTooltip')}
-                </p>
-              </HoverCardContent>
-            </HoverCard>
-          </div>
-
-          {/* Negative values toggle */}
-          <div className="inline-flex items-center">
-            <button
-              onClick={() => setShowNegativeValues(!showNegativeValues)}
-              className={`flex items-center gap-2 px-3 py-1.5 text-sm font-medium rounded-md border transition-colors ${
-                showNegativeValues 
-                  ? 'bg-gray-50 border-gray-200 text-gray-700 hover:bg-gray-100' 
-                  : 'bg-blue-50 border-blue-200 text-blue-700'
-              }`}
-            >
-              {showNegativeValues ? (
-                <span>{t('expenseChart.showNegativeValues')}</span>
-              ) : (
-                <>
-                  <span>{t('expenseChart.hideNegativeValues')}</span>
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                  </svg>
-                </>
-              )}
-            </button>
-          </div>
           
           <div className="inline-flex items-center rounded-md border border-gray-200 p-1 bg-gray-50">
             <button
@@ -954,278 +742,69 @@ export const ExpenseChart = ({
               </div>
             </div>
           )}
+          {/* Inflation adjustment toggle */}
+          <button
+            className="px-3 py-1.5 text-sm font-medium rounded-md border border-gray-200 bg-white hover:bg-gray-50 transition-colors"
+            onClick={() => setShowAdvancedOptions(true)}
+          >
+            {t('expenseChart.advancedOptions')}
+          </button>
         </div>
       </div>
 
-      <ResponsiveContainer 
-        width="100%" 
-        height={500}
-        key={`${JSON.stringify(chartData)}-${showRealValues}`}
-      >
-        <LineChart 
-          data={chartData}
-          margin={{ top: 20, right: 30, left: 50, bottom: 25 }}
-          onClick={(data) => data && data.activePayload && handleChartClick(data.activePayload[0].payload)}
-        >
-          <defs>
-            <linearGradient id="colorUv" x1="0" y1="0" x2="1" y2="0">
-              <stop offset={offset} stopColor="#2563eb" /> {/* blue-600 */}
-              <stop offset={offset} stopColor="#93c5fd" /> {/* blue-300 */}
-            </linearGradient>
-            <linearGradient id="colorProjected" x1="0" y1="0" x2="1" y2="0">
-              <stop offset="0%" stopColor="#f97316" stopOpacity={0.8} /> {/* orange-500 */}
-              <stop offset="100%" stopColor="#fb923c" stopOpacity={0.8} /> {/* orange-400 */}
-            </linearGradient>
-            <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
-              <feGaussianBlur in="SourceAlpha" stdDeviation="3" />
-              <feOffset dx="2" dy="2" result="offsetblur" />
-              <feComponentTransfer>
-                <feFuncA type="linear" slope="0.2" />
-              </feComponentTransfer>
-              <feMerge>
-                <feMergeNode />
-                <feMergeNode in="SourceGraphic" />
-              </feMerge>
-            </filter>
-          </defs>
-          <CartesianGrid 
-            strokeDasharray="5 5" 
-            stroke="#e5e7eb" 
-            strokeOpacity={1}
-            vertical={false}
-            horizontal={true}
-          />
-          <XAxis 
-            dataKey="xAxisLabel"
-            interval={zoomLevel === 'all' || zoomLevel === '10y' ? 'preserveStartEnd' : 3}
-            label={{ 
-              value: t('expenseChart.years'), 
-              position: 'bottom', 
-              offset: 0,
-              style: { 
-                fill: '#6b7280',
-                fontSize: '0.875rem',
-                fontWeight: '500'
-              }
-            }}
-            tick={{ 
-              fill: '#6b7280',
-              fontSize: '0.75rem'
-            }}
-            axisLine={{ 
-              stroke: '#e5e7eb',
-              strokeWidth: 2
-            }}
-          />
-          <YAxis 
-            tickCount={6}
-            tickFormatter={(value) => 
-              new Intl.NumberFormat('pt-BR', {
-                style: 'currency',
-                currency: investmentPlan?.currency as CurrencyCode,
-                notation: 'compact',
-                maximumFractionDigits: 1
-              }).format(value)
-            }
-            tick={{ 
-              fill: '#6b7280',
-              fontSize: '0.75rem'
-            }}
-            axisLine={{ 
-              stroke: '#e5e7eb',
-              strokeWidth: 2
-            }}
-          />
-          <Tooltip 
-            contentStyle={{
-              backgroundColor: 'white',
-              border: '1px solid #e5e7eb',
-              borderRadius: '0.75rem',
-              boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1)',
-              padding: '0.75rem',
-            }}
-            formatter={(value: number, name: string, props: { color?: string }) => [
-              <div className="flex items-center gap-2">
-                <div 
-                  className="w-3 h-3 rounded-full" 
-                  style={{ 
-                    background: name === t('expenseChart.actualValue') || name === t('expenseChart.actualValueReal') ? 
-                              'linear-gradient(to right, #3b82f6, #60a5fa)' :
-                              'linear-gradient(to right, #f97316, #fb923c)'
-                  }}
-                />
-                <div className="flex flex-col">
-                  <span className="text-gray-600 text-sm font-medium">{name}</span>
-                  <span className={`text-gray-900 font-semibold ${value >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                    {value < 0 && '-'}{formatCurrency(Math.abs(value), investmentPlan?.currency as CurrencyCode)}
-                  </span>
-                  <span className="text-xs text-gray-500">
-                    {t('expenseChart.lifetimeIncome')}: {formatCurrency((value * (investmentPlan.expected_return/100))/12, investmentPlan?.currency as CurrencyCode)}/{t('common.perMonth')}
-                  </span>
-                </div>
-              </div>
-            ]}
-            labelFormatter={(label) => {
-              const dataPoint = chartData.find(point => point.xAxisLabel === label);
-              if (!dataPoint) return '';
-
-              if (zoomLevel === 'all') {
-                return `${Math.floor(Number(dataPoint.age))} ${t('expenseChart.years')} (${dataPoint.year})${
-                  showRealValues ? ` - ${t('expenseChart.realValues')}` : ''
-                }`;
-              }
-
-              const monthName = new Date(0, dataPoint.month - 1).toLocaleString('en-US', { month: 'long' }).toLowerCase();
-              const wholeAge = Math.floor(Number(dataPoint.age));
-              
-              return `${wholeAge} ${t('expenseChart.years')} (${t('monthlyView.table.months.' + monthName)} ${dataPoint.year})${
-                showRealValues ? ` - ${t('expenseChart.realValues')}` : ''
-              }`;
-            }}
-            labelStyle={{
-              color: '#1f2937',
-              fontWeight: '600',
-              fontSize: '0.875rem',
-              marginBottom: '0.5rem',
-            }}
-            itemStyle={{
-              color: '#374151',
-              fontSize: '0.875rem',
-              padding: '0.25rem 0',
-            }}
-          />
-          <Legend 
-            verticalAlign="bottom" 
-            align="center"
-            wrapperStyle={{ 
-              paddingTop: '20px',
-              bottom: 0
-            }}
-            formatter={(value) => (
-              <span className="text-sm font-medium text-gray-600">{value}</span>
-            )}
-          />
-
-          {/* Update reference lines for goals */}
-          {goals?.sort((a, b) => a.year - b.year)
-            .reduce((acc: React.ReactNode[], goal) => {
-              const achievementPoint = chartData.find(point => {
-                if (zoomLevel === 'all' || zoomLevel === '10y') {
-                  if (chartData.length > 1) { 
-                    const yearDiff = chartData[1].year - chartData[0].year;
-                    const halfYearDiff = yearDiff / 2;
-                    return Math.abs(point.year - goal.year) <= halfYearDiff;
-                  }
-                  return point.year === goal.year;
-                } else {
-                  if (chartData.length > 1) {
-                    const monthDiff = chartData[1].month - chartData[0].month;
-                    const halfMonthDiff = monthDiff / 2;
-                    return point.year === goal.year && Math.abs(point.month - goal.month) <= halfMonthDiff;
-                  }
-                  return point.year === goal.year && point.month === goal.month;
-                }
-              });
-              
-              if (achievementPoint) {
-                acc.push(
-                  <ReferenceLine
-                    key={`${goal.id}-actual`}
-                    x={achievementPoint.xAxisLabel}
-                    stroke="#6b7280"
-                    strokeDasharray="3 3"
-                    strokeOpacity={0.3}
-                    ifOverflow="extendDomain"
-                    label={{
-                      position: 'top',
-                      content: (props) => renderGoalIcon(props, goal)
-                    }}
-                  />
-                );
-              }
-              return acc;
-            }, [])}
-
-          {events?.sort((a, b) => a.year - b.year)
-            .reduce((acc: React.ReactNode[], event) => {
-              const achievementPoint = chartData.find(point => {
-                if (zoomLevel === 'all' || zoomLevel === '10y') {
-                  if (chartData.length > 1) {
-                    const yearDiff = chartData[1].year - chartData[0].year;
-                    const halfYearDiff = yearDiff / 2;
-                    return Math.abs(point.year - event.year) <= halfYearDiff;
-                  }
-                  return point.year === event.year;
-                } else {
-                  if (chartData.length > 1) {
-                    const monthDiff = chartData[1].month - chartData[0].month;
-                    const halfMonthDiff = monthDiff / 2;
-                    return point.year === event.year && Math.abs(point.month - event.month) <= halfMonthDiff;
-                  }
-                  return point.year === event.year && point.month === event.month;
-                }
-              });
-
-              if (achievementPoint) {
-                acc.push(
-                  <ReferenceLine
-                    key={event.id}
-                    x={achievementPoint.xAxisLabel}
-                    stroke="#6b7280"
-                    strokeDasharray="3 3"
-                    strokeOpacity={0.3}
-                    ifOverflow="extendDomain"
-                    label={{
-                      position: 'top',
-                      content: (props) => renderEventIcon(props, event)
-                    }}
-                  />
-                );
-              }
-              return acc;
-            }, [])}
-
-          {/* Line for actual values (solid) */}
-          <Line 
-            type="natural"
-            dataKey="actualValue"
-            stroke="url(#colorUv)"
-            name={showRealValues ? t('expenseChart.actualValueReal') : t('expenseChart.actualValue')}
-            strokeWidth={3}
-            connectNulls
-            dot={false}
-            activeDot={{ 
-              r: 8, 
-              strokeWidth: 2,
-              stroke: '#3b82f6',
-              fill: 'white',
-              filter: 'url(#shadow)'
-            }}
-            animationDuration={1000}
-            animationEasing="ease-in-out"
-          />
-        
-          <Line 
-            type="natural"
-            dataKey="projectedValue" 
-            stroke="url(#colorProjected)"
-            name={showRealValues ? t('expenseChart.projectedValueReal') : t('expenseChart.projectedValue')}
-            strokeWidth={3}
-            strokeDasharray="8 8"
-            connectNulls
-            dot={false}
-            activeDot={{ 
-              r: 8, 
-              strokeWidth: 2,
-              stroke: '#f97316',
-              fill: 'white',
-              filter: 'url(#shadow)'
-            }}
-            animationDuration={1000}
-            animationEasing="ease-in-out"
-          />
-        </LineChart>
-      </ResponsiveContainer>
+      <div className="mt-8">
+        <PatrimonialProjectionChart
+          monthlyData={chartData.map((d) => ({
+            age: d.age,
+            year: d.year,
+            month: d.month,
+            actualValue: d.actualValue,
+            projectedValue: d.projectedValue,
+            realDataPoint: d.realDataPoint,
+          }))}
+          objectives={[
+            ...(goals?.map(goal => ({
+              asset_value: goal.asset_value,
+              name: goal.name,
+              created_at: new Date(goal.year, goal.month - 1, 1).toISOString(),
+              icon: goal.icon,
+              id: goal.id,
+              installment_count: goal.installment_count ?? 1,
+              installment_interval: goal.installment_interval ?? 1,
+              payment_mode: goal.payment_mode ?? 'none',
+              type: 'goal' as const,
+            })) || []),
+            ...(events?.map(event => ({
+              asset_value: event.asset_value,
+              name: event.name,
+              created_at: new Date(event.year, event.month - 1, 1).toISOString(),
+              icon: event.icon,
+              id: event.id,
+              installment_count: event.installment_count ?? 1,
+              installment_interval: event.installment_interval ?? 1,
+              payment_mode: event.payment_mode ?? 'none',
+              type: 'event' as const,
+            })) || []),
+          ]}
+          selectedYears={Array.from(new Set(chartData.map(d => d.year)))}
+          showNominalValues={!showRealValues}
+          hideNegativeValues={!showNegativeValues}
+          handleEditItem={(item) => {
+            // Try to find the matching goal or event by id
+            const foundGoal = goals?.find(g => g.id === item.id)
+            if (foundGoal) return handleEditItem(foundGoal)
+            const foundEvent = events?.find(e => e.id === item.id)
+            if (foundEvent) return handleEditItem(foundEvent)
+          }}
+          onSubmitGoal={createGoal.mutateAsync}
+          onSubmitEvent={createEvent.mutateAsync}
+          currency={investmentPlan.currency}
+          birthDate={profile.birth_date}
+          zoomLevel={zoomLevel}
+          width="100%"
+          height={500}
+        />
+      </div>
 
       <ChartPointDialog
         open={showDialog}
