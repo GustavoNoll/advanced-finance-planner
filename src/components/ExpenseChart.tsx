@@ -73,6 +73,253 @@ const isCartesianViewBox = (viewBox: ViewBox | undefined): viewBox is { x: numbe
   );
 };
 
+/**
+ * Obtém os dados brutos do gráfico, usando projeções se disponíveis ou gerando-as.
+ * @param projectionData Projeções anuais, se disponíveis
+ * @param profile Perfil do usuário
+ * @param investmentPlan Plano de investimento
+ * @param allFinancialRecords Todos os registros financeiros
+ * @param goals Metas financeiras
+ * @param events Eventos projetados
+ * @returns Array de ChartDataPoint
+ */
+function getRawChartData({
+  projectionData,
+  profile,
+  investmentPlan,
+  allFinancialRecords,
+  goals,
+  events
+}: {
+  projectionData?: YearlyProjectionData[]
+  profile: Profile
+  investmentPlan: InvestmentPlan
+  allFinancialRecords: FinancialRecord[]
+  goals?: Goal[]
+  events?: ProjectedEvent[]
+}): ChartDataPoint[] {
+  if (projectionData) {
+    return projectionData.flatMap(yearData =>
+      yearData.months?.map(monthData => ({
+        age: yearData.age.toString(),
+        year: yearData.year,
+        month: monthData.month as MonthNumber,
+        actualValue: monthData.balance,
+        projectedValue: monthData.planned_balance,
+        realDataPoint: monthData.isHistorical
+      })) || []
+    )
+  }
+  return generateChartProjections(
+    profile,
+    investmentPlan,
+    allFinancialRecords,
+    goals,
+    events
+  )
+}
+
+/**
+ * Ajusta os valores do gráfico para inflação e negativos, conforme as opções do usuário.
+ * @param data Dados brutos do gráfico
+ * @param showRealValues Se deve ajustar para valores reais (inflação)
+ * @param showNegativeValues Se deve mostrar valores negativos
+ * @param baseYear Ano base para ajuste
+ * @param baseMonth Mês base para ajuste
+ * @param investmentPlan Plano de investimento
+ * @param allFinancialRecords Todos os registros financeiros
+ * @returns Array ajustado de ChartDataPoint
+ */
+function adjustChartData({
+  data,
+  showRealValues,
+  showNegativeValues,
+  baseYear,
+  baseMonth,
+  investmentPlan,
+  allFinancialRecords
+}: {
+  data: ChartDataPoint[]
+  showRealValues: boolean
+  showNegativeValues: boolean
+  baseYear: number
+  baseMonth: number
+  investmentPlan: InvestmentPlan
+  allFinancialRecords: FinancialRecord[]
+}): ChartDataPoint[] {
+  function calculateInflationAdjustedValue(
+    value: number | null | undefined,
+    baseYear: number,
+    baseMonth: number,
+    targetYear: number,
+    targetMonth: number,
+    monthlyInflationRate: number
+  ): number | null | undefined {
+    if (value === null || value === undefined) return value;
+    const monthsDiff = (targetYear - baseYear) * 12 + (targetMonth - baseMonth);
+    if (monthsDiff <= 0) {
+      const recordsBetween = allFinancialRecords.filter(record => {
+        const recordToTargetMonthDiff = (record.record_year - targetYear) * 12 + (record.record_month - targetMonth);
+        return recordToTargetMonthDiff < 0;
+      });
+      const inflationFactor = 1 + (calculateCompoundedRates(recordsBetween.map(record => record.target_rentability/100)) || 1);
+      if (inflationFactor !== 1) return value / inflationFactor;
+      return value;
+    }
+    return value / Math.pow(1 + monthlyInflationRate, monthsDiff);
+  }
+  const monthlyInflation = yearlyReturnRateToMonthlyReturnRate(investmentPlan.inflation/100);
+  return data.map(point => {
+    if (!showRealValues) {
+      return {
+        ...point,
+        actualValue: showNegativeValues ? point.actualValue : Math.max(0, point.actualValue),
+        projectedValue: showNegativeValues ? point.projectedValue : Math.max(0, point.projectedValue),
+      }
+    }
+    const adjustedActualValue = point.realDataPoint
+      ? point.actualValue
+      : calculateInflationAdjustedValue(
+          point.actualValue,
+          baseYear,
+          baseMonth,
+          point.year,
+          point.month,
+          monthlyInflation
+        );
+    const adjustedProjectedValue = calculateInflationAdjustedValue(
+      point.projectedValue,
+      baseYear,
+      baseMonth,
+      point.year,
+      point.month,
+      monthlyInflation
+    );
+    return {
+      ...point,
+      actualValue: showNegativeValues ? adjustedActualValue : Math.max(0, adjustedActualValue),
+      projectedValue: showNegativeValues ? adjustedProjectedValue : Math.max(0, adjustedProjectedValue),
+    }
+  })
+}
+
+/**
+ * Reduz o número de pontos do gráfico para evitar sobrecarga visual.
+ * @param data Array de ChartDataPoint
+ * @param maxPoints Número máximo de pontos
+ * @returns Array reduzido de ChartDataPoint
+ */
+function reduceDataPoints(data: ChartDataPoint[], maxPoints: number = 30) {
+  if (data.length <= maxPoints) return data;
+  const step = Math.ceil(data.length / maxPoints);
+  return data.filter((_, index) => index % step === 0);
+}
+
+/**
+ * Aplica o zoom (recorte temporal) nos dados do gráfico, agrupando por ano se necessário.
+ * @param data Dados ajustados do gráfico
+ * @param zoomLevel Nível de zoom selecionado
+ * @param customRange Range customizado (se aplicável)
+ * @returns Array de ChartDataPoint filtrado
+ */
+function getZoomedChartData({
+  data,
+  zoomLevel,
+  customRange
+}: {
+  data: ChartDataPoint[]
+  zoomLevel: ZoomLevel
+  customRange: { past: number, future: number }
+}): ChartDataPoint[] {
+  if (zoomLevel === 'all') {
+    // Group by year and calculate last value for each year
+    const yearlyData = data.reduce((acc: { [key: string]: ChartDataPoint[] }, point) => {
+      const year = point.year.toString();
+      if (!acc[year]) {
+        acc[year] = [];
+      }
+      acc[year].push(point);
+      return acc;
+    }, {});
+
+    const yearlyPoints = Object.entries(yearlyData).map(([year, points]) => {
+      const sortedPoints = [...points].sort((a, b) => b.month - a.month);
+      const lastMonthPoint = sortedPoints[0];
+
+      return {
+        ...lastMonthPoint,
+        age: Math.floor(Number(lastMonthPoint.age)).toString()
+      };
+    });
+
+    return reduceDataPoints(yearlyPoints);
+  }
+  
+  // Get current date
+  const currentDate = new Date();
+  const currentYear = currentDate.getFullYear();
+  const currentMonth = currentDate.getMonth() + 1;
+
+  // Find the current point in data
+  const currentPoint = data.find(point => 
+    point.year === currentYear && 
+    point.month === currentMonth
+  ) || data[0];
+
+  if (!currentPoint) return data;
+
+  const currentAge = Number(currentPoint.age);
+  
+  // Define time ranges based on zoom level
+  const timeRanges = {
+    '1y': { past: 0.5, future: 0.5 }, // 6 months back, 6 months forward
+    '5y': { past: 1, future: 4 },     // 1 year back, 4 years forward
+    '10y': { past: 2, future: 8 },    // 2 years back, 8 years forward
+    'custom': customRange,             // Use custom range values
+  }[zoomLevel];
+
+  const filteredData = data.filter(point => {
+    const pointAge = Number(point.age);
+    return pointAge >= (currentAge - timeRanges.past) && 
+           pointAge <= (currentAge + timeRanges.future);
+  });
+
+  // For 10y view, group by year as in 'all' mode
+  if (zoomLevel === '10y') {
+    const yearlyData = filteredData.reduce((acc: { [key: string]: ChartDataPoint[] }, point) => {
+      const year = point.year.toString();
+      if (!acc[year]) {
+        acc[year] = [];
+      }
+      acc[year].push(point);
+      return acc;
+    }, {});
+
+    const yearlyPoints = Object.entries(yearlyData).map(([year, points]) => {
+      const lastRealPoint = points.reverse().find(p => p.realDataPoint);
+      
+      if (lastRealPoint) {
+        return {
+          ...lastRealPoint,
+          age: Math.floor(Number(lastRealPoint.age)).toString()
+        };
+      }
+
+      const lastPoint = points[0];
+      return {
+        ...lastPoint,
+        actualValue: lastPoint.actualValue,
+        age: Math.floor(Number(lastPoint.age)).toString()
+      };
+    });
+
+    return reduceDataPoints(yearlyPoints);
+  }
+
+  // Reduz os pontos para visualizações mensais também
+  return reduceDataPoints(filteredData);
+}
+
 export const ExpenseChart = ({ 
   profile, 
   investmentPlan, 
@@ -108,6 +355,7 @@ export const ExpenseChart = ({
       return data.map(goal => ({ ...goal, type: 'goal' }));
     },
   });
+  console.log('goals', goals);
 
   const { data: events } = useQuery<ProjectedEvent[]>({
     queryKey: ["events", clientId],
@@ -290,48 +538,6 @@ export const ExpenseChart = ({
     );
   }
 
-  // Function to calculate inflation-adjusted values
-  const calculateInflationAdjustedValue = (
-    value: number | null | undefined,
-    baseYear: number,
-    baseMonth: number,
-    targetYear: number,
-    targetMonth: number,
-    monthlyInflationRate: number
-  ): number | null | undefined => {
-    if (value === null || value === undefined) return value;
-    
-    // Calculate total months between the dates
-    const monthsDiff = 
-      (targetYear - baseYear) * 12 + (targetMonth - baseMonth);
-    
-    // If the target date is before or equal to the base date, use historical inflation data
-    if (monthsDiff <= 0) {
-      // For historical values, use accumulated target_rentability from financial records
-      // Find all records between target date and base date
-      const recordsBetween = allFinancialRecords.filter(record => {
-        // Calculate if this record is older than target date (before target date)
-        const recordToTargetMonthDiff = 
-          (record.record_year - targetYear) * 12 + (record.record_month - targetMonth);
-        
-        return recordToTargetMonthDiff < 0; // Record is BEFORE target date (negative diff means older)
-      });
-      // Calculate accumulated inflation factor using target_rentability
-
-      const inflationFactor = 1 + (calculateCompoundedRates(recordsBetween.map(record => record.target_rentability/100)) || 1);
-      
-      // If we have inflation data, apply the adjustment
-      if (inflationFactor !== 1) {
-        return value / inflationFactor;
-      }
-      
-      // If no historical inflation data, return original value
-      return value;
-    }
-    // Discount the value by the accumulated inflation
-    return value / Math.pow(1 + monthlyInflationRate, monthsDiff);
-  };
-
   const formatXAxisLabel = (point: ChartDataPoint) => {
     if (zoomLevel === 'all' || zoomLevel === '10y') {
       return Math.floor(Number(point.age)).toString();
@@ -341,175 +547,37 @@ export const ExpenseChart = ({
     return `${Math.floor(Number(point.age))}/${monthName}`;
   };
 
-  // Adicione esta função auxiliar
-  const reduceDataPoints = (data: ChartDataPoint[], maxPoints: number = 30) => {
-    if (data.length <= maxPoints) return data;
-    
-    const step = Math.ceil(data.length / maxPoints);
-    return data.filter((_, index) => index % step === 0);
-  };
-
-  const getZoomedData = (data: ChartDataPoint[]) => {
-    if (zoomLevel === 'all') {
-      // Group by year and calculate last value for each year
-      const yearlyData = data.reduce((acc: { [key: string]: ChartDataPoint[] }, point) => {
-        const year = point.year.toString();
-        if (!acc[year]) {
-          acc[year] = [];
-        }
-        acc[year].push(point);
-        return acc;
-      }, {});
-
-      const yearlyPoints = Object.entries(yearlyData).map(([year, points]) => {
-        const sortedPoints = [...points].sort((a, b) => b.month - a.month);
-        const lastMonthPoint = sortedPoints[0];
-
-        return {
-          ...lastMonthPoint,
-          age: Math.floor(Number(lastMonthPoint.age)).toString()
-        };
-      });
-
-      return reduceDataPoints(yearlyPoints);
-    }
-    
-    // Get current date
-    const currentDate = new Date();
-    const currentYear = currentDate.getFullYear();
-    const currentMonth = currentDate.getMonth() + 1;
-
-    // Find the current point in data
-    const currentPoint = data.find(point => 
-      point.year === currentYear && 
-      point.month === currentMonth
-    ) || data[0];
-
-    if (!currentPoint) return data;
-
-    const currentAge = Number(currentPoint.age);
-    
-    // Define time ranges based on zoom level
-    const timeRanges = {
-      '1y': { past: 0.5, future: 0.5 }, // 6 months back, 6 months forward
-      '5y': { past: 1, future: 4 },     // 1 year back, 4 years forward
-      '10y': { past: 2, future: 8 },    // 2 years back, 8 years forward
-      'custom': customRange,             // Use custom range values
-    }[zoomLevel];
-
-    const filteredData = data.filter(point => {
-      const pointAge = Number(point.age);
-      return pointAge >= (currentAge - timeRanges.past) && 
-             pointAge <= (currentAge + timeRanges.future);
-    });
-
-    // For 10y view, group by year as in 'all' mode
-    if (zoomLevel === '10y') {
-      const yearlyData = filteredData.reduce((acc: { [key: string]: ChartDataPoint[] }, point) => {
-        const year = point.year.toString();
-        if (!acc[year]) {
-          acc[year] = [];
-        }
-        acc[year].push(point);
-        return acc;
-      }, {});
-
-      const yearlyPoints = Object.entries(yearlyData).map(([year, points]) => {
-        const lastRealPoint = points.reverse().find(p => p.realDataPoint);
-        
-        if (lastRealPoint) {
-          return {
-            ...lastRealPoint,
-            age: Math.floor(Number(lastRealPoint.age)).toString()
-          };
-        }
-
-        const lastPoint = points[0];
-        return {
-          ...lastPoint,
-          actualValue: lastPoint.actualValue,
-          age: Math.floor(Number(lastPoint.age)).toString()
-        };
-      });
-
-      return reduceDataPoints(yearlyPoints);
-    }
-
-    // Reduz os pontos para visualizações mensais também
-    return reduceDataPoints(filteredData);
-  };
-
-  // Get base date (today) for inflation adjustment
-  const currentDate = new Date();
-  const sortedRecords = [...allFinancialRecords].sort((a, b) => {
-    if (a.record_year !== b.record_year) {
-      return b.record_year - a.record_year; // Descending by year
-    }
-    return b.record_month - a.record_month; // Descending by month
-  });
-  
-  const lastRecord = sortedRecords[0];
-  const baseYear = lastRecord ? lastRecord.record_year : currentDate.getFullYear();
-  const baseMonth = lastRecord ? lastRecord.record_month : currentDate.getMonth() + 1;
-
-  // Update the rawChartData generation to use projectionData if available
-  const rawChartData = projectionData?.flatMap(yearData => 
-    yearData.months?.map(monthData => ({
-      age: yearData.age.toString(),
-      year: yearData.year,
-      month: monthData.month as MonthNumber,
-      actualValue: monthData.balance,
-      projectedValue: monthData.planned_balance,
-      realDataPoint: monthData.isHistorical
-    })) || []
-  ) || generateChartProjections(
+  // --- PREPARAÇÃO DOS DADOS DO GRÁFICO ---
+  // 1. Obtenha os dados brutos
+  const rawChartData = getRawChartData({
+    projectionData,
     profile,
     investmentPlan,
     allFinancialRecords,
     goals,
     events
-  );
+  })
 
-  // Apply adjustments based on showRealValues and showNegativeValues settings
-  const adjustedChartData = showRealValues 
-    ? rawChartData.map(point => {
-        const adjustedActualValue = point.realDataPoint 
-          ? point.actualValue
-          : calculateInflationAdjustedValue(
-              point.actualValue, 
-              baseYear, 
-              baseMonth, 
-              point.year, 
-              point.month, 
-              yearlyReturnRateToMonthlyReturnRate(investmentPlan.inflation/100)
-            );
+  // 2. Ajuste para inflação/negativos
+  const adjustedChartData = adjustChartData({
+    data: rawChartData,
+    showRealValues,
+    showNegativeValues,
+    baseYear: 2024,
+    baseMonth: 1,
+    investmentPlan,
+    allFinancialRecords
+  })
 
-        const adjustedProjectedValue = calculateInflationAdjustedValue(
-          point.projectedValue, 
-          baseYear, 
-          baseMonth, 
-          point.year, 
-          point.month, 
-          yearlyReturnRateToMonthlyReturnRate(investmentPlan.inflation/100)
-        );
-
-        return {
-          ...point,
-          actualValue: showNegativeValues ? adjustedActualValue : Math.max(0, adjustedActualValue),
-          projectedValue: showNegativeValues ? adjustedProjectedValue : Math.max(0, adjustedProjectedValue),
-        };
-      })
-    : rawChartData.map(point => ({
-        ...point,
-        actualValue: showNegativeValues ? point.actualValue : Math.max(0, point.actualValue),
-        projectedValue: showNegativeValues ? point.projectedValue : Math.max(0, point.projectedValue),
-      }));
-
-  // Get final data with zoom applied
-  const chartData = getZoomedData(adjustedChartData).map(point => ({
+  // 3. Aplique o zoom
+  const chartData = getZoomedChartData({
+    data: adjustedChartData,
+    zoomLevel,
+    customRange
+  }).map(point => ({
     ...point,
     xAxisLabel: formatXAxisLabel(point)
-  }));
+  }))
 
   const colorOffset = () => {
     // Encontrar o ponto mais antigo com dados reais
