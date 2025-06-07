@@ -698,6 +698,46 @@ export const ExpenseChart = ({
             >
               {t('common.custom')}
             </button>
+            {zoomLevel === 'custom' && (
+              <div className="flex items-center gap-2 ml-4">
+                <div className="flex items-center gap-2">
+                  <label className="text-sm text-gray-600">{t('expenseChart.pastYears')}:</label>
+                  <input
+                    type="number"
+                    min="0"
+                    max="100"
+                    value={customRange.past.toString()}
+                    onChange={(e) => {
+                      const value = e.target.value === '' ? 0 : parseFloat(e.target.value);
+                      setCustomRange(prev => ({ 
+                        ...prev, 
+                        past: value 
+                      }));
+                    }}
+                    step="any"
+                    className="w-20 px-2 py-1 text-sm border rounded-md"
+                  />
+                </div>
+                <div className="flex items-center gap-2">
+                  <label className="text-sm text-gray-600">{t('expenseChart.futureYears')}:</label>
+                  <input
+                    type="number"
+                    min="0"
+                    max="100"
+                    value={customRange.future.toString()}
+                    onChange={(e) => {
+                      const value = e.target.value === '' ? 0 : parseFloat(e.target.value);
+                      setCustomRange(prev => ({ 
+                        ...prev, 
+                        future: value 
+                      }));
+                    }}
+                    step="any"
+                    className="w-20 px-2 py-1 text-sm border rounded-md"
+                  />
+                </div>
+              </div>
+            )}
           </div>
           <div className="ml-4 pl-4 border-l border-gray-200">
             <button
@@ -712,48 +752,6 @@ export const ExpenseChart = ({
               {t('expenseChart.advancedOptions')}
             </button>
           </div>
-
-          {/* Custom range inputs */}
-          {zoomLevel === 'custom' && (
-            <div className="flex items-center gap-2">
-              <div className="flex items-center gap-2">
-                <label className="text-sm text-gray-600">{t('expenseChart.pastYears')}:</label>
-                <input
-                  type="number"
-                  min="0"
-                  max="100"
-                  value={customRange.past.toString()}
-                  onChange={(e) => {
-                    const value = e.target.value === '' ? 0 : parseFloat(e.target.value);
-                    setCustomRange(prev => ({ 
-                      ...prev, 
-                      past: value 
-                    }));
-                  }}
-                  step="any"
-                  className="w-20 px-2 py-1 text-sm border rounded-md"
-                />
-              </div>
-              <div className="flex items-center gap-2">
-                <label className="text-sm text-gray-600">{t('expenseChart.futureYears')}:</label>
-                <input
-                  type="number"
-                  min="0"
-                  max="100"
-                  value={customRange.future.toString()}
-                  onChange={(e) => {
-                    const value = e.target.value === '' ? 0 : parseFloat(e.target.value);
-                    setCustomRange(prev => ({ 
-                      ...prev, 
-                      future: value 
-                    }));
-                  }}
-                  step="any"
-                  className="w-20 px-2 py-1 text-sm border rounded-md"
-                />
-              </div>
-            </div>
-          )}
         </div>
       </div>
 
