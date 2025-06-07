@@ -397,8 +397,23 @@ export default function PatrimonialProjectionChart({
               curve={curveMonotoneX}
             />
           )}
-          {/* Linha azul não real (clara, pontilhada) - segmento único após último real */}
+          {/* Linha azul não real (clara, pontilhada) - segmento único após último real ou todos os pontos se não houver real */}
           {(() => {
+            if (!realPoints.length && sortedData.length > 1) {
+              // Não há pontos reais, mostrar linha clara para todos os pontos
+              return (
+                <LinePath
+                  data={sortedData}
+                  x={d => dateScale(d.date) ?? 0}
+                  y={d => valueScale(d.actualValue) ?? 0}
+                  stroke="#60a5fa"
+                  strokeWidth={2.5}
+                  strokeDasharray="6,6"
+                  curve={curveMonotoneX}
+                />
+              )
+            }
+            // Caso padrão já existente: mostrar segmento não real após último real
             if (!realPoints.length) return null
             // Encontrar o último índice onde realDataPoint é true
             const lastRealIdx = [...sortedData].reverse().findIndex(d => d.realDataPoint)

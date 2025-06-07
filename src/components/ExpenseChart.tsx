@@ -647,7 +647,6 @@ export const ExpenseChart = ({
             </DialogContent>
           </Dialog>
 
-          
           <div className="inline-flex items-center rounded-md border border-gray-200 p-1 bg-gray-50">
             <button
               onClick={() => setZoomLevel('1y')}
@@ -699,56 +698,60 @@ export const ExpenseChart = ({
             >
               {t('common.custom')}
             </button>
+            {zoomLevel === 'custom' && (
+              <div className="flex items-center gap-2 ml-4">
+                <div className="flex items-center gap-2">
+                  <label className="text-sm text-gray-600">{t('expenseChart.pastYears')}:</label>
+                  <input
+                    type="number"
+                    min="0"
+                    max="100"
+                    value={customRange.past.toString()}
+                    onChange={(e) => {
+                      const value = e.target.value === '' ? 0 : parseFloat(e.target.value);
+                      setCustomRange(prev => ({ 
+                        ...prev, 
+                        past: value 
+                      }));
+                    }}
+                    step="any"
+                    className="w-20 px-2 py-1 text-sm border rounded-md"
+                  />
+                </div>
+                <div className="flex items-center gap-2">
+                  <label className="text-sm text-gray-600">{t('expenseChart.futureYears')}:</label>
+                  <input
+                    type="number"
+                    min="0"
+                    max="100"
+                    value={customRange.future.toString()}
+                    onChange={(e) => {
+                      const value = e.target.value === '' ? 0 : parseFloat(e.target.value);
+                      setCustomRange(prev => ({ 
+                        ...prev, 
+                        future: value 
+                      }));
+                    }}
+                    step="any"
+                    className="w-20 px-2 py-1 text-sm border rounded-md"
+                  />
+                </div>
+              </div>
+            )}
           </div>
-
-          {/* Custom range inputs */}
-          {zoomLevel === 'custom' && (
-            <div className="flex items-center gap-2">
-              <div className="flex items-center gap-2">
-                <label className="text-sm text-gray-600">{t('expenseChart.pastYears')}:</label>
-                <input
-                  type="number"
-                  min="0"
-                  max="100"
-                  value={customRange.past.toString()}
-                  onChange={(e) => {
-                    const value = e.target.value === '' ? 0 : parseFloat(e.target.value);
-                    setCustomRange(prev => ({ 
-                      ...prev, 
-                      past: value 
-                    }));
-                  }}
-                  step="any"
-                  className="w-20 px-2 py-1 text-sm border rounded-md"
-                />
-              </div>
-              <div className="flex items-center gap-2">
-                <label className="text-sm text-gray-600">{t('expenseChart.futureYears')}:</label>
-                <input
-                  type="number"
-                  min="0"
-                  max="100"
-                  value={customRange.future.toString()}
-                  onChange={(e) => {
-                    const value = e.target.value === '' ? 0 : parseFloat(e.target.value);
-                    setCustomRange(prev => ({ 
-                      ...prev, 
-                      future: value 
-                    }));
-                  }}
-                  step="any"
-                  className="w-20 px-2 py-1 text-sm border rounded-md"
-                />
-              </div>
-            </div>
-          )}
-          {/* Inflation adjustment toggle */}
-          <button
-            className="px-3 py-1.5 text-sm font-medium rounded-md border border-gray-200 bg-white hover:bg-gray-50 transition-colors"
-            onClick={() => setShowAdvancedOptions(true)}
-          >
-            {t('expenseChart.advancedOptions')}
-          </button>
+          <div className="ml-4 pl-4 border-l border-gray-200">
+            <button
+              type="button"
+              onClick={() => setShowAdvancedOptions(true)}
+              className={`px-3 py-1.5 text-sm font-medium rounded-md transition-colors ${
+                showAdvancedOptions
+                  ? 'bg-white text-blue-600 shadow-sm'
+                  : 'text-gray-600 hover:text-gray-900'
+              }`}
+            >
+              {t('expenseChart.advancedOptions')}
+            </button>
+          </div>
         </div>
       </div>
 
