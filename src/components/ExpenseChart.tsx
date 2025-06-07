@@ -647,7 +647,6 @@ export const ExpenseChart = ({
             </DialogContent>
           </Dialog>
 
-          
           <div className="inline-flex items-center rounded-md border border-gray-200 p-1 bg-gray-50">
             <button
               onClick={() => setZoomLevel('1y')}
@@ -700,6 +699,19 @@ export const ExpenseChart = ({
               {t('common.custom')}
             </button>
           </div>
+          <div className="ml-4 pl-4 border-l border-gray-200">
+            <button
+              type="button"
+              onClick={() => setShowAdvancedOptions(true)}
+              className={`px-3 py-1.5 text-sm font-medium rounded-md transition-colors ${
+                showAdvancedOptions
+                  ? 'bg-white text-blue-600 shadow-sm'
+                  : 'text-gray-600 hover:text-gray-900'
+              }`}
+            >
+              {t('expenseChart.advancedOptions')}
+            </button>
+          </div>
 
           {/* Custom range inputs */}
           {zoomLevel === 'custom' && (
@@ -742,13 +754,6 @@ export const ExpenseChart = ({
               </div>
             </div>
           )}
-          {/* Inflation adjustment toggle */}
-          <button
-            className="px-3 py-1.5 text-sm font-medium rounded-md border border-gray-200 bg-white hover:bg-gray-50 transition-colors"
-            onClick={() => setShowAdvancedOptions(true)}
-          >
-            {t('expenseChart.advancedOptions')}
-          </button>
         </div>
       </div>
 
