@@ -362,6 +362,8 @@ export const ptBR = {
     loading: "Verificando permissões..."
   },
   common: {
+    confirmDeleteTitle: "Confirmar exclusão",
+    confirmDeleteMessage: "Tem certeza que deseja excluir este item? Esta ação não pode ser desfeita.",
     perYear: "por ano",
     perMonth: "por mês",
     notInformed: "Não informado",

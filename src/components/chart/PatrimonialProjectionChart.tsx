@@ -11,10 +11,9 @@ import { scaleLinear, scaleTime } from "@visx/scale"
 import { Tooltip, useTooltip, defaultStyles } from "@visx/tooltip"
 import { localPoint } from "@visx/event"
 import { bisector } from "d3-array"
-import { timeFormat } from "d3-time-format"
 import { useMemo, useCallback, useState } from "react"
 import { formatCurrency } from "@/lib/utils"
-import { Target, TrendingUp, DollarSign, Home, Car, GraduationCap, Heart, Star, Trophy, Zap, LineChart, BarChart, PieChart, Briefcase, Users, Plane, Monitor, Gamepad, Gift, PiggyBank, Grid, Layers } from "lucide-react"
+import { Target, Home, Car, GraduationCap, Heart, Briefcase, Users, Plane, Monitor, Gamepad, PiggyBank, Layers } from "lucide-react"
 import { ChartPointDialog } from "@/components/chart/ChartPointDialog"
 import type { GoalFormValues, EventFormValues } from '@/types/financial'
 import { useTranslation } from 'react-i18next'
@@ -86,17 +85,6 @@ const getIconComponent = (iconType: string) => {
 
 // Bisector para encontrar o ponto mais próximo
 const bisectDate = bisector<{ date: Date }, Date>((d) => d.date).left
-
-// Estilos do tooltip
-const tooltipStyles = {
-  ...defaultStyles,
-  background: "rgba(0, 0, 0, 0.9)",
-  border: "1px solid white",
-  color: "white",
-  fontSize: "12px",
-  padding: "8px",
-  borderRadius: "4px",
-}
 
 // Interface para pontos de objetivo agrupados
 interface ObjectivePoint {
@@ -351,7 +339,7 @@ export default function PatrimonialProjectionChart({
     if (!chartData.length) return
     const { x, y } = localPoint(event) || { x: 0, y: 0 }
     // Só abre modal se clicar na metade inferior do gráfico
-    if (y < innerHeight / 2) return
+    if (y < innerHeight / 5) return
     const x0 = dateScale.invert(x - margin.left)
     const index = bisectDate(chartData, x0, 1)
     const d0 = chartData[index - 1]

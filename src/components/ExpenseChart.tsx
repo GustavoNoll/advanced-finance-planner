@@ -12,8 +12,9 @@ import { CurrencyCode } from "@/utils/currency";
 import { Switch } from "@/components/ui/switch";
 import { HoverCard, HoverCardContent, HoverCardTrigger } from "@/components/ui/hover-card";
 import { EditFinancialItemDialog } from "@/components/chart/EditFinancialItemDialog";
-import PatrimonialProjectionChart from "./monthlyData"
+import PatrimonialProjectionChart from "@/components/chart/PatrimonialProjectionChart"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogClose } from "@/components/ui/dialog"
+import { toast } from '@/components/ui/use-toast'
 
 interface ChartPoint {
   age: string;
@@ -389,7 +390,11 @@ export const ExpenseChart = ({
       setShowDialog(false);
       setSelectedPoint(null);
       onProjectionDataChange?.();
+      toast({ title: t('financialGoals.messages.createSuccess') })
     },
+    onError: () => {
+      toast({ title: t('financialGoals.messages.createError'), variant: 'destructive' })
+    }
   });
 
   const createEvent = useMutation({
@@ -425,7 +430,53 @@ export const ExpenseChart = ({
       setShowDialog(false);
       setSelectedPoint(null);
       onProjectionDataChange?.();
+      toast({ title: t('events.messages.createSuccess') })
     },
+    onError: () => {
+      toast({ title: t('events.messages.createError'), variant: 'destructive' })
+    }
+  });
+
+  // Add mutation for deleting events
+  const deleteEvent = useMutation({
+    mutationFn: async (eventId: string) => {
+      const { error } = await supabase
+        .from("events")
+        .delete()
+        .eq("id", eventId);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["events"] });
+      queryClient.invalidateQueries({ queryKey: ["counters"] });
+      setShowEditDialog(false);
+      setSelectedItem(null);
+      toast({ title: t('events.messages.deleteSuccess') })
+    },
+    onError: () => {
+      toast({ title: t('events.messages.deleteError'), variant: 'destructive' })
+    }
+  });
+
+  // Add mutation for deleting goals
+  const deleteGoal = useMutation({
+    mutationFn: async (goalId: string) => {
+      const { error } = await supabase
+        .from("financial_goals")
+        .delete()
+        .eq("id", goalId);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["financial-goals"] });
+      queryClient.invalidateQueries({ queryKey: ["counters"] });
+      setShowEditDialog(false);
+      setSelectedItem(null);
+      toast({ title: t('financialGoals.messages.deleteSuccess') })
+    },
+    onError: () => {
+      toast({ title: t('financialGoals.messages.deleteError'), variant: 'destructive' })
+    }
   });
 
   // Add mutation for updating goals
@@ -826,6 +877,14 @@ export const ExpenseChart = ({
         item={selectedItem}
         currency={investmentPlan?.currency as CurrencyCode}
         onSubmit={handleEditSubmit}
+        onDelete={selectedItem ? async () => {
+          if (!selectedItem) return;
+          if (selectedItem.type === 'goal') {
+            await deleteGoal.mutateAsync(selectedItem.id as string)
+          } else if (selectedItem.type === 'event') {
+            await deleteEvent.mutateAsync(selectedItem.id as string)
+          }
+        } : undefined}
       />
     </div>
   );
