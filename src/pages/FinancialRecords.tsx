@@ -878,7 +878,7 @@ const FinancialRecords = () => {
                     <div className="space-y-1">
                       <div className="flex items-center gap-2">
                         <p className={`font-semibold ${record.monthly_return_rate >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                          {record.monthly_return_rate.toFixed(2)}%
+                          {record.monthly_return_rate != null ? record.monthly_return_rate.toFixed(2) : '--'}%
                         </p>
                         <span className="text-xs text-gray-500">
                           (meta: {record.target_rentability != null ? `${record.target_rentability.toFixed(2)}%` : '--'})
