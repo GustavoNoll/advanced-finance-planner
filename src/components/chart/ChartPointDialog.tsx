@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useLocale } from "@/hooks/useLocale";
 import { CurrencyCode } from "@/utils/currency";
 import { FinancialItemForm } from "./FinancialItemForm";
-import { ChartFormValues, GoalFormValues, EventFormValues, FinancialItemFormValues } from "@/types/financial";
+import { GoalFormValues, EventFormValues, FinancialItemFormValues } from "@/types/financial";
 
 interface ChartPoint {
   age: string;
@@ -40,11 +40,16 @@ export const ChartPointDialog = ({
   const [formType, setFormType] = useState<'goal' | 'event'>(type);
   const { formatDate } = useLocale();
 
-  const handleSubmit = (values: FinancialItemFormValues) => {
-    if (values.type === 'goal') {
-      onSubmitGoal(values);
-    } else {
-      onSubmitEvent(values);
+  const handleSubmit = async (values: FinancialItemFormValues) => {
+    try {
+      if (values.type === 'goal') {
+        await onSubmitGoal(values);
+      } else {
+        await onSubmitEvent(values);
+      }
+      onOpenChange(false);
+    } catch (e) {
+      // error handled by parent toast
     }
   };
 

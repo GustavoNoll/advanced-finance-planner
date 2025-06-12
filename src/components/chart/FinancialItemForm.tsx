@@ -16,7 +16,6 @@ import { goalIcons } from "@/constants/goals";
 import { eventIcons } from "@/constants/events";
 import { CurrencyCode, getCurrencySymbol, formatCurrency } from "@/utils/currency";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Checkbox } from "@/components/ui/checkbox";
 import { cn } from "@/lib/utils";
 import { Input } from "@/components/ui/input";
 import { Alert, AlertDescription } from "@/components/ui/alert";
@@ -60,6 +59,7 @@ interface FinancialItemFormProps {
   currency: CurrencyCode;
   onTypeChange?: (type: 'goal' | 'event') => void;
   showTypeSelector?: boolean;
+  leftActions?: React.ReactNode;
 }
 
 export const FinancialItemForm = ({
@@ -71,6 +71,7 @@ export const FinancialItemForm = ({
   currency,
   onTypeChange,
   showTypeSelector = true,
+  leftActions,
 }: FinancialItemFormProps) => {
   const { t } = useTranslation();
   const form = useForm<FinancialItemFormValues>({
@@ -414,26 +415,29 @@ export const FinancialItemForm = ({
           )}
         </div>
 
-        <div className="flex justify-end gap-2 pt-2">
-          <Button
-            type="button"
-            variant="outline"
-            onClick={onCancel}
-            disabled={isSubmitting}
-            className="h-9"
-          >
-            {t('common.cancel')}
-          </Button>
-          <Button 
-            type="submit" 
-            disabled={isSubmitting || hasErrors}
-            className={cn(
-              "h-9",
-              hasErrors && "opacity-50 cursor-not-allowed"
-            )}
-          >
-            {isSubmitting ? t('common.saving') : t('common.save')}
-          </Button>
+        <div className="flex items-center justify-between gap-2 pt-2">
+          {leftActions && <div>{leftActions}</div>}
+          <div className="flex gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={onCancel}
+              disabled={isSubmitting}
+              className="h-9"
+            >
+              {t('common.cancel')}
+            </Button>
+            <Button 
+              type="submit" 
+              disabled={isSubmitting || hasErrors}
+              className={cn(
+                "h-9",
+                hasErrors && "opacity-50 cursor-not-allowed"
+              )}
+            >
+              {isSubmitting ? t('common.saving') : t('common.save')}
+            </Button>
+          </div>
         </div>
       </form>
     </Form>
