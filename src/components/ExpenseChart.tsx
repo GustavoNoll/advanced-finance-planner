@@ -843,6 +843,7 @@ export const ExpenseChart = ({
           selectedYears={Array.from(new Set(chartData.map(d => d.year)))}
           showNominalValues={!showRealValues}
           hideNegativeValues={!showNegativeValues}
+          investmentPlan={investmentPlan}
           handleEditItem={(item) => {
             // Try to find the matching goal or event by id
             const foundGoal = goals?.find(g => g.id === item.id)

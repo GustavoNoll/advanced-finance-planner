@@ -12,11 +12,13 @@ import { Tooltip, useTooltip, defaultStyles } from "@visx/tooltip"
 import { localPoint } from "@visx/event"
 import { bisector } from "d3-array"
 import { useMemo, useCallback, useState } from "react"
-import { formatCurrency } from "@/lib/utils"
+import { formatCurrency } from "@/utils/currency"
 import { Target, Home, Car, GraduationCap, Heart, Briefcase, Users, Plane, Monitor, Gamepad, PiggyBank, Layers } from "lucide-react"
 import { ChartPointDialog } from "@/components/chart/ChartPointDialog"
 import type { GoalFormValues, EventFormValues } from '@/types/financial'
 import { useTranslation } from 'react-i18next'
+import { CurrencyCode } from "@/utils/currency"
+import { InvestmentPlan } from "@/types/financial"
 
 // Tipos para os dados
 type MonthlyData = {
@@ -46,6 +48,7 @@ type PatrimonialProjectionChartProps = {
   selectedYears: number[]
   showNominalValues: boolean
   hideNegativeValues: boolean
+  investmentPlan: InvestmentPlan
   onSubmitGoal: (values: GoalFormValues) => Promise<void>
   onSubmitEvent: (values: EventFormValues) => Promise<void>
   currency: 'BRL' | 'USD' | 'EUR'
@@ -136,6 +139,7 @@ export default function PatrimonialProjectionChart({
   selectedYears,
   showNominalValues,
   hideNegativeValues,
+  investmentPlan,
   width = '100%',
   height = 400,
   onSubmitGoal,
@@ -639,8 +643,8 @@ export default function PatrimonialProjectionChart({
               <div className="w-3 h-3 rounded-full" style={{ background: 'linear-gradient(to right, #3b82f6, #60a5fa)' }} />
               <div className="flex flex-col">
                 <span className="text-gray-600 text-xs font-medium">{t('expenseChart.actualValue')}</span>
-                <span className={`text-sm font-semibold ${tooltipData.actualValue >= 0 ? 'text-green-600' : 'text-red-600'}`}>{formatCurrency(tooltipData.actualValue)}</span>
-                <span className="text-xs text-gray-500">{t('expenseChart.projectedLifetimeIncome')}: {formatCurrency((tooltipData.actualValue * 0.007) || 0)}/{t('common.perMonth')}</span>
+                <span className={`text-sm font-semibold ${tooltipData.actualValue >= 0 ? 'text-green-600' : 'text-red-600'}`}>{formatCurrency(tooltipData.actualValue, investmentPlan?.currency as CurrencyCode)}</span>
+                <span className="text-xs text-gray-500">{t('expenseChart.projectedLifetimeIncome')}:{t('expenseChart.lifetimeIncome')}: {formatCurrency((tooltipData.actualValue * (investmentPlan.expected_return/100))/12, investmentPlan?.currency as CurrencyCode)}/{t('common.perMonth')}</span>
               </div>
             </div>
           )}
@@ -649,8 +653,8 @@ export default function PatrimonialProjectionChart({
               <div className="w-3 h-3 rounded-full" style={{ background: 'linear-gradient(to right, #f97316, #fb923c)' }} />
               <div className="flex flex-col">
                 <span className="text-gray-600 text-xs font-medium">{t('expenseChart.projectedValue')}</span>
-                <span className={`text-sm font-semibold ${tooltipData.projectedValue >= 0 ? 'text-green-600' : 'text-red-600'}`}>{formatCurrency(tooltipData.projectedValue)}</span>
-                <span className="text-xs text-gray-500">{t('expenseChart.plannedLifetimeIncome')}: {formatCurrency((tooltipData.projectedValue * 0.007) || 0)}/{t('common.perMonth')}</span>
+                <span className={`text-sm font-semibold ${tooltipData.projectedValue >= 0 ? 'text-green-600' : 'text-red-600'}`}>{formatCurrency(tooltipData.projectedValue, investmentPlan?.currency as CurrencyCode)}</span>
+                <span className="text-xs text-gray-500">{t('expenseChart.plannedLifetimeIncome')}: {formatCurrency((tooltipData.projectedValue * (investmentPlan.expected_return/100))/12, investmentPlan?.currency as CurrencyCode)}/{t('common.perMonth')}</span>
               </div>
             </div>
           )}
@@ -687,7 +691,7 @@ export default function PatrimonialProjectionChart({
                         <IconComponent size={16} color={color === 'text-green-600' ? '#16a34a' : '#dc2626'} style={{ marginRight: 4 }} />
                         {iconLabel}
                       </span>
-                      <span className={`font-bold ${color}`}>{formatCurrency(value)}</span>
+                      <span className={`font-bold ${color}`}>{formatCurrency(value, investmentPlan?.currency as CurrencyCode)}</span>
                       <span className="text-xs text-gray-500">{name}</span>
                     </div>
                     {paymentMode === 'installment' && parcelasCount && (
@@ -697,7 +701,7 @@ export default function PatrimonialProjectionChart({
                       <div className="text-xs text-blue-500">{t('financialGoals.form.installmentInterval')}: {parcelasInterval} {t('common.months')}</div>
                     )}
                     {paymentMode === 'installment' && valorParcela && (
-                      <div className="text-xs text-blue-500">{t('financialGoals.form.assetValue')}: {formatCurrency(valorParcela)}</div>
+                      <div className="text-xs text-blue-500">{t('financialGoals.form.assetValue')}: {formatCurrency(valorParcela, investmentPlan?.currency as CurrencyCode)}</div>
                     )}
                     {paymentMode === 'repeat' && parcelasCount && (
                       <div className="text-xs text-blue-500">{t('financialGoals.form.repeatCount')}: {parcelasCount}x</div>
@@ -781,7 +785,7 @@ export default function PatrimonialProjectionChart({
                             <IconComponent size={16} color={color === 'text-green-600' ? '#16a34a' : '#dc2626'} style={{ marginRight: 4 }} />
                             {iconLabel}
                           </span>
-                          <span className={`font-bold ${color}`}>{formatCurrency(value)}</span>
+                          <span className={`font-bold ${color}`}>{formatCurrency(value, investmentPlan?.currency as CurrencyCode)}</span>
                           <span className="text-xs text-gray-500">{name}</span>
                         </div>
                         {paymentMode === 'installment' && parcelasCount && (
@@ -791,7 +795,7 @@ export default function PatrimonialProjectionChart({
                           <div className="text-xs text-blue-500">{t('financialGoals.form.installmentInterval')}: {parcelasInterval} {t('common.months')}</div>
                         )}
                         {paymentMode === 'installment' && valorParcela && (
-                          <div className="text-xs text-blue-500">{t('financialGoals.form.assetValue')}: {formatCurrency(valorParcela)}</div>
+                          <div className="text-xs text-blue-500">{t('financialGoals.form.assetValue')}: {formatCurrency(valorParcela, investmentPlan?.currency as CurrencyCode)}</div>
                         )}
                         {paymentMode === 'repeat' && parcelasCount && (
                           <div className="text-xs text-blue-500">{t('financialGoals.form.repeatCount')}: {parcelasCount}x</div>
