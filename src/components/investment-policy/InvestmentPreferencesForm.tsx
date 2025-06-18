@@ -222,7 +222,9 @@ export const InvestmentPreferencesForm = ({
 
   useEffect(() => {
     const total = Object.values(allocations || {}).reduce((sum, value) => {
-      const numValue = typeof value === 'string' ? parseFloat(value) || 0 : value;
+      const numValue = typeof value === 'number'
+        ? value
+        : parseFloat(value ?? '0') || 0;
       return sum + numValue;
     }, 0);
     setTotalAllocation(total);
