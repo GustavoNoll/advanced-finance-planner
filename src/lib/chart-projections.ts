@@ -46,12 +46,24 @@ export interface YearlyProjectionData {
   effectiveRate: number;
 }
 
+export interface ChartOptions {
+  changeMonthlyDeposit?: {
+    value: number;
+    date: string; // formato: 'YYYY-MM-DD'
+  };
+  changeMontlhyWithdraw?: {
+    value: number;
+    date: string; // formato: 'YYYY-MM-DD'
+  };
+}
+
 export function generateProjectionData(
   investmentPlan: InvestmentPlan,
   profile: { birth_date: string },
   initialRecords: FinancialRecord[],
   goals?: Goal[],
-  events?: ProjectedEvent[]
+  events?: ProjectedEvent[],
+  chartOptions?: ChartOptions
 ): YearlyProjectionData[] {
   const projectionData: YearlyProjectionData[] = [];
   
@@ -79,6 +91,10 @@ export function generateProjectionData(
   let plannedBalance = investmentPlan.initial_amount;
   let currentMonthlyDeposit = investmentPlan.monthly_deposit;
   let currentMonthlyWithdrawal = investmentPlan.desired_income;
+  
+  // Parse chart options dates for easy comparison
+  const changeDepositDate = chartOptions?.changeMonthlyDeposit?.date ? new Date(chartOptions.changeMonthlyDeposit.date) : null;
+  const changeWithdrawDate = chartOptions?.changeMontlhyWithdraw?.date ? new Date(chartOptions.changeMontlhyWithdraw.date) : null;
   
   // Default to the estimated inflation rate if no IPCA data is available
   const defaultMonthlyInflationRate = yearlyReturnRateToMonthlyReturnRate(investmentPlan.inflation/100);
@@ -109,6 +125,18 @@ export function generateProjectionData(
       // Skip months before the plan start month in the first year
       if (i === 0 && currentMonthNumber < startMonth) {
         return null;
+      }
+      
+      if (changeDepositDate && 
+          changeDepositDate.getFullYear() === year && 
+          changeDepositDate.getMonth() + 1 === currentMonthNumber) {
+        currentMonthlyDeposit = chartOptions!.changeMonthlyDeposit!.value;
+      }
+      
+      if (changeWithdrawDate && 
+          changeWithdrawDate.getFullYear() === year && 
+          changeWithdrawDate.getMonth() + 1 === currentMonthNumber) {
+        currentMonthlyWithdrawal = chartOptions!.changeMontlhyWithdraw!.value;
       }
 
       const isRetirementAge = year > endDate.getFullYear() ||
@@ -287,13 +315,15 @@ export function generateChartProjections(
   financialRecordsByYear: FinancialRecord[],
   goals?: Goal[],
   events?: ProjectedEvent[],
+  chartOptions?: ChartOptions
 ): ChartDataPoint[] {
   const projectionData = generateProjectionData(
     investmentPlan,
     profile,
     financialRecordsByYear,
     goals,
-    events
+    events,
+    chartOptions
   );
 
   return projectionData.flatMap(yearData => 

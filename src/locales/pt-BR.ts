@@ -569,7 +569,14 @@ export const ptBR = {
     valueType: "Tipo de Valor",
     display: "Exibição",
     noNegativeValues: "Sem Valores Negativos",
-    advancedOptionsHelp: "Valores nominais mostram o valor bruto ao longo do tempo, sem ajuste pela inflação. Valores reais mostram o poder de compra real ao longo do tempo, ajustando pela inflação."
+    advancedOptionsHelp: "Valores nominais mostram o valor bruto ao longo do tempo, sem ajuste pela inflação. Valores reais mostram o poder de compra real ao longo do tempo, ajustando pela inflação.",
+    chartOptionsSection: "Mudanças nos Aportes/Retiradas",
+    changeMonthlyDeposit: "Alterar Depósito Mensal",
+    changeMonthlyWithdraw: "Alterar Retirada Mensal",
+    newDepositValue: "Novo valor (valor inicial do plano: {{value}})",
+    newWithdrawValue: "Novo valor (valor inicial do plano: {{value}})",
+    changeDate: "Data da mudança",
+    chartOptionsHelp: "O valor informado será aplicado a partir da data especificada, sem considerar inflação acumulada desde o início do plano. A inflação será aplicada apenas a partir da data da mudança."
   },
   budgetCategories: {
     categories: {

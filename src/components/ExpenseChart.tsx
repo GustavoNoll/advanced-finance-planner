@@ -1,9 +1,9 @@
 import { useTranslation } from "react-i18next";
 import { ChartDataPoint, FinancialRecord, Goal, ProjectedEvent, MonthNumber, InvestmentPlan, Profile, FinancialItemFormValues } from '@/types/financial';
-import { generateChartProjections, YearlyProjectionData } from '@/lib/chart-projections';
+import { generateChartProjections, YearlyProjectionData, ChartOptions } from '@/lib/chart-projections';
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { calculateCompoundedRates, yearlyReturnRateToMonthlyReturnRate } from '@/lib/financial-math';
 import { ChartPointDialog } from "@/components/chart/ChartPointDialog";
 import { TrendingUp, HelpCircle } from "lucide-react";
@@ -15,6 +15,10 @@ import { EditFinancialItemDialog } from "@/components/chart/EditFinancialItemDia
 import PatrimonialProjectionChart from "@/components/chart/PatrimonialProjectionChart"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogClose } from "@/components/ui/dialog"
 import { toast } from '@/components/ui/use-toast'
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import { formatCurrency, getCurrencySymbol } from "@/utils/currency"
+import CurrencyInput from 'react-currency-input-field'
 
 interface ChartPoint {
   age: string;
@@ -81,7 +85,8 @@ function getRawChartData({
   investmentPlan,
   allFinancialRecords,
   goals,
-  events
+  events,
+  chartOptions
 }: {
   projectionData?: YearlyProjectionData[]
   profile: Profile
@@ -89,8 +94,15 @@ function getRawChartData({
   allFinancialRecords: FinancialRecord[]
   goals?: Goal[]
   events?: ProjectedEvent[]
+  chartOptions?: ChartOptions
 }): ChartDataPoint[] {
-  if (projectionData) {
+  // Se há chartOptions definidas, força recálculo ignorando projectionData
+  const hasActiveChartOptions = chartOptions && (
+    chartOptions.changeMonthlyDeposit || 
+    chartOptions.changeMontlhyWithdraw
+  );
+
+  if (projectionData && !hasActiveChartOptions) {
     return projectionData.flatMap(yearData =>
       yearData.months?.map(monthData => ({
         age: yearData.age.toString(),
@@ -102,12 +114,15 @@ function getRawChartData({
       })) || []
     )
   }
+  
+  // Força recálculo com chartOptions ou usa quando não há projectionData
   return generateChartProjections(
     profile,
     investmentPlan,
     allFinancialRecords,
     goals,
-    events
+    events,
+    chartOptions
   )
 }
 
@@ -331,6 +346,32 @@ export const ExpenseChart = ({
   const [selectedItem, setSelectedItem] = useState<Goal | ProjectedEvent | null>(null);
   const [showEditDialog, setShowEditDialog] = useState(false);
   const [showAdvancedOptions, setShowAdvancedOptions] = useState(false);
+  
+
+  
+  // Chart options states
+  const [changeMonthlyDeposit, setChangeMonthlyDeposit] = useState({
+    enabled: false,
+    value: investmentPlan.monthly_deposit,
+    date: ''
+  });
+  const [changeMonthlyWithdraw, setChangeMonthlyWithdraw] = useState({
+    enabled: false,
+    value: investmentPlan.desired_income,
+    date: ''
+  });
+
+  // Update default values when investment plan changes
+  useEffect(() => {
+    setChangeMonthlyDeposit(prev => ({
+      ...prev,
+      value: prev.enabled ? prev.value : investmentPlan.monthly_deposit
+    }));
+    setChangeMonthlyWithdraw(prev => ({
+      ...prev,
+      value: prev.enabled ? prev.value : investmentPlan.desired_income
+    }));
+  }, [investmentPlan.monthly_deposit, investmentPlan.desired_income]);
   
   // Add query for financial goals
   const { data: goals } = useQuery<Goal[]>({
@@ -584,6 +625,22 @@ export const ExpenseChart = ({
     return `${Math.floor(Number(point.age))}/${monthName}`;
   };
 
+  // Prepare chart options
+  const chartOptions: ChartOptions = {
+    ...(changeMonthlyDeposit.enabled && changeMonthlyDeposit.date && {
+      changeMonthlyDeposit: {
+        value: changeMonthlyDeposit.value,
+        date: changeMonthlyDeposit.date
+      }
+    }),
+    ...(changeMonthlyWithdraw.enabled && changeMonthlyWithdraw.date && {
+      changeMontlhyWithdraw: {
+        value: changeMonthlyWithdraw.value,
+        date: changeMonthlyWithdraw.date
+      }
+    })
+  };
+
   // --- PREPARAÇÃO DOS DADOS DO GRÁFICO ---
   // 1. Obtenha os dados brutos
   const rawChartData = getRawChartData({
@@ -592,7 +649,8 @@ export const ExpenseChart = ({
     investmentPlan,
     allFinancialRecords,
     goals,
-    events
+    events,
+    chartOptions
   })
 
   // 2. Ajuste para inflação/negativos
@@ -650,7 +708,7 @@ export const ExpenseChart = ({
         
         <div className="flex flex-wrap items-center gap-4">
           <Dialog open={showAdvancedOptions} onOpenChange={setShowAdvancedOptions}>
-            <DialogContent className="max-w-md">
+            <DialogContent className="max-w-lg max-h-[80vh] overflow-y-auto">
               <DialogHeader>
                 <DialogTitle>{t('expenseChart.advancedOptions')}</DialogTitle>
               </DialogHeader>
@@ -687,6 +745,122 @@ export const ExpenseChart = ({
                       checked={!showNegativeValues}
                       onCheckedChange={v => setShowNegativeValues(!v)}
                     />
+                  </div>
+                </div>
+                
+                <div className="space-y-4">
+                  <div className="flex items-center gap-2 mb-2">
+                    <div className="text-xs font-semibold text-gray-500 uppercase tracking-wider">{t('expenseChart.chartOptionsSection')}</div>
+                    <HoverCard>
+                      <HoverCardTrigger asChild>
+                        <button className="text-gray-400 hover:text-gray-600 transition-colors" tabIndex={-1} type="button">
+                          <HelpCircle className="w-4 h-4" />
+                        </button>
+                      </HoverCardTrigger>
+                      <HoverCardContent className="max-w-xs">
+                        <p className="text-sm text-gray-600">
+                          {t('expenseChart.chartOptionsHelp')}
+                        </p>
+                      </HoverCardContent>
+                    </HoverCard>
+                  </div>
+                  
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm font-medium text-gray-700">{t('expenseChart.changeMonthlyDeposit')}</span>
+                      <Switch
+                        checked={changeMonthlyDeposit.enabled}
+                        onCheckedChange={(enabled) => setChangeMonthlyDeposit(prev => ({ ...prev, enabled }))}
+                      />
+                    </div>
+                    
+                    {changeMonthlyDeposit.enabled && (
+                      <div className="space-y-2 pl-4 border-l-2 border-gray-200">
+                                                 <div>
+                           <Label htmlFor="monthly-deposit" className="text-xs text-gray-600">
+                             {t('expenseChart.newDepositValue', { value: formatCurrency(investmentPlan.monthly_deposit, investmentPlan.currency) })}
+                           </Label>
+                                                     <CurrencyInput
+                             id="monthly-deposit"
+                             className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 mt-1"
+                             prefix={getCurrencySymbol(investmentPlan.currency)}
+                             groupSeparator="."
+                             decimalSeparator=","
+                             decimalsLimit={2}
+                             placeholder="Ex: 5.000,00"
+                             value={changeMonthlyDeposit.value}
+                             onValueChange={(value) => {
+                               setChangeMonthlyDeposit(prev => ({ 
+                                 ...prev, 
+                                 value: value ? parseFloat(value.replace(/\./g, '').replace(',', '.')) : 0
+                               }));
+                             }}
+                           />
+                        </div>
+                                                 <div>
+                           <Label htmlFor="deposit-date" className="text-xs text-gray-600">{t('expenseChart.changeDate')}</Label>
+                          <Input
+                            id="deposit-date"
+                            type="date"
+                            value={changeMonthlyDeposit.date}
+                            onChange={(e) => setChangeMonthlyDeposit(prev => ({ 
+                              ...prev, 
+                              date: e.target.value 
+                            }))}
+                            className="mt-1"
+                          />
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                  
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm font-medium text-gray-700">{t('expenseChart.changeMonthlyWithdraw')}</span>
+                      <Switch
+                        checked={changeMonthlyWithdraw.enabled}
+                        onCheckedChange={(enabled) => setChangeMonthlyWithdraw(prev => ({ ...prev, enabled }))}
+                      />
+                    </div>
+                    
+                    {changeMonthlyWithdraw.enabled && (
+                      <div className="space-y-2 pl-4 border-l-2 border-gray-200">
+                                                 <div>
+                           <Label htmlFor="monthly-withdraw" className="text-xs text-gray-600">
+                             {t('expenseChart.newWithdrawValue', { value: formatCurrency(investmentPlan.desired_income, investmentPlan.currency) })}
+                           </Label>
+                                                     <CurrencyInput
+                             id="monthly-withdraw"
+                             className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 mt-1"
+                             prefix={getCurrencySymbol(investmentPlan.currency)}
+                             groupSeparator="."
+                             decimalSeparator=","
+                             decimalsLimit={2}
+                             placeholder="Ex: 3.000,00"
+                             value={changeMonthlyWithdraw.value}
+                             onValueChange={(value) => {
+                               setChangeMonthlyWithdraw(prev => ({ 
+                                 ...prev, 
+                                 value: value ? parseFloat(value.replace(/\./g, '').replace(',', '.')) : 0
+                               }));
+                             }}
+                           />
+                        </div>
+                                                 <div>
+                           <Label htmlFor="withdraw-date" className="text-xs text-gray-600">{t('expenseChart.changeDate')}</Label>
+                          <Input
+                            id="withdraw-date"
+                            type="date"
+                            value={changeMonthlyWithdraw.date}
+                            onChange={(e) => setChangeMonthlyWithdraw(prev => ({ 
+                              ...prev, 
+                              date: e.target.value 
+                            }))}
+                            className="mt-1"
+                          />
+                        </div>
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>
