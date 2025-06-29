@@ -23,7 +23,9 @@ import { InvestmentPlanDetails } from "@/components/InvestmentPlanDetails";
 import { formatCurrency, CurrencyCode } from "@/utils/currency";
 import { EditPlanModal } from "@/components/EditPlanModal";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { ChartAdvancedOptionsModal } from "@/components/chart/ChartAdvancedOptionsModal";
 import { useIPCASync } from "@/hooks/useIPCASync";
+import { useChartOptions } from "@/hooks/useChartOptions";
 import { Profile, InvestmentPlan } from "@/types/financial";
 type TimePeriod = 'all' | '6m' | '12m' | '24m';
 
@@ -48,6 +50,9 @@ const Finances = ({
   const [selectedPeriod, setSelectedPeriod] = useState<TimePeriod>('all');
   const [contributionPeriod, setContributionPeriod] = useState<TimePeriod>('all');
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [showAdvancedOptions, setShowAdvancedOptions] = useState(false);
+  const [showRealValues, setShowRealValues] = useState<boolean>(false);
+  const [showNegativeValues, setShowNegativeValues] = useState<boolean>(false);
   const queryClient = useQueryClient();
 
   const { data: allFinancialRecords, isLoading: isFinancialRecordsLoading } = useQuery({
@@ -308,8 +313,17 @@ const Finances = ({
     })[0];
   }, [processedRecords.financialRecords]);
 
-  // Add this before the return statement, after other useMemo hooks
-  const projectionData = useMemo(() => {
+  // Use chart options hook for projection data with advanced options
+  const chartOptionsHook = useChartOptions({
+    investmentPlan,
+    clientProfile,
+    allFinancialRecords: allFinancialRecords || [],
+    goals: goalsAndEvents?.goals,
+    events: goalsAndEvents?.events
+  });
+
+  // Fallback to original projection data when no chart options are active
+  const originalProjectionData = useMemo(() => {
     if (!investmentPlan || !clientProfile || !allFinancialRecords || !goalsAndEvents) return null;
 
     return generateProjectionData(
@@ -320,6 +334,11 @@ const Finances = ({
       goalsAndEvents?.events
     );
   }, [investmentPlan, clientProfile, allFinancialRecords, goalsAndEvents?.goals, goalsAndEvents?.events]);
+
+  // Use chart options projection data if available, otherwise use original
+  const projectionData = chartOptionsHook.hasActiveChartOptions 
+    ? chartOptionsHook.projectionDataWithOptions 
+    : originalProjectionData;
 
   // Memoize plan progress data
   const planProgressData = useMemo(() => {
@@ -711,6 +730,9 @@ const Finances = ({
               allFinancialRecords={[...(allFinancialRecords || [])]}
               projectionData={projectionData}
               onProjectionDataChange={handleProjectionDataChange}
+              showRealValues={showRealValues}
+              showNegativeValues={showNegativeValues}
+              onOpenAdvancedOptions={() => setShowAdvancedOptions(true)}
             />
           ) : (
             <div className="flex items-center justify-center h-[300px]">
@@ -782,6 +804,20 @@ const Finances = ({
           }}
         />
       )}
+      
+      <ChartAdvancedOptionsModal
+        open={showAdvancedOptions}
+        onOpenChange={setShowAdvancedOptions}
+        investmentPlan={investmentPlan}
+        showRealValues={showRealValues}
+        setShowRealValues={setShowRealValues}
+        showNegativeValues={showNegativeValues}
+        setShowNegativeValues={setShowNegativeValues}
+        changeMonthlyDeposit={chartOptionsHook.changeMonthlyDeposit}
+        setChangeMonthlyDeposit={chartOptionsHook.setChangeMonthlyDeposit}
+        changeMonthlyWithdraw={chartOptionsHook.changeMonthlyWithdraw}
+        setChangeMonthlyWithdraw={chartOptionsHook.setChangeMonthlyWithdraw}
+      />
     </>
   );
 };
