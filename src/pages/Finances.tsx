@@ -394,7 +394,23 @@ const Finances = ({
         projectedContribution: 0,
       };
     }
-  }, [allFinancialRecords, investmentPlan, clientProfile, goalsAndEvents, projectionData]);
+  }, [
+    // allFinancialRecords: depend on length and a stable identifier (e.g., JSON.stringify or .map(r => r.id))
+    allFinancialRecords?.length,
+    JSON.stringify(allFinancialRecords), // Replace with .map(r => r.id) if available
+    // investmentPlan: only plan_end_accumulation_date and any other used property
+    investmentPlan?.plan_end_accumulation_date,
+    // clientProfile: only birth_date
+    clientProfile?.birth_date,
+    // goalsAndEvents: only goals and events arrays
+    goalsAndEvents?.goals?.length,
+    JSON.stringify(goalsAndEvents?.goals),
+    goalsAndEvents?.events?.length,
+    JSON.stringify(goalsAndEvents?.events),
+    // projectionData: depend on length and a stable identifier
+    projectionData?.length,
+    JSON.stringify(projectionData)
+  ]);
 
   const calculateMonthlyContributions = useCallback((period: TimePeriod = 'all') => {
     if (!processedRecords.financialRecords?.length) return 0;
