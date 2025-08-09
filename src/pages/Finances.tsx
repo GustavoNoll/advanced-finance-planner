@@ -333,7 +333,7 @@ const Finances = ({
       goalsAndEvents?.goals,
       goalsAndEvents?.events
     );
-  }, [investmentPlan, clientProfile, allFinancialRecords, goalsAndEvents]);
+  }, [investmentPlan, clientProfile, allFinancialRecords, goalsAndEvents?.goals, goalsAndEvents?.events]);
 
   // Use chart options projection data if available, otherwise use original
   const projectionData = chartOptionsHook.hasActiveChartOptions 
