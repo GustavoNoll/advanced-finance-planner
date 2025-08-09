@@ -21,7 +21,9 @@ export function ThemeToggle() {
     try {
       localStorage.setItem('theme', next ? 'dark' : 'light')
       window.dispatchEvent(new CustomEvent('themechange', { detail: { theme: next ? 'dark' : 'light' } }))
-    } catch (_) {}
+    } catch {
+      // eslint-disable-next-line no-empty
+    }
   }
 
   return (
@@ -57,13 +59,13 @@ export function ThemeToggle() {
               )}
             >
               {isDark
-                ? t('common.theme.dark', { defaultValue: 'Escuro' })
-                : t('common.theme.light', { defaultValue: 'Claro' })}
+                ? t('common.theme.dark')
+                : t('common.theme.light')}
             </span>
           </button>
         </TooltipTrigger>
         <TooltipContent sideOffset={6}>
-          {t('common.theme.toggle', { defaultValue: 'Alternar tema' })}
+          {t('common.theme.toggle')}
         </TooltipContent>
       </Tooltip>
     </div>
