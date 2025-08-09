@@ -19,11 +19,11 @@ const customTooltip = (props: CustomTooltipProps) => {
   if (!categoryPayload) return null;
 
   return (
-    <div className="bg-white p-3 rounded-lg shadow-lg border border-gray-200">
-      <p className="text-sm font-medium text-gray-700 mb-1">{label}</p>
+    <div className="bg-white dark:bg-gray-900 p-3 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700">
+      <p className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{label}</p>
       <div className="flex items-center gap-2">
         <span className="h-2 w-2 rounded-full bg-blue-500" />
-        <p className="text-sm text-gray-600">
+        <p className="text-sm text-gray-600 dark:text-gray-300">
           {t('brokerDashboard.metrics.actions.clients')}: {' '} 
           <span className="font-semibold">{categoryPayload.value}</span>
         </p>
@@ -67,9 +67,10 @@ export const PlanningMetrics = ({ metrics }: PlanningMetricsProps) => {
   ];
 
   const donutColors = planTypesData.map(item => item.color);
+  const totalClients = planTypesData.reduce((sum, item) => sum + (Number(item.value) || 0), 0);
 
   return (
-    <Card className="hover:shadow-lg transition-all duration-200 border-gray-100">
+    <Card className="hover:shadow-lg transition-all duration-200 border-gray-100 dark:border-gray-800 bg-card">
       <CardHeader className="pb-2">
         <CardTitle className="flex items-center gap-2 text-lg">
           <Avatar 
@@ -86,30 +87,30 @@ export const PlanningMetrics = ({ metrics }: PlanningMetricsProps) => {
         <div className="grid grid-cols-2 gap-8">
           <div className="space-y-8">
             <div className="space-y-2">
-              <Text className="text-sm font-medium text-gray-500">{t('brokerDashboard.metrics.planning.averageAge')}</Text>
-              <Metric className="text-3xl font-bold text-gray-900 tracking-tight">
+              <Text className="text-sm font-medium text-gray-500 dark:text-gray-300">{t('brokerDashboard.metrics.planning.averageAge')}</Text>
+              <Metric className="text-3xl font-bold text-gray-900 dark:text-gray-100 tracking-tight">
                 {handleNaN(metrics.planning.averageAge).toFixed(1)}
-                <span className="text-sm text-gray-500 ml-2">anos</span>
+                <span className="text-sm text-gray-500 dark:text-gray-300 ml-2">anos</span>
               </Metric>
             </div>
             <div className="space-y-2">
-              <Text className="text-sm font-medium text-gray-500">{t('brokerDashboard.metrics.planning.averageDesiredIncome')}</Text>
-              <Metric className="text-3xl font-bold text-gray-900 tracking-tight">
+              <Text className="text-sm font-medium text-gray-500 dark:text-gray-300">{t('brokerDashboard.metrics.planning.averageDesiredIncome')}</Text>
+              <Metric className="text-3xl font-bold text-gray-900 dark:text-gray-100 tracking-tight">
                 {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(handleNaN(metrics.planning.averageDesiredIncome))}
               </Metric>
             </div>
           </div>
           <div className="space-y-8">
             <div className="space-y-2">
-              <Text className="text-sm font-medium text-gray-500">{t('brokerDashboard.metrics.planning.averageRetirementAge')}</Text>
-              <Metric className="text-3xl font-bold text-gray-900 tracking-tight">
+              <Text className="text-sm font-medium text-gray-500 dark:text-gray-300">{t('brokerDashboard.metrics.planning.averageRetirementAge')}</Text>
+              <Metric className="text-3xl font-bold text-gray-900 dark:text-gray-100 tracking-tight">
                 {handleNaN(metrics.planning.averageRetirementAge).toFixed(1)}
-                <span className="text-sm text-gray-500 ml-2">anos</span>
+                <span className="text-sm text-gray-500 dark:text-gray-300 ml-2">anos</span>
               </Metric>
             </div>
             <div className="space-y-4">
-              <Text className="text-sm font-medium text-gray-500">{t('brokerDashboard.metrics.planning.planTypes.title')}</Text>
-              <div className="h-[200px]">
+              <Text className="text-sm font-medium text-gray-500 dark:text-gray-300">{t('brokerDashboard.metrics.planning.planTypes.title')}</Text>
+              <div className="relative h-[200px] dark:[&_.recharts-label]:fill-gray-200 dark:[&_.recharts-text]:fill-gray-200 dark:[&_.recharts-legend-item-text]:fill-gray-300">
                 <DonutChart
                   variant="donut"
                   className="h-full"
@@ -122,6 +123,11 @@ export const PlanningMetrics = ({ metrics }: PlanningMetricsProps) => {
                   showAnimation={true}
                   customTooltip={customTooltip}
                 />
+                <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
+                  <span className="text-sm font-semibold text-gray-700 dark:text-gray-200">
+                    {totalClients} {t('brokerDashboard.metrics.actions.clients')}
+                  </span>
+                </div>
               </div>
             </div>
           </div>

@@ -60,35 +60,6 @@ interface DashboardMetrics {
   actions: ActionMetrics;
 }
 
-const ClientActions = ({ clientId, onDelete }: { clientId: string; onDelete: (id: string) => void }) => {
-  const { t } = useTranslation();
-  const navigate = useNavigate();
-
-  return (
-    <div className="flex items-center gap-2">
-      <Button
-        variant="outline"
-        size="sm"
-        onClick={() => navigate(`/client/${clientId}`)}
-        className="flex items-center gap-2"
-      >
-        <Share2 className="h-4 w-4" />
-        {t('brokerDashboard.share')}
-      </Button>
-      
-      <Button
-        variant="destructive"
-        size="sm"
-        onClick={() => onDelete(clientId)}
-        className="flex items-center gap-2"
-      >
-        <Trash2 className="h-4 w-4" />
-        {t('common.delete')}
-      </Button>
-    </div>
-  );
-};
-
 /**
  * Main broker dashboard component that displays client metrics and management tools
  */
@@ -434,16 +405,16 @@ export const BrokerDashboard = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white">
+    <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white dark:from-slate-900 dark:via-gray-950 dark:to-slate-900/50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Enhanced Header Section */}
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 mb-8">
+        <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-800 p-6 mb-8">
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-6">
             <div className="flex items-center gap-4">
               <Logo variant="minimal" />
               <div>
-                <h1 className="text-2xl font-bold text-gray-900 tracking-tight">{t('brokerDashboard.title')}</h1>
-                <p className="text-sm text-gray-500 mt-1">
+                <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100 tracking-tight">{t('brokerDashboard.title')}</h1>
+                <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
                   {brokerProfile?.name || 'Welcome back'}
                 </p>
               </div>
@@ -488,26 +459,26 @@ export const BrokerDashboard = () => {
           </div>
         </div>
 
-        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 mb-8">
+        <div className="bg-white dark:bg-gray-900 rounded-xl shadow-sm border border-gray-100 dark:border-gray-800 p-6 mb-8">
           <SummaryMetrics metrics={metrics} />
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-          <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+          <div className="bg-white dark:bg-gray-900 rounded-xl shadow-sm border border-gray-100 dark:border-gray-800 p-6">
             <WealthDistributionChart metrics={metrics} />
           </div>
-          <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+          <div className="bg-white dark:bg-gray-900 rounded-xl shadow-sm border border-gray-100 dark:border-gray-800 p-6">
             <PlanningMetrics metrics={metrics} />
           </div>
-          <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+          <div className="bg-white dark:bg-gray-900 rounded-xl shadow-sm border border-gray-100 dark:border-gray-800 p-6">
             <TrendMetrics metrics={metrics} />
           </div>
-          <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+          <div className="bg-white dark:bg-gray-900 rounded-xl shadow-sm border border-gray-100 dark:border-gray-800 p-6">
             <ActionMetrics metrics={metrics} />
           </div>
         </div>
 
-        <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+        <div className="bg-white dark:bg-gray-900 rounded-xl shadow-sm border border-gray-100 dark:border-gray-800 overflow-hidden">
           <ClientList
             clients={searchResults}
             onClientSelect={handleUserSelect}

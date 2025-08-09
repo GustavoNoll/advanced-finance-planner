@@ -59,6 +59,7 @@ export const AdminDashboard = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'inactive'>('active');
   const [loading, setLoading] = useState(true);
+  const [isDark, setIsDark] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [isCreatingBroker, setIsCreatingBroker] = useState(false);
@@ -79,7 +80,15 @@ export const AdminDashboard = () => {
 
   useEffect(() => {
     checkAdminStatus();
-  }, [user]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user, navigate, toast, t]);
+
+  useEffect(() => {
+    const updateTheme = () => setIsDark(document.documentElement.classList.contains('dark'))
+    updateTheme()
+    window.addEventListener('themechange', updateTheme)
+    return () => window.removeEventListener('themechange', updateTheme)
+  }, [])
 
   const checkAdminStatus = async () => {
     if (!user) {
@@ -519,17 +528,20 @@ export const AdminDashboard = () => {
 
   const totalPages = Math.ceil(filteredBrokers.length / itemsPerPage);
 
+  const gridColor = isDark ? '#1f2937' : '#f0f0f0'
+  const tickColor = isDark ? '#9ca3af' : '#6b7280'
+
   return (
-    <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white">
+    <div className="min-h-screen bg-gradient-to-b from-background to-muted">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Header */}
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 mb-8">
+        <div className="bg-card rounded-2xl shadow-sm border border-border p-6 mb-8">
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-6">
             <div className="flex items-center gap-4">
               <Logo variant="minimal" />
               <div>
-                <h1 className="text-2xl font-bold text-gray-900 tracking-tight">{t('adminDashboard.title')}</h1>
-                <p className="text-sm text-gray-500 mt-1">{t('adminDashboard.subtitle')}</p>
+                <h1 className="text-2xl font-bold text-foreground tracking-tight">{t('adminDashboard.title')}</h1>
+                <p className="text-sm text-muted-foreground mt-1">{t('adminDashboard.subtitle')}</p>
               </div>
             </div>
             
@@ -698,7 +710,7 @@ export const AdminDashboard = () => {
         {/* Search and Filter Bar */}
         <div className="mb-8 flex flex-col sm:flex-row gap-4">
           <div className="relative flex-1">
-            <Search className="absolute left-3 top-3 h-5 w-5 text-gray-400" />
+            <Search className="absolute left-3 top-3 h-5 w-5 text-muted-foreground" />
             <Input
               type="text"
               placeholder={t('adminDashboard.searchPlaceholder')}
@@ -730,48 +742,48 @@ export const AdminDashboard = () => {
         </div>
 
         {/* Brokers List */}
-        <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden mb-8">
+        <div className="bg-card rounded-xl shadow-sm border border-border overflow-hidden mb-8">
           <div className="p-6">
-            <h2 className="text-lg font-semibold text-gray-900 mb-4">{t('adminDashboard.brokersList')}</h2>
+            <h2 className="text-lg font-semibold text-foreground mb-4">{t('adminDashboard.brokersList')}</h2>
             <div className="overflow-x-auto">
-              <table className="min-w-full divide-y divide-gray-200">
-                <thead className="bg-gray-50">
+              <table className="min-w-full divide-y divide-border">
+                <thead className="bg-muted">
                   <tr>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-1/4">
+                    <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider w-1/4">
                       {t('adminDashboard.broker')}
                     </th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-1/6">
+                    <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider w-1/6">
                       {t('adminDashboard.status')}
                     </th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-1/6">
+                    <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider w-1/6">
                       {t('adminDashboard.clients')}
                     </th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-1/6">
+                    <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider w-1/6">
                       {t('adminDashboard.plans')}
                     </th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-1/6">
+                    <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider w-1/6">
                       {t('adminDashboard.balance')}
                     </th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-1/6">
+                    <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider w-1/6">
                       {t('adminDashboard.lastActivity')}
                     </th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-1/6">
+                    <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider w-1/6">
                       {t('adminDashboard.activeClients')}
                     </th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-1/6">
+                    <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider w-1/6">
                       {t('adminDashboard.actions')}
                     </th>
                   </tr>
                 </thead>
-                <tbody className="bg-white divide-y divide-gray-200">
+                <tbody className="bg-card divide-y divide-border">
                   {paginatedBrokers.map((broker) => (
-                    <tr key={broker.id} className="hover:bg-gray-50">
+                    <tr key={broker.id} className="hover:bg-muted">
                       <td className="px-4 py-4">
                         <div className="flex items-center">
                           <Avatar initial={broker.name[0]} color="bluePrimary" />
                           <div className="ml-3">
-                            <div className="text-sm font-medium text-gray-900 truncate max-w-[180px]">{broker.name}</div>
-                            <div className="text-[10px] text-gray-500 truncate max-w-[180px]">{broker.email}</div>
+                            <div className="text-sm font-medium text-foreground truncate max-w-[180px]">{broker.name}</div>
+                            <div className="text-[10px] text-muted-foreground truncate max-w-[180px]">{broker.email}</div>
                           </div>
                         </div>
                       </td>
@@ -786,24 +798,24 @@ export const AdminDashboard = () => {
                         </Button>
                       </td>
                       <td className="px-4 py-4">
-                        <div className="text-sm text-gray-900">{broker.totalClients}</div>
+                        <div className="text-sm text-foreground">{broker.totalClients}</div>
                       </td>
                       <td className="px-4 py-4">
-                        <div className="text-sm text-gray-900">{broker.totalPlans}</div>
+                        <div className="text-sm text-foreground">{broker.totalPlans}</div>
                       </td>
                       <td className="px-4 py-4">
-                        <div className="text-sm text-gray-900">
+                        <div className="text-sm text-foreground">
                           {formatLargeNumber(broker.totalBalance)}
-                          <span className="text-xs text-gray-500 ml-1">{formatCurrency(broker.totalBalance)}</span>
+                          <span className="text-xs text-muted-foreground ml-1">{formatCurrency(broker.totalBalance)}</span>
                         </div>
                       </td>
                       <td className="px-4 py-4">
-                        <div className="text-sm text-gray-900">
+                        <div className="text-sm text-foreground">
                           {formatDate(broker.lastActivity)}
                         </div>
                       </td>
                       <td className="px-4 py-4">
-                        <div className="text-sm text-gray-900">
+                        <div className="text-sm text-foreground">
                           {broker.clientsWithActiveRecords} / {broker.totalClients}
                         </div>
                       </td>
@@ -833,7 +845,7 @@ export const AdminDashboard = () => {
             </div>
             {/* Pagination */}
             <div className="flex items-center justify-between mt-4">
-              <div className="text-sm text-gray-700">
+              <div className="text-sm text-muted-foreground">
                 {t('adminDashboard.showingItems', {
                   from: (currentPage - 1) * itemsPerPage + 1,
                   to: Math.min(currentPage * itemsPerPage, filteredBrokers.length),
@@ -849,7 +861,7 @@ export const AdminDashboard = () => {
                 >
                   {t('adminDashboard.previous')}
                 </Button>
-                <span className="text-sm text-gray-700">
+                <span className="text-sm text-muted-foreground">
                   {t('adminDashboard.page')} {currentPage} {t('adminDashboard.of')} {totalPages}
                 </span>
                 <Button
@@ -867,10 +879,10 @@ export const AdminDashboard = () => {
 
         {/* Summary Cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-          <Card className="hover:shadow-lg transition-all duration-200 border-gray-100">
+          <Card className="hover:shadow-lg transition-all duration-200 border-border">
             <CardHeader className="pb-2">
               <div className="flex items-center justify-between">
-                <CardTitle className="text-sm font-medium text-gray-500">
+                <CardTitle className="text-sm font-medium text-muted-foreground">
                   {t('adminDashboard.totalBrokers')}
                 </CardTitle>
                 <Avatar 
@@ -884,21 +896,21 @@ export const AdminDashboard = () => {
             </CardHeader>
             <CardContent>
               <div className="flex items-baseline gap-2">
-                <p className="text-3xl font-bold text-gray-900">{filteredBrokers.length}</p>
-                <p className="text-sm text-gray-500">{t('adminDashboard.brokers')}</p>
+                <p className="text-3xl font-bold text-foreground">{filteredBrokers.length}</p>
+                <p className="text-sm text-muted-foreground">{t('adminDashboard.brokers')}</p>
               </div>
               <div className="mt-2">
-                <p className="text-sm text-gray-500">
+                <p className="text-sm text-muted-foreground">
                   {filteredBrokers.filter(b => b.active).length} {t('adminDashboard.active')}
                 </p>
               </div>
             </CardContent>
           </Card>
 
-          <Card className="hover:shadow-lg transition-all duration-200 border-gray-100">
+          <Card className="hover:shadow-lg transition-all duration-200 border-border">
             <CardHeader className="pb-2">
               <div className="flex items-center justify-between">
-                <CardTitle className="text-sm font-medium text-gray-500">
+                <CardTitle className="text-sm font-medium text-muted-foreground">
                   {t('adminDashboard.totalClients')}
                 </CardTitle>
                 <Avatar 
@@ -912,23 +924,23 @@ export const AdminDashboard = () => {
             </CardHeader>
             <CardContent>
               <div className="flex items-baseline gap-2">
-                <p className="text-3xl font-bold text-gray-900">
+                <p className="text-3xl font-bold text-foreground">
                   {formatLargeNumber(filteredBrokers.reduce((sum, broker) => sum + broker.totalClients, 0))}
                 </p>
-                <p className="text-sm text-gray-500">{t('adminDashboard.clients')}</p>
+                <p className="text-sm text-muted-foreground">{t('adminDashboard.clients')}</p>
               </div>
               <div className="mt-2">
-                <p className="text-sm text-gray-500">
+                <p className="text-sm text-muted-foreground">
                   {formatLargeNumber(filteredBrokers.reduce((sum, broker) => sum + broker.clientsWithActiveRecords, 0))} {t('adminDashboard.active')}
                 </p>
               </div>
             </CardContent>
           </Card>
 
-          <Card className="hover:shadow-lg transition-all duration-200 border-gray-100">
+          <Card className="hover:shadow-lg transition-all duration-200 border-border">
             <CardHeader className="pb-2">
               <div className="flex items-center justify-between">
-                <CardTitle className="text-sm font-medium text-gray-500">
+                <CardTitle className="text-sm font-medium text-muted-foreground">
                   {t('adminDashboard.totalPlans')}
                 </CardTitle>
                 <Avatar 
@@ -942,23 +954,23 @@ export const AdminDashboard = () => {
             </CardHeader>
             <CardContent>
               <div className="flex items-baseline gap-2">
-                <p className="text-3xl font-bold text-gray-900">
+                <p className="text-3xl font-bold text-foreground">
                   {formatLargeNumber(filteredBrokers.reduce((sum, broker) => sum + broker.totalPlans, 0))}
                 </p>
-                <p className="text-sm text-gray-500">{t('adminDashboard.plans')}</p>
+                <p className="text-sm text-muted-foreground">{t('adminDashboard.plans')}</p>
               </div>
               <div className="mt-2">
-                <p className="text-sm text-gray-500">
+                <p className="text-sm text-muted-foreground">
                   {formatLargeNumber(filteredBrokers.reduce((sum, broker) => sum + broker.clientsWithOutdatedRecords, 0))} {t('adminDashboard.needReview')}
                 </p>
               </div>
             </CardContent>
           </Card>
 
-          <Card className="hover:shadow-lg transition-all duration-200 border-gray-100">
+          <Card className="hover:shadow-lg transition-all duration-200 border-border">
             <CardHeader className="pb-2">
               <div className="flex items-center justify-between">
-                <CardTitle className="text-sm font-medium text-gray-500">
+                <CardTitle className="text-sm font-medium text-muted-foreground">
                   {t('adminDashboard.totalBalance')}
                 </CardTitle>
                 <Avatar 
@@ -972,12 +984,12 @@ export const AdminDashboard = () => {
             </CardHeader>
             <CardContent>
               <div className="flex items-baseline gap-2">
-                <p className="text-3xl font-bold text-gray-900">
+                <p className="text-3xl font-bold text-foreground">
                   {formatCurrency(filteredBrokers.reduce((sum, broker) => sum + broker.totalBalance, 0))}
                 </p>
               </div>
               <div className="mt-2">
-                <p className="text-sm text-gray-500">
+                <p className="text-sm text-muted-foreground">
                   {t('adminDashboard.averagePerClient')}: {formatCurrency(
                     filteredBrokers.reduce((sum, broker) => sum + broker.totalBalance, 0) / 
                     filteredBrokers.reduce((sum, broker) => sum + broker.totalClients, 0)

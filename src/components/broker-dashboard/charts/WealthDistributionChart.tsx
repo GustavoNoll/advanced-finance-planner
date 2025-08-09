@@ -18,11 +18,11 @@ const customTooltip = (props: CustomTooltipProps) => {
   if (!categoryPayload) return null;
 
   return (
-    <div className="bg-white p-3 rounded-lg shadow-lg border border-gray-200">
-      <p className="text-sm font-medium text-gray-700 mb-1">{label}</p>
+    <div className="bg-white dark:bg-gray-900 p-3 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700">
+      <p className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{label}</p>
       <div className="flex items-center gap-2">
         <span className="h-2 w-2 rounded-full bg-blue-500" />
-        <p className="text-sm text-gray-600">
+        <p className="text-sm text-gray-600 dark:text-gray-300">
           {categoryPayload.dataKey}: {' '} 
           <span className="font-semibold">{categoryPayload.value}</span>
         </p>
@@ -51,7 +51,7 @@ export const WealthDistributionChart = ({ metrics }: WealthDistributionChartProp
   }));
 
   return (
-    <Card className="hover:shadow-lg transition-all duration-200 border-gray-100">
+    <Card className="hover:shadow-lg transition-all duration-200 border-gray-100 dark:border-gray-800 bg-card">
       <CardHeader className="pb-2">
         <CardTitle className="flex items-center gap-2 text-lg">
           <Avatar 
@@ -65,10 +65,10 @@ export const WealthDistributionChart = ({ metrics }: WealthDistributionChartProp
         </CardTitle>
       </CardHeader>
       <CardContent>
-        <Text className="text-center text-sm text-gray-500 mb-2">
+        <Text className="text-center text-sm text-gray-500 dark:text-gray-300 mb-2">
           {t('brokerDashboard.metrics.wealthDistribution.clientCount')}
         </Text>
-        <div className="h-[300px]">
+        <div className="h-[300px] [&_.recharts-cartesian-axis-tick_text]:fill-gray-500 dark:[&_.recharts-cartesian-axis-tick_text]:fill-gray-300 [&_.recharts-cartesian-grid_line]:stroke-gray-200 dark:[&_.recharts-cartesian-grid_line]:stroke-gray-700 dark:[&_.recharts-label]:fill-gray-300 dark:[&_.recharts-legend-item-text]:fill-gray-300">
           <BarChart
             className="h-full"
             data={data}

@@ -169,17 +169,17 @@ export function EditPlanModal({ investmentPlan, birthDate, onClose, onSuccess }:
   const prefix = getCurrencySymbol(formData.currency as CurrencyCode);
 
   return (
-    <div className="fixed inset-0 flex items-center justify-center z-50">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm">
       <div className="relative w-full max-w-2xl mx-4">
-        <Card className="w-full max-h-[90vh] overflow-y-auto bg-gradient-to-br from-white via-slate-50/95 to-blue-50/90 border border-blue-100/50 shadow-2xl rounded-xl">
-          <CardHeader className="sticky top-0 z-[99999] border-b bg-gradient-to-r from-white/80 via-slate-50/80 to-blue-50/80 backdrop-blur-md">
+        <Card className="w-full max-h-[90vh] overflow-y-auto bg-gradient-to-br from-white via-slate-50/95 to-blue-50/90 dark:from-slate-900 dark:via-slate-900/80 dark:to-blue-950/20 border border-blue-100/50 dark:border-slate-800 shadow-2xl rounded-xl">
+          <CardHeader className="sticky top-0 z-[99999] border-b bg-gradient-to-r from-white/80 via-slate-50/80 to-blue-50/80 dark:from-slate-900/80 dark:via-slate-900/80 dark:to-blue-950/20 backdrop-blur-md">
             <div className="flex items-center justify-between">
-              <CardTitle className="text-xl font-semibold text-gray-900">{t('investmentPlan.edit.title')}</CardTitle>
+              <CardTitle className="text-xl font-semibold text-gray-900 dark:text-gray-100">{t('investmentPlan.edit.title')}</CardTitle>
               <Button 
                 variant="ghost" 
                 size="icon"
                 onClick={onClose}
-                className="hover:bg-gray-100/50"
+                className="hover:bg-gray-100/50 dark:hover:bg-slate-800/60"
               >
                 <X className="h-4 w-4" />
               </Button>
@@ -189,7 +189,7 @@ export function EditPlanModal({ investmentPlan, birthDate, onClose, onSuccess }:
             <form onSubmit={handleSubmit} className="space-y-6">
               <div className="space-y-4">
                 <div className="space-y-2">
-                  <label className="text-sm font-medium text-gray-700">
+                  <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
                     {t('investmentPlan.form.planType')}
                   </label>
                   <select
@@ -206,7 +206,7 @@ export function EditPlanModal({ investmentPlan, birthDate, onClose, onSuccess }:
                 </div>
 
                 <div className="space-y-2">
-                  <label className="text-sm font-medium text-gray-700">
+                  <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
                     {t('investmentPlan.form.initialAmount')}
                   </label>
                   <CurrencyInput
@@ -229,7 +229,7 @@ export function EditPlanModal({ investmentPlan, birthDate, onClose, onSuccess }:
                 </div>
 
                 <div className="space-y-2">
-                  <label className="text-sm font-medium text-gray-700">
+                  <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
                     {t('investmentPlan.form.finalAge')}
                   </label>
                   <div className="flex gap-2">
@@ -315,7 +315,7 @@ export function EditPlanModal({ investmentPlan, birthDate, onClose, onSuccess }:
                 </div>
 
                 <div className="space-y-2">
-                  <label className="text-sm font-medium text-gray-700">
+                  <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
                     {t('investmentPlan.form.monthlyDeposit')}
                   </label>
                   <CurrencyInput
@@ -338,7 +338,7 @@ export function EditPlanModal({ investmentPlan, birthDate, onClose, onSuccess }:
                 </div>
 
                 <div className="space-y-2">
-                  <label className="text-sm font-medium text-gray-700">
+                  <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
                     {t('investmentPlan.form.desiredIncome')}
                   </label>
                   <CurrencyInput
@@ -361,7 +361,7 @@ export function EditPlanModal({ investmentPlan, birthDate, onClose, onSuccess }:
                 </div>
 
                 <div className="space-y-2">
-                  <label className="text-sm font-medium text-gray-700">
+                  <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
                     {t('investmentPlan.form.lifeExpectancy')}
                   </label>
                   <Input
@@ -380,7 +380,7 @@ export function EditPlanModal({ investmentPlan, birthDate, onClose, onSuccess }:
 
               <Button 
                 type="submit" 
-                className="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-md transition-colors duration-200" 
+                className="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-md transition-colors duration-200 dark:bg-blue-600 dark:hover:bg-blue-500" 
                 disabled={loading}
               >
                 {loading ? t('common.saving') : t('common.save')}

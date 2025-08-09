@@ -31,7 +31,7 @@ export const TrendMetrics = ({ metrics }: TrendMetricsProps) => {
   const trendColors: AvailableChartColorsKeys[] = ['emerald', 'blue', 'lime', 'orange'];
 
   return (
-    <Card className="hover:shadow-lg transition-all duration-200 border-gray-100">
+    <Card className="hover:shadow-lg transition-all duration-200 border-gray-100 dark:border-gray-800 bg-card">
       <CardHeader className="pb-2">
         <CardTitle className="flex items-center gap-2 text-lg">
           <Avatar 

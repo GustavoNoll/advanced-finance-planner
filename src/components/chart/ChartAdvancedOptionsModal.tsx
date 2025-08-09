@@ -68,22 +68,22 @@ export const ChartAdvancedOptionsModal = ({
         <div className="space-y-6 py-2">
           <div>
             <div className="flex items-center gap-1 mb-2">
-              <div className="text-xs font-semibold text-gray-500 uppercase tracking-wider">{t('expenseChart.valueType')}</div>
+              <div className="text-xs font-semibold text-gray-500 dark:text-gray-300 uppercase tracking-wider">{t('expenseChart.valueType')}</div>
               <HoverCard>
                 <HoverCardTrigger asChild>
-                  <button className="text-gray-400 hover:text-gray-600 transition-colors" tabIndex={-1} type="button">
+                  <button className="text-gray-400 dark:text-gray-300 hover:text-gray-600 dark:hover:text-gray-100 transition-colors" tabIndex={-1} type="button">
                     <HelpCircle className="w-4 h-4" />
                   </button>
                 </HoverCardTrigger>
-                <HoverCardContent className="max-w-xs">
-                  <p className="text-sm text-gray-600">
+                <HoverCardContent className="max-w-xs bg-white dark:bg-gray-900">
+                  <p className="text-sm text-gray-600 dark:text-gray-300">
                     {t('expenseChart.advancedOptionsHelp')}
                   </p>
                 </HoverCardContent>
               </HoverCard>
             </div>
             <div className="flex items-center justify-between">
-              <span className="text-sm font-medium text-gray-700">{showRealValues ? t('expenseChart.realValues') : t('expenseChart.nominalValues')}</span>
+              <span className="text-sm font-medium text-gray-700 dark:text-gray-200">{showRealValues ? t('expenseChart.realValues') : t('expenseChart.nominalValues')}</span>
               <Switch
                 checked={showRealValues}
                 onCheckedChange={setShowRealValues}
@@ -91,9 +91,9 @@ export const ChartAdvancedOptionsModal = ({
             </div>
           </div>
           <div>
-            <div className="text-xs font-semibold text-gray-500 mb-2 uppercase tracking-wider">{t('expenseChart.display')}</div>
+            <div className="text-xs font-semibold text-gray-500 dark:text-gray-300 mb-2 uppercase tracking-wider">{t('expenseChart.display')}</div>
             <div className="flex items-center justify-between">
-              <span className="text-sm font-medium text-gray-700">{t('expenseChart.noNegativeValues')}</span>
+              <span className="text-sm font-medium text-gray-700 dark:text-gray-200">{t('expenseChart.noNegativeValues')}</span>
               <Switch
                 checked={!showNegativeValues}
                 onCheckedChange={v => setShowNegativeValues(!v)}
@@ -102,16 +102,16 @@ export const ChartAdvancedOptionsModal = ({
           </div>
           
           <div className="space-y-4">
-            <div className="flex items-center gap-2 mb-2">
-              <div className="text-xs font-semibold text-gray-500 uppercase tracking-wider">{t('expenseChart.chartOptionsSection')}</div>
+              <div className="flex items-center gap-2 mb-2">
+              <div className="text-xs font-semibold text-gray-500 dark:text-gray-300 uppercase tracking-wider">{t('expenseChart.chartOptionsSection')}</div>
               <HoverCard>
                 <HoverCardTrigger asChild>
-                  <button className="text-gray-400 hover:text-gray-600 transition-colors" tabIndex={-1} type="button">
+                  <button className="text-gray-400 dark:text-gray-300 hover:text-gray-600 dark:hover:text-gray-100 transition-colors" tabIndex={-1} type="button">
                     <HelpCircle className="w-4 h-4" />
                   </button>
                 </HoverCardTrigger>
-                <HoverCardContent className="max-w-xs">
-                  <p className="text-sm text-gray-600">
+                <HoverCardContent className="max-w-xs bg-white dark:bg-gray-900">
+                  <p className="text-sm text-gray-600 dark:text-gray-300">
                     {t('expenseChart.chartOptionsHelp')}
                   </p>
                 </HoverCardContent>
@@ -120,7 +120,7 @@ export const ChartAdvancedOptionsModal = ({
             
             <div className="space-y-3">
               <div className="flex items-center justify-between">
-                <span className="text-sm font-medium text-gray-700">{t('expenseChart.changeMonthlyDeposit')}</span>
+                <span className="text-sm font-medium text-gray-700 dark:text-gray-200">{t('expenseChart.changeMonthlyDeposit')}</span>
                 <Switch
                   checked={changeMonthlyDeposit.enabled}
                   onCheckedChange={(enabled) => setChangeMonthlyDeposit({ ...changeMonthlyDeposit, enabled })}
@@ -130,7 +130,7 @@ export const ChartAdvancedOptionsModal = ({
               {changeMonthlyDeposit.enabled && (
                 <div className="space-y-2 pl-4 border-l-2 border-gray-200">
                   <div>
-                    <Label htmlFor="monthly-deposit" className="text-xs text-gray-600">
+                    <Label htmlFor="monthly-deposit" className="text-xs text-gray-600 dark:text-gray-300">
                       {t('expenseChart.newDepositValue', { value: formatCurrency(investmentPlan.monthly_deposit, investmentPlan.currency) })}
                     </Label>
                     <CurrencyInput
@@ -151,7 +151,7 @@ export const ChartAdvancedOptionsModal = ({
                     />
                   </div>
                   <div>
-                    <Label htmlFor="deposit-date" className="text-xs text-gray-600">{t('expenseChart.changeDate')}</Label>
+                    <Label htmlFor="deposit-date" className="text-xs text-gray-600 dark:text-gray-300">{t('expenseChart.changeDate')}</Label>
                     <Input
                       id="deposit-date"
                       type="month"
@@ -169,7 +169,7 @@ export const ChartAdvancedOptionsModal = ({
             
             <div className="space-y-3">
               <div className="flex items-center justify-between">
-                <span className="text-sm font-medium text-gray-700">{t('expenseChart.changeMonthlyWithdraw')}</span>
+                <span className="text-sm font-medium text-gray-700 dark:text-gray-200">{t('expenseChart.changeMonthlyWithdraw')}</span>
                 <Switch
                   checked={changeMonthlyWithdraw.enabled}
                   onCheckedChange={(enabled) => setChangeMonthlyWithdraw({ ...changeMonthlyWithdraw, enabled })}
@@ -179,7 +179,7 @@ export const ChartAdvancedOptionsModal = ({
               {changeMonthlyWithdraw.enabled && (
                 <div className="space-y-2 pl-4 border-l-2 border-gray-200">
                   <div>
-                    <Label htmlFor="monthly-withdraw" className="text-xs text-gray-600">
+                    <Label htmlFor="monthly-withdraw" className="text-xs text-gray-600 dark:text-gray-300">
                       {t('expenseChart.newWithdrawValue', { value: formatCurrency(investmentPlan.desired_income, investmentPlan.currency) })}
                     </Label>
                     <CurrencyInput
@@ -200,7 +200,7 @@ export const ChartAdvancedOptionsModal = ({
                     />
                   </div>
                   <div>
-                    <Label htmlFor="withdraw-date" className="text-xs text-gray-600">{t('expenseChart.changeDate')}</Label>
+                    <Label htmlFor="withdraw-date" className="text-xs text-gray-600 dark:text-gray-300">{t('expenseChart.changeDate')}</Label>
                     <Input
                       id="withdraw-date"
                       type="month"

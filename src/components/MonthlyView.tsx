@@ -2,7 +2,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { DashboardCard } from "./DashboardCard";
 import { useTranslation } from "react-i18next";
 import { useQuery } from "@tanstack/react-query";
-import { useState, useCallback, useMemo } from "react";
+import { useState, useCallback, useMemo, useEffect } from "react";
 import { toast } from "@/components/ui/use-toast";
 import { fetchCDIRates, fetchIPCARates, fetchUSCPIRates, fetchEuroCPIRates } from '@/lib/bcb-api';
 import { ChevronDown, ChevronRight, Download, BarChart } from "lucide-react";
@@ -33,6 +33,12 @@ export const MonthlyView = ({
 }) => {
   const { t } = useTranslation();
   const RECORDS_PER_PAGE = 12;
+  const [isDark, setIsDark] = useState<boolean>(typeof document !== 'undefined' ? document.documentElement.classList.contains('dark') : false)
+  useEffect(() => {
+    const handler = () => setIsDark(document.documentElement.classList.contains('dark'))
+    window.addEventListener('themechange', handler)
+    return () => window.removeEventListener('themechange', handler)
+  }, [])
   
   // 1. All useState hooks
   const [page, setPage] = useState(1);
@@ -442,21 +448,24 @@ export const MonthlyView = ({
       icon={BarChart}
     >
       <Tabs defaultValue={allFinancialRecords.length > 0 ? "returnChart" : "table"} className="w-full">
-        <TabsList className={`grid w-full ${allFinancialRecords.length > 0 ? 'grid-cols-3' : 'grid-cols-2'} lg:w-[800px] gap-2`}>
+        <TabsList className={`grid w-full ${allFinancialRecords.length > 0 ? 'grid-cols-3' : 'grid-cols-2'} lg:w-[800px] gap-2 bg-gray-100 dark:bg-gray-900/60 border border-gray-200 dark:border-gray-700 rounded-lg`}>
           {allFinancialRecords.length > 0 && (
             <TabsTrigger 
               value="returnChart"
+              className="data-[state=active]:bg-white dark:data-[state=active]:bg-gray-800 data-[state=active]:text-blue-600 dark:data-[state=active]:text-blue-400 text-gray-700 dark:text-gray-300"
             >
               {t('monthlyView.tabs.returnChart')}
             </TabsTrigger>
           )}
           <TabsTrigger 
             value="table"
+            className="data-[state=active]:bg-white dark:data-[state=active]:bg-gray-800 data-[state=active]:text-blue-600 dark:data-[state=active]:text-blue-400 text-gray-700 dark:text-gray-300"
           >
             {t('monthlyView.tabs.table')}
           </TabsTrigger>
           <TabsTrigger 
             value="futureProjection"
+            className="data-[state=active]:bg-white dark:data-[state=active]:bg-gray-800 data-[state=active]:text-blue-600 dark:data-[state=active]:text-blue-400 text-gray-700 dark:text-gray-300"
           >
             {t('monthlyView.tabs.futureProjection')}
           </TabsTrigger>
@@ -466,7 +475,7 @@ export const MonthlyView = ({
           <TabsContent value="returnChart" className="space-y-4">
             <div className="flex justify-end gap-2 mb-4">
                 <Select value={timeWindow.toString()} onValueChange={(value) => setTimeWindow(Number(value) as typeof timeWindow)}>
-                  <SelectTrigger className="w-[150px] h-8 text-sm border border-gray-200 rounded-lg px-2 bg-white/90 text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent shadow-sm hover:border-blue-200 transition-colors ml-auto">
+                  <SelectTrigger className="w-[150px] h-8 text-sm border border-gray-200 dark:border-gray-700 rounded-lg px-2 bg-white/90 dark:bg-gray-900/80 text-gray-700 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent shadow-sm hover:border-blue-200 dark:hover:border-gray-600 transition-colors ml-auto">
                     <SelectValue placeholder={t('common.selectPeriod')} />
                   </SelectTrigger>
                   <SelectContent>
@@ -477,7 +486,7 @@ export const MonthlyView = ({
                   </SelectContent>
                 </Select> 
             </div>
-            <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-4">
+            <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-100 dark:border-gray-800 shadow-sm p-4">
               <ResponsiveContainer width="100%" height={400}>
                 <RechartsLineChart data={filteredChartData}>
                   <defs>
@@ -519,36 +528,36 @@ export const MonthlyView = ({
                   </defs>
                   <CartesianGrid 
                     strokeDasharray="3 3" 
-                    stroke="#e5e7eb" 
+                    stroke={isDark ? '#374151' : '#e5e7eb'} 
                     vertical={false}
                     strokeOpacity={0.3}
                   />
                   <XAxis 
                     dataKey="month"
                     tick={{ 
-                      fill: '#6b7280',
+                      fill: isDark ? '#9ca3af' : '#6b7280',
                       fontSize: '0.75rem'
                     }}
                     axisLine={{ 
-                      stroke: '#e5e7eb',
+                      stroke: isDark ? '#374151' : '#e5e7eb',
                       strokeWidth: 1
                     }}
                   />
                   <YAxis 
                     unit="%"
                     tick={{ 
-                      fill: '#6b7280',
+                      fill: isDark ? '#9ca3af' : '#6b7280',
                       fontSize: '0.75rem'
                     }}
                     axisLine={{ 
-                      stroke: '#e5e7eb',
+                      stroke: isDark ? '#374151' : '#e5e7eb',
                       strokeWidth: 1
                     }}
                   />
                   <Tooltip 
                     contentStyle={{
-                      backgroundColor: 'white',
-                      border: '1px solid #e5e7eb',
+                      backgroundColor: isDark ? '#111827' : 'white',
+                      border: isDark ? '1px solid #374151' : '1px solid #e5e7eb',
                       borderRadius: '0.75rem',
                       boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1)',
                       padding: '0.75rem',
@@ -565,21 +574,21 @@ export const MonthlyView = ({
                           }}
                         />
                         <div className="flex flex-col">
-                          <span className="text-gray-600 text-sm font-medium">{name}</span>
-                          <span className={`text-gray-900 font-semibold ${value >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                          <span className="text-gray-600 dark:text-gray-300 text-sm font-medium">{name}</span>
+                          <span className={`text-gray-900 dark:text-gray-100 font-semibold ${value >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
                             {value >= 0 ? '↑' : '↓'} {Math.abs(value).toFixed(2)}%
                           </span>
                         </div>
                       </div>
                     ]}
                     labelStyle={{
-                      color: '#1f2937',
+                      color: isDark ? '#e5e7eb' : '#1f2937',
                       fontWeight: '600',
                       fontSize: '0.875rem',
                       marginBottom: '0.5rem',
                     }}
                     itemStyle={{
-                      color: '#374151',
+                      color: isDark ? '#d1d5db' : '#374151',
                       fontSize: '0.875rem',
                       padding: '0.25rem 0',
                     }}
@@ -702,7 +711,7 @@ export const MonthlyView = ({
                       bottom: 0
                     }}
                     formatter={(value) => (
-                      <span className="text-sm font-medium text-gray-600">{value}</span>
+                      <span className="text-sm font-medium text-gray-600 dark:text-gray-300">{value}</span>
                     )}
                   />
                 </RechartsLineChart>
@@ -727,10 +736,10 @@ export const MonthlyView = ({
               <p>{t('monthlyView.noData')}</p>
             </div>
           ) : (
-            <div className="rounded-md border overflow-hidden shadow-sm">
+            <div className="rounded-md border border-gray-200 dark:border-gray-800 overflow-hidden shadow-sm">
               <table className="w-full text-sm">
                 <thead>
-                  <tr className="bg-muted/50 border-b">
+                  <tr className="bg-muted/50 border-b dark:border-gray-800">
                     <th className="p-3 text-left font-medium text-muted-foreground">{t('monthlyView.table.headers.month')}</th>
                     <th className="p-3 text-right font-medium text-muted-foreground">{t('monthlyView.table.headers.initialBalance')}</th>
                     <th className="p-3 text-right font-medium text-muted-foreground">{t('monthlyView.table.headers.contribution')}</th>
@@ -744,8 +753,8 @@ export const MonthlyView = ({
                   {localizedData.map((data, index) => (
                     <tr 
                       key={`${data.month}-${data.balance}-${data.contribution}-${data.return}-${data.endBalance}-${data.targetRentability}`} 
-                      className={`border-b transition-colors hover:bg-muted/50 ${
-                        index % 2 === 0 ? 'bg-white' : 'bg-muted/10'
+                      className={`border-b dark:border-gray-800 transition-colors hover:bg-muted/50 dark:hover:bg-gray-800/60 ${
+                        index % 2 === 0 ? 'bg-white dark:bg-gray-900' : 'bg-muted/10 dark:bg-gray-800/40'
                       }`}
                     >
                       <td className="p-3 font-medium">{data.month}</td>
@@ -798,10 +807,10 @@ export const MonthlyView = ({
               {t('monthlyView.downloadCSV')}
             </Button>
           </div>
-          <div className="rounded-md border overflow-hidden shadow-sm">
+            <div className="rounded-md border border-gray-200 dark:border-gray-800 overflow-hidden shadow-sm">
             <table className="w-full text-sm">
               <thead>
-                <tr className="bg-muted/50 border-b">
+                <tr className="bg-muted/50 border-b dark:border-gray-800">
                   <th className="p-3 text-left font-medium text-muted-foreground whitespace-nowrap">{t('monthlyView.futureProjection.age')}</th>
                   <th className="p-3 text-left font-medium text-muted-foreground whitespace-nowrap">{t('monthlyView.futureProjection.year')}</th>
                   <th className="p-3 text-right font-medium text-muted-foreground whitespace-nowrap">{t('monthlyView.futureProjection.cashFlow')}</th>
@@ -823,8 +832,8 @@ export const MonthlyView = ({
                 )).map((projection, index) => (
                   <React.Fragment key={`${projection.year}-${index}-group`}>
                     <tr 
-                      className={`border-b transition-colors hover:bg-muted/50 ${
-                        projection.hasHistoricalData ? 'bg-blue-50/50' : index % 2 === 0 ? 'bg-white' : 'bg-muted/10'
+                      className={`border-b dark:border-gray-800 transition-colors hover:bg-muted/50 dark:hover:bg-gray-800/60 ${
+                        projection.hasHistoricalData ? 'bg-blue-50/50 dark:bg-blue-900/20' : index % 2 === 0 ? 'bg-white dark:bg-gray-900' : 'bg-muted/10 dark:bg-gray-800/40'
                       }`}
                     >
                       <td className="p-3">
@@ -904,10 +913,10 @@ export const MonthlyView = ({
                       return (
                         <tr 
                           key={`${projection.year}-${monthIndex}`} 
-                          className={`border-b text-xs transition-colors hover:bg-muted/50 ${
+                          className={`border-b dark:border-gray-800 text-xs transition-colors hover:bg-muted/50 dark:hover:bg-gray-800/60 ${
                             month.isHistorical 
-                              ? 'bg-blue-50/50' 
-                              : 'bg-muted/20'
+                              ? 'bg-blue-50/50 dark:bg-blue-900/20' 
+                              : 'bg-muted/20 dark:bg-gray-800/40'
                           }`}
                         >
                           <td className="p-2">

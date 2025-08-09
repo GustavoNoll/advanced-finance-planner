@@ -91,10 +91,10 @@ export const SavingsGoal = ({ allFinancialRecords, investmentPlan, profile, plan
           <span>{t('savingsGoal.title')}</span>
           <HoverCard>
             <HoverCardTrigger>
-              <Info className="h-4 w-4 text-gray-400 cursor-help hover:text-blue-600 transition-colors" />
+              <Info className="h-4 w-4 text-gray-400 dark:text-gray-300 cursor-help hover:text-blue-600 dark:hover:text-blue-400 transition-colors" />
             </HoverCardTrigger>
-            <HoverCardContent className="w-80">
-              <p className="text-sm text-gray-600">
+            <HoverCardContent className="w-80 bg-white dark:bg-gray-900">
+              <p className="text-sm text-gray-600 dark:text-gray-300">
                 {t('savingsGoal.tooltip')}
               </p>
             </HoverCardContent>
@@ -102,15 +102,15 @@ export const SavingsGoal = ({ allFinancialRecords, investmentPlan, profile, plan
         </div>
       }
       icon={Target}
-      className="transform transition-all duration-300 hover:scale-[1.02] hover:shadow-2xl bg-gradient-to-br from-white/95 via-slate-50/90 to-blue-50/80 backdrop-blur-sm border border-gray-100/50 rounded-xl shadow-lg hover:border-blue-100/50"
+      className="transform transition-all duration-300 hover:scale-[1.02] hover:shadow-2xl bg-gradient-to-br from-white/95 via-slate-50/90 to-blue-50/80 dark:from-gray-900/90 dark:via-gray-900/80 dark:to-slate-800/70 backdrop-blur-sm border border-gray-100/50 dark:border-gray-800 rounded-xl shadow-lg hover:border-blue-100/50 dark:hover:border-gray-700"
     >
       <div className="space-y-6">
         <div className="relative">
           <Progress 
             value={percentage} 
-            className="w-full h-3 bg-gray-100/50 rounded-full overflow-hidden"
+            className="w-full h-3 bg-gray-100/50 dark:bg-gray-800 rounded-full overflow-hidden"
           />
-          <span className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-sm font-medium bg-white/90 px-3 py-1.5 rounded-full shadow-sm backdrop-blur-sm border border-gray-100/50">
+          <span className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-sm font-medium bg-white/90 dark:bg-gray-900/80 px-3 py-1.5 rounded-full shadow-sm backdrop-blur-sm border border-gray-100/50 dark:border-gray-800">
             {Math.round(percentage)}%
           </span>
         </div>
@@ -118,12 +118,12 @@ export const SavingsGoal = ({ allFinancialRecords, investmentPlan, profile, plan
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div className="space-y-4">
             <div>
-              <span className="block text-xl font-semibold bg-gradient-to-r from-blue-600 via-indigo-600 to-slate-700 bg-clip-text text-transparent drop-shadow-sm">
+              <span className="block text-xl font-semibold bg-gradient-to-r from-blue-600 via-indigo-600 to-slate-700 dark:from-blue-400 dark:via-indigo-400 dark:to-slate-300 bg-clip-text text-transparent drop-shadow-sm">
                 {t('savingsGoal.currentValue', { 
                   value: formatCurrency(currentInvestment, investmentPlan?.currency as CurrencyCode)
                 })}
               </span>
-              <span className="text-gray-500 flex items-center gap-1.5 mt-1">
+              <span className="text-gray-500 dark:text-gray-300 flex items-center gap-1.5 mt-1">
                 <ArrowUpRight className="h-4 w-4" />
                 {t('savingsGoal.returnRate', { value: returnRate })}
               </span>
@@ -179,49 +179,49 @@ export const SavingsGoal = ({ allFinancialRecords, investmentPlan, profile, plan
         </div>
 
         <div className="space-y-4">
-          <div className="bg-white/50 rounded-lg p-3 transition-all duration-200 hover:bg-white/80 hover:shadow-md">
+          <div className="bg-white/50 dark:bg-gray-900/40 rounded-lg p-3 transition-all duration-200 hover:bg-white/80 dark:hover:bg-gray-900/60 hover:shadow-md">
             <div className="flex flex-col">
               <div className="flex justify-between items-center mb-1">
-                <h3 className="text-xs font-medium text-gray-600">{t('savingsGoal.goal.goalPresentValue')}</h3>
-                <p className="text-sm font-semibold text-blue-700">
+                <h3 className="text-xs font-medium text-gray-600 dark:text-gray-300">{t('savingsGoal.goal.goalPresentValue')}</h3>
+                <p className="text-sm font-semibold text-blue-700 dark:text-blue-400">
                   {formatCurrency(presentFutureValue, investmentPlan?.currency as CurrencyCode)}
                 </p>
               </div>
               <div className="flex justify-between items-center">
-                <span className="text-xs text-gray-500">{t('savingsGoal.goal.goalFutureValue')}</span>
-                <p className="text-xs font-medium text-gray-600">
+                <span className="text-xs text-gray-500 dark:text-gray-400">{t('savingsGoal.goal.goalFutureValue')}</span>
+                <p className="text-xs font-medium text-gray-600 dark:text-gray-300">
                   {formatCurrency(investmentGoal, investmentPlan?.currency as CurrencyCode)}
                 </p>
               </div>
             </div>
           </div>
-          <div className="bg-white/50 rounded-lg p-3 transition-all duration-200 hover:bg-white/80 hover:shadow-md">
+          <div className="bg-white/50 dark:bg-gray-900/40 rounded-lg p-3 transition-all duration-200 hover:bg-white/80 dark:hover:bg-gray-900/60 hover:shadow-md">
             <div className="flex flex-col">
               <div className="flex justify-between items-center mb-1">
-                <h3 className="text-xs font-medium text-gray-600">{t('savingsGoal.goal.planned')}</h3>
-                <p className="text-sm font-semibold text-blue-700">
+                <h3 className="text-xs font-medium text-gray-600 dark:text-gray-300">{t('savingsGoal.goal.planned')}</h3>
+                <p className="text-sm font-semibold text-blue-700 dark:text-blue-400">
                   {formatCurrency(planProgressData?.plannedPresentValue ?? 0, investmentPlan?.currency as CurrencyCode)}
                 </p>
               </div>
               <div className="flex justify-between items-center">
-                <span className="text-xs text-gray-500">{t('savingsGoal.goal.plannedFutureValue')}</span>
-                <p className="text-xs font-medium text-gray-600">
+                <span className="text-xs text-gray-500 dark:text-gray-400">{t('savingsGoal.goal.plannedFutureValue')}</span>
+                <p className="text-xs font-medium text-gray-600 dark:text-gray-300">
                   {formatCurrency(planProgressData?.plannedFuturePresentValue ?? 0, investmentPlan?.currency as CurrencyCode)}
                 </p>
               </div>
             </div>
           </div>
-          <div className="bg-white/50 rounded-lg p-3 transition-all duration-200 hover:bg-white/80 hover:shadow-md">
+          <div className="bg-white/50 dark:bg-gray-900/40 rounded-lg p-3 transition-all duration-200 hover:bg-white/80 dark:hover:bg-gray-900/60 hover:shadow-md">
             <div className="flex flex-col">
               <div className="flex justify-between items-center mb-1">
-                <h3 className="text-xs font-medium text-gray-600">{t('savingsGoal.goal.projected')}</h3>
-                <p className="text-sm font-semibold text-blue-700">
+                <h3 className="text-xs font-medium text-gray-600 dark:text-gray-300">{t('savingsGoal.goal.projected')}</h3>
+                <p className="text-sm font-semibold text-blue-700 dark:text-blue-400">
                   {formatCurrency(planProgressData?.projectedPresentValue ?? 0, investmentPlan?.currency as CurrencyCode)}
                 </p>
               </div>
               <div className="flex justify-between items-center">
-                <span className="text-xs text-gray-500">{t('savingsGoal.goal.projectedFutureValue')}</span>
-                <p className="text-xs font-medium text-gray-600">
+                <span className="text-xs text-gray-500 dark:text-gray-400">{t('savingsGoal.goal.projectedFutureValue')}</span>
+                <p className="text-xs font-medium text-gray-600 dark:text-gray-300">
                   {formatCurrency(planProgressData?.projectedFuturePresentValue ?? 0, investmentPlan?.currency as CurrencyCode)}
                 </p>
               </div>

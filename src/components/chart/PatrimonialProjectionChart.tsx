@@ -11,7 +11,7 @@ import { scaleLinear, scaleTime } from "@visx/scale"
 import { Tooltip, useTooltip, defaultStyles } from "@visx/tooltip"
 import { localPoint } from "@visx/event"
 import { bisector } from "d3-array"
-import { useMemo, useCallback, useState } from "react"
+import { useMemo, useCallback, useState, useEffect } from "react"
 import { formatCurrency } from "@/utils/currency"
 import { Target, Home, Car, GraduationCap, Heart, Briefcase, Users, Plane, Monitor, Gamepad, PiggyBank, Layers } from "lucide-react"
 import { ChartPointDialog } from "@/components/chart/ChartPointDialog"
@@ -356,8 +356,21 @@ export default function PatrimonialProjectionChart({
     setShowAddModal(true)
   }
 
+  const [isDark, setIsDark] = useState<boolean>(typeof document !== 'undefined' ? document.documentElement.classList.contains('dark') : false)
+  // Listen for theme changes
+  useEffect(() => {
+    const handler = () => setIsDark(document.documentElement.classList.contains('dark'))
+    window.addEventListener('themechange', handler)
+    return () => window.removeEventListener('themechange', handler)
+  }, [])
+
+  const gridColor = isDark ? 'rgba(255,255,255,0.15)' : 'rgba(0,0,0,0.05)'
+  const axisStroke = isDark ? '#475569' : '#e5e7eb'
+  const axisLabel = isDark ? '#e5e7eb' : '#6b7280'
+  const bgColor = isDark ? '#0b1020' : 'white'
+
   return (
-    <div className="relative bg-white w-full">
+    <div className="relative w-full" style={{ backgroundColor: 'transparent' }}>
       <svg width="100%" height={height} viewBox={`0 0 ${chartTotalWidth} ${chartTotalHeight}`} preserveAspectRatio="xMidYMid meet">
         <defs>
           <linearGradient id="blueGradient" x1="0%" y1="0%" x2="0%" y2="100%">
@@ -370,12 +383,12 @@ export default function PatrimonialProjectionChart({
           </linearGradient>
         </defs>
 
-        <rect width={width} height={height} fill="white" />
+        <rect width={width} height={height} fill={bgColor} />
 
         {/* Área principal do gráfico */}
         <Group left={margin.left} top={margin.top}>
-          <GridRows scale={valueScale} width={innerWidth} strokeDasharray="1,3" stroke="rgba(0,0,0,0.05)" />
-          <GridColumns scale={dateScale} height={innerHeight} strokeDasharray="1,3" stroke="rgba(0,0,0,0.05)" />
+          <GridRows scale={valueScale} width={innerWidth} strokeDasharray="1,3" stroke={gridColor} />
+          <GridColumns scale={dateScale} height={innerHeight} strokeDasharray="1,3" stroke={gridColor} />
 
           {/* Linha dos valores reais/projetados - azul gradiente, curva única */}
           {/* Linha azul real (sólida, escura) */}
@@ -464,11 +477,11 @@ export default function PatrimonialProjectionChart({
               }
               return ageLabel
             }}
-            stroke="#e5e7eb"
-            tickStroke="#e5e7eb"
+            stroke={axisStroke}
+            tickStroke={axisStroke}
             label={t('expenseChart.years')}
             tickLabelProps={{
-              fill: "#6b7280",
+              fill: axisLabel,
               fontSize: 12,
               textAnchor: "middle",
             }}
@@ -476,8 +489,8 @@ export default function PatrimonialProjectionChart({
 
           <AxisLeft
             scale={valueScale}
-            stroke="#e5e7eb"
-            tickStroke="#e5e7eb"
+            stroke={axisStroke}
+            tickStroke={axisStroke}
             tickFormat={(value) =>
               new Intl.NumberFormat('pt-BR', {
                 style: 'currency',
@@ -487,7 +500,7 @@ export default function PatrimonialProjectionChart({
               }).format(Number(value))
             }
             tickLabelProps={{
-              fill: "#6b7280",
+              fill: axisLabel,
               fontSize: 12,
               textAnchor: "end",
               dx: "-0.25em",
@@ -601,11 +614,11 @@ export default function PatrimonialProjectionChart({
       <div className="flex items-center justify-center gap-8 mt-4 pb-4">
         <div className="flex items-center gap-2">
           <div className="w-6 h-0.5 bg-blue-500"></div>
-          <span className="text-sm text-gray-600">Evolução Real</span>
+          <span className="text-sm text-gray-600 dark:text-gray-300">Evolução Real</span>
         </div>
         <div className="flex items-center gap-2">
           <div className="w-6 h-0.5 bg-orange-500" style={{ borderTop: "2px dashed #f97316" }}></div>
-          <span className="text-sm text-gray-600">Projeção Financeira</span>
+          <span className="text-sm text-gray-600 dark:text-gray-300">Projeção Financeira</span>
         </div>
       </div>
 
@@ -615,8 +628,8 @@ export default function PatrimonialProjectionChart({
           top={tooltipTop}
           left={tooltipLeft}
           style={{
-            backgroundColor: 'white',
-            border: '1px solid #e5e7eb',
+            backgroundColor: isDark ? '#111827' : 'white',
+            border: isDark ? '1px solid #374151' : '1px solid #e5e7eb',
             borderRadius: '0.75rem',
             boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1)',
             padding: '0.5rem 0.75rem',
@@ -626,7 +639,7 @@ export default function PatrimonialProjectionChart({
           }}
         >
           <div className="mb-2">
-            <span className="text-gray-900 font-semibold text-base">
+            <span className="text-gray-900 dark:text-gray-100 font-semibold text-base">
               {formatDate(tooltipData.date)}
               {birthDate && tooltipData.date && (() => {
                 const birth = new Date(birthDate)
@@ -642,9 +655,9 @@ export default function PatrimonialProjectionChart({
             <div className="flex items-center gap-2 mb-1">
               <div className="w-3 h-3 rounded-full" style={{ background: 'linear-gradient(to right, #3b82f6, #60a5fa)' }} />
               <div className="flex flex-col">
-                <span className="text-gray-600 text-xs font-medium">{t('expenseChart.actualValue')}</span>
-                <span className={`text-sm font-semibold ${tooltipData.actualValue >= 0 ? 'text-green-600' : 'text-red-600'}`}>{formatCurrency(tooltipData.actualValue, investmentPlan?.currency as CurrencyCode)}</span>
-                <span className="text-xs text-gray-500">{t('expenseChart.projectedLifetimeIncome')}:{t('expenseChart.lifetimeIncome')}: {formatCurrency((tooltipData.actualValue * (investmentPlan.expected_return/100))/12, investmentPlan?.currency as CurrencyCode)}/{t('common.perMonth')}</span>
+                <span className="text-gray-600 dark:text-gray-300 text-xs font-medium">{t('expenseChart.actualValue')}</span>
+                <span className={`text-sm font-semibold ${tooltipData.actualValue >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>{formatCurrency(tooltipData.actualValue, investmentPlan?.currency as CurrencyCode)}</span>
+                <span className="text-xs text-gray-500 dark:text-gray-400">{t('expenseChart.projectedLifetimeIncome')}:{t('expenseChart.lifetimeIncome')}: {formatCurrency((tooltipData.actualValue * (investmentPlan.expected_return/100))/12, investmentPlan?.currency as CurrencyCode)}/{t('common.perMonth')}</span>
               </div>
             </div>
           )}
@@ -652,9 +665,9 @@ export default function PatrimonialProjectionChart({
             <div className="flex items-center gap-2 mb-1">
               <div className="w-3 h-3 rounded-full" style={{ background: 'linear-gradient(to right, #f97316, #fb923c)' }} />
               <div className="flex flex-col">
-                <span className="text-gray-600 text-xs font-medium">{t('expenseChart.projectedValue')}</span>
-                <span className={`text-sm font-semibold ${tooltipData.projectedValue >= 0 ? 'text-green-600' : 'text-red-600'}`}>{formatCurrency(tooltipData.projectedValue, investmentPlan?.currency as CurrencyCode)}</span>
-                <span className="text-xs text-gray-500">{t('expenseChart.plannedLifetimeIncome')}: {formatCurrency((tooltipData.projectedValue * (investmentPlan.expected_return/100))/12, investmentPlan?.currency as CurrencyCode)}/{t('common.perMonth')}</span>
+                <span className="text-gray-600 dark:text-gray-300 text-xs font-medium">{t('expenseChart.projectedValue')}</span>
+                <span className={`text-sm font-semibold ${tooltipData.projectedValue >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>{formatCurrency(tooltipData.projectedValue, investmentPlan?.currency as CurrencyCode)}</span>
+                <span className="text-xs text-gray-500 dark:text-gray-400">{t('expenseChart.plannedLifetimeIncome')}: {formatCurrency((tooltipData.projectedValue * (investmentPlan.expected_return/100))/12, investmentPlan?.currency as CurrencyCode)}/{t('common.perMonth')}</span>
               </div>
             </div>
           )}

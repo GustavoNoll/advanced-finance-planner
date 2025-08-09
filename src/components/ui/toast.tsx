@@ -27,10 +27,10 @@ const toastVariants = cva(
   {
     variants: {
       variant: {
-        default: "border border-gray-200 bg-white text-gray-900 shadow-sm hover:shadow-md transition-shadow duration-200",
+        default: "border border-gray-200 bg-white text-gray-900 shadow-sm hover:shadow-md transition-shadow duration-200 dark:border-gray-800 dark:bg-gray-900 dark:text-gray-100",
         destructive:
-          "border-red-500 bg-red-50 text-red-900",
-        success: "border-green-500 bg-green-50 text-green-900",
+          "border-red-500 bg-red-50 text-red-900 dark:border-red-600 dark:bg-red-950 dark:text-red-200",
+        success: "border-green-500 bg-green-50 text-green-900 dark:border-green-600 dark:bg-green-950 dark:text-green-200",
       },
     },
     defaultVariants: {

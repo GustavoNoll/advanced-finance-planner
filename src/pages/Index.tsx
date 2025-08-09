@@ -155,8 +155,8 @@ const Index = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-blue-50/50">
-      <header className="bg-white/95 backdrop-blur-md border-b sticky top-0 z-50 shadow-lg">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-blue-50/50 dark:from-slate-900 dark:via-gray-950 dark:to-slate-900/50">
+      <header className="bg-white/95 dark:bg-gray-900/80 backdrop-blur-md border-b dark:border-gray-800 sticky top-0 z-50 shadow-lg">
         <div className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
@@ -164,25 +164,25 @@ const Index = () => {
                 <Button 
                   variant="ghost" 
                   onClick={() => navigate('/broker-dashboard')}
-                  className="text-gray-600 hover:text-blue-600 transition-colors"
+                  className="text-gray-600 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
                 >
                   <ArrowLeft className="h-4 w-4" />
                 </Button>
               )}
               <Logo variant="minimal" className="h-6" />
               {clientProfile && (
-                <p className="text-sm text-gray-700 font-medium hidden sm:block">{clientProfile.name}</p>
+                <p className="text-sm text-gray-700 dark:text-gray-300 font-medium hidden sm:block">{clientProfile.name}</p>
               )}
             </div>
 
             <div className="flex items-center gap-4">
-              <div className="flex space-x-1 bg-gray-100 p-1 rounded-lg">
+              <div className="flex space-x-1 bg-gray-100 dark:bg-gray-800 p-1 rounded-lg">
                 <Button
                   variant="ghost"
                   className={`px-3 py-1 text-sm font-medium rounded-md ${
                     activeView === 'policies'
-                      ? 'text-blue-600 bg-white shadow-sm'
-                      : 'text-gray-500 hover:text-gray-700'
+                      ? 'text-blue-600 dark:text-blue-400 bg-white dark:bg-gray-900 shadow-sm'
+                      : 'text-gray-500 dark:text-gray-300 hover:text-gray-700 dark:hover:text-gray-100'
                   }`}
                   onClick={() => {
                     setActiveView('policies');
@@ -194,8 +194,8 @@ const Index = () => {
                   variant="ghost"
                   className={`px-3 py-1 text-sm font-medium rounded-md ${
                     activeView === 'finances'
-                      ? 'text-blue-600 bg-white shadow-sm'
-                      : 'text-gray-500 hover:text-gray-700'
+                      ? 'text-blue-600 dark:text-blue-400 bg-white dark:bg-gray-900 shadow-sm'
+                      : 'text-gray-500 dark:text-gray-300 hover:text-gray-700 dark:hover:text-gray-100'
                   }`}
                   onClick={() => {
                     setActiveView('finances');
@@ -212,7 +212,7 @@ const Index = () => {
                   variant="ghost" 
                   size="sm"
                   onClick={handleShareClient}
-                  className="flex items-center gap-1 text-gray-600 hover:text-blue-600 transition-colors"
+                  className="flex items-center gap-1 text-gray-600 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
                 >
                   <Share2 className="h-4 w-4" />
                   <span className="hidden sm:inline">{t('brokerDashboard.shareWithClient')}</span>
@@ -222,7 +222,7 @@ const Index = () => {
                 variant="ghost" 
                 size="sm"
                 onClick={() => navigate(`/client-profile/${clientId}`)}
-                className="flex items-center gap-1 text-gray-600 hover:text-blue-600 transition-colors"
+                className="flex items-center gap-1 text-gray-600 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
               >
                 <Key className="h-4 w-4" />
                 <span className="hidden sm:inline">{t('clientProfile.buttons.changePassword')}</span>
@@ -231,7 +231,7 @@ const Index = () => {
                 variant="ghost" 
                 size="sm"
                 onClick={handleLogout}
-                className="text-gray-600 hover:text-red-600 transition-colors"
+                className="text-gray-600 dark:text-gray-300 hover:text-red-600 dark:hover:text-red-500 transition-colors"
               >
                 <LogOut className="h-4 w-4" />
               </Button>

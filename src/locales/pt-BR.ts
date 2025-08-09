@@ -423,6 +423,11 @@ export const ptBR = {
     minimize: 'Minimizar',
     maximize: 'Maximizar',
     save_changes: 'Salvar alterações',
+    theme: {
+      light: 'Claro',
+      dark: 'Escuro',
+      toggle: 'Alternar tema'
+    }
   },
   createClient: {
     title: "Criar Novo Cliente",
@@ -1045,6 +1050,7 @@ export const ptBR = {
       }
     },
     children: {
+      empty: 'Nenhum filho cadastrado',
       title: 'Filhos',
       add: 'Adicionar Filho',
       name: {
