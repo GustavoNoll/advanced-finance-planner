@@ -14,7 +14,6 @@ import { CreateClient } from "./pages/CreateClient";
 import { InvestmentPlanShow } from "./pages/InvestmentPlan";
 import FinancialRecords from "@/pages/FinancialRecords";
 import ClientProfile from "@/pages/ClientProfile";
-import EditFinancialRecord from "@/pages/EditFinancialRecord";
 import FinancialGoals from "@/pages/FinancialGoals";
 import Events from "@/pages/Events";
 import { LoadingScreen } from "@/components/ui/loading-screen";

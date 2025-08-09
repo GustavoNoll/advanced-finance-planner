@@ -1,10 +1,12 @@
 import { useEffect, useState } from 'react'
-import { Switch } from '@/components/ui/switch'
-import { Label } from '@/components/ui/label'
+import { useTranslation } from 'react-i18next'
+import { Sun, Moon } from 'lucide-react'
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 import { cn } from '@/lib/utils'
 
 export function ThemeToggle() {
   const [isDark, setIsDark] = useState(false)
+  const { t } = useTranslation()
 
   useEffect(() => {
     const root = document.documentElement
@@ -23,13 +25,47 @@ export function ThemeToggle() {
   }
 
   return (
-    <div
-      className={cn(
-        'fixed z-50 bottom-4 right-4 inline-flex items-center gap-2 rounded-full bg-card/80 backdrop-blur border px-3 py-2 shadow'
-      )}
+    <div className={cn('fixed bottom-4 right-4 z-50')}
     >
-      <Label htmlFor="theme-toggle" className="text-sm">Dark</Label>
-      <Switch id="theme-toggle" checked={isDark} onCheckedChange={onToggle} />
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <button
+            type="button"
+            aria-label={t('common.theme.toggle', { defaultValue: 'Alternar tema' })}
+            onClick={() => onToggle(!isDark)}
+            className={cn(
+              'group inline-flex items-center gap-2 rounded-full border bg-card/80 backdrop-blur px-2 py-1 shadow transition-all',
+              'hover:px-3'
+            )}
+          >
+            <span
+              className={cn(
+                'relative flex h-8 w-8 items-center justify-center rounded-full bg-muted text-foreground transition-colors'
+              )}
+            >
+              {/* Icons swap */}
+              {isDark ? (
+                <Moon className="h-4 w-4" />
+              ) : (
+                <Sun className="h-4 w-4" />
+              )}
+            </span>
+            <span
+              className={cn(
+                'max-w-0 overflow-hidden whitespace-nowrap text-sm opacity-0 transition-all duration-200',
+                'group-hover:max-w-[120px] group-hover:opacity-100'
+              )}
+            >
+              {isDark
+                ? t('common.theme.dark', { defaultValue: 'Escuro' })
+                : t('common.theme.light', { defaultValue: 'Claro' })}
+            </span>
+          </button>
+        </TooltipTrigger>
+        <TooltipContent sideOffset={6}>
+          {t('common.theme.toggle', { defaultValue: 'Alternar tema' })}
+        </TooltipContent>
+      </Tooltip>
     </div>
   )
 }
