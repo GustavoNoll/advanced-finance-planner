@@ -12,10 +12,10 @@ interface DashboardCardProps {
 
 export const DashboardCard = ({ title, children, className, icon: Icon }: DashboardCardProps) => {
   return (
-    <Card className={cn("investment-card", className)}>
+    <Card className={cn("investment-card bg-card text-card-foreground border border-border", className)}>
       <CardHeader>
-        <CardTitle className="text-lg font-semibold flex items-center gap-2">
-          {Icon && <Icon className="w-5 h-5 text-blue-500" />}
+        <CardTitle className="text-lg font-semibold flex items-center gap-2 text-foreground">
+          {Icon && <Icon className="w-5 h-5 text-blue-600 dark:text-blue-400" />}
           {title}
         </CardTitle>
       </CardHeader>

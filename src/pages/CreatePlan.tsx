@@ -50,7 +50,6 @@ export const CreatePlan = () => {
   useEffect(() => {
     if (isCalculationReady(formData) && birthDate) {
       setCalculations(calculateFutureValues(formData, birthDate));
-      console.log('Calculations:', calculations);
     }
   }, [formData, birthDate]);
 
@@ -84,7 +83,7 @@ export const CreatePlan = () => {
     };
 
     checkExistingPlan();
-  }, [clientId, toast, loading]);
+  }, [clientId, toast, loading, navigate]);
 
   useEffect(() => {
     const fetchProfileAndSetDate = async () => {
@@ -233,10 +232,10 @@ export const CreatePlan = () => {
   const prefix = getCurrencySymbol(formData.currency as CurrencyCode);
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8">
+    <div className="min-h-screen bg-background py-8">
       <div className="max-w-3xl mx-auto px-4">
-        <Card>
-          <CardHeader>
+        <Card className="bg-card text-card-foreground border border-border">
+          <CardHeader className="border-b border-border">
             <div className="flex items-center space-x-4">
               <Link to="/broker-dashboard">
                 <Button variant="ghost" size="icon">
@@ -250,7 +249,7 @@ export const CreatePlan = () => {
             <form onSubmit={handleSubmit} className="space-y-8">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="space-y-2">
-                  <label className="text-sm font-medium text-gray-700">
+                  <label className="text-sm font-medium text-muted-foreground">
                     {t('investmentPlan.form.planInitialDate')}
                   </label>
                   <Input
@@ -265,7 +264,7 @@ export const CreatePlan = () => {
                 </div>
 
                 <div className="space-y-2">
-                  <label className="text-sm font-medium text-gray-700">
+                  <label className="text-sm font-medium text-muted-foreground">
                     {t('investmentPlan.form.planType')}
                   </label>
                   <select
@@ -282,7 +281,7 @@ export const CreatePlan = () => {
                 </div>
 
                 <div className="space-y-2">
-                  <label className="text-sm font-medium text-gray-700">
+                  <label className="text-sm font-medium text-muted-foreground">
                     {t('investmentPlan.form.initialAmount')}
                   </label>
                   <CurrencyInput
@@ -305,7 +304,7 @@ export const CreatePlan = () => {
                 </div>
 
                 <div className="space-y-2">
-                  <label className="text-sm font-medium text-gray-700">
+                  <label className="text-sm font-medium text-muted-foreground">
                     {t('investmentPlan.form.finalAge')}
                   </label>
                   <div className="flex gap-2">
@@ -393,7 +392,7 @@ export const CreatePlan = () => {
                 </div>
 
                 <div className="space-y-2">
-                  <label className="text-sm font-medium text-gray-700">
+                  <label className="text-sm font-medium text-muted-foreground">
                     {t('investmentPlan.form.monthlyDeposit')}
                   </label>
                   <CurrencyInput
@@ -416,7 +415,7 @@ export const CreatePlan = () => {
                 </div>
 
                 <div className="space-y-2">
-                  <label className="text-sm font-medium text-gray-700">
+                  <label className="text-sm font-medium text-muted-foreground">
                     {t('investmentPlan.form.desiredIncome')}
                   </label>
                   <CurrencyInput
@@ -439,7 +438,7 @@ export const CreatePlan = () => {
                 </div>
 
                 <div className="space-y-2">
-                  <label className="text-sm font-medium text-gray-700">
+                  <label className="text-sm font-medium text-muted-foreground">
                     {t('investmentPlan.form.riskProfile')}
                   </label>
                   <select
@@ -462,7 +461,7 @@ export const CreatePlan = () => {
                 </div>
 
                 <div className="space-y-2">
-                  <label className="text-sm font-medium text-gray-700">
+                  <label className="text-sm font-medium text-muted-foreground">
                     {t('investmentPlan.form.inflationRate')}
                   </label>
                   <Input
@@ -479,12 +478,12 @@ export const CreatePlan = () => {
               </div>
 
               <div className="space-y-2">
-                <label className="text-sm font-medium">
+                <label className="text-sm font-medium text-foreground">
                   {t('investmentPlan.form.advancedSettings')}
                 </label>
                 <div className="space-y-4">
                   <div className="space-y-2">
-                    <label className="text-sm font-medium text-gray-700">
+                    <label className="text-sm font-medium text-muted-foreground">
                       {t('investmentPlan.form.currency')}
                     </label>
                     <select
@@ -507,9 +506,9 @@ export const CreatePlan = () => {
                       name="adjust_contribution_for_inflation"
                       checked={formData.adjustContributionForInflation}
                       onChange={handleChange}
-                      className="h-4 w-4 rounded border-gray-300"
+                      className="h-4 w-4 rounded border-input text-primary focus:ring-primary"
                     />
-                    <label htmlFor="adjustContributionForInflation" className="text-sm font-medium text-gray-700">
+                    <label htmlFor="adjustContributionForInflation" className="text-sm font-medium text-muted-foreground">
                       {t('investmentPlan.form.adjustContributionForInflation')}
                     </label>
                   </div>
@@ -521,9 +520,9 @@ export const CreatePlan = () => {
                       name="adjust_income_for_inflation"
                       checked={formData.adjustIncomeForInflation}
                       onChange={handleChange}
-                      className="h-4 w-4 rounded border-gray-300"
+                      className="h-4 w-4 rounded border-input text-primary focus:ring-primary"
                     />
-                    <label htmlFor="adjust_income_for_inflation" className="text-sm font-medium text-gray-700">
+                    <label htmlFor="adjust_income_for_inflation" className="text-sm font-medium text-muted-foreground">
                       {t('investmentPlan.form.adjustIncomeForInflation')}
                     </label>
                   </div>
@@ -532,7 +531,7 @@ export const CreatePlan = () => {
 
               <Button 
                 type="submit" 
-                className="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-md transition-colors duration-200" 
+                className="w-full" 
                 disabled={loading}
               >
                 {loading ? t('common.saving') : t('common.save')}
@@ -540,49 +539,49 @@ export const CreatePlan = () => {
             </form>
           </CardContent>
           
-          <div className="mt-8 p-4 bg-gray-50 rounded-lg">
-            <h3 className="text-lg font-semibold mb-4">
+          <div className="mt-8 p-4 bg-muted rounded-lg border border-border">
+            <h3 className="text-lg font-semibold mb-4 text-foreground">
               {t('investmentPlan.create.calculations.title')}
             </h3>
             {isCalculationReady(formData) ? (
               <div className="space-y-4">
-                <div className="flex justify-between p-3 bg-white rounded-lg border">
+                <div className="flex justify-between p-3 bg-card rounded-lg border border-border">
                   <div className="flex items-center gap-2">
-                    <span className="text-sm text-gray-600">{t('investmentPlan.create.calculations.inflationAdjustedIncome')}:</span>
+                    <span className="text-sm text-muted-foreground">{t('investmentPlan.create.calculations.inflationAdjustedIncome')}:</span>
                   </div>
                   <span className="font-medium">{formatCurrency(calculations?.inflationAdjustedIncome || 0, formData.currency)}/mês</span>
                 </div>
                 
-                <div className="flex justify-between p-3 bg-white rounded-lg border">
+                <div className="flex justify-between p-3 bg-card rounded-lg border border-border">
                   <div className="flex items-center gap-2">
-                    <span className="text-sm text-gray-600">{t('investmentPlan.create.calculations.requiredFutureValue')}:</span>
+                    <span className="text-sm text-muted-foreground">{t('investmentPlan.create.calculations.requiredFutureValue')}:</span>
                   </div>
                   <span className="font-medium">
                     {formatCurrency(calculations?.futureValue || 0, formData.currency)}
                   </span>
                 </div>
 
-                <div className="bg-white rounded-lg border overflow-hidden">
+                <div className="bg-card rounded-lg border border-border overflow-hidden">
                   <div 
-                    className="flex justify-between p-3 cursor-pointer hover:bg-gray-50"
+                    className="flex justify-between p-3 cursor-pointer hover:bg-accent"
                     onClick={() => setExpandedRow(expandedRow === 'return' ? null : 'return')}
                   >
                     <div className="flex items-center gap-2">
-                      <span className="text-sm text-gray-600">{t('investmentPlan.create.calculations.totalMonthlyReturn')}:</span>
+                      <span className="text-sm text-muted-foreground">{t('investmentPlan.create.calculations.totalMonthlyReturn')}:</span>
                     </div>
                     <span className="font-medium">{formatCurrency(calculations?.totalMonthlyReturn || 0, formData.currency)}</span>
                   </div>
                   {expandedRow === 'return' && (
-                    <div className="px-3 pb-3 space-y-2 border-t">
+                    <div className="px-3 pb-3 space-y-2 border-t border-border">
                       <div className="flex justify-between pt-3">
                         <div className="flex items-center gap-2">
-                          <span className="text-sm text-gray-600">{t('investmentPlan.create.calculations.monthlyRealReturn')}:</span>
+                          <span className="text-sm text-muted-foreground">{t('investmentPlan.create.calculations.monthlyRealReturn')}:</span>
                         </div>
                         <span className="font-medium">{formatCurrency(calculations?.realReturn || 0, formData.currency)}</span>
                       </div>
                       <div className="flex justify-between">
                         <div className="flex items-center gap-2">
-                          <span className="text-sm text-gray-600">{t('investmentPlan.create.calculations.monthlyInflationReturn')}:</span>
+                          <span className="text-sm text-muted-foreground">{t('investmentPlan.create.calculations.monthlyInflationReturn')}:</span>
                         </div>
                         <span className="font-medium">{formatCurrency(calculations?.inflationReturn || 0, formData.currency)}</span>
                       </div>
@@ -590,9 +589,9 @@ export const CreatePlan = () => {
                   )}
                 </div>
 
-                <div className="flex justify-between p-3 bg-white rounded-lg border">
+                <div className="flex justify-between p-3 bg-card rounded-lg border border-border">
                   <div className="flex items-center gap-2">
-                    <span className="text-sm text-gray-600">{t('investmentPlan.create.calculations.requiredMonthlyDeposit')}:</span>
+                    <span className="text-sm text-muted-foreground">{t('investmentPlan.create.calculations.requiredMonthlyDeposit')}:</span>
                   </div>
                   <span className="font-medium">
                     {formatCurrency(calculations?.requiredMonthlyDeposit || 0, formData.currency)}
@@ -600,7 +599,7 @@ export const CreatePlan = () => {
                 </div>
               </div>
             ) : (
-              <div className="text-center text-gray-500">
+              <div className="text-center text-muted-foreground">
                 {t('investmentPlan.create.calculations.fillRequired')}
               </div>
             )}

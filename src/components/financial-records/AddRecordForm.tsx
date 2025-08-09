@@ -229,7 +229,7 @@ export const AddRecordForm = ({ clientId, onSuccess, editingRecord, investmentPl
     <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div className="space-y-4">
-          <h3 className="text-lg font-medium text-gray-900">{t('financialRecords.form.basicInfo')}</h3>
+          <h3 className="text-lg font-medium text-foreground">{t('financialRecords.form.basicInfo')}</h3>
           
           <div className="grid grid-cols-2 gap-4">
             <FormField
@@ -237,12 +237,12 @@ export const AddRecordForm = ({ clientId, onSuccess, editingRecord, investmentPl
               name="record_month"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel className="text-sm font-medium text-gray-700">{t('financialRecords.form.month')}</FormLabel>
+                  <FormLabel className="text-sm font-medium text-muted-foreground">{t('financialRecords.form.month')}</FormLabel>
                   <select
                     {...field}
                     value={field.value}
                     onChange={e => field.onChange(Number(e.target.value))}
-                    className="w-full h-12 px-4 py-2 text-sm rounded-lg border border-gray-200 bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors appearance-none bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjQiIGhlaWdodD0iMjQiIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cGF0aCBkPSJNNiA5TDEyIDE1TDE4IDkiIHN0cm9rZT0iIzYxNjE2MSIgc3Ryb2tlLXdpZHRoPSIyIiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiLz48L3N2Zz4=')] bg-no-repeat bg-[right_1rem_center]"
+                    className="w-full h-12 px-4 py-2 text-sm rounded-lg border border-input bg-background text-foreground ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 transition-colors appearance-none dark:[color-scheme:dark] bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjQiIGhlaWdodD0iMjQiIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cGF0aCBkPSJNNiA5TDEyIDE1TDE4IDkiIHN0cm9rZT0iIzYxNjE2MSIgc3Ryb2tlLXdpZHRoPSIyIiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiLz48L3N2Zz4=')] bg-no-repeat bg-[right_1rem_center]"
                   >
                     <option value="">{t('common.select')}</option>
                     <option value="1">{t('date.months.january')}</option>
@@ -267,7 +267,7 @@ export const AddRecordForm = ({ clientId, onSuccess, editingRecord, investmentPl
               name="record_year"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel className="text-sm font-medium text-gray-700">{t('financialRecords.form.year')}</FormLabel>
+                  <FormLabel className="text-sm font-medium text-muted-foreground">{t('financialRecords.form.year')}</FormLabel>
                   <FormControl>
                     <Input 
                       type="number" 
@@ -283,7 +283,7 @@ export const AddRecordForm = ({ clientId, onSuccess, editingRecord, investmentPl
         </div>
 
         <div className="space-y-4">
-          <h3 className="text-lg font-medium text-gray-900">{t('financialRecords.form.balances')}</h3>
+          <h3 className="text-lg font-medium text-foreground">{t('financialRecords.form.balances')}</h3>
           
           <div className="grid grid-cols-2 gap-4">
             <FormField
@@ -292,11 +292,11 @@ export const AddRecordForm = ({ clientId, onSuccess, editingRecord, investmentPl
               name={'starting_balance'}
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel className="text-sm font-medium text-gray-700">{t(`financialRecords.form.startingBalance`)}</FormLabel>
+                  <FormLabel className="text-sm font-medium text-muted-foreground">{t(`financialRecords.form.startingBalance`)}</FormLabel>
                   <FormControl>
                     <CurrencyInput
                       id={'starting_balance'}
-                      className="flex h-12 w-full rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                      className="flex h-12 w-full rounded-lg border border-input bg-background text-foreground px-4 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 transition-colors dark:[color-scheme:dark]"
                       prefix={getCurrencySymbol(investmentPlan?.currency as CurrencyCode)}
                       groupSeparator="."
                       decimalSeparator=","
@@ -317,11 +317,11 @@ export const AddRecordForm = ({ clientId, onSuccess, editingRecord, investmentPl
               name={'ending_balance'}
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel className="text-sm font-medium text-gray-700">{t(`financialRecords.form.endingBalance`)}</FormLabel>
+                  <FormLabel className="text-sm font-medium text-muted-foreground">{t(`financialRecords.form.endingBalance`)}</FormLabel>
                   <FormControl>
                     <CurrencyInput
                       id={'ending_balance'}
-                      className="flex h-12 w-full rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                      className="flex h-12 w-full rounded-lg border border-input bg-background text-foreground px-4 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 transition-colors dark:[color-scheme:dark]"
                       prefix={getCurrencySymbol(investmentPlan?.currency as CurrencyCode)}
                       groupSeparator="."
                       decimalSeparator=","
@@ -341,7 +341,7 @@ export const AddRecordForm = ({ clientId, onSuccess, editingRecord, investmentPl
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div className="space-y-4">
-          <h3 className="text-lg font-medium text-gray-900">{t('financialRecords.form.contributions')}</h3>
+          <h3 className="text-lg font-medium text-foreground">{t('financialRecords.form.contributions')}</h3>
           
           <div className="grid grid-cols-2 gap-4">
             <FormField
@@ -349,11 +349,11 @@ export const AddRecordForm = ({ clientId, onSuccess, editingRecord, investmentPl
               name="monthly_contribution"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel className="text-sm font-medium text-gray-700">{t('financialRecords.form.monthlyContribution')}</FormLabel>
+                  <FormLabel className="text-sm font-medium text-muted-foreground">{t('financialRecords.form.monthlyContribution')}</FormLabel>
                   <FormControl>
                     <CurrencyInput
                       id="monthly_contribution"
-                      className="flex h-12 w-full rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                      className="flex h-12 w-full rounded-lg border border-input bg-background text-foreground px-4 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 transition-colors dark:[color-scheme:dark]"
                       prefix={getCurrencySymbol(investmentPlan?.currency as CurrencyCode)}
                       groupSeparator="."
                       decimalSeparator=","
@@ -373,7 +373,7 @@ export const AddRecordForm = ({ clientId, onSuccess, editingRecord, investmentPl
               name="target_rentability"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel className="text-sm font-medium text-gray-700">{t('financialRecords.form.targetRentability')}</FormLabel>
+                  <FormLabel className="text-sm font-medium text-muted-foreground">{t('financialRecords.form.targetRentability')}</FormLabel>
                   <FormControl>
                     <Input 
                       type="number" 
@@ -384,7 +384,7 @@ export const AddRecordForm = ({ clientId, onSuccess, editingRecord, investmentPl
                     />
                   </FormControl>
                   {ipcaDate && (
-                    <p className="text-xs text-gray-500 mt-1">
+                    <p className="text-xs text-muted-foreground mt-1">
                       IPCA referente a {ipcaDate}
                     </p>
                   )}
@@ -395,7 +395,7 @@ export const AddRecordForm = ({ clientId, onSuccess, editingRecord, investmentPl
         </div>
 
         <div className="space-y-4">
-          <h3 className="text-lg font-medium text-gray-900">{t('financialRecords.form.returns')}</h3>
+          <h3 className="text-lg font-medium text-foreground">{t('financialRecords.form.returns')}</h3>
           
           <div className="grid grid-cols-2 gap-4">
             <FormField
@@ -403,11 +403,11 @@ export const AddRecordForm = ({ clientId, onSuccess, editingRecord, investmentPl
               name="monthly_return"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel className="text-sm font-medium text-gray-700">{t('financialRecords.form.monthlyReturn')}</FormLabel>
+                  <FormLabel className="text-sm font-medium text-muted-foreground">{t('financialRecords.form.monthlyReturn')}</FormLabel>
                   <FormControl>
                     <CurrencyInput
                       id="monthly_return"
-                      className="flex h-12 w-full rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                      className="flex h-12 w-full rounded-lg border border-input bg-background text-foreground px-4 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 transition-colors dark:[color-scheme:dark]"
                       prefix={getCurrencySymbol(investmentPlan?.currency as CurrencyCode)}
                       groupSeparator="."
                       decimalSeparator=","
@@ -427,7 +427,7 @@ export const AddRecordForm = ({ clientId, onSuccess, editingRecord, investmentPl
               name="monthly_return_rate"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel className="text-sm font-medium text-gray-700">{t('financialRecords.form.monthlyReturnRate')}</FormLabel>
+                  <FormLabel className="text-sm font-medium text-muted-foreground">{t('financialRecords.form.monthlyReturnRate')}</FormLabel>
                   <FormControl>
                     <Input 
                       type="number" 
@@ -446,7 +446,7 @@ export const AddRecordForm = ({ clientId, onSuccess, editingRecord, investmentPl
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div className="space-y-4">
-          <h3 className="text-lg font-medium text-gray-900">{t('financialRecords.form.eventsBalance')}</h3>
+          <h3 className="text-lg font-medium text-foreground">{t('financialRecords.form.eventsBalance')}</h3>
           <FormField
             control={form.control}
             name="events_balance"
@@ -455,7 +455,7 @@ export const AddRecordForm = ({ clientId, onSuccess, editingRecord, investmentPl
                 <FormControl>
                   <CurrencyInput
                     id="events_balance"
-                    className="flex h-12 w-full rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                    className="flex h-12 w-full rounded-lg border border-input bg-background text-foreground px-4 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 transition-colors dark:[color-scheme:dark]"
                     prefix={getCurrencySymbol(investmentPlan?.currency as CurrencyCode)}
                     groupSeparator="."
                     decimalSeparator=","
@@ -474,13 +474,13 @@ export const AddRecordForm = ({ clientId, onSuccess, editingRecord, investmentPl
         </div>
       </div>
 
-      <div className="flex gap-3 justify-end pt-4 border-t border-gray-100">
+      <div className="flex gap-3 justify-end pt-4 border-t border-border">
         <Button 
           type="button" 
           variant="outline"
           onClick={onSuccess}
           disabled={isSaving}
-          className="px-6 py-2 text-gray-700 hover:bg-gray-50"
+          className="px-6 py-2 text-foreground hover:bg-muted"
         >
           {t('common.cancel')}
         </Button>
@@ -496,10 +496,10 @@ export const AddRecordForm = ({ clientId, onSuccess, editingRecord, investmentPl
   );
 
   return (
-    <div className={editingRecord ? "mt-4 border-t pt-4" : ""}>
+    <div className={editingRecord ? "mt-4 border-t border-border pt-4" : ""}>
       <Form {...form}>
         {!editingRecord ? (
-          <Card className="p-6 bg-white rounded-lg shadow-sm border border-gray-100">
+          <Card className="p-6 bg-card rounded-lg shadow-sm border border-border">
             {renderFormFields()}
           </Card>
         ) : (

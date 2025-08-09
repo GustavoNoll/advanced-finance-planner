@@ -255,7 +255,7 @@ export const PatrimonialForm = ({
             variant="outline"
             size="sm"
             onClick={() => append()}
-            className={`bg-${color}-100 hover:bg-${color}-200`}
+            className={`bg-${color}-100 hover:bg-${color}-200 dark:bg-slate-800 dark:hover:bg-slate-700`}
           >
             <Plus className="h-4 w-4 mr-2" />
             {t(`patrimonial.form.${title}.add`)}
@@ -274,8 +274,8 @@ export const PatrimonialForm = ({
                   control={form.control}
                   name={`${basePath}.${index}.name` as FieldPath<PatrimonialFormValues>}
                   render={({ field: formField }) => (
-                    <FormItem>
-                      <FormLabel className={`text-${color}-600`}>{t(`patrimonial.form.${title}.name`)}</FormLabel>
+                        <FormItem>
+                      <FormLabel className={`text-${color}-600 dark:text-slate-300`}>{t(`patrimonial.form.${title}.name`)}</FormLabel>
                       <FormControl>
                         <Input 
                           {...formField} 
@@ -293,8 +293,8 @@ export const PatrimonialForm = ({
                   control={form.control}
                   name={`${basePath}.${index}.value` as FieldPath<PatrimonialFormValues>}
                   render={({ field: formField }) => (
-                    <FormItem>
-                      <FormLabel className={`text-${color}-600`}>{t(`patrimonial.form.${title}.value`)}</FormLabel>
+                        <FormItem>
+                      <FormLabel className={`text-${color}-600 dark:text-slate-300`}>{t(`patrimonial.form.${title}.value`)}</FormLabel>
                       <FormControl>
                         <CurrencyInput
                           value={formField.value as number}
@@ -311,7 +311,7 @@ export const PatrimonialForm = ({
 
                 {isProperty ? (
                   <div className="col-span-2">
-                    <h4 className="text-md font-medium mb-4">{t(`patrimonial.form.${title}.location`)}</h4>
+                    <h4 className="text-md font-medium mb-4 dark:text-slate-200">{t(`patrimonial.form.${title}.location`)}</h4>
                     <AddressInput
                       control={form.control}
                       setValue={form.setValue}
@@ -325,8 +325,8 @@ export const PatrimonialForm = ({
                     control={form.control}
                     name={`${basePath}.${index}.location` as FieldPath<PatrimonialFormValues>}
                     render={({ field: formField }) => (
-                      <FormItem>
-                        <FormLabel className={`text-${color}-600`}>{t(`patrimonial.form.${title}.address.name`)}</FormLabel>
+                        <FormItem>
+                      <FormLabel className={`text-${color}-600 dark:text-slate-300`}>{t(`patrimonial.form.${title}.address.name`)}</FormLabel>
                         <FormControl>
                           <Input 
                             {...formField} 
@@ -345,8 +345,8 @@ export const PatrimonialForm = ({
                   control={form.control}
                   name={`${basePath}.${index}.country` as FieldPath<PatrimonialFormValues>}
                   render={({ field: formField }) => (
-                    <FormItem>
-                      <FormLabel className={`text-${color}-600`}>{t(`patrimonial.form.${title}.country`)}</FormLabel>
+                        <FormItem>
+                      <FormLabel className={`text-${color}-600 dark:text-slate-300`}>{t(`patrimonial.form.${title}.country`)}</FormLabel>
                       <FormControl>
                         <Input 
                           {...formField} 
@@ -364,8 +364,8 @@ export const PatrimonialForm = ({
                   control={form.control}
                   name={`${basePath}.${index}.description` as FieldPath<PatrimonialFormValues>}
                   render={({ field: formField }) => (
-                    <FormItem className="col-span-2">
-                      <FormLabel className={`text-${color}-600`}>{t(`patrimonial.form.${title}.description`)}</FormLabel>
+                        <FormItem className="col-span-2">
+                      <FormLabel className={`text-${color}-600 dark:text-slate-300`}>{t(`patrimonial.form.${title}.description`)}</FormLabel>
                       <FormControl>
                         <Textarea 
                           {...formField} 
@@ -438,38 +438,38 @@ export const PatrimonialForm = ({
         </CardHeader>
         <CardContent className="space-y-8">
           {/* Investments Section */}
-          <div className="space-y-4 bg-blue-50 p-6 rounded-lg border border-blue-100">
+          <div className="space-y-4 bg-blue-50 p-6 rounded-lg border border-blue-100 dark:bg-slate-900/30 dark:border-slate-800">
             <div className="flex justify-between items-center">
-              <h2 className="text-xl font-bold text-blue-900">{t('patrimonial.form.investments.title')}</h2>
+              <h2 className="text-xl font-bold text-blue-900 dark:text-blue-300">{t('patrimonial.form.investments.title')}</h2>
             </div>
-            <p className="text-sm text-blue-700">{t('patrimonial.form.investments.description')}</p>
+            <p className="text-sm text-blue-700 dark:text-blue-300/80">{t('patrimonial.form.investments.description')}</p>
             
             {/* Properties */}
             <div className="space-y-4">
-              <h4 className="text-md font-medium text-black">{t('patrimonial.form.investments.properties.title')}</h4>
+              <h4 className="text-md font-medium text-black dark:text-slate-200">{t('patrimonial.form.investments.properties.title')}</h4>
               {(!values.investments?.properties || values.investments.properties.length === 0) ? (
                 <p className="text-sm">{t('patrimonial.form.investments.properties.empty')}</p>
               ) : (
                 values.investments.properties.map((property, index) => (
-                  <div key={index} className="grid grid-cols-1 md:grid-cols-2 gap-4 border-l-4 border-blue-500 pl-4 bg-white rounded-r-lg p-4">
+                  <div key={index} className="grid grid-cols-1 md:grid-cols-2 gap-4 border-l-4 border-blue-500 pl-4 bg-white dark:bg-slate-900 rounded-r-lg p-4">
                     <div>
-                      <p className="text-sm text-blue-600">{t('patrimonial.form.investments.properties.name')}</p>
+                      <p className="text-sm text-blue-600 dark:text-blue-300">{t('patrimonial.form.investments.properties.name')}</p>
                       <p className="font-medium">{property.name || 'Não informado'}</p>
                     </div>
                     <div>
-                      <p className="text-sm text-blue-600">{t('patrimonial.form.investments.properties.value')}</p>
+                      <p className="text-sm text-blue-600 dark:text-blue-300">{t('patrimonial.form.investments.properties.value')}</p>
                       <p className="font-medium">{formatCurrency(property.value)}</p>
                     </div>
                     <div>
-                      <p className="text-sm text-blue-600">{t('patrimonial.form.investments.properties.location')}</p>
+                      <p className="text-sm text-blue-600 dark:text-blue-300">{t('patrimonial.form.investments.properties.location')}</p>
                       <p className="font-medium">{formatAddress(property.location)}</p>
                     </div>
                     <div>
-                      <p className="text-sm text-blue-600">{t('patrimonial.form.investments.properties.country')}</p>
+                      <p className="text-sm text-blue-600 dark:text-blue-300">{t('patrimonial.form.investments.properties.country')}</p>
                       <p className="font-medium">{property.country || 'Não informado'}</p>
                     </div>
                     <div className="col-span-2">
-                      <p className="text-sm text-blue-600">{t('patrimonial.form.investments.properties.description')}</p>
+                      <p className="text-sm text-blue-600 dark:text-blue-300">{t('patrimonial.form.investments.properties.description')}</p>
                       <p className="font-medium">{property.description || 'Não informado'}</p>
                     </div>
                   </div>
@@ -481,30 +481,30 @@ export const PatrimonialForm = ({
 
             {/* Liquid Investments */}
             <div className="space-y-4">
-              <h4 className="text-md font-medium text-black">{t('patrimonial.form.investments.liquid_investments.title')}</h4>
+              <h4 className="text-md font-medium text-black dark:text-slate-200">{t('patrimonial.form.investments.liquid_investments.title')}</h4>
               {(!values.investments?.liquid_investments || values.investments.liquid_investments.length === 0) ? (
                 <p className="text-sm">{t('patrimonial.form.investments.liquid_investments.empty')}</p>
               ) : (
                 values.investments.liquid_investments.map((investment, index) => (
-                  <div key={index} className="grid grid-cols-1 md:grid-cols-2 gap-4 border-l-4 border-blue-500 pl-4 bg-white rounded-r-lg p-4">
+                  <div key={index} className="grid grid-cols-1 md:grid-cols-2 gap-4 border-l-4 border-blue-500 pl-4 bg-white dark:bg-slate-900 rounded-r-lg p-4">
                     <div>
-                      <p className="text-sm text-blue-600">{t('patrimonial.form.investments.liquid_investments.name')}</p>
+                      <p className="text-sm text-blue-600 dark:text-blue-300">{t('patrimonial.form.investments.liquid_investments.name')}</p>
                       <p className="font-medium">{investment.name || 'Não informado'}</p>
                     </div>
                     <div>
-                      <p className="text-sm text-blue-600">{t('patrimonial.form.investments.liquid_investments.value')}</p>
+                      <p className="text-sm text-blue-600 dark:text-blue-300">{t('patrimonial.form.investments.liquid_investments.value')}</p>
                       <p className="font-medium">{formatCurrency(investment.value)}</p>
                     </div>
                     <div>
-                      <p className="text-sm text-blue-600">{t('patrimonial.form.investments.liquid_investments.location')}</p>
+                      <p className="text-sm text-blue-600 dark:text-blue-300">{t('patrimonial.form.investments.liquid_investments.location')}</p>
                       <p className="font-medium">{formatAddress(investment.location)}</p>
                     </div>
                     <div>
-                      <p className="text-sm text-blue-600">{t('patrimonial.form.investments.liquid_investments.country')}</p>
+                      <p className="text-sm text-blue-600 dark:text-blue-300">{t('patrimonial.form.investments.liquid_investments.country')}</p>
                       <p className="font-medium">{investment.country || 'Não informado'}</p>
                     </div>
                     <div className="col-span-2">
-                      <p className="text-sm text-blue-600">{t('patrimonial.form.investments.liquid_investments.description')}</p>
+                      <p className="text-sm text-blue-600 dark:text-blue-300">{t('patrimonial.form.investments.liquid_investments.description')}</p>
                       <p className="font-medium">{investment.description || 'Não informado'}</p>
                     </div>
                   </div>
@@ -516,30 +516,30 @@ export const PatrimonialForm = ({
 
             {/* Participations */}
             <div className="space-y-4">
-              <h4 className="text-md font-medium text-black">{t('patrimonial.form.investments.participations.title')}</h4>
+              <h4 className="text-md font-medium text-black dark:text-slate-200">{t('patrimonial.form.investments.participations.title')}</h4>
               {(!values.investments?.participations || values.investments.participations.length === 0) ? (
                 <p className="text-sm">{t('patrimonial.form.investments.participations.empty')}</p>
               ) : (
                 values.investments.participations.map((participation, index) => (
-                  <div key={index} className="grid grid-cols-1 md:grid-cols-2 gap-4 border-l-4 border-blue-500 pl-4 bg-white rounded-r-lg p-4">
+                  <div key={index} className="grid grid-cols-1 md:grid-cols-2 gap-4 border-l-4 border-blue-500 pl-4 bg-white dark:bg-slate-900 rounded-r-lg p-4">
                     <div>
-                      <p className="text-sm text-blue-600">{t('patrimonial.form.investments.participations.name')}</p>
+                      <p className="text-sm text-blue-600 dark:text-blue-300">{t('patrimonial.form.investments.participations.name')}</p>
                       <p className="font-medium">{participation.name || 'Não informado'}</p>
                     </div>
                     <div>
-                      <p className="text-sm text-blue-600">{t('patrimonial.form.investments.participations.value')}</p>
+                      <p className="text-sm text-blue-600 dark:text-blue-300">{t('patrimonial.form.investments.participations.value')}</p>
                       <p className="font-medium">{formatCurrency(participation.value)}</p>
                     </div>
                     <div>
-                      <p className="text-sm text-blue-600">{t('patrimonial.form.investments.participations.location')}</p>
+                      <p className="text-sm text-blue-600 dark:text-blue-300">{t('patrimonial.form.investments.participations.location')}</p>
                       <p className="font-medium">{formatAddress(participation.location)}</p>
                     </div>
                     <div>
-                      <p className="text-sm text-blue-600">{t('patrimonial.form.investments.participations.country')}</p>
+                      <p className="text-sm text-blue-600 dark:text-blue-300">{t('patrimonial.form.investments.participations.country')}</p>
                       <p className="font-medium">{participation.country || 'Não informado'}</p>
                     </div>
                     <div className="col-span-2">
-                      <p className="text-sm text-blue-600">{t('patrimonial.form.investments.participations.description')}</p>
+                      <p className="text-sm text-blue-600 dark:text-blue-300">{t('patrimonial.form.investments.participations.description')}</p>
                       <p className="font-medium">{participation.description || 'Não informado'}</p>
                     </div>
                   </div>
@@ -551,30 +551,30 @@ export const PatrimonialForm = ({
 
             {/* Emergency Reserve */}
             <div className="space-y-4">
-              <h4 className="text-md font-medium text-black">{t('patrimonial.form.investments.emergency_reserve.title')}</h4>
+              <h4 className="text-md font-medium text-black dark:text-slate-200">{t('patrimonial.form.investments.emergency_reserve.title')}</h4>
               {(!values.investments?.emergency_reserve || values.investments.emergency_reserve.length === 0) ? (
                 <p className="text-sm">{t('patrimonial.form.investments.emergency_reserve.empty')}</p>
               ) : (
                 values.investments.emergency_reserve.map((reserve, index) => (
-                  <div key={index} className="grid grid-cols-1 md:grid-cols-2 gap-4 border-l-4 border-blue-500 pl-4 bg-white rounded-r-lg p-4">
+                  <div key={index} className="grid grid-cols-1 md:grid-cols-2 gap-4 border-l-4 border-blue-500 pl-4 bg-white dark:bg-slate-900 rounded-r-lg p-4">
                     <div>
-                      <p className="text-sm text-blue-600">{t('patrimonial.form.investments.emergency_reserve.name')}</p>
+                      <p className="text-sm text-blue-600 dark:text-blue-300">{t('patrimonial.form.investments.emergency_reserve.name')}</p>
                       <p className="font-medium">{reserve.name || 'Não informado'}</p>
                     </div>
                     <div>
-                      <p className="text-sm text-blue-600">{t('patrimonial.form.investments.emergency_reserve.value')}</p>
+                      <p className="text-sm text-blue-600 dark:text-blue-300">{t('patrimonial.form.investments.emergency_reserve.value')}</p>
                       <p className="font-medium">{formatCurrency(reserve.value)}</p>
                     </div>
                     <div>
-                      <p className="text-sm text-blue-600">{t('patrimonial.form.investments.emergency_reserve.location')}</p>
+                      <p className="text-sm text-blue-600 dark:text-blue-300">{t('patrimonial.form.investments.emergency_reserve.location')}</p>
                       <p className="font-medium">{formatAddress(reserve.location)}</p>
                     </div>
                     <div>
-                      <p className="text-sm text-blue-600">{t('patrimonial.form.investments.emergency_reserve.country')}</p>
+                      <p className="text-sm text-blue-600 dark:text-blue-300">{t('patrimonial.form.investments.emergency_reserve.country')}</p>
                       <p className="font-medium">{reserve.country || 'Não informado'}</p>
                     </div>
                     <div className="col-span-2">
-                      <p className="text-sm text-blue-600">{t('patrimonial.form.investments.emergency_reserve.description')}</p>
+                      <p className="text-sm text-blue-600 dark:text-blue-300">{t('patrimonial.form.investments.emergency_reserve.description')}</p>
                       <p className="font-medium">{reserve.description || 'Não informado'}</p>
                     </div>
                   </div>
@@ -584,38 +584,38 @@ export const PatrimonialForm = ({
           </div>
 
           {/* Personal Assets Section */}
-          <div className="space-y-4 bg-green-50 p-6 rounded-lg border border-green-100">
+          <div className="space-y-4 bg-green-50 p-6 rounded-lg border border-green-100 dark:bg-slate-900/30 dark:border-slate-800">
             <div className="flex justify-between items-center">
-              <h2 className="text-xl font-bold text-green-900">{t('patrimonial.form.personal_assets.title')}</h2>
+              <h2 className="text-xl font-bold text-green-900 dark:text-green-300">{t('patrimonial.form.personal_assets.title')}</h2>
             </div>
-            <p className="text-sm text-green-700">{t('patrimonial.form.personal_assets.description')}</p>
+            <p className="text-sm text-green-700 dark:text-green-300/80">{t('patrimonial.form.personal_assets.description')}</p>
             
             {/* Properties */}
             <div className="space-y-4">
-              <h4 className="text-md font-medium text-black">{t('patrimonial.form.personal_assets.properties.title')}</h4>
+              <h4 className="text-md font-medium text-black dark:text-slate-200">{t('patrimonial.form.personal_assets.properties.title')}</h4>
               {(!values.personal_assets?.properties || values.personal_assets.properties.length === 0) ? (
                 <p className="text-sm">{t('patrimonial.form.personal_assets.properties.empty')}</p>
               ) : (
                 values.personal_assets.properties.map((property, index) => (
-                  <div key={index} className="grid grid-cols-1 md:grid-cols-2 gap-4 border-l-4 border-green-500 pl-4 bg-white rounded-r-lg p-4">
+                  <div key={index} className="grid grid-cols-1 md:grid-cols-2 gap-4 border-l-4 border-green-500 pl-4 bg-white dark:bg-slate-900 rounded-r-lg p-4">
                     <div>
-                      <p className="text-sm text-green-600">{t('patrimonial.form.personal_assets.properties.name')}</p>
+                      <p className="text-sm text-green-600 dark:text-green-300">{t('patrimonial.form.personal_assets.properties.name')}</p>
                       <p className="font-medium">{property.name || 'Não informado'}</p>
                     </div>
                     <div>
-                      <p className="text-sm text-green-600">{t('patrimonial.form.personal_assets.properties.value')}</p>
+                      <p className="text-sm text-green-600 dark:text-green-300">{t('patrimonial.form.personal_assets.properties.value')}</p>
                       <p className="font-medium">{formatCurrency(property.value)}</p>
                     </div>
                     <div>
-                      <p className="text-sm text-green-600">{t('patrimonial.form.personal_assets.properties.location')}</p>
+                      <p className="text-sm text-green-600 dark:text-green-300">{t('patrimonial.form.personal_assets.properties.location')}</p>
                       <p className="font-medium">{formatAddress(property.location)}</p>
                     </div>
                     <div>
-                      <p className="text-sm text-green-600">{t('patrimonial.form.personal_assets.properties.country')}</p>
+                      <p className="text-sm text-green-600 dark:text-green-300">{t('patrimonial.form.personal_assets.properties.country')}</p>
                       <p className="font-medium">{property.country || 'Não informado'}</p>
                     </div>
                     <div className="col-span-2">
-                      <p className="text-sm text-green-600">{t('patrimonial.form.personal_assets.properties.description')}</p>
+                      <p className="text-sm text-green-600 dark:text-green-300">{t('patrimonial.form.personal_assets.properties.description')}</p>
                       <p className="font-medium">{property.description || 'Não informado'}</p>
                     </div>
                   </div>
@@ -627,30 +627,30 @@ export const PatrimonialForm = ({
 
             {/* Vehicles */}
             <div className="space-y-4">
-              <h4 className="text-md font-medium text-black">{t('patrimonial.form.personal_assets.vehicles.title')}</h4>
+              <h4 className="text-md font-medium text-black dark:text-slate-200">{t('patrimonial.form.personal_assets.vehicles.title')}</h4>
               {(!values.personal_assets?.vehicles || values.personal_assets.vehicles.length === 0) ? (
                 <p className="text-sm">{t('patrimonial.form.personal_assets.vehicles.empty')}</p>
               ) : (
                 values.personal_assets.vehicles.map((vehicle, index) => (
-                  <div key={index} className="grid grid-cols-1 md:grid-cols-2 gap-4 border-l-4 border-green-500 pl-4 bg-white rounded-r-lg p-4">
+                  <div key={index} className="grid grid-cols-1 md:grid-cols-2 gap-4 border-l-4 border-green-500 pl-4 bg-white dark:bg-slate-900 rounded-r-lg p-4">
                     <div>
-                      <p className="text-sm text-green-600">{t('patrimonial.form.personal_assets.vehicles.name')}</p>
+                      <p className="text-sm text-green-600 dark:text-green-300">{t('patrimonial.form.personal_assets.vehicles.name')}</p>
                       <p className="font-medium">{vehicle.name || 'Não informado'}</p>
                     </div>
                     <div>
-                      <p className="text-sm text-green-600">{t('patrimonial.form.personal_assets.vehicles.value')}</p>
+                      <p className="text-sm text-green-600 dark:text-green-300">{t('patrimonial.form.personal_assets.vehicles.value')}</p>
                       <p className="font-medium">{formatCurrency(vehicle.value)}</p>
                     </div>
                     <div>
-                      <p className="text-sm text-green-600">{t('patrimonial.form.personal_assets.vehicles.location')}</p>
+                      <p className="text-sm text-green-600 dark:text-green-300">{t('patrimonial.form.personal_assets.vehicles.location')}</p>
                       <p className="font-medium">{formatAddress(vehicle.location)}</p>
                     </div>
                     <div>
-                      <p className="text-sm text-green-600">{t('patrimonial.form.personal_assets.vehicles.country')}</p>
+                      <p className="text-sm text-green-600 dark:text-green-300">{t('patrimonial.form.personal_assets.vehicles.country')}</p>
                       <p className="font-medium">{vehicle.country || 'Não informado'}</p>
                     </div>
                     <div className="col-span-2">
-                      <p className="text-sm text-green-600">{t('patrimonial.form.personal_assets.vehicles.description')}</p>
+                      <p className="text-sm text-green-600 dark:text-green-300">{t('patrimonial.form.personal_assets.vehicles.description')}</p>
                       <p className="font-medium">{vehicle.description || 'Não informado'}</p>
                     </div>
                   </div>
@@ -662,30 +662,30 @@ export const PatrimonialForm = ({
 
             {/* Valuable Goods */}
             <div className="space-y-4">
-              <h4 className="text-md font-medium text-black">{t('patrimonial.form.personal_assets.valuable_goods.title')}</h4>
+              <h4 className="text-md font-medium text-black dark:text-slate-200">{t('patrimonial.form.personal_assets.valuable_goods.title')}</h4>
               {(!values.personal_assets?.valuable_goods || values.personal_assets.valuable_goods.length === 0) ? (
                 <p className="text-sm">{t('patrimonial.form.personal_assets.valuable_goods.empty')}</p>
               ) : (
                 values.personal_assets.valuable_goods.map((good, index) => (
-                  <div key={index} className="grid grid-cols-1 md:grid-cols-2 gap-4 border-l-4 border-green-500 pl-4 bg-white rounded-r-lg p-4">
+                  <div key={index} className="grid grid-cols-1 md:grid-cols-2 gap-4 border-l-4 border-green-500 pl-4 bg-white dark:bg-slate-900 rounded-r-lg p-4">
                     <div>
-                      <p className="text-sm text-green-600">{t('patrimonial.form.personal_assets.valuable_goods.name')}</p>
+                      <p className="text-sm text-green-600 dark:text-green-300">{t('patrimonial.form.personal_assets.valuable_goods.name')}</p>
                       <p className="font-medium">{good.name || 'Não informado'}</p>
                     </div>
                     <div>
-                      <p className="text-sm text-green-600">{t('patrimonial.form.personal_assets.valuable_goods.value')}</p>
+                      <p className="text-sm text-green-600 dark:text-green-300">{t('patrimonial.form.personal_assets.valuable_goods.value')}</p>
                       <p className="font-medium">{formatCurrency(good.value)}</p>
                     </div>
                     <div>
-                      <p className="text-sm text-green-600">{t('patrimonial.form.personal_assets.valuable_goods.location')}</p>
+                      <p className="text-sm text-green-600 dark:text-green-300">{t('patrimonial.form.personal_assets.valuable_goods.location')}</p>
                       <p className="font-medium">{formatAddress(good.location)}</p>
                     </div>
                     <div>
-                      <p className="text-sm text-green-600">{t('patrimonial.form.personal_assets.valuable_goods.country')}</p>
+                      <p className="text-sm text-green-600 dark:text-green-300">{t('patrimonial.form.personal_assets.valuable_goods.country')}</p>
                       <p className="font-medium">{good.country || 'Não informado'}</p>
                     </div>
                     <div className="col-span-2">
-                      <p className="text-sm text-green-600">{t('patrimonial.form.personal_assets.valuable_goods.description')}</p>
+                      <p className="text-sm text-green-600 dark:text-green-300">{t('patrimonial.form.personal_assets.valuable_goods.description')}</p>
                       <p className="font-medium">{good.description || 'Não informado'}</p>
                     </div>
                   </div>
@@ -695,38 +695,38 @@ export const PatrimonialForm = ({
           </div>
 
           {/* Liabilities Section */}
-          <div className="space-y-4 bg-red-50 p-6 rounded-lg border border-red-100">
+          <div className="space-y-4 bg-red-50 p-6 rounded-lg border border-red-100 dark:bg-slate-900/30 dark:border-slate-800">
             <div className="flex justify-between items-center">
-              <h2 className="text-xl font-bold text-red-900">{t('patrimonial.form.liabilities.title')}</h2>
+              <h2 className="text-xl font-bold text-red-900 dark:text-red-300">{t('patrimonial.form.liabilities.title')}</h2>
             </div>
-            <p className="text-sm text-red-700">{t('patrimonial.form.liabilities.description')}</p>
+            <p className="text-sm text-red-700 dark:text-red-300/80">{t('patrimonial.form.liabilities.description')}</p>
             
             {/* Financing */}
             <div className="space-y-4">
-              <h4 className="text-md font-medium text-black">{t('patrimonial.form.liabilities.financing.title')}</h4>
+              <h4 className="text-md font-medium text-black dark:text-slate-200">{t('patrimonial.form.liabilities.financing.title')}</h4>
               {(!values.liabilities?.financing || values.liabilities.financing.length === 0) ? (
                 <p className="text-sm">{t('patrimonial.form.liabilities.financing.empty')}</p>
               ) : (
                 values.liabilities.financing.map((financing, index) => (
-                  <div key={index} className="grid grid-cols-1 md:grid-cols-2 gap-4 border-l-4 border-red-500 pl-4 bg-white rounded-r-lg p-4">
+                  <div key={index} className="grid grid-cols-1 md:grid-cols-2 gap-4 border-l-4 border-red-500 pl-4 bg-white dark:bg-slate-900 rounded-r-lg p-4">
                     <div>
-                      <p className="text-sm text-red-600">{t('patrimonial.form.liabilities.financing.name')}</p>
+                      <p className="text-sm text-red-600 dark:text-red-300">{t('patrimonial.form.liabilities.financing.name')}</p>
                       <p className="font-medium">{financing.name || 'Não informado'}</p>
                     </div>
                     <div>
-                      <p className="text-sm text-red-600">{t('patrimonial.form.liabilities.financing.value')}</p>
+                      <p className="text-sm text-red-600 dark:text-red-300">{t('patrimonial.form.liabilities.financing.value')}</p>
                       <p className="font-medium">{formatCurrency(financing.value)}</p>
                     </div>
                     <div>
-                      <p className="text-sm text-red-600">{t('patrimonial.form.liabilities.financing.location')}</p>
+                      <p className="text-sm text-red-600 dark:text-red-300">{t('patrimonial.form.liabilities.financing.location')}</p>
                       <p className="font-medium">{formatAddress(financing.location)}</p>
                     </div>
                     <div>
-                      <p className="text-sm text-red-600">{t('patrimonial.form.liabilities.financing.country')}</p>
+                      <p className="text-sm text-red-600 dark:text-red-300">{t('patrimonial.form.liabilities.financing.country')}</p>
                       <p className="font-medium">{financing.country || 'Não informado'}</p>
                     </div>
                     <div className="col-span-2">
-                      <p className="text-sm text-red-600">{t('patrimonial.form.liabilities.financing.description')}</p>
+                      <p className="text-sm text-red-600 dark:text-red-300">{t('patrimonial.form.liabilities.financing.description')}</p>
                       <p className="font-medium">{financing.description || 'Não informado'}</p>
                     </div>
                   </div>
@@ -738,30 +738,30 @@ export const PatrimonialForm = ({
 
             {/* Debts */}
             <div className="space-y-4">
-              <h4 className="text-md font-medium text-black">{t('patrimonial.form.liabilities.debts.title')}</h4>
+              <h4 className="text-md font-medium text-black dark:text-slate-200">{t('patrimonial.form.liabilities.debts.title')}</h4>
               {(!values.liabilities?.debts || values.liabilities.debts.length === 0) ? (
                 <p className="text-sm">{t('patrimonial.form.liabilities.debts.empty')}</p>
               ) : (
                 values.liabilities.debts.map((debt, index) => (
-                  <div key={index} className="grid grid-cols-1 md:grid-cols-2 gap-4 border-l-4 border-red-500 pl-4 bg-white rounded-r-lg p-4">
+                  <div key={index} className="grid grid-cols-1 md:grid-cols-2 gap-4 border-l-4 border-red-500 pl-4 bg-white dark:bg-slate-900 rounded-r-lg p-4">
                     <div>
-                      <p className="text-sm text-red-600">{t('patrimonial.form.liabilities.debts.name')}</p>
+                      <p className="text-sm text-red-600 dark:text-red-300">{t('patrimonial.form.liabilities.debts.name')}</p>
                       <p className="font-medium">{debt.name || 'Não informado'}</p>
                     </div>
                     <div>
-                      <p className="text-sm text-red-600">{t('patrimonial.form.liabilities.debts.value')}</p>
+                      <p className="text-sm text-red-600 dark:text-red-300">{t('patrimonial.form.liabilities.debts.value')}</p>
                       <p className="font-medium">{formatCurrency(debt.value)}</p>
                     </div>
                     <div>
-                      <p className="text-sm text-red-600">{t('patrimonial.form.liabilities.debts.location')}</p>
+                      <p className="text-sm text-red-600 dark:text-red-300">{t('patrimonial.form.liabilities.debts.location')}</p>
                       <p className="font-medium">{formatAddress(debt.location)}</p>
                     </div>
                     <div>
-                      <p className="text-sm text-red-600">{t('patrimonial.form.liabilities.debts.country')}</p>
+                      <p className="text-sm text-red-600 dark:text-red-300">{t('patrimonial.form.liabilities.debts.country')}</p>
                       <p className="font-medium">{debt.country || 'Não informado'}</p>
                     </div>
                     <div className="col-span-2">
-                      <p className="text-sm text-red-600">{t('patrimonial.form.liabilities.debts.description')}</p>
+                      <p className="text-sm text-red-600 dark:text-red-300">{t('patrimonial.form.liabilities.debts.description')}</p>
                       <p className="font-medium">{debt.description || 'Não informado'}</p>
                     </div>
                   </div>

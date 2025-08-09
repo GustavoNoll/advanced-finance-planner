@@ -25,6 +25,7 @@ import { AnimatePresence } from "framer-motion";
 import { SpeedInsights } from "@vercel/speed-insights/react"
 import { Analytics } from "@vercel/analytics/react"
 import { Suspense, lazy } from 'react'
+import { ThemeToggle } from '@/components/ui/theme-toggle'
 const AdminDashboard = lazy(() => import('./pages/AdminDashboard').then(m => ({ default: m.AdminDashboard })))
 const BrokerDashboard = lazy(() => import('./pages/BrokerDashboard').then(m => ({ default: m.BrokerDashboard })))
 const queryClient = new QueryClient();
@@ -156,16 +157,6 @@ function AppRoutes() {
           }
         />
         <Route
-          path="/financial-records/edit/:id"
-          element={
-            <ProtectedRoute>
-              <PageTransition>
-                <EditFinancialRecord />
-              </PageTransition>
-            </ProtectedRoute>
-          }
-        />
-        <Route
           path="/client-profile"
           element={
             <ProtectedRoute>
@@ -217,6 +208,7 @@ const App = () => (
       <AuthProvider>
         <TooltipProvider>
           <RouteProgress />
+          <ThemeToggle />
           <Toaster />
           <Sonner />
           <ScrollToTop />

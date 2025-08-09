@@ -78,10 +78,10 @@ export const ClientList = ({
 
   return (
     <>
-      <Card className="border-gray-100">
+      <Card className="border-gray-100 dark:border-gray-800 bg-card">
         <CardHeader className="pb-2">
           <div className="flex flex-col gap-4">
-            <CardTitle className="flex items-center gap-2 text-lg">
+            <CardTitle className="flex items-center gap-2 text-lg text-foreground">
               <Avatar 
                 icon={User} 
                 size="md" 
@@ -91,23 +91,16 @@ export const ClientList = ({
               />
               {t('brokerDashboard.search.results')}
             </CardTitle>
-            <div className="relative group">
-              <div className="absolute inset-0 bg-gradient-to-r from-primary/5 to-primary/10 rounded-lg blur-sm group-hover:blur-md transition-all duration-300" />
-              <div className="relative flex items-center">
-                <div className="absolute left-4 top-1/2 -translate-y-1/2">
-                  <Avatar 
-                    icon={Search} 
-                    size="lg" 
-                    color="gray"
-                    iconClassName="h-6 w-6"
-                  />
-                </div>
-                <Input
-                  placeholder={t('brokerDashboard.search.placeholder')}
-                  value={searchQuery}
-                  onChange={(e) => onSearchChange(e.target.value)}
-                  className="pl-10 pr-10 h-11 bg-white/50 backdrop-blur-sm border-gray-200/50 focus:border-primary/50 focus:ring-primary/20 transition-all duration-200 group-hover:bg-white/80"
-                />
+              <div className="relative group">
+               <div className="absolute inset-0 bg-gradient-to-r from-primary/5 to-primary/10 rounded-lg blur-sm group-hover:blur-md transition-all duration-300" />
+               <div className="relative flex items-center">
+                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400 pointer-events-none" />
+                 <Input
+                   placeholder={t('brokerDashboard.search.placeholder')}
+                   value={searchQuery}
+                   onChange={(e) => onSearchChange(e.target.value)}
+                   className="pl-10 pr-10 h-11 bg-white/50 dark:bg-gray-900/60 backdrop-blur-sm border-gray-200/50 dark:border-gray-700 focus:border-primary/50 focus:ring-primary/20 transition-all duration-200 group-hover:bg-white/80 dark:group-hover:bg-gray-900/80 text-foreground"
+                 />
                 {searchQuery && (
                   <Button
                     variant="ghost"
@@ -124,12 +117,12 @@ export const ClientList = ({
           </div>
         </CardHeader>
         <CardContent>
-          <div className="divide-y divide-gray-100">
+           <div className="divide-y divide-gray-100 dark:divide-gray-800">
             {clients.length > 0 ? (
               clients.map((client) => (
                 <div
                   key={client.id}
-                  className="relative flex items-center py-4 px-4 cursor-pointer hover:bg-gray-50/50 transition-colors duration-200 group"
+                   className="relative flex items-center py-4 px-4 cursor-pointer hover:bg-gray-50/50 dark:hover:bg-gray-800/60 transition-colors duration-200 group"
                   onClick={() => onClientSelect(client.id)}
                 >
                   <div className="flex-1 min-w-0">
@@ -141,12 +134,12 @@ export const ClientList = ({
                       />
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2">
-                          <p className="text-sm font-medium text-gray-900 truncate">{client.profile_name}</p>
+                          <p className="text-sm font-medium text-gray-900 dark:text-gray-100 truncate">{client.profile_name}</p>
                           {!client.investment_plan_id && (
                             <TooltipProvider>
                               <Tooltip>
                                 <TooltipTrigger asChild>
-                                  <span className="px-2 py-0.5 text-xs font-medium bg-yellow-50 text-yellow-700 rounded-full ring-1 ring-yellow-200">
+                                  <span className="px-2 py-0.5 text-xs font-medium bg-yellow-50 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-400 rounded-full ring-1 ring-yellow-200 dark:ring-yellow-800">
                                     {t('brokerDashboard.client.pendingPlan')}
                                   </span>
                                 </TooltipTrigger>
@@ -160,7 +153,7 @@ export const ClientList = ({
                             <TooltipProvider>
                               <Tooltip>
                                 <TooltipTrigger asChild>
-                                  <span className="px-2 py-0.5 text-xs font-medium bg-red-50 text-red-700 rounded-full ring-1 ring-red-200">
+                                  <span className="px-2 py-0.5 text-xs font-medium bg-red-50 dark:bg-red-900/30 text-red-700 dark:text-red-400 rounded-full ring-1 ring-red-200 dark:ring-red-800">
                                     {t('brokerDashboard.client.outdatedRecord')}
                                   </span>
                                 </TooltipTrigger>
@@ -178,7 +171,7 @@ export const ClientList = ({
                             <TooltipProvider>
                               <Tooltip>
                                 <TooltipTrigger asChild>
-                                  <span className="px-2 py-0.5 text-xs font-medium bg-orange-50 text-orange-700 rounded-full ring-1 ring-orange-200">
+                                  <span className="px-2 py-0.5 text-xs font-medium bg-orange-50 dark:bg-orange-900/30 text-orange-700 dark:text-orange-400 rounded-full ring-1 ring-orange-200 dark:ring-orange-800">
                                     {t('brokerDashboard.client.lowReturns')}
                                   </span>
                                 </TooltipTrigger>
@@ -192,7 +185,7 @@ export const ClientList = ({
                             <TooltipProvider>
                               <Tooltip>
                                 <TooltipTrigger asChild>
-                                  <span className="px-2 py-0.5 text-xs font-medium bg-red-50 text-red-700 rounded-full ring-1 ring-red-200">
+                                  <span className="px-2 py-0.5 text-xs font-medium bg-red-50 dark:bg-red-900/30 text-red-700 dark:text-red-400 rounded-full ring-1 ring-red-200 dark:ring-red-800">
                                     {t('brokerDashboard.client.belowRequiredContribution')}
                                   </span>
                                 </TooltipTrigger>
@@ -203,7 +196,7 @@ export const ClientList = ({
                             </TooltipProvider>
                           )}
                         </div>
-                        <p className="text-sm text-gray-500 truncate">{client.email}</p>
+                        <p className="text-sm text-gray-500 dark:text-gray-300 truncate">{client.email}</p>
                         <div className="flex items-center gap-2 mt-1">
                           <p className="text-xs text-gray-400">{t('brokerDashboard.client.id')}: {client.id}</p>
                           {client.last_activity_date && (
@@ -237,7 +230,7 @@ export const ClientList = ({
                       <TooltipProvider>
                         <Tooltip>
                           <TooltipTrigger asChild>
-                            <div className="flex items-center gap-1.5 text-yellow-600">
+                             <div className="flex items-center gap-1.5 text-yellow-600 dark:text-yellow-400">
                               <Clock className="h-4 w-4" />
                               <p className="text-sm font-medium">Revisão</p>
                             </div>
@@ -261,14 +254,14 @@ export const ClientList = ({
                                 e.stopPropagation();
                                 handleShareClient(client.id);
                               }}
-                              className="h-8 w-8 border border-gray-200 hover:border-blue-300 hover:text-blue-600"
+                              className="h-8 w-8 border border-gray-200 dark:border-gray-700 hover:border-blue-300 dark:hover:border-blue-700 hover:text-blue-600 dark:hover:text-blue-400"
                             >
                               <Share2 className="h-4 w-4" />
                             </Button>
                           </TooltipTrigger>
-                          <TooltipContent side="left" className="flex flex-col gap-1 bg-white">
+                          <TooltipContent side="left" className="flex flex-col gap-1 bg-white dark:bg-gray-900">
                             <p className="font-medium">{t('brokerDashboard.client.shareTooltip')}</p>
-                            <p className="text-xs text-gray-500">Clique para copiar o link</p>
+                            <p className="text-xs text-gray-500 dark:text-gray-400">Clique para copiar o link</p>
                           </TooltipContent>
                         </Tooltip>
                       </TooltipProvider>
@@ -279,14 +272,14 @@ export const ClientList = ({
                               variant="ghost"
                               size="icon"
                               onClick={(e) => handleDeleteClick(e, client.id)}
-                              className="h-8 w-8 border border-gray-200 hover:border-red-300 hover:text-red-600"
+                              className="h-8 w-8 border border-gray-200 dark:border-gray-700 hover:border-red-300 dark:hover:border-red-700 hover:text-red-600 dark:hover:text-red-400"
                             >
                               <Trash2 className="h-4 w-4" />
                             </Button>
                           </TooltipTrigger>
-                          <TooltipContent side="left" className="flex flex-col gap-1">
+                          <TooltipContent side="left" className="flex flex-col gap-1 bg-white dark:bg-gray-900">
                             <p className="font-medium">{t('brokerDashboard.client.deleteTooltip')}</p>
-                            <p className="text-xs text-gray-500">{t('brokerDashboard.client.deleteWarning')}</p>
+                            <p className="text-xs text-gray-500 dark:text-gray-400">{t('brokerDashboard.client.deleteWarning')}</p>
                           </TooltipContent>
                         </Tooltip>
                       </TooltipProvider>
@@ -297,7 +290,7 @@ export const ClientList = ({
               ))
             ) : (
               <div className="flex flex-col items-center justify-center py-12 px-4 text-center">
-                <div className="h-12 w-12 rounded-full bg-gray-50 flex items-center justify-center mb-4">
+                <div className="h-12 w-12 rounded-full bg-gray-50 dark:bg-gray-800 flex items-center justify-center mb-4">
                   <Avatar 
                     icon={Search} 
                     size="lg" 
@@ -305,10 +298,10 @@ export const ClientList = ({
                     iconClassName="h-6 w-6"
                   />
                 </div>
-                <h3 className="text-lg font-medium text-gray-900 mb-2">
+                <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-2">
                   {t('brokerDashboard.search.noResults')}
                 </h3>
-                <p className="text-sm text-gray-500 max-w-sm">
+                <p className="text-sm text-gray-500 dark:text-gray-400 max-w-sm">
                   {t('brokerDashboard.search.noResultsDescription')}
                 </p>
               </div>
@@ -317,8 +310,8 @@ export const ClientList = ({
         </CardContent>
       </Card>
 
-      <AlertDialog open={!!clientToDelete} onOpenChange={() => setClientToDelete(null)}>
-        <AlertDialogContent className="bg-white">
+      <AlertDialog open={!!clientToDelete} onOpenChange={(open) => !open && setClientToDelete(null)}>
+        <AlertDialogContent className="bg-white dark:bg-gray-900">
           <AlertDialogHeader>
             <AlertDialogTitle>{t('brokerDashboard.client.deleteClient.title')}</AlertDialogTitle>
             <AlertDialogDescription>

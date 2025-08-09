@@ -90,25 +90,25 @@ const ComparisonRow = ({
   const isGood = isHigherBetter ? isPositive : !isPositive;
   
   return (
-    <div className="bg-white/50 rounded-lg p-4 transition-all duration-200 hover:bg-white/80 hover:shadow-md">
-      <h3 className="text-sm font-medium text-gray-800 mb-3">{title}</h3>
+    <div className="bg-white/50 dark:bg-gray-900/40 rounded-lg p-4 transition-all duration-200 hover:bg-white/80 dark:hover:bg-gray-900/60 hover:shadow-md">
+      <h3 className="text-sm font-medium text-gray-800 dark:text-gray-100 mb-3">{title}</h3>
       <div className="flex justify-between items-baseline">
         <div className="space-y-1">
-          <p className="text-sm text-gray-500">{t('dashboard.planProgress.planned')}:</p>
+          <p className="text-sm text-gray-500 dark:text-gray-400">{t('dashboard.planProgress.planned')}:</p>
           <div>
-            <p className="text-lg font-semibold text-blue-700">
+            <p className="text-lg font-semibold text-blue-700 dark:text-blue-400">
               {isCurrency 
                 ? formatCurrency(planned, currency as CurrencyCode)
                 : `${planned.toFixed(0)} ${t('common.months')}`
               }
             </p>
             {!isCurrency && planned >= 12 && (
-              <span className="block text-xs text-gray-500">
+              <span className="block text-xs text-gray-500 dark:text-gray-400">
                 {formatMonthsToYearsAndMonths(planned, t)}
               </span>
             )}
             {!isCurrency && planned >= 12 && plannedAgeYears !== undefined && (
-              <div className="text-xs text-gray-500 mt-0.5">
+              <div className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
                 <span className="block">
                   <span className="relative group cursor-pointer">
                     <span>
@@ -129,15 +129,15 @@ const ComparisonRow = ({
           </div>
         </div>
         <div className="text-right space-y-1">
-          <p className="text-sm text-gray-500">{t('dashboard.planProgress.projected')}:</p>
+          <p className="text-sm text-gray-500 dark:text-gray-400">{t('dashboard.planProgress.projected')}:</p>
           <div>
-            <p className={`text-lg font-semibold ${isEqual ? 'text-gray-900' : isGood ? 'text-emerald-600' : 'text-rose-600'}`}>
+            <p className={`text-lg font-semibold ${isEqual ? 'text-gray-900 dark:text-gray-100' : isGood ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}`}>
               {isCurrency 
                 ? formatCurrency(projected, currency as CurrencyCode)
                 : `${Math.round(projected)} ${t('common.months')}`
               }
               {!isEqual && (
-                <span className={`text-xs ml-1.5 px-1.5 py-0.5 rounded-full ${isGood ? 'bg-emerald-50' : 'bg-rose-50'}`}>
+                <span className={`text-xs ml-1.5 px-1.5 py-0.5 rounded-full ${isGood ? 'bg-emerald-50 dark:bg-emerald-900/30' : 'bg-rose-50 dark:bg-rose-900/30'}`}>
                   {isPositive ? '+' : '-'}
                   {isCurrency 
                     ? formatCurrency(Math.abs(difference), currency as CurrencyCode)
@@ -147,12 +147,12 @@ const ComparisonRow = ({
               )}
             </p>
             {!isCurrency && projected >= 12 && (
-              <span className="block text-xs text-gray-500">
+              <span className="block text-xs text-gray-500 dark:text-gray-400">
                 {formatMonthsToYearsAndMonths(Math.round(projected), t)}
               </span>
             )}
             {!isCurrency && projected >= 12 && projectedAgeYears !== undefined && (
-              <div className="text-xs text-gray-500 mt-0.5">
+              <div className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
                 <span className="block">
                   <span className="relative group cursor-pointer">
                     <span>

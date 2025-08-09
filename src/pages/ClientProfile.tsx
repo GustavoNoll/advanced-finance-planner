@@ -144,45 +144,45 @@ const ClientProfile = () => {
   const canEdit = brokerProfile || clientId === user?.id;
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-gray-50 to-gray-100">
+    <div className="min-h-screen bg-gradient-to-b from-background to-muted">
       <div className="max-w-2xl mx-auto px-4 py-8">
         <div className="mb-6">
           <Link 
             to={brokerProfile && clientId === user?.id ? '/broker-dashboard' : `/client/${clientId}`}
-            className="inline-flex items-center text-gray-600 hover:text-gray-900"
+            className="inline-flex items-center text-muted-foreground hover:text-foreground"
           >
             <ArrowLeft className="h-4 w-4 mr-2" />
             {t('common.back')}
           </Link>
         </div>
 
-        <div className="bg-white rounded-xl shadow-sm p-6 space-y-8">
-          <h1 className="text-2xl font-semibold text-gray-900">Troca de Senha</h1>
+        <div className="bg-card rounded-xl shadow-sm p-6 space-y-8 border border-border">
+          <h1 className="text-2xl font-semibold text-foreground">Troca de Senha</h1>
 
           {canEdit && (
-            <div className="bg-white rounded-lg shadow-sm border border-gray-100 p-6">
+            <div className="bg-card rounded-lg shadow-sm border border-border p-6">
               <div className="space-y-6">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-sm font-medium text-muted-foreground mb-2">
                     {t('clientProfile.newPassword')}
                   </label>
                   <Input
                     type="password"
                     value={newPassword}
                     onChange={(e) => setNewPassword(e.target.value)}
-                    className="h-12 rounded-lg border-gray-200 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                    className="h-12 rounded-lg transition-colors"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-sm font-medium text-muted-foreground mb-2">
                     {t('clientProfile.confirmPassword')}
                   </label>
                   <Input
                     type="password"
                     value={confirmPassword}
                     onChange={(e) => setConfirmPassword(e.target.value)}
-                    className="h-12 rounded-lg border-gray-200 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                    className="h-12 rounded-lg transition-colors"
                   />
                 </div>
 
@@ -192,7 +192,7 @@ const ClientProfile = () => {
                   </div>
                 )}
 
-                <div className="flex justify-center pt-4 border-t border-gray-100">
+                <div className="flex justify-center pt-4 border-t border-border">
                   <Button 
                     onClick={handlePasswordChange}
                     className="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white disabled:opacity-50 disabled:cursor-not-allowed"

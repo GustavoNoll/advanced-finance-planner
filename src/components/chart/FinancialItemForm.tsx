@@ -115,7 +115,7 @@ export const FinancialItemForm = ({
     <Form {...form}>
       <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
         {hasErrors && (
-          <Alert variant="destructive" className="bg-red-50 border-red-200 text-red-600 py-2">
+          <Alert variant="destructive" className="py-2">
             <AlertDescription>
               {t('common.formErrors')}
             </AlertDescription>
@@ -150,8 +150,8 @@ export const FinancialItemForm = ({
             render={({ field }) => (
               <FormItem>
                 <FormLabel className={cn(
-                  "text-sm font-medium mb-1",
-                  form.formState.errors.name && "text-red-600"
+                  "text-sm font-medium mb-1 text-muted-foreground",
+                  form.formState.errors.name && "text-destructive"
                 )}>
                   {t('common.name')} *
                 </FormLabel>
@@ -159,13 +159,11 @@ export const FinancialItemForm = ({
                   <Input
                     {...field}
                     placeholder={t('common.enterName')}
-                    className={cn(
-                      "flex h-9 w-full rounded-lg border border-gray-200 bg-white px-3 py-1 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors",
-                      form.formState.errors.name && "border-red-500 focus:ring-red-500 focus:border-red-500"
-                    )}
+                    error={!!form.formState.errors.name}
+                    className="h-9"
                   />
                 </FormControl>
-                <FormMessage className="text-red-600 text-xs mt-1" />
+                <FormMessage className="text-destructive text-xs mt-1" />
               </FormItem>
             )}
           />
@@ -176,8 +174,8 @@ export const FinancialItemForm = ({
             render={({ field }) => (
               <FormItem>
                 <FormLabel className={cn(
-                  "text-sm font-medium mb-1",
-                  form.formState.errors.asset_value && "text-red-600"
+                  "text-sm font-medium mb-1 text-muted-foreground",
+                  form.formState.errors.asset_value && "text-destructive"
                 )}>
                   {t('events.form.amount')} *
                 </FormLabel>
@@ -185,8 +183,8 @@ export const FinancialItemForm = ({
                   <CurrencyInput
                     id="asset_value"
                     className={cn(
-                      "flex h-9 w-full rounded-lg border border-gray-200 bg-white px-3 py-1 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors",
-                      form.formState.errors.asset_value && "border-red-500 focus:ring-red-500 focus:border-red-500"
+                      "flex h-9 w-full rounded-lg border border-input bg-background px-3 py-1 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 transition-colors",
+                      form.formState.errors.asset_value && "border-destructive focus-visible:ring-destructive"
                     )}
                     value={field.value}
                     onValueChange={(value) => field.onChange(value)}
@@ -196,7 +194,7 @@ export const FinancialItemForm = ({
                     decimalsLimit={2}
                   />
                 </FormControl>
-                <FormMessage className="text-red-600 text-xs mt-1" />
+                <FormMessage className="text-destructive text-xs mt-1" />
               </FormItem>
             )}
           />
@@ -207,8 +205,8 @@ export const FinancialItemForm = ({
             render={({ field }) => (
               <FormItem>
                 <FormLabel className={cn(
-                  "text-sm font-medium mb-1",
-                  form.formState.errors.month && "text-red-600"
+                  "text-sm font-medium mb-1 text-muted-foreground",
+                  form.formState.errors.month && "text-destructive"
                 )}>
                   {t('common.month')} *
                 </FormLabel>
@@ -216,7 +214,7 @@ export const FinancialItemForm = ({
                   <FormControl>
                     <SelectTrigger className={cn(
                       "h-9",
-                      form.formState.errors.month && "border-red-500 focus:ring-red-500 focus:border-red-500"
+                      form.formState.errors.month && "border-destructive focus-visible:ring-destructive"
                     )}>
                       <SelectValue placeholder={t('common.selectMonth')} />
                     </SelectTrigger>
@@ -229,7 +227,7 @@ export const FinancialItemForm = ({
                     ))}
                   </SelectContent>
                 </Select>
-                <FormMessage className="text-red-600 text-xs mt-1" />
+                <FormMessage className="text-destructive text-xs mt-1" />
               </FormItem>
             )}
           />
@@ -240,8 +238,8 @@ export const FinancialItemForm = ({
             render={({ field }) => (
               <FormItem>
                 <FormLabel className={cn(
-                  "text-sm font-medium mb-1",
-                  form.formState.errors.year && "text-red-600"
+                  "text-sm font-medium mb-1 text-muted-foreground",
+                  form.formState.errors.year && "text-destructive"
                 )}>
                   {t('common.year')} *
                 </FormLabel>
@@ -249,7 +247,7 @@ export const FinancialItemForm = ({
                   <FormControl>
                     <SelectTrigger className={cn(
                       "h-9",
-                      form.formState.errors.year && "border-red-500 focus:ring-red-500 focus:border-red-500"
+                      form.formState.errors.year && "border-destructive focus-visible:ring-destructive"
                     )}>
                       <SelectValue placeholder={t('common.selectYear')} />
                     </SelectTrigger>
@@ -262,7 +260,7 @@ export const FinancialItemForm = ({
                     ))}
                   </SelectContent>
                 </Select>
-                <FormMessage className="text-red-600 text-xs mt-1" />
+                <FormMessage className="text-destructive text-xs mt-1" />
               </FormItem>
             )}
           />
@@ -273,10 +271,10 @@ export const FinancialItemForm = ({
           name="icon"
           render={({ field }) => (
             <FormItem>
-              <FormLabel className={cn(
-                "text-sm font-medium mb-1",
-                form.formState.errors.icon && "text-red-600"
-              )}>
+                <FormLabel className={cn(
+                  "text-sm font-medium mb-1 text-muted-foreground",
+                  form.formState.errors.icon && "text-destructive"
+                )}>
                 {t('financialGoals.form.icon')} *
               </FormLabel>
               <FormControl>
@@ -287,22 +285,22 @@ export const FinancialItemForm = ({
                       type="button"
                       onClick={() => field.onChange(key)}
                       className={cn(
-                        "flex flex-col items-center justify-center p-2 rounded-lg border-2 transition-all duration-200",
+                          "flex flex-col items-center justify-center p-2 rounded-lg border-2 transition-all duration-200",
                         field.value === key
-                          ? 'border-blue-500 bg-blue-50'
-                          : 'border-gray-200 hover:border-blue-300 hover:bg-gray-50',
-                        form.formState.errors.icon && "border-red-500"
+                            ? 'border-primary bg-accent'
+                            : 'border-input hover:border-primary/50 hover:bg-accent',
+                          form.formState.errors.icon && "border-destructive"
                       )}
                     >
-                      <Icon className="h-6 w-6 text-gray-700" />
-                      <span className="text-xs font-medium text-gray-700 mt-1">
+                        <Icon className="h-6 w-6 text-foreground" />
+                        <span className="text-xs font-medium text-foreground mt-1">
                         {type === 'goal' ? t(`financialGoals.icons.${key}`) : t(`events.icons.${key}`)}
                       </span>
                     </button>
                   ))}
                 </div>
               </FormControl>
-              <FormMessage className="text-red-600 text-xs mt-1" />
+                <FormMessage className="text-destructive text-xs mt-1" />
             </FormItem>
           )}
         />
@@ -313,7 +311,7 @@ export const FinancialItemForm = ({
             name="payment_mode"
             render={({ field }) => (
               <FormItem className="space-y-3">
-                <FormLabel className="text-sm font-medium">
+                <FormLabel className="text-sm font-medium text-foreground">
                   {t('financialGoals.form.paymentMode')}
                 </FormLabel>
                 <FormControl>
@@ -360,26 +358,24 @@ export const FinancialItemForm = ({
                 name="installment_count"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel className={cn(
-                      "text-sm font-medium",
-                      form.formState.errors.installment_count && "text-red-600"
-                    )}>
+                <FormLabel className={cn(
+                  "text-sm font-medium text-muted-foreground",
+                  form.formState.errors.installment_count && "text-destructive"
+                )}>
                       {t('financialGoals.form.installmentCount')}
                     </FormLabel>
                     <FormControl>
-                      <Input
+                  <Input
                         type="number"
                         min="1"
                         max="120"
                         {...field}
                         placeholder={t('financialGoals.form.selectInstallments')}
-                        className={cn(
-                          "flex h-9 w-full rounded-lg border border-gray-200 bg-white px-3 py-1 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors",
-                          form.formState.errors.installment_count && "border-red-500 focus:ring-red-500 focus:border-red-500"
-                        )}
+                    error={!!form.formState.errors.installment_count}
+                    className="h-9"
                       />
                     </FormControl>
-                    <FormMessage className="text-red-600 text-xs mt-1" />
+                <FormMessage className="text-destructive text-xs mt-1" />
                   </FormItem>
                 )}
               />
@@ -389,25 +385,23 @@ export const FinancialItemForm = ({
                 name="installment_interval"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel className={cn(
-                      "text-sm font-medium",
-                      form.formState.errors.installment_interval && "text-red-600"
-                    )}>
+                <FormLabel className={cn(
+                  "text-sm font-medium text-muted-foreground",
+                  form.formState.errors.installment_interval && "text-destructive"
+                )}>
                       {t('financialGoals.form.installmentInterval')}
                     </FormLabel>
                     <FormControl>
-                      <Input
+                  <Input
                         type="number"
                         min="1"
                         {...field}
                         placeholder={t('financialGoals.form.enterInstallmentInterval')}
-                        className={cn(
-                          "flex h-9 w-full rounded-lg border border-gray-200 bg-white px-3 py-1 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors",
-                          form.formState.errors.installment_interval && "border-red-500 focus:ring-red-500 focus:border-red-500"
-                        )}
+                    error={!!form.formState.errors.installment_interval}
+                    className="h-9"
                       />
                     </FormControl>
-                    <FormMessage className="text-red-600 text-xs mt-1" />
+                <FormMessage className="text-destructive text-xs mt-1" />
                   </FormItem>
                 )}
               />

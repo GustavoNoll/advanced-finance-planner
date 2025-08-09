@@ -655,7 +655,7 @@ const FinancialRecords = () => {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <Spinner size="lg" />
-        <p className="ml-3 text-gray-500">{t('common.loading')}</p>
+        <p className="ml-3 text-muted-foreground">{t('common.loading')}</p>
       </div>
     );
   }
@@ -673,7 +673,7 @@ const FinancialRecords = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-gray-50 to-gray-100">
+    <div className="min-h-screen bg-gradient-to-b from-background to-muted">
       <SuccessAnimation 
         show={showSuccessAnimation} 
         onComplete={() => {
@@ -683,19 +683,19 @@ const FinancialRecords = () => {
         }}
         position={animationPosition}
       />
-      <header className="bg-white border-b">
+      <header className="bg-card border-b border-border">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
           <div className="flex items-center justify-between">
             <div className="w-1/3">
               <Link to={params.id ? `/client/${params.id}` : "/"}>
-                <Button variant="ghost" className="text-gray-600 hover:text-gray-900">
+                <Button variant="ghost" className="text-muted-foreground hover:text-foreground">
                   <ArrowLeft className="h-4 w-4" />
                 </Button>
               </Link>
             </div>
 
             <div className="flex flex-col items-center w-1/3">
-              <h1 className="text-xl font-semibold text-gray-900">{t('financialRecords.title')}</h1>
+              <h1 className="text-xl font-semibold text-foreground">{t('financialRecords.title')}</h1>
             </div>
 
             <div className="flex justify-end w-1/3">
@@ -711,11 +711,11 @@ const FinancialRecords = () => {
               <Button 
                 variant="ghost"
                 onClick={() => setShowAddForm(!showAddForm)}
-                className="w-full h-14 flex flex-col items-center justify-center gap-1 bg-gradient-to-br from-white to-gray-50 hover:from-blue-50 hover:to-blue-100 shadow-sm hover:shadow transition-all duration-200 border border-gray-100"
+                className="w-full h-14 flex flex-col items-center justify-center gap-1 bg-card hover:bg-muted shadow-sm hover:shadow transition-all duration-200 border border-border"
               >
                 <div className="flex items-center gap-2">
                   <Plus className="h-4 w-4 text-blue-600" />
-                  <span className="text-sm font-medium text-gray-700">{t('financialRecords.addNew')}</span>
+                  <span className="text-sm font-medium text-foreground">{t('financialRecords.addNew')}</span>
                 </div>
               </Button>
 
@@ -723,44 +723,44 @@ const FinancialRecords = () => {
                 <DialogTrigger asChild>
                   <Button 
                     variant="ghost"
-                    className="w-full h-14 flex flex-col items-center justify-center gap-1 bg-gradient-to-br from-white to-gray-50 hover:from-blue-50 hover:to-blue-100 shadow-sm hover:shadow transition-all duration-200 border border-gray-100"
+                    className="w-full h-14 flex flex-col items-center justify-center gap-1 bg-card hover:bg-muted shadow-sm hover:shadow transition-all duration-200 border border-border"
                   >
                     <div className="flex items-center gap-2">
                       <Upload className="h-4 w-4 text-blue-600" />
-                      <span className="text-sm font-medium text-gray-700">{t('financialRecords.importButton')}</span>
+                      <span className="text-sm font-medium text-foreground">{t('financialRecords.importButton')}</span>
                     </div>
                   </Button>
                 </DialogTrigger>
-                <DialogContent className="sm:max-w-[1000px] bg-white">
+                <DialogContent className="sm:max-w-[1000px] bg-card">
                   <DialogHeader>
                     <DialogTitle>{t('financialRecords.importTitle')}</DialogTitle>
                   </DialogHeader>
                   <div className="space-y-4">
-                    <p className="text-sm text-gray-500">{t('financialRecords.importInstructions')}</p>
-                    <div className="overflow-x-auto border rounded-lg">
+                    <p className="text-sm text-muted-foreground">{t('financialRecords.importInstructions')}</p>
+                    <div className="overflow-x-auto border border-border rounded-lg">
                       <table className="w-full text-xs">
                         <thead>
-                          <tr className="bg-gray-50">
-                            <th className="whitespace-nowrap px-3 py-2 text-left font-medium text-gray-900 border-b">Data</th>
-                            <th className="whitespace-nowrap px-3 py-2 text-left font-medium text-gray-900 border-b">PatrimonioInicial</th>
-                            <th className="whitespace-nowrap px-3 py-2 text-left font-medium text-gray-900 border-b">Aporte</th>
-                            <th className="whitespace-nowrap px-3 py-2 text-left font-medium text-gray-900 border-b">PatrimonioFinal</th>
-                            <th className="whitespace-nowrap px-3 py-2 text-left font-medium text-gray-900 border-b">Retorno</th>
-                            <th className="whitespace-nowrap px-3 py-2 text-left font-medium text-gray-900 border-b">RetornoPercentual</th>
-                            <th className="whitespace-nowrap px-3 py-2 text-left font-medium text-gray-900 border-b">RentabilidadeMeta</th>
-                            <th className="whitespace-nowrap px-3 py-2 text-left font-medium text-gray-900 border-b">Eventos</th>
+                          <tr className="bg-muted">
+                            <th className="whitespace-nowrap px-3 py-2 text-left font-medium text-foreground border-b border-border">Data</th>
+                            <th className="whitespace-nowrap px-3 py-2 text-left font-medium text-foreground border-b border-border">PatrimonioInicial</th>
+                            <th className="whitespace-nowrap px-3 py-2 text-left font-medium text-foreground border-b border-border">Aporte</th>
+                            <th className="whitespace-nowrap px-3 py-2 text-left font-medium text-foreground border-b border-border">PatrimonioFinal</th>
+                            <th className="whitespace-nowrap px-3 py-2 text-left font-medium text-foreground border-b border-border">Retorno</th>
+                            <th className="whitespace-nowrap px-3 py-2 text-left font-medium text-foreground border-b border-border">RetornoPercentual</th>
+                            <th className="whitespace-nowrap px-3 py-2 text-left font-medium text-foreground border-b border-border">RentabilidadeMeta</th>
+                            <th className="whitespace-nowrap px-3 py-2 text-left font-medium text-foreground border-b border-border">Eventos</th>
                           </tr>
                         </thead>
                         <tbody>
                           <tr>
-                            <td className="whitespace-nowrap px-3 py-2 text-gray-700">01/08/2023</td>
-                            <td className="whitespace-nowrap px-3 py-2 text-gray-700">{formatCurrency(51447.92, 'BRL')}</td>
-                            <td className="whitespace-nowrap px-3 py-2 text-gray-700">{formatCurrency(4000, 'BRL')}</td>
-                            <td className="whitespace-nowrap px-3 py-2 text-gray-700">{formatCurrency(55992.62, 'BRL')}</td>
-                            <td className="whitespace-nowrap px-3 py-2 text-gray-700">{formatCurrency(1000, 'BRL')}</td>
-                            <td className="whitespace-nowrap px-3 py-2 text-gray-700">1,19%</td>
-                            <td className="whitespace-nowrap px-3 py-2 text-gray-700">0,64%</td>
-                            <td className="whitespace-nowrap px-3 py-2 text-gray-700">{formatCurrency(500, 'BRL')}</td>
+                            <td className="whitespace-nowrap px-3 py-2 text-muted-foreground">01/08/2023</td>
+                            <td className="whitespace-nowrap px-3 py-2 text-muted-foreground">{formatCurrency(51447.92, 'BRL')}</td>
+                            <td className="whitespace-nowrap px-3 py-2 text-muted-foreground">{formatCurrency(4000, 'BRL')}</td>
+                            <td className="whitespace-nowrap px-3 py-2 text-muted-foreground">{formatCurrency(55992.62, 'BRL')}</td>
+                            <td className="whitespace-nowrap px-3 py-2 text-muted-foreground">{formatCurrency(1000, 'BRL')}</td>
+                            <td className="whitespace-nowrap px-3 py-2 text-muted-foreground">1,19%</td>
+                            <td className="whitespace-nowrap px-3 py-2 text-muted-foreground">0,64%</td>
+                            <td className="whitespace-nowrap px-3 py-2 text-muted-foreground">{formatCurrency(500, 'BRL')}</td>
                           </tr>
                         </tbody>
                       </table>
@@ -778,22 +778,22 @@ const FinancialRecords = () => {
               <Button 
                 variant="ghost"
                 onClick={handleReset}
-                className="w-full h-14 flex flex-col items-center justify-center gap-1 bg-gradient-to-br from-white to-gray-50 hover:from-red-50 hover:to-red-100 shadow-sm hover:shadow transition-all duration-200 border border-gray-100"
+                className="w-full h-14 flex flex-col items-center justify-center gap-1 bg-card hover:bg-muted shadow-sm hover:shadow transition-all duration-200 border border-border"
               >
                 <div className="flex items-center gap-2">
                   <RefreshCcw className="h-4 w-4 text-red-600" />
-                  <span className="text-sm font-medium text-gray-700">{t('financialRecords.resetRecords')}</span>
+                  <span className="text-sm font-medium text-foreground">{t('financialRecords.resetRecords')}</span>
                 </div>
               </Button>
 
               <Button 
                 variant="ghost"
                 onClick={handleSyncIPCA}
-                className="w-full h-14 flex flex-col items-center justify-center gap-1 bg-gradient-to-br from-white to-gray-50 hover:from-green-50 hover:to-green-100 shadow-sm hover:shadow transition-all duration-200 border border-gray-100"
+                className="w-full h-14 flex flex-col items-center justify-center gap-1 bg-card hover:bg-muted shadow-sm hover:shadow transition-all duration-200 border border-border"
               >
                 <div className="flex items-center gap-2">
                   <ArrowLeft className="h-4 w-4 text-green-600" />
-                  <span className="text-sm font-medium text-gray-700">{t('financialRecords.syncIPCA')}</span>
+                  <span className="text-sm font-medium text-foreground">{t('financialRecords.syncIPCA')}</span>
                 </div>
               </Button>
             </>
@@ -811,16 +811,16 @@ const FinancialRecords = () => {
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="grid gap-4">
-          {records?.length === 0 ? (
-            <Card className="p-6">
-              <p className="text-center text-gray-500">{t('financialRecords.noRecords')}</p>
+        {records?.length === 0 ? (
+          <Card className="p-6">
+            <p className="text-center text-muted-foreground">{t('financialRecords.noRecords')}</p>
             </Card>
           ) : (
             records?.map((record) => (
               <Card 
                 key={record.id} 
                 className={`p-6 relative ${
-                  updatedRecordIds.includes(record.id) ? 'animate-pulse bg-green-50' : ''
+                  updatedRecordIds.includes(record.id) ? 'animate-pulse bg-green-50 dark:bg-green-900/30' : ''
                 }`}
                 ref={(el) => {
                   if (el && updatedRecordIds.includes(record.id) && !showSuccessAnimation) {
@@ -837,17 +837,17 @@ const FinancialRecords = () => {
                   <div>
                     <h3 className="font-semibold text-lg">
                       {formatMonth(record.record_month)} {record.record_year}
-                      <div className="text-sm text-gray-500">
+                    <div className="text-sm text-muted-foreground">
                         {formatDate(record.record_month, record.record_year)}
                       </div>
                     </h3>
                   </div>
                   <div>
-                    <p className="text-sm text-gray-500">{t('financialRecords.startingBalance')}</p>
+                  <p className="text-sm text-muted-foreground">{t('financialRecords.startingBalance')}</p>
                     <p className="font-semibold">{formatCurrency(record.starting_balance, investmentPlan?.currency as CurrencyCode)}</p>
                   </div>
                   <div>
-                    <p className="text-sm text-gray-500">{t('financialRecords.monthlyContribution')}</p>
+                  <p className="text-sm text-muted-foreground">{t('financialRecords.monthlyContribution')}</p>
                     <div>
                       <p className={`font-semibold ${
                         investmentPlan?.monthly_deposit && 
@@ -858,29 +858,29 @@ const FinancialRecords = () => {
                         {formatCurrency(record.monthly_contribution, investmentPlan?.currency as CurrencyCode)}
                       </p>
                       {investmentPlan?.monthly_deposit && (
-                        <p className="text-xs text-gray-400 mt-0.5">
+                      <p className="text-xs text-muted-foreground mt-0.5">
                           Meta: {formatCurrency(investmentPlan.monthly_deposit, investmentPlan?.currency as CurrencyCode)}
                         </p>
                       )}
                     </div>
                   </div>
                   <div>
-                    <p className="text-sm text-gray-500">{t('financialRecords.endingBalance')}</p>
+                  <p className="text-sm text-muted-foreground">{t('financialRecords.endingBalance')}</p>
                     <p className="font-semibold">{formatCurrency(record.ending_balance, investmentPlan?.currency as CurrencyCode)}</p>
                     {record.events_balance != null && record.events_balance !== 0 && (
-                      <p className="text-xs text-gray-500 mt-0.5">
+                    <p className="text-xs text-muted-foreground mt-0.5">
                         Eventos: {formatCurrency(record.events_balance, investmentPlan?.currency as CurrencyCode)}
                       </p>
                     )}
                   </div>
                   <div>
-                    <p className="text-sm text-gray-500">{t('financialRecords.growth')}</p>
+                  <p className="text-sm text-muted-foreground">{t('financialRecords.growth')}</p>
                     <div className="space-y-1">
                       <div className="flex items-center gap-2">
                         <p className={`font-semibold ${record.monthly_return_rate >= 0 ? 'text-green-600' : 'text-red-600'}`}>
                           {record.monthly_return_rate != null ? record.monthly_return_rate.toFixed(2) : '--'}%
                         </p>
-                        <span className="text-xs text-gray-500">
+                      <span className="text-xs text-muted-foreground">
                           (meta: {record.target_rentability != null ? `${record.target_rentability.toFixed(2)}%` : '--'})
                         </span>
                       </div>
@@ -895,7 +895,7 @@ const FinancialRecords = () => {
                         variant="ghost"
                         size="icon"
                         onClick={() => handleEdit(record.id)}
-                        className="text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+                      className="text-blue-600 hover:text-blue-700 hover:bg-blue-50 dark:hover:bg-blue-900/30"
                       >
                         <Pencil className="h-4 w-4" />
                       </Button>
@@ -903,7 +903,7 @@ const FinancialRecords = () => {
                         variant="ghost"
                         size="icon"
                         onClick={() => handleDelete(record.id)}
-                        className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                      className="text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-900/30"
                       >
                         <Trash2 className="h-4 w-4" />
                       </Button>

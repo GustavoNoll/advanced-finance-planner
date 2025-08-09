@@ -26,19 +26,19 @@ function PlanMetric({ icon, label, value, color, duration }: PlanMetricProps) {
   const { t } = useTranslation();
   return (
     <div className="flex items-center gap-2 py-1">
-      <div className={`p-1.5 rounded-lg ${color} bg-opacity-10`}>
+      <div className={`p-1.5 rounded-lg ${color} bg-opacity-10 dark:bg-white/5`}>
         {icon}
       </div>
       <div className="flex-1">
-        <p className="text-sm text-gray-500">{label}</p>
-        <p className="text-base font-medium text-gray-900">
+        <p className="text-sm text-gray-500 dark:text-gray-400">{label}</p>
+        <p className="text-base font-medium text-gray-900 dark:text-gray-100">
           {value}
         </p>
       </div>
       {duration && (
         <div className="text-right">
-          <p className="text-sm text-gray-500">{t('dashboard.investmentPlan.duration')}</p>
-          <p className="text-base font-medium text-gray-900">
+          <p className="text-sm text-gray-500 dark:text-gray-400">{t('dashboard.investmentPlan.duration')}</p>
+          <p className="text-base font-medium text-gray-900 dark:text-gray-100">
             {duration}
           </p>
         </div>
@@ -153,7 +153,7 @@ export function InvestmentPlanDetails({ investmentPlan, birthDate, onPlanUpdated
   return (
     <div className="space-y-2">
       <div className="flex justify-between items-center">
-        <h3 className="text-sm font-semibold text-gray-900 flex items-center gap-2">
+        <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100 flex items-center gap-2">
           <CalendarDays className="h-4 w-4 text-blue-600" />
           {t('dashboard.investmentPlan.timeline')}
         </h3>
@@ -162,7 +162,7 @@ export function InvestmentPlanDetails({ investmentPlan, birthDate, onPlanUpdated
             variant="ghost"
             size="sm"
             onClick={onEditClick}
-            className="text-gray-600 hover:text-blue-600"
+            className="text-gray-600 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400"
           >
             <Pencil className="h-4 w-4" />
           </Button>
@@ -180,7 +180,7 @@ export function InvestmentPlanDetails({ investmentPlan, birthDate, onPlanUpdated
 
       {/* Financial Section */}
       <div className="space-y-3">
-        <h3 className="text-sm font-semibold text-gray-900 flex items-center gap-2">
+        <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100 flex items-center gap-2">
           <ChartLine className="h-4 w-4 text-amber-600" />
           {t('dashboard.investmentPlan.financial')}
         </h3>

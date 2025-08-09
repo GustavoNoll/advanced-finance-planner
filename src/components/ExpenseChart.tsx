@@ -655,13 +655,13 @@ export const ExpenseChart = ({
         
         <div className="flex flex-wrap items-center gap-4">
 
-          <div className="inline-flex items-center rounded-md border border-gray-200 p-1 bg-gray-50">
+          <div className="inline-flex items-center rounded-md border border-gray-200 dark:border-gray-700 p-1 bg-gray-50 dark:bg-gray-900/80">
             <button
               onClick={() => setZoomLevel('1y')}
               className={`px-3 py-1.5 text-sm font-medium rounded-md transition-colors ${
                 zoomLevel === '1y' 
-                  ? 'bg-white text-blue-600 shadow-sm' 
-                  : 'text-gray-600 hover:text-gray-900'
+                  ? 'bg-white dark:bg-gray-800 text-blue-600 dark:text-blue-400 shadow-sm' 
+                  : 'text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100'
               }`}
             >
               {t('common.last1YearS')}
@@ -670,8 +670,8 @@ export const ExpenseChart = ({
               onClick={() => setZoomLevel('5y')}
               className={`px-3 py-1.5 text-sm font-medium rounded-md transition-colors ${
                 zoomLevel === '5y' 
-                  ? 'bg-white text-blue-600 shadow-sm' 
-                  : 'text-gray-600 hover:text-gray-900'
+                  ? 'bg-white dark:bg-gray-800 text-blue-600 dark:text-blue-400 shadow-sm' 
+                  : 'text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100'
               }`}
             >
               {t('common.last5YearsS')}
@@ -680,8 +680,8 @@ export const ExpenseChart = ({
               onClick={() => setZoomLevel('10y')}
               className={`px-3 py-1.5 text-sm font-medium rounded-md transition-colors ${
                 zoomLevel === '10y' 
-                  ? 'bg-white text-blue-600 shadow-sm' 
-                  : 'text-gray-600 hover:text-gray-900'
+                  ? 'bg-white dark:bg-gray-800 text-blue-600 dark:text-blue-400 shadow-sm' 
+                  : 'text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100'
               }`}
             >
               {t('common.last10YearsS')}
@@ -690,8 +690,8 @@ export const ExpenseChart = ({
               onClick={() => setZoomLevel('all')}
               className={`px-3 py-1.5 text-sm font-medium rounded-md transition-colors ${
                 zoomLevel === 'all' 
-                  ? 'bg-white text-blue-600 shadow-sm' 
-                  : 'text-gray-600 hover:text-gray-900'
+                  ? 'bg-white dark:bg-gray-800 text-blue-600 dark:text-blue-400 shadow-sm' 
+                  : 'text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100'
               }`}
             >
               {t('common.all')}
@@ -700,8 +700,8 @@ export const ExpenseChart = ({
               onClick={() => setZoomLevel('custom')}
               className={`px-3 py-1.5 text-sm font-medium rounded-md transition-colors ${
                 zoomLevel === 'custom' 
-                  ? 'bg-white text-blue-600 shadow-sm' 
-                  : 'text-gray-600 hover:text-gray-900'
+                  ? 'bg-white dark:bg-gray-800 text-blue-600 dark:text-blue-400 shadow-sm' 
+                  : 'text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100'
               }`}
             >
               {t('common.custom')}
@@ -709,7 +709,7 @@ export const ExpenseChart = ({
             {zoomLevel === 'custom' && (
               <div className="flex items-center gap-2 ml-4">
                 <div className="flex items-center gap-2">
-                  <label className="text-sm text-gray-600">{t('expenseChart.pastYears')}:</label>
+                  <label className="text-sm text-gray-600 dark:text-gray-300">{t('expenseChart.pastYears')}:</label>
                   <input
                     type="number"
                     min="0"
@@ -723,11 +723,11 @@ export const ExpenseChart = ({
                       }));
                     }}
                     step="any"
-                    className="w-20 px-2 py-1 text-sm border rounded-md"
+                    className="w-20 px-2 py-1 text-sm border border-gray-200 dark:border-gray-700 rounded-md bg-white dark:bg-gray-900 text-gray-700 dark:text-gray-200"
                   />
                 </div>
                 <div className="flex items-center gap-2">
-                  <label className="text-sm text-gray-600">{t('expenseChart.futureYears')}:</label>
+                  <label className="text-sm text-gray-600 dark:text-gray-300">{t('expenseChart.futureYears')}:</label>
                   <input
                     type="number"
                     min="0"
@@ -741,18 +741,18 @@ export const ExpenseChart = ({
                       }));
                     }}
                     step="any"
-                    className="w-20 px-2 py-1 text-sm border rounded-md"
+                    className="w-20 px-2 py-1 text-sm border border-gray-200 dark:border-gray-700 rounded-md bg-white dark:bg-gray-900 text-gray-700 dark:text-gray-200"
                   />
                 </div>
               </div>
             )}
           </div>
           {onOpenAdvancedOptions && (
-            <div className="ml-4 pl-4 border-l border-gray-200">
+            <div className="ml-4 pl-4 border-l border-gray-200 dark:border-gray-700">
               <button
                 type="button"
                 onClick={onOpenAdvancedOptions}
-                className="px-3 py-1.5 text-sm font-medium rounded-md transition-colors text-gray-600 hover:text-gray-900"
+                className="px-3 py-1.5 text-sm font-medium rounded-md transition-colors text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100"
               >
                 {t('expenseChart.advancedOptions')}
               </button>

@@ -71,7 +71,7 @@ export const ClientLoginForm: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen flex flex-col justify-center items-center bg-gradient-to-br from-slate-50 via-white to-blue-50/50 p-4">
+    <div className="min-h-screen flex flex-col justify-center items-center bg-gradient-to-br from-slate-50 via-white to-blue-50/50 p-4 dark:from-slate-900 dark:via-gray-950 dark:to-slate-900/50">
       <div className="flex flex-col items-center justify-center w-full max-w-md">
         <Logo variant="full" className="mb-8" />
         <Card className="w-full shadow-lg border-0">

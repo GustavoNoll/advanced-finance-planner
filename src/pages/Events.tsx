@@ -163,20 +163,20 @@ const Events = () => {
   const completedEvents = events?.filter(event => event.status === 'completed') || [];
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-gray-50 to-gray-100">
-      <header className="bg-white border-b">
+    <div className="min-h-screen bg-background">
+      <header className="bg-background border-b border-border">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
           <div className="flex items-center justify-between">
             <div className="w-1/3">
               <Link to={userId ? `/client/${userId}` : "/"}>
-                <Button variant="ghost" className="text-gray-600 hover:text-gray-900">
+                <Button variant="ghost" className="text-muted-foreground hover:text-foreground">
                   <ArrowLeft className="h-4 w-4" />
                 </Button>
               </Link>
             </div>
 
             <div className="flex flex-col items-center w-1/3">
-              <h1 className="text-xl font-semibold text-gray-900">{t("events.title")}</h1>
+              <h1 className="text-xl font-semibold text-foreground">{t("events.title")}</h1>
             </div>
 
             <div className="w-1/3" />
@@ -189,16 +189,16 @@ const Events = () => {
           <Button 
             variant="ghost"
             onClick={() => setShowAddForm(!showAddForm)}
-            className="w-full h-14 flex flex-col items-center justify-center gap-1 bg-gradient-to-br from-white to-gray-50 hover:from-blue-50 hover:to-blue-100 shadow-sm hover:shadow transition-all duration-200 border border-gray-100"
+            className="w-full h-14 flex flex-col items-center justify-center gap-1 bg-gradient-to-br from-card to-muted hover:from-accent hover:to-accent/60 shadow-sm hover:shadow transition-all duration-200 border border-border"
           >
             <div className="flex items-center gap-2">
-              <Plus className="h-4 w-4 text-blue-600" />
-              <span className="text-sm font-medium text-gray-700">{t("events.addNew")}</span>
+              <Plus className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+              <span className="text-sm font-medium text-foreground">{t("events.addNew")}</span>
             </div>
           </Button>
 
           {(showAddForm || editingEvent) && (
-            <Card className="p-4 bg-white shadow-sm border border-gray-200">
+            <Card className="p-4 bg-card shadow-sm border border-border">
               <FinancialItemForm
                 type="event"
                 onSubmit={(values) => editingEvent ? updateEvent.mutate(values) : createEvent.mutate(values)}
@@ -254,7 +254,7 @@ const Events = () => {
             <Button
               variant="ghost"
               onClick={() => setShowCompleted(!showCompleted)}
-              className="w-full justify-start text-gray-500"
+              className="w-full justify-start text-muted-foreground"
             >
               {showCompleted ? t("events.hideCompleted") : t("events.showCompleted")}
             </Button>

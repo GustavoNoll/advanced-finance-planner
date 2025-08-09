@@ -127,7 +127,7 @@ export const CreateClient = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 p-8">
+    <div className="min-h-screen bg-gradient-to-b from-background to-muted p-8">
       <div className="max-w-2xl mx-auto">
         <Card>
           <CardHeader>
@@ -136,7 +136,7 @@ export const CreateClient = () => {
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-6">
               <div className="space-y-2">
-                <label className="text-sm font-medium">
+                <label className="text-sm font-medium text-muted-foreground">
                   {t('createClient.form.name.label')}
                 </label>
                 <Input
@@ -150,7 +150,7 @@ export const CreateClient = () => {
               </div>
 
               <div className="space-y-2">
-                <label className="text-sm font-medium">
+                <label className="text-sm font-medium text-muted-foreground">
                   {t('createClient.form.password.label')}
                 </label>
                 <Input
@@ -165,7 +165,7 @@ export const CreateClient = () => {
               </div>
 
               <div className="space-y-2">
-                <label className="text-sm font-medium">
+                <label className="text-sm font-medium text-muted-foreground">
                   {t('createClient.form.birthDate.label')}
                 </label>
                 <Input

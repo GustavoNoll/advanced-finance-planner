@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en" class="antialiased dark:bg-gray-950">
+<html lang="en" class="antialiased">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -7,6 +7,18 @@
     <meta name="description" content="Foundation" />
     <meta name="author" content="Noll" />
     <meta property="og:image" content="/images/image.png" />
+    <script>
+      ;(() => {
+        try {
+          const ls = localStorage.getItem('theme')
+          const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches
+          if (ls === 'dark' || (!ls && prefersDark)) document.documentElement.classList.add('dark')
+          else document.documentElement.classList.remove('dark')
+        } catch (_) {
+          // no-op
+        }
+      })()
+    </script>
   </head>
 
   <body>

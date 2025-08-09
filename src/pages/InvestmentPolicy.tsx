@@ -166,43 +166,43 @@ const InvestmentPolicy = ({
       id: 'personal-information',
       title: t('investmentPolicy.sections.personalInformation'),
       icon: User,
-      color: 'bg-cyan-500/10 text-cyan-500'
+      color: 'bg-cyan-500/10 text-cyan-600 dark:bg-cyan-500/20 dark:text-cyan-300'
     },
     {
       id: 'professional-information',
       title: t('investmentPolicy.sections.professionalInformation'),
       icon: UserCircle2,
-      color: 'bg-blue-500/10 text-blue-500'
+      color: 'bg-blue-500/10 text-blue-600 dark:bg-blue-500/20 dark:text-blue-300'
     },
     {
       id: 'family-structure',
       title: t('investmentPolicy.sections.familyStructure'),
       icon: Users,
-      color: 'bg-purple-500/10 text-purple-500'
+      color: 'bg-purple-500/10 text-purple-600 dark:bg-purple-500/20 dark:text-purple-300'
     },
     {
       id: 'budget',
       title: t('investmentPolicy.sections.budget'),
       icon: Wallet,
-      color: 'bg-green-500/10 text-green-500'
+      color: 'bg-green-500/10 text-green-600 dark:bg-green-500/20 dark:text-green-300'
     },
     {
       id: 'patrimonial',
       title: t('investmentPolicy.sections.patrimonial'),
       icon: Building2,
-      color: 'bg-orange-500/10 text-orange-500'
+      color: 'bg-orange-500/10 text-orange-600 dark:bg-orange-500/20 dark:text-orange-300'
     },
     {
       id: 'life',
       title: t('investmentPolicy.sections.life'),
       icon: HeartPulse,
-      color: 'bg-red-500/10 text-red-500'
+      color: 'bg-red-500/10 text-red-600 dark:bg-red-500/20 dark:text-red-300'
     },
     {
       id: 'investment-preferences',
       title: t('investmentPolicy.sections.investmentPreferences'),
       icon: LineChart,
-      color: 'bg-indigo-500/10 text-indigo-500'
+      color: 'bg-indigo-500/10 text-indigo-600 dark:bg-indigo-500/20 dark:text-indigo-300'
     }
   ];
 
@@ -263,10 +263,10 @@ const InvestmentPolicy = ({
                 <AccordionItem 
                   key={section.id} 
                   value={section.id} 
-                  className="border rounded-lg scroll-mt-24"
+                  className="border rounded-lg scroll-mt-24 bg-card"
                 >
                   <div ref={(el) => (sectionRefs.current[section.id] = el)}>
-                    <AccordionTrigger className="px-6 py-4 hover:no-underline">
+                    <AccordionTrigger className="px-6 py-4 hover:no-underline bg-card hover:bg-muted/50">
                       <div className="flex items-center justify-between w-full">
                         <div className="flex items-center gap-3">
                           <div className={`p-2 rounded-lg ${section.color}`}>
@@ -277,7 +277,7 @@ const InvestmentPolicy = ({
                         <ChevronDown className="h-4 w-4 shrink-0 transition-transform duration-200" />
                       </div>
                     </AccordionTrigger>
-                    <AccordionContent className="px-6 pb-4">
+                    <AccordionContent className="px-6 pb-4 bg-card">
                       {section.id === 'personal-information' && (
                         <PersonalInformationForm
                           initialData={clientProfile}

@@ -1045,6 +1045,7 @@ export const ptBR = {
       }
     },
     children: {
+      empty: 'Nenhum filho cadastrado',
       title: 'Filhos',
       add: 'Adicionar Filho',
       name: {

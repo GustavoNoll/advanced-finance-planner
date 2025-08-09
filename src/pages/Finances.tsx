@@ -333,7 +333,7 @@ const Finances = ({
       goalsAndEvents?.goals,
       goalsAndEvents?.events
     );
-  }, [investmentPlan, clientProfile, allFinancialRecords, goalsAndEvents?.goals, goalsAndEvents?.events]);
+  }, [investmentPlan, clientProfile, allFinancialRecords, goalsAndEvents]);
 
   // Use chart options projection data if available, otherwise use original
   const projectionData = chartOptionsHook.hasActiveChartOptions 
@@ -394,7 +394,7 @@ const Finances = ({
         projectedContribution: 0,
       };
     }
-  }, [allFinancialRecords, investmentPlan, clientProfile?.birth_date, goalsAndEvents?.goals, goalsAndEvents?.events, projectionData]);
+  }, [allFinancialRecords, investmentPlan, clientProfile, goalsAndEvents, projectionData]);
 
   const calculateMonthlyContributions = useCallback((period: TimePeriod = 'all') => {
     if (!processedRecords.financialRecords?.length) return 0;
@@ -473,11 +473,11 @@ const Finances = ({
             <Button 
               variant="outline"
               size="lg"
-              className="w-full h-14 flex flex-col items-center justify-center gap-1 bg-gradient-to-br from-white/95 via-slate-50/90 to-blue-50/80 backdrop-blur-sm hover:from-blue-50/95 hover:via-blue-100/90 hover:to-blue-200/80 shadow-md hover:shadow-xl transition-all duration-200 border border-gray-100/50 rounded-xl"
+              className="w-full h-14 flex flex-col items-center justify-center gap-1 bg-gradient-to-br from-white/95 via-slate-50/90 to-blue-50/80 dark:from-gray-900/90 dark:via-gray-900/80 dark:to-slate-800/70 backdrop-blur-sm hover:from-blue-50/95 dark:hover:from-gray-800 hover:via-blue-100/90 dark:hover:via-gray-800 hover:to-blue-200/80 dark:hover:to-slate-700 shadow-md hover:shadow-xl transition-all duration-200 border border-gray-100/50 dark:border-gray-800 rounded-xl"
             >
               <div className="flex items-center gap-2">
-                <History className="h-4 w-4 text-blue-600" />
-                <span className="text-sm font-medium text-gray-700 whitespace-nowrap">{t('dashboard.buttons.financialRecords')}</span>
+                <History className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+                <span className="text-sm font-medium text-gray-700 dark:text-gray-200 whitespace-nowrap">{t('dashboard.buttons.financialRecords')}</span>
               </div>
             </Button>
           </Link>
@@ -486,11 +486,11 @@ const Finances = ({
             <Button 
               variant="outline"
               size="lg"
-              className="w-full h-14 flex flex-col items-center justify-center gap-1 bg-gradient-to-br from-white/95 via-slate-50/90 to-blue-50/80 backdrop-blur-sm hover:from-blue-50/95 hover:via-blue-100/90 hover:to-blue-200/80 shadow-md hover:shadow-xl transition-all duration-200 border border-gray-100/50 rounded-xl"
+              className="w-full h-14 flex flex-col items-center justify-center gap-1 bg-gradient-to-br from-white/95 via-slate-50/90 to-blue-50/80 dark:from-gray-900/90 dark:via-gray-900/80 dark:to-slate-800/70 backdrop-blur-sm hover:from-blue-50/95 dark:hover:from-gray-800 hover:via-blue-100/90 dark:hover:via-gray-800 hover:to-blue-200/80 dark:hover:to-slate-700 shadow-md hover:shadow-xl transition-all duration-200 border border-gray-100/50 dark:border-gray-800 rounded-xl"
             >
               <div className="flex items-center gap-2">
-                <TrendingUp className="h-4 w-4 text-blue-600" />
-                <span className="text-sm font-medium text-gray-700 whitespace-nowrap">{t('dashboard.buttons.investmentPlan')}</span>
+                <TrendingUp className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+                <span className="text-sm font-medium text-gray-700 dark:text-gray-200 whitespace-nowrap">{t('dashboard.buttons.investmentPlan')}</span>
               </div>
             </Button>
           </Link>
@@ -502,18 +502,18 @@ const Finances = ({
             <Button 
               variant="outline"
               size="lg"
-              className="w-full h-14 flex flex-col items-center justify-center gap-1 bg-gradient-to-br from-white/95 via-slate-50/90 to-blue-50/80 backdrop-blur-sm hover:from-blue-50/95 hover:via-blue-100/90 hover:to-blue-200/80 shadow-md hover:shadow-xl transition-all duration-200 border border-gray-100/50 rounded-xl"
+              className="w-full h-14 flex flex-col items-center justify-center gap-1 bg-gradient-to-br from-white/95 via-slate-50/90 to-blue-50/80 dark:from-gray-900/90 dark:via-gray-900/80 dark:to-slate-800/70 backdrop-blur-sm hover:from-blue-50/95 dark:hover:from-gray-800 hover:via-blue-100/90 dark:hover:via-gray-800 hover:to-blue-200/80 dark:hover:to-slate-700 shadow-md hover:shadow-xl transition-all duration-200 border border-gray-100/50 dark:border-gray-800 rounded-xl"
             >
               <div className="flex items-center gap-2">
                 <div className="relative">
-                  <Target className="h-4 w-4 text-blue-600" />
+                  <Target className="h-4 w-4 text-blue-600 dark:text-blue-400" />
                   {counters?.goals > 0 && (
                     <div className="absolute -top-2 -right-2 bg-gradient-to-r from-blue-600 via-blue-700 to-indigo-700 text-white text-xs rounded-full min-w-[16px] h-4 flex items-center justify-center px-1 shadow-sm">
                       {counters.goals}
                     </div>
                   )}
                 </div>
-                <span className="text-sm font-medium text-gray-700 whitespace-nowrap">{t('dashboard.buttons.financialGoals')}</span>
+                <span className="text-sm font-medium text-gray-700 dark:text-gray-200 whitespace-nowrap">{t('dashboard.buttons.financialGoals')}</span>
               </div>
             </Button>
           </Link>
@@ -525,18 +525,18 @@ const Finances = ({
             <Button 
               variant="outline"
               size="lg"
-              className="w-full h-14 flex flex-col items-center justify-center gap-1 bg-gradient-to-br from-white/95 via-slate-50/90 to-blue-50/80 backdrop-blur-sm hover:from-blue-50/95 hover:via-blue-100/90 hover:to-blue-200/80 shadow-md hover:shadow-xl transition-all duration-200 border border-gray-100/50 rounded-xl"
+              className="w-full h-14 flex flex-col items-center justify-center gap-1 bg-gradient-to-br from-white/95 via-slate-50/90 to-blue-50/80 dark:from-gray-900/90 dark:via-gray-900/80 dark:to-slate-800/70 backdrop-blur-sm hover:from-blue-50/95 dark:hover:from-gray-800 hover:via-blue-100/90 dark:hover:via-gray-800 hover:to-blue-200/80 dark:hover:to-slate-700 shadow-md hover:shadow-xl transition-all duration-200 border border-gray-100/50 dark:border-gray-800 rounded-xl"
             >
               <div className="flex items-center gap-2">
                 <div className="relative">
-                  <Calendar className="h-4 w-4 text-blue-600" />
+                  <Calendar className="h-4 w-4 text-blue-600 dark:text-blue-400" />
                   {counters?.events > 0 && (
                     <div className="absolute -top-2 -right-2 bg-gradient-to-r from-blue-600 via-blue-700 to-indigo-700 text-white text-xs rounded-full min-w-[16px] h-4 flex items-center justify-center px-1 shadow-sm">
                       {counters.events}
                     </div>
                   )}
                 </div>
-                <span className="text-sm font-medium text-gray-700 whitespace-nowrap">{t('dashboard.buttons.events')}</span>
+                <span className="text-sm font-medium text-gray-700 dark:text-gray-200 whitespace-nowrap">{t('dashboard.buttons.events')}</span>
               </div>
             </Button>
           </Link>
@@ -546,46 +546,45 @@ const Finances = ({
       {/* Highlights Section */}
       <div className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8 py-4">
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
-          {calculateHighlights().map((highlight, index) => (
+          {calculateHighlights().map((highlight, index) => {
+            function getHighlightBgClasses(i: number): string {
+              if (i === 0) return 'bg-gradient-to-br from-emerald-50 via-green-50 to-emerald-100/70 dark:from-emerald-900/60 dark:via-emerald-800/40 dark:to-emerald-700/40 border border-emerald-100/60 dark:border-emerald-700/60'
+              if (i === 1) return 'bg-gradient-to-br from-blue-50 via-indigo-50 to-blue-100/70 dark:from-blue-900/60 dark:via-indigo-800/40 dark:to-blue-700/40 border border-blue-100/60 dark:border-blue-700/60'
+              return 'bg-gradient-to-br from-rose-50 via-red-50 to-rose-100/70 dark:from-rose-900/60 dark:via-rose-800/40 dark:to-rose-700/40 border border-rose-100/60 dark:border-rose-700/60'
+            }
+            return (
             <div 
               key={index}
-              className="flex items-center gap-3 p-3 rounded-lg shadow-sm hover:shadow-md transition-all duration-200"
-              style={{
-                background: index === 0 
-                  ? 'linear-gradient(135deg, rgba(236, 253, 245, 0.8), rgba(167, 243, 208, 0.8))'
-                  : index === 1
-                  ? 'linear-gradient(135deg, rgba(239, 246, 255, 0.8), rgba(191, 219, 254, 0.8))'
-                  : 'linear-gradient(135deg, rgba(254, 242, 242, 0.8), rgba(254, 202, 202, 0.8))'
-              }}
+              className={`flex items-center gap-3 p-3 rounded-lg shadow-sm hover:shadow-md transition-all duration-200 ${getHighlightBgClasses(index)}`}
             >
-              <div className="p-2 rounded-lg bg-white/50">
+              <div className="p-2 rounded-lg bg-white/50 dark:bg-gray-800/80">
                 {highlight.icon}
               </div>
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-gray-700 truncate">
+                <p className="text-sm font-medium text-gray-700 dark:text-gray-100 truncate">
                   {highlight.message}
                 </p>
               </div>
             </div>
-          ))}
+          )})}
         </div>
       </div>
 
       <main className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <DashboardCard 
-            className="transform transition-all duration-300 hover:scale-[1.02] hover:shadow-2xl bg-gradient-to-br from-white/95 via-slate-50/90 to-blue-50/80 backdrop-blur-sm border border-gray-100/50 rounded-xl shadow-lg hover:border-blue-100/50"
+            className="transform transition-all duration-300 hover:scale-[1.02] hover:shadow-2xl bg-gradient-to-br from-white/95 via-slate-50/90 to-blue-50/80 dark:from-gray-900/90 dark:via-gray-900/80 dark:to-slate-800/70 backdrop-blur-sm border border-gray-100/50 dark:border-gray-800 rounded-xl shadow-lg hover:border-blue-100/50 dark:hover:border-gray-700"
             title={
               <div className="flex items-center gap-2">
-                <span className="text-gray-900 font-medium">
+                <span className="text-gray-900 dark:text-gray-100 font-medium">
                   {t('dashboard.cards.portfolioValue.title')}
                 </span>
                 <HoverCard>
                   <HoverCardTrigger>
-                    <Info className="h-4 w-4 text-gray-400 cursor-help hover:text-blue-600 transition-colors" />
+                    <Info className="h-4 w-4 text-gray-400 dark:text-gray-300 cursor-help hover:text-blue-600 dark:hover:text-blue-400 transition-colors" />
                   </HoverCardTrigger>
-                  <HoverCardContent className="w-80 bg-white shadow-lg rounded-lg">
-                    <p className="text-sm text-gray-600">
+                  <HoverCardContent className="w-80 bg-white dark:bg-gray-900 shadow-lg rounded-lg">
+                    <p className="text-sm text-gray-600 dark:text-gray-300">
                       {t('dashboard.cards.portfolioValue.tooltip')}
                     </p>
                   </HoverCardContent>
@@ -595,18 +594,18 @@ const Finances = ({
             icon={Briefcase}
           >
             <div className="space-y-3">
-              <p className="text-3xl font-bold bg-gradient-to-r from-blue-600 via-indigo-600 to-slate-700 bg-clip-text text-transparent drop-shadow-sm">
+              <p className="text-3xl font-bold bg-gradient-to-r from-blue-600 via-indigo-600 to-slate-700 dark:from-blue-400 dark:via-indigo-400 dark:to-slate-300 bg-clip-text text-transparent drop-shadow-sm">
                 {formatCurrency(portfolioValue, investmentPlan?.currency as CurrencyCode)}
               </p>
               {portfolioIncreaseRate && (
                 <div className={`flex items-center gap-2 ${
-                  portfolioIncreaseRate >= 0 ? 'bg-gradient-to-r from-emerald-50 via-green-50 to-emerald-100/50' : 'bg-gradient-to-r from-rose-50 via-red-50 to-rose-100/50'
-                } rounded-full px-3 py-1 w-fit shadow-sm backdrop-blur-sm border border-white/50`}>
+                  portfolioIncreaseRate >= 0 ? 'bg-gradient-to-r from-emerald-50 via-green-50 to-emerald-100/50 dark:from-emerald-900/30 dark:via-emerald-900/20 dark:to-emerald-900/10' : 'bg-gradient-to-r from-rose-50 via-red-50 to-rose-100/50 dark:from-rose-900/30 dark:via-rose-900/20 dark:to-rose-900/10'
+                } rounded-full px-3 py-1 w-fit shadow-sm backdrop-blur-sm border border-white/50 dark:border-gray-800`}>
                   <LineChart className={`h-4 w-4 ${
-                    portfolioIncreaseRate >= 0 ? 'text-green-600' : 'text-red-600'
+                    portfolioIncreaseRate >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'
                   }`} />
                   <p className={`text-sm font-medium ${
-                    portfolioIncreaseRate >= 0 ? 'text-green-600' : 'text-red-600'
+                    portfolioIncreaseRate >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'
                   }`}>
                     {portfolioIncreaseRate.toFixed(2)}% {t('dashboard.cards.portfolioValue.monthlyReturn')}
                   </p>
@@ -616,26 +615,26 @@ const Finances = ({
           </DashboardCard>
           
           <DashboardCard 
-            className="transform transition-all duration-300 hover:scale-[1.02] hover:shadow-2xl bg-gradient-to-br from-white/95 via-slate-50/90 to-blue-50/80 backdrop-blur-sm border border-gray-100/50 rounded-xl shadow-lg hover:border-blue-100/50"
+            className="transform transition-all duration-300 hover:scale-[1.02] hover:shadow-2xl bg-gradient-to-br from-white/95 via-slate-50/90 to-blue-50/80 dark:from-gray-900/90 dark:via-gray-900/80 dark:to-slate-800/70 backdrop-blur-sm border border-gray-100/50 dark:border-gray-800 rounded-xl shadow-lg hover:border-blue-100/50 dark:hover:border-gray-700"
             title={
               <div className="flex items-center justify-between w-full">
                 <div className="flex items-center gap-2">
-                  <span className="text-gray-900 font-medium">
+                  <span className="text-gray-900 dark:text-gray-100 font-medium">
                     {t('dashboard.cards.contributions.title')}
                   </span>
                   <HoverCard>
                     <HoverCardTrigger>
-                      <Info className="h-4 w-4 text-gray-400 cursor-help hover:text-blue-600 transition-colors" />
+                      <Info className="h-4 w-4 text-gray-400 dark:text-gray-300 cursor-help hover:text-blue-600 dark:hover:text-blue-400 transition-colors" />
                     </HoverCardTrigger>
-                    <HoverCardContent className="w-80 bg-white shadow-lg rounded-lg">
-                      <p className="text-sm text-gray-600">
+                    <HoverCardContent className="w-80 bg-white dark:bg-gray-900 shadow-lg rounded-lg">
+                      <p className="text-sm text-gray-600 dark:text-gray-300">
                         {t('dashboard.cards.contributions.tooltip')}
                       </p>
                     </HoverCardContent>
                   </HoverCard>
                 </div>
                 <Select value={contributionPeriod} onValueChange={(value) => setContributionPeriod(value as TimePeriod)}>
-                  <SelectTrigger className="w-[150px] h-8 text-sm border border-gray-200 rounded-lg px-2 bg-white/90 text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent shadow-sm hover:border-blue-200 transition-colors ml-auto">
+                  <SelectTrigger className="w-[150px] h-8 text-sm border border-gray-200 dark:border-gray-700 rounded-lg px-2 bg-white/90 dark:bg-gray-900/80 text-gray-700 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent shadow-sm hover:border-blue-200 dark:hover:border-gray-600 transition-colors ml-auto">
                     <SelectValue placeholder={t('common.selectPeriod')} />
                   </SelectTrigger>
                   <SelectContent>
@@ -653,8 +652,8 @@ const Finances = ({
               <p className={`text-2xl font-bold drop-shadow-sm ${
                 investmentPlan?.required_monthly_deposit && 
                 totalContribution >= investmentPlan.required_monthly_deposit 
-                  ? 'text-green-600' 
-                  : 'text-red-600'
+                  ? 'text-green-600 dark:text-green-400' 
+                  : 'text-red-600 dark:text-red-400'
               }`}>
                 {formatCurrency(totalContribution, investmentPlan?.currency as CurrencyCode)}
               </p>
@@ -665,26 +664,26 @@ const Finances = ({
           </DashboardCard>
           
           <DashboardCard 
-            className="transform transition-all duration-300 hover:scale-[1.02] hover:shadow-2xl bg-gradient-to-br from-white/95 via-slate-50/90 to-blue-50/80 backdrop-blur-sm border border-gray-100/50 rounded-xl shadow-lg hover:border-blue-100/50"
+            className="transform transition-all duration-300 hover:scale-[1.02] hover:shadow-2xl bg-gradient-to-br from-white/95 via-slate-50/90 to-blue-50/80 dark:from-gray-900/90 dark:via-gray-900/80 dark:to-slate-800/70 backdrop-blur-sm border border-gray-100/50 dark:border-gray-800 rounded-xl shadow-lg hover:border-blue-100/50 dark:hover:border-gray-700"
             title={
               <div className="flex items-center justify-between w-full">
                 <div className="flex items-center gap-2">
-                  <span className="text-gray-900 font-medium">
+                  <span className="text-gray-900 dark:text-gray-100 font-medium">
                     {t('dashboard.cards.totalReturns.title')}
                   </span>
                   <HoverCard>
                     <HoverCardTrigger>
-                      <Info className="h-4 w-4 text-gray-400 cursor-help hover:text-blue-600 transition-colors" />
+                      <Info className="h-4 w-4 text-gray-400 dark:text-gray-300 cursor-help hover:text-blue-600 dark:hover:text-blue-400 transition-colors" />
                     </HoverCardTrigger>
-                    <HoverCardContent className="w-80 bg-white shadow-lg rounded-lg">
-                      <p className="text-sm text-gray-600">
+                    <HoverCardContent className="w-80 bg-white dark:bg-gray-900 shadow-lg rounded-lg">
+                      <p className="text-sm text-gray-600 dark:text-gray-300">
                         {t('dashboard.cards.totalReturns.tooltip')}
                       </p>
                     </HoverCardContent>
                   </HoverCard>
                 </div>
                 <Select value={selectedPeriod} onValueChange={(value) => setSelectedPeriod(value as TimePeriod)}>
-                  <SelectTrigger className="w-[150px] h-8 text-sm border border-gray-200 rounded-lg px-2 bg-white/90 text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent shadow-sm hover:border-blue-200 transition-colors ml-auto">
+                  <SelectTrigger className="w-[150px] h-8 text-sm border border-gray-200 dark:border-gray-700 rounded-lg px-2 bg-white/90 dark:bg-gray-900/80 text-gray-700 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent shadow-sm hover:border-blue-200 dark:hover:border-gray-600 transition-colors ml-auto">
                     <SelectValue placeholder={t('common.selectPeriod')} />
                   </SelectTrigger>
                   <SelectContent>
@@ -700,19 +699,19 @@ const Finances = ({
           >
             <div className="space-y-2">
               <p className={`text-2xl font-bold drop-shadow-sm ${
-                totalAmount >= 0 ? 'text-green-600' : 'text-red-600'
+                totalAmount >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'
               }`}>
                 {formatCurrency(totalAmount, investmentPlan?.currency as CurrencyCode)}
               </p>
               
               <div className={`flex items-center gap-2 ${
-                Number(percentageReturn) >= 0 ? 'bg-gradient-to-r from-emerald-50 via-green-50 to-emerald-100/50' : 'bg-gradient-to-r from-rose-50 via-red-50 to-rose-100/50'
-              } rounded-full px-3 py-1 w-fit shadow-sm backdrop-blur-sm border border-white/50`}>
+                Number(percentageReturn) >= 0 ? 'bg-gradient-to-r from-emerald-50 via-green-50 to-emerald-100/50 dark:from-emerald-900/30 dark:via-emerald-900/20 dark:to-emerald-900/10' : 'bg-gradient-to-r from-rose-50 via-red-50 to-rose-100/50 dark:from-rose-900/30 dark:via-rose-900/20 dark:to-rose-900/10'
+              } rounded-full px-3 py-1 w-fit shadow-sm backdrop-blur-sm border border-white/50 dark:border-gray-800`}>
                 <LineChart className={`h-4 w-4 ${
-                  Number(percentageReturn) >= 0 ? 'text-green-600' : 'text-red-600'
+                  Number(percentageReturn) >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'
                 }`} />
                 <p className={`text-sm flex items-center gap-1 ${
-                  Number(percentageReturn) >= 0 ? 'text-green-600' : 'text-red-600'
+                  Number(percentageReturn) >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'
                 }`}>
                   {percentageReturn}%
                 </p>
@@ -721,7 +720,7 @@ const Finances = ({
           </DashboardCard>
         </div>
 
-        <div className="transform transition-all duration-300 hover:scale-[1.01] hover:shadow-2xl bg-gradient-to-br from-white/95 via-slate-50/90 to-blue-50/80 backdrop-blur-sm rounded-xl shadow-lg p-6 border border-gray-100/50 hover:border-blue-100/50">
+        <div className="transform transition-all duration-300 hover:scale-[1.01] hover:shadow-2xl bg-gradient-to-br from-white/95 via-slate-50/90 to-blue-50/80 dark:from-gray-900/90 dark:via-gray-900/80 dark:to-slate-800/70 backdrop-blur-sm rounded-xl shadow-lg p-6 border border-gray-100/50 dark:border-gray-800 hover:border-blue-100/50 dark:hover:border-gray-700">
           {projectionData ? (
             <ExpenseChart 
               profile={clientProfile}
@@ -759,11 +758,11 @@ const Finances = ({
           
           <DashboardCard 
             title={
-              <span className="text-gray-900 font-medium">
+              <span className="text-gray-900 font-medium dark:text-gray-100">
                 {t('dashboard.investmentPlan.title')}
               </span>
             }
-            className="transform transition-all duration-300 hover:scale-[1.02] hover:shadow-2xl bg-gradient-to-br from-blue-50/95 via-indigo-50/90 to-slate-50/80 backdrop-blur-sm border border-gray-100/50 rounded-xl shadow-lg hover:border-blue-100/50"
+            className="transform transition-all duration-300 hover:scale-[1.02] hover:shadow-2xl bg-card backdrop-blur-sm border border-gray-100/50 dark:border-gray-800 rounded-xl shadow-lg hover:border-blue-100/50 dark:hover:border-gray-700"
             icon={Trophy}
           >
             <InvestmentPlanDetails 
@@ -776,7 +775,7 @@ const Finances = ({
           </DashboardCard>
         </div>
 
-        <section className="transform transition-all duration-300 hover:scale-[1.01] hover:shadow-2xl bg-gradient-to-br from-white/95 via-slate-50/90 to-blue-50/80 backdrop-blur-sm rounded-xl shadow-lg border border-gray-100/50 hover:border-blue-100/50">
+        <section className="transform transition-all duration-300 hover:scale-[1.01] hover:shadow-2xl bg-gradient-to-br from-white/95 via-slate-50/90 to-blue-50/80 dark:from-gray-900/90 dark:via-gray-900/80 dark:to-slate-800/70 backdrop-blur-sm rounded-xl shadow-lg border border-gray-100/50 dark:border-gray-800 hover:border-blue-100/50 dark:hover:border-gray-700">
           {projectionData ? (
             <MonthlyView 
               userId={clientId} 
