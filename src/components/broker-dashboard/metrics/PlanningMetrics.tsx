@@ -119,7 +119,7 @@ export const PlanningMetrics = ({ metrics }: PlanningMetricsProps) => {
                   index="name"
                   colors={donutColors}
                   valueFormatter={(value) => `${value} clientes`}
-                  showLabel={true}
+                  showLabel={false}
                   showAnimation={true}
                   customTooltip={customTooltip}
                 />
