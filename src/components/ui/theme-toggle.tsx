@@ -19,9 +19,8 @@ export function ThemeToggle() {
     if (next) root.classList.add('dark')
     else root.classList.remove('dark')
     try {
-      localStorage.setItem('theme', next ? 'dark' : 'light')
+      localStorage.setItem('theme', next ? 'dark' : 'light')  
       window.dispatchEvent(new CustomEvent('themechange', { detail: { theme: next ? 'dark' : 'light' } }))
-    } catch {
     } catch (error) {
       console.error('Failed to persist theme to localStorage or dispatch themechange event:', error);
     }
