@@ -81,7 +81,7 @@ export const AdminDashboard = () => {
   useEffect(() => {
     checkAdminStatus();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user]);
+  }, [user, navigate, toast, t]);
 
   useEffect(() => {
     const updateTheme = () => setIsDark(document.documentElement.classList.contains('dark'))
