@@ -83,7 +83,7 @@ export const CreatePlan = () => {
     };
 
     checkExistingPlan();
-  }, [clientId, toast, loading, navigate]);
+  }, [clientId, toast, loading]);
 
   useEffect(() => {
     const fetchProfileAndSetDate = async () => {
