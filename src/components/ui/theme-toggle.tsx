@@ -22,7 +22,8 @@ export function ThemeToggle() {
       localStorage.setItem('theme', next ? 'dark' : 'light')
       window.dispatchEvent(new CustomEvent('themechange', { detail: { theme: next ? 'dark' : 'light' } }))
     } catch {
-      // eslint-disable-next-line no-empty
+    } catch (error) {
+      console.error('Failed to persist theme to localStorage or dispatch themechange event:', error);
     }
   }
 
