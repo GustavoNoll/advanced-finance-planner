@@ -15,7 +15,7 @@ export function LoadingScreen({
   return (
     <div 
       className={cn(
-        "min-h-screen flex flex-col items-center justify-center bg-gradient-to-br from-white to-gray-50",
+        "min-h-screen flex flex-col items-center justify-center bg-gradient-to-br from-white to-gray-50 dark:from-gray-900 dark:to-gray-800",
         className
       )} 
       {...props}
@@ -32,7 +32,7 @@ export function LoadingScreen({
         </div>
         <div className="space-y-2 text-center">
           <Logo variant="full" />
-          <p className="text-sm text-gray-500">{t('common.loading')}</p>
+          <p className="text-sm text-gray-500 dark:text-gray-400">{t('common.loading')}</p>
         </div>
       </div>
     </div>
