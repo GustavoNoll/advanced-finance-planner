@@ -24,6 +24,7 @@ export const CreatePlan = () => {
   const clientId = searchParams.get('client_id') || user?.id;
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
+  const [planCreated, setPlanCreated] = useState(false);
   const [birthDate, setBirthDate] = useState<Date | null>(null);
   const [formData, setFormData] = useState<FormData>({
     initialAmount: "",
@@ -40,6 +41,8 @@ export const CreatePlan = () => {
     limitAge: "100",
     legacyAmount: "1000000",
     currency: "BRL",
+    oldPortfolioProfitability: null,
+    hasOldPortfolio: false,
   });
 
   const [calculations, setCalculations] = useState<Calculations | null>(null);
@@ -55,7 +58,7 @@ export const CreatePlan = () => {
 
   useEffect(() => {
     const checkExistingPlan = async () => {
-      if (!clientId) return;
+      if (!clientId || loading || planCreated) return;
 
       try {
         const { data, error } = await supabase
@@ -65,7 +68,7 @@ export const CreatePlan = () => {
 
         if (error) throw error;
 
-        if (data && data.length > 0 && !loading) {
+        if (data && data.length > 0) {
           toast({
             title: "Plan already exists",
             description: "This client already has an investment plan. Redirecting to edit page...",
@@ -83,7 +86,7 @@ export const CreatePlan = () => {
     };
 
     checkExistingPlan();
-  }, [clientId, toast, loading]);
+  }, [clientId, toast, loading, planCreated]);
 
   useEffect(() => {
     const fetchProfileAndSetDate = async () => {
@@ -203,14 +206,19 @@ export const CreatePlan = () => {
           limit_age: formData.limitAge,
           legacy_amount: formData.planType === "2" ? parseFloat(formData.legacyAmount.replace(',', '.')) : null,
           currency: formData.currency,
+          old_portfolio_profitability: formData.hasOldPortfolio && formData.oldPortfolioProfitability 
+            ? parseInt(formData.oldPortfolioProfitability) 
+            : null,
         },
       ]);
 
       if (error) throw error;
 
+      setPlanCreated(true);
+      
       toast({
         title: "Success",
-        description: "Investment plan created successfully",
+        description: t('investmentPlan.create.success'),
       });
 
       if (searchParams.get('client_id')) {
@@ -474,6 +482,64 @@ export const CreatePlan = () => {
                     required
                     className="h-10"
                   />
+                </div>
+
+                <div className="space-y-2">
+                  <div className="flex items-center space-x-2 mb-2">
+                    <input
+                      type="checkbox"
+                      id="hasOldPortfolio"
+                      name="hasOldPortfolio"
+                      checked={formData.hasOldPortfolio}
+                      onChange={(e) => {
+                        setFormData(prev => ({
+                          ...prev,
+                          hasOldPortfolio: e.target.checked,
+                          oldPortfolioProfitability: e.target.checked ? prev.oldPortfolioProfitability : null
+                        }))
+                      }}
+                      className="h-4 w-4 rounded border-input text-primary focus:ring-primary"
+                    />
+                    <label htmlFor="hasOldPortfolio" className="text-sm font-medium text-muted-foreground">
+                      {t('investmentPlan.form.hasOldPortfolio')}
+                    </label>
+                  </div>
+                  {formData.hasOldPortfolio && (
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium text-muted-foreground">
+                        {t('investmentPlan.form.oldPortfolioProfitability')}
+                      </label>
+                      <select
+                        name="oldPortfolioProfitability"
+                        value={formData.oldPortfolioProfitability || ""}
+                        onChange={(e) => {
+                          setFormData(prev => ({
+                            ...prev,
+                            oldPortfolioProfitability: e.target.value || null
+                          }))
+                        }}
+                        className="w-full h-10 rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                        required={formData.hasOldPortfolio}
+                      >
+                        <option value="">{t('investmentPlan.form.selectProfitability')}</option>
+                        <option value="1">IPCA + 1%</option>
+                        <option value="2">IPCA + 2%</option>
+                        <option value="3">IPCA + 3%</option>
+                        <option value="4">IPCA + 4%</option>
+                        <option value="5">IPCA + 5%</option>
+                        <option value="6">IPCA + 6%</option>
+                        <option value="7">IPCA + 7%</option>
+                        <option value="8">IPCA + 8%</option>
+                        <option value="9">IPCA + 9%</option>
+                        <option value="10">IPCA + 10%</option>
+                        <option value="11">IPCA + 11%</option>
+                        <option value="12">IPCA + 12%</option>
+                        <option value="13">IPCA + 13%</option>
+                        <option value="14">IPCA + 14%</option>
+                        <option value="15">IPCA + 15%</option>
+                      </select>
+                    </div>
+                  )}
                 </div>
               </div>
 

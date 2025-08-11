@@ -88,7 +88,10 @@ export const ptBR = {
         BRL: "Real Brasileiro (R$)",
         USD: "Dólar Americano ($)",
         EUR: "Euro (€)"
-      }
+      },
+      hasOldPortfolio: "Cliente possui carteira anterior",
+      oldPortfolioProfitability: "Rentabilidade da Carteira Anterior (IPCA+)",
+      selectProfitability: "Selecione a rentabilidade"
     },
     planTypes: {
       endAt120: "Encerrar",
