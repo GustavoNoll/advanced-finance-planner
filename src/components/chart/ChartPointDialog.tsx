@@ -60,7 +60,7 @@ export const ChartPointDialog = ({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[600px] md:max-w-[700px] lg:max-w-[800px] bg-white">
+      <DialogContent className="sm:max-w-[600px] md:max-w-[700px] lg:max-w-[800px]">
         <DialogHeader>
           <DialogTitle className="text-lg font-semibold">
             {formType === 'goal' ? t('financialGoals.addNew') : formType === 'event' ? t('events.addNew') : t('other.addNew')}
@@ -69,8 +69,8 @@ export const ChartPointDialog = ({
         
         {selectedPoint ? (
           <>
-            <div className="mb-4 p-3 bg-gray-50 rounded-md">
-              <p className="text-sm text-gray-600">
+            <div className="mb-4 p-3 bg-gray-50 dark:bg-gray-900/80 rounded-md">
+              <p className="text-sm text-gray-600 dark:text-gray-300">
                 {t("expenseChart.selectedDate")}: {formatDate(new Date(selectedPoint.year, selectedPoint.month - 1))}
               </p>
             </div>
@@ -95,7 +95,7 @@ export const ChartPointDialog = ({
             />
           </>
         ) : (
-          <p className="text-center text-gray-600">
+          <p className="text-center text-gray-600 dark:text-gray-300">
             {t("expenseChart.clickToAdd")}
           </p>
         )}

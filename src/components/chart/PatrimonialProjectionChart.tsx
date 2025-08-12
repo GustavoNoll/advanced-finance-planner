@@ -712,7 +712,7 @@ export default function PatrimonialProjectionChart({
           )}
           {tooltipData.objectives && tooltipData.objectives.length > 0 && (
             <>
-              <div className="text-gray-800 font-semibold mt-2 mb-1">{t('financialGoals.title')} / {t('events.title')}:</div>
+              <div className="text-gray-800 dark:text-gray-200 font-semibold mt-2 mb-1">{t('financialGoals.title')} / {t('events.title')}:</div>
               {tooltipData.objectives.map((obj, idx) => {
                 const IconComponent = getIconComponent(obj.icon)
                 const isEvent = obj.icon === 'goal' || obj.icon === 'contribution' || obj.icon === 'event'
@@ -737,7 +737,7 @@ export default function PatrimonialProjectionChart({
                 else iconLabel = t(`events.icons.${obj.icon}`) || obj.icon
                 const date = objCast.date ? formatDate(objCast.date) : ''
                 return (
-                  <div key={obj.id} className="mb-2 p-2 rounded border border-gray-100 bg-gray-50">
+                  <div key={obj.id} className="mb-2 p-2 rounded border border-gray-100 bg-gray-50 dark:bg-gray-900/80 dark:border-gray-700">
                     <div className="flex items-center gap-2 mb-1">
                       <span style={{ fontSize: 16, color: color === 'text-green-600' ? '#16a34a' : '#dc2626', display: 'flex', alignItems: 'center' }}>
                         <IconComponent size={16} color={color === 'text-green-600' ? '#16a34a' : '#dc2626'} style={{ marginRight: 4 }} />
