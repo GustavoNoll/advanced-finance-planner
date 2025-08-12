@@ -15,6 +15,7 @@ import { ResponsiveContainer } from "recharts";
 import { Select, SelectItem, SelectTrigger, SelectContent, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { formatCurrency, CurrencyCode } from "@/utils/currency";
+import { yearlyReturnRateToMonthlyReturnRate } from "@/lib/financial-math";
 
 export const MonthlyView = ({ 
   userId, 
@@ -378,6 +379,16 @@ export const MonthlyView = ({
         return acc * (1 + curr.euroCpiRate / 100);
       }, 1);
 
+      // Calculate accumulated old portfolio return if available
+      let accumulatedOldPortfolioReturn = 0;
+      if (investmentPlan?.old_portfolio_profitability) {
+        const oldPortfolioMonthlyRate = investmentPlan.old_portfolio_profitability / 12; // Convert annual to monthly
+        accumulatedOldPortfolioReturn = relevantData.reduce((acc, curr) => {
+          return acc * (1 + oldPortfolioMonthlyRate / 100);
+        }, 1);
+        accumulatedOldPortfolioReturn = ((accumulatedOldPortfolioReturn - 1) * 100);
+      }
+
       return {
         ...record,
         accumulatedPercentage: ((accumulatedReturn - 1) * 100),
@@ -385,7 +396,8 @@ export const MonthlyView = ({
         accumulatedCDIReturn: ((accumulatedCDIReturn - 1) * 100),
         accumulatedIPCAReturn: ((accumulatedIPCAReturn - 1) * 100),
         accumulatedUSCPIReturn: ((accumulatedUSCPIReturn - 1) * 100),
-        accumulatedEuroCPIReturn: ((accumulatedEuroCPIReturn - 1) * 100)
+        accumulatedEuroCPIReturn: ((accumulatedEuroCPIReturn - 1) * 100),
+        accumulatedOldPortfolioReturn
       };
     });
 
@@ -405,7 +417,8 @@ export const MonthlyView = ({
       accumulatedCDIReturn: 0,
       accumulatedIPCAReturn: 0,
       accumulatedUSCPIReturn: 0,
-      accumulatedEuroCPIReturn: 0
+      accumulatedEuroCPIReturn: 0,
+      accumulatedOldPortfolioReturn: 0
     };
     return [syntheticDataPoint, ...processedData];
   };
@@ -514,6 +527,10 @@ export const MonthlyView = ({
                       <stop offset="0%" stopColor="#ec4899" /> {/* pink-500 */}
                       <stop offset="100%" stopColor="#f472b6" /> {/* pink-400 */} 
                     </linearGradient>
+                    <linearGradient id="colorOldPortfolio" x1="0" y1="0" x2="1" y2="0">
+                      <stop offset="0%" stopColor="#c2410c" /> {/* orange-700 */}
+                      <stop offset="100%" stopColor="#ea580c" /> {/* orange-600 */}
+                    </linearGradient>
                     <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
                       <feGaussianBlur in="SourceAlpha" stdDeviation="3" />
                       <feOffset dx="2" dy="2" result="offsetblur" />
@@ -570,6 +587,10 @@ export const MonthlyView = ({
                             background: name === t('monthlyView.chart.accumulatedReturn') ? 'linear-gradient(to right, #22c55e, #4ade80)' :
                                       name === t('monthlyView.chart.accumulatedTargetReturn') ? 'linear-gradient(to right, #f43f5e, #fb7185)' :
                                       name === t('monthlyView.chart.accumulatedCDIReturn') ? 'linear-gradient(to right, #3b82f6, #60a5fa)' :
+                                      name === t('monthlyView.chart.accumulatedIPCAReturn') ? 'linear-gradient(to right, #eab308, #facc15)' :
+                                      name === t('monthlyView.chart.accumulatedUSCPIReturn') ? 'linear-gradient(to right, #8b5cf6, #c4b5fd)' :
+                                      name === t('monthlyView.chart.accumulatedEuroCPIReturn') ? 'linear-gradient(to right, #ec4899, #f472b6)' :
+                                      name === t('monthlyView.chart.accumulatedOldPortfolioReturn') ? 'linear-gradient(to right, #c2410c, #ea580c)' :
                                       'linear-gradient(to right, #eab308, #facc15)'
                           }}
                         />
@@ -696,6 +717,25 @@ export const MonthlyView = ({
                         r: 8, 
                         strokeWidth: 2,
                         stroke: '#ec4899',
+                        fill: 'white',
+                        filter: 'url(#shadow)'
+                      }}
+                      animationDuration={1000}
+                      animationEasing="ease-in-out"
+                    />
+                  )}
+                  {investmentPlan?.old_portfolio_profitability && (
+                    <Line 
+                      type="monotone" 
+                      dataKey="accumulatedOldPortfolioReturn" 
+                      stroke="url(#colorOldPortfolio)"
+                      name={t('monthlyView.chart.accumulatedOldPortfolioReturn')}
+                      strokeWidth={3}
+                      dot={false}
+                      activeDot={{ 
+                        r: 8, 
+                        strokeWidth: 2,
+                        stroke: '#ea580c',
                         fill: 'white',
                         filter: 'url(#shadow)'
                       }}

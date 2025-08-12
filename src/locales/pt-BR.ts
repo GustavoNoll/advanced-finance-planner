@@ -492,6 +492,7 @@ export const ptBR = {
       accumulatedIPCAReturn: "Retorno IPC-A Acumulado",
       accumulatedUSCPIReturn: "Retorno CPI EUA Acumulado",
       accumulatedEuroCPIReturn: "Retorno CPI Euro Acumulado",
+      accumulatedOldPortfolioReturn: "Antiga Rentabilidade Acumulada",
       accumulatedTargetReturn: "Rentabilidade Alvo Acumulada",
       endBalance: "Saldo Final",
       contribution: "Contribuição",
