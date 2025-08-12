@@ -22,6 +22,7 @@ export interface ChartDataPoint {
   month: MonthNumber;
   actualValue?: number | null;
   projectedValue?: number;
+  oldPortfolioValue?: number | null;
   realDataPoint?: boolean;
   realValue?: number;
 }
@@ -61,6 +62,7 @@ export interface InvestmentPlan {
   created_at?: string;
   updated_at?: string;
   currency: 'BRL' | 'USD' | 'EUR';
+  old_portfolio_profitability: number | null;
 }
 
 export interface MonthlyMetrics {

@@ -5,6 +5,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
 import { useState } from "react";
 import { calculateCompoundedRates, yearlyReturnRateToMonthlyReturnRate } from '@/lib/financial-math';
+import { calculateInflationAdjustedValue, getInvestmentPlanBaseDate } from '@/lib/inflation-utils';
 import { ChartPointDialog } from "@/components/chart/ChartPointDialog";
 import { TrendingUp } from "lucide-react";
 import type { ViewBox } from 'recharts/types/util/types';
@@ -31,6 +32,7 @@ interface ExpenseChartProps {
   onProjectionDataChange?: () => void;
   showRealValues?: boolean;
   showNegativeValues?: boolean;
+  showOldPortfolio?: boolean;
   onOpenAdvancedOptions?: () => void;
 }
 
@@ -98,6 +100,7 @@ function getRawChartData({
         month: monthData.month as MonthNumber,
         actualValue: monthData.balance,
         projectedValue: monthData.planned_balance,
+        oldPortfolioValue: monthData.old_portfolio_balance,
         realDataPoint: monthData.isHistorical
       })) || []
     )
@@ -140,27 +143,6 @@ function adjustChartData({
   investmentPlan: InvestmentPlan
   allFinancialRecords: FinancialRecord[]
 }): ChartDataPoint[] {
-  function calculateInflationAdjustedValue(
-    value: number | null | undefined,
-    baseYear: number,
-    baseMonth: number,
-    targetYear: number,
-    targetMonth: number,
-    monthlyInflationRate: number
-  ): number | null | undefined {
-    if (value === null || value === undefined) return value;
-    const monthsDiff = (targetYear - baseYear) * 12 + (targetMonth - baseMonth);
-    if (monthsDiff <= 0) {
-      const recordsBetween = allFinancialRecords.filter(record => {
-        const recordToTargetMonthDiff = (record.record_year - targetYear) * 12 + (record.record_month - targetMonth);
-        return recordToTargetMonthDiff < 0;
-      });
-      const inflationFactor = 1 + (calculateCompoundedRates(recordsBetween.map(record => record.target_rentability/100)) || 1);
-      if (inflationFactor !== 1) return value / inflationFactor;
-      return value;
-    }
-    return value / Math.pow(1 + monthlyInflationRate, monthsDiff);
-  }
   const monthlyInflation = yearlyReturnRateToMonthlyReturnRate(investmentPlan.inflation/100);
   return data.map(point => {
     if (!showRealValues) {
@@ -168,6 +150,7 @@ function adjustChartData({
         ...point,
         actualValue: showNegativeValues ? point.actualValue : Math.max(0, point.actualValue),
         projectedValue: showNegativeValues ? point.projectedValue : Math.max(0, point.projectedValue),
+        oldPortfolioValue: point.oldPortfolioValue ? (showNegativeValues ? point.oldPortfolioValue : Math.max(0, point.oldPortfolioValue)) : null,
       }
     }
     const adjustedActualValue = point.realDataPoint
@@ -178,7 +161,8 @@ function adjustChartData({
           baseMonth,
           point.year,
           point.month,
-          monthlyInflation
+          monthlyInflation,
+          allFinancialRecords
         );
     const adjustedProjectedValue = calculateInflationAdjustedValue(
       point.projectedValue,
@@ -186,12 +170,23 @@ function adjustChartData({
       baseMonth,
       point.year,
       point.month,
-      monthlyInflation
+      monthlyInflation,
+      allFinancialRecords
+    );
+    const adjustedOldPortfolioValue = calculateInflationAdjustedValue(
+      point.oldPortfolioValue,
+      baseYear,
+      baseMonth,
+      point.year,
+      point.month,
+      monthlyInflation,
+      allFinancialRecords
     );
     return {
       ...point,
       actualValue: showNegativeValues ? adjustedActualValue : Math.max(0, adjustedActualValue),
       projectedValue: showNegativeValues ? adjustedProjectedValue : Math.max(0, adjustedProjectedValue),
+      oldPortfolioValue: point.oldPortfolioValue ? (showNegativeValues ? adjustedOldPortfolioValue : Math.max(0, adjustedOldPortfolioValue)) : null,
     }
   })
 }
@@ -322,6 +317,7 @@ export const ExpenseChart = ({
   onProjectionDataChange,
   showRealValues = false,
   showNegativeValues = false,
+  showOldPortfolio = false,
   onOpenAdvancedOptions
 }: ExpenseChartProps) => {
   const { t } = useTranslation();
@@ -601,12 +597,14 @@ export const ExpenseChart = ({
   })
 
   // 2. Ajuste para inflação/negativos
+  const { baseYear, baseMonth } = getInvestmentPlanBaseDate(investmentPlan);
+  
   const adjustedChartData = adjustChartData({
     data: rawChartData,
     showRealValues,
     showNegativeValues,
-    baseYear: 2024,
-    baseMonth: 1,
+    baseYear,
+    baseMonth,
     investmentPlan,
     allFinancialRecords
   })
@@ -769,6 +767,7 @@ export const ExpenseChart = ({
             month: d.month,
             actualValue: d.actualValue,
             projectedValue: d.projectedValue,
+            oldPortfolioValue: d.oldPortfolioValue,
             realDataPoint: d.realDataPoint,
           }))}
           objectives={[
@@ -798,6 +797,7 @@ export const ExpenseChart = ({
           selectedYears={Array.from(new Set(chartData.map(d => d.year)))}
           showNominalValues={!showRealValues}
           hideNegativeValues={!showNegativeValues}
+          showOldPortfolio={showOldPortfolio}
           investmentPlan={investmentPlan}
           handleEditItem={(item) => {
             // Try to find the matching goal or event by id

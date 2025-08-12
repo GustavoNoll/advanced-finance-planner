@@ -27,6 +27,7 @@ type MonthlyData = {
   month: number
   actualValue: number
   projectedValue: number
+  oldPortfolioValue?: number | null
   realDataPoint?: boolean
 }
 
@@ -48,6 +49,7 @@ type PatrimonialProjectionChartProps = {
   selectedYears: number[]
   showNominalValues: boolean
   hideNegativeValues: boolean
+  showOldPortfolio: boolean
   investmentPlan: InvestmentPlan
   onSubmitGoal: (values: GoalFormValues) => Promise<void>
   onSubmitEvent: (values: EventFormValues) => Promise<void>
@@ -139,6 +141,7 @@ export default function PatrimonialProjectionChart({
   selectedYears,
   showNominalValues,
   hideNegativeValues,
+  showOldPortfolio,
   investmentPlan,
   width = '100%',
   height = 400,
@@ -162,11 +165,16 @@ export default function PatrimonialProjectionChart({
     let filtered = monthlyData.filter((d) => selectedYears.includes(d.year))
 
     if (hideNegativeValues) {
-      filtered = filtered.filter((d) => d.actualValue >= 0 && d.projectedValue >= 0)
+      filtered = filtered.filter((d) => {
+        const actualValueValid = d.actualValue >= 0
+        const projectedValueValid = d.projectedValue >= 0
+        const oldPortfolioValueValid = !showOldPortfolio || d.oldPortfolioValue === null || d.oldPortfolioValue === undefined || d.oldPortfolioValue >= 0
+        return actualValueValid && projectedValueValid && oldPortfolioValueValid
+      })
     }
 
     return filtered
-  }, [monthlyData, selectedYears, hideNegativeValues])
+  }, [monthlyData, selectedYears, hideNegativeValues, showOldPortfolio])
 
   // Preparar dados para o gráfico
   const chartData = useMemo(() => {
@@ -174,12 +182,13 @@ export default function PatrimonialProjectionChart({
       date: getDateFromMonthYear(d.year, d.month),
       actualValue: showNominalValues ? d.actualValue : d.actualValue * 0.85, // Simulando ajuste por inflação
       projectedValue: showNominalValues ? d.projectedValue : d.projectedValue * 0.85,
+      oldPortfolioValue: showOldPortfolio && d.oldPortfolioValue ? (showNominalValues ? d.oldPortfolioValue : d.oldPortfolioValue * 0.85) : null,
       age: d.age,
       year: d.year,
       month: d.month,
       realDataPoint: d.realDataPoint,
     }))
-  }, [filteredData, showNominalValues])
+  }, [filteredData, showNominalValues, showOldPortfolio])
 
   // Preparar dados de objetivos
   const objectivePoints = useMemo(() => {
@@ -231,6 +240,7 @@ export default function PatrimonialProjectionChart({
     const allValues = [
       ...chartData.map((d) => d.actualValue),
       ...chartData.map((d) => d.projectedValue),
+      ...(showOldPortfolio ? chartData.map((d) => d.oldPortfolioValue).filter(v => v !== null && v !== undefined) : []),
       ...objectivePoints.map((d) => d.value),
     ]
 
@@ -242,13 +252,14 @@ export default function PatrimonialProjectionChart({
       domain: [minValue, maxValue],
       nice: true,
     })
-  }, [chartData, objectivePoints, innerHeight, hideNegativeValues])
+  }, [chartData, objectivePoints, innerHeight, hideNegativeValues, showOldPortfolio])
 
   // Tooltip
   const { tooltipData, tooltipLeft, tooltipTop, tooltipOpen, showTooltip, hideTooltip } = useTooltip<{
     date: Date
     actualValue?: number
     projectedValue?: number
+    oldPortfolioValue?: number
     objectives?: { value: number; icon: string; id: string }[]
   }>()
 
@@ -299,6 +310,7 @@ export default function PatrimonialProjectionChart({
             date: d.date,
             actualValue: d.actualValue,
             projectedValue: d.projectedValue,
+            oldPortfolioValue: d.oldPortfolioValue,
           },
           tooltipLeft: x,
           tooltipTop: valueScale(d.actualValue || d.projectedValue),
@@ -447,6 +459,18 @@ export default function PatrimonialProjectionChart({
               stroke="#f97316"
               strokeWidth={2}
               strokeDasharray="8,4"
+              curve={curveMonotoneX}
+            />
+          )}
+          {/* Linha do portfólio anterior - verde tracejado */}
+          {showOldPortfolio && sortedData.length > 1 && sortedData.some(d => d.oldPortfolioValue !== null && d.oldPortfolioValue !== undefined) && (
+            <LinePath
+              data={sortedData.filter(d => d.oldPortfolioValue !== null && d.oldPortfolioValue !== undefined)}
+              x={d => dateScale(d.date) ?? 0}
+              y={d => valueScale(d.oldPortfolioValue) ?? 0}
+              stroke="#10b981"
+              strokeWidth={2}
+              strokeDasharray="4,4"
               curve={curveMonotoneX}
             />
           )}
@@ -620,6 +644,12 @@ export default function PatrimonialProjectionChart({
           <div className="w-6 h-0.5 bg-orange-500" style={{ borderTop: "2px dashed #f97316" }}></div>
           <span className="text-sm text-gray-600 dark:text-gray-300">Projeção Financeira</span>
         </div>
+        {showOldPortfolio && sortedData.some(d => d.oldPortfolioValue !== null && d.oldPortfolioValue !== undefined) && (
+          <div className="flex items-center gap-2">
+            <div className="w-6 h-0.5 bg-green-500" style={{ borderTop: "2px dashed #10b981" }}></div>
+            <span className="text-sm text-gray-600 dark:text-gray-300">{t('expenseChart.oldPortfolioValue')}</span>
+          </div>
+        )}
       </div>
 
       {/* Tooltip */}
@@ -651,29 +681,63 @@ export default function PatrimonialProjectionChart({
               })()}
             </span>
           </div>
-          {tooltipData.actualValue !== undefined && (
-            <div className="flex items-center gap-2 mb-1">
-              <div className="w-3 h-3 rounded-full" style={{ background: 'linear-gradient(to right, #3b82f6, #60a5fa)' }} />
-              <div className="flex flex-col">
-                <span className="text-gray-600 dark:text-gray-300 text-xs font-medium">{t('expenseChart.actualValue')}</span>
-                <span className={`text-sm font-semibold ${tooltipData.actualValue >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>{formatCurrency(tooltipData.actualValue, investmentPlan?.currency as CurrencyCode)}</span>
-                <span className="text-xs text-gray-500 dark:text-gray-400">{t('expenseChart.projectedLifetimeIncome')}:{t('expenseChart.lifetimeIncome')}: {formatCurrency((tooltipData.actualValue * (investmentPlan.expected_return/100))/12, investmentPlan?.currency as CurrencyCode)}/{t('common.perMonth')}</span>
+          {(() => {
+            // Criar array com todos os valores disponíveis para ordenação
+            const values = []
+            
+            if (tooltipData.actualValue !== undefined) {
+              values.push({
+                type: 'actual',
+                value: tooltipData.actualValue,
+                label: t('expenseChart.actualValue'),
+                color: 'linear-gradient(to right, #3b82f6, #60a5fa)',
+                textColor: tooltipData.actualValue >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400',
+                additionalInfo: `${t('expenseChart.lifetimeIncome')}: ${formatCurrency((tooltipData.actualValue * (investmentPlan.expected_return/100))/12, investmentPlan?.currency as CurrencyCode)}/${t('common.perMonth')}`
+              })
+            }
+            
+            if (tooltipData.projectedValue !== undefined) {
+              values.push({
+                type: 'projected',
+                value: tooltipData.projectedValue,
+                label: t('expenseChart.projectedValue'),
+                color: 'linear-gradient(to right, #f97316, #fb923c)',
+                textColor: tooltipData.projectedValue >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400',
+                additionalInfo: `${t('expenseChart.plannedLifetimeIncome')}: ${formatCurrency((tooltipData.projectedValue * (investmentPlan.expected_return/100))/12, investmentPlan?.currency as CurrencyCode)}/${t('common.perMonth')}`
+              })
+            }
+            
+            if (showOldPortfolio && tooltipData.oldPortfolioValue !== undefined && tooltipData.oldPortfolioValue !== null) {
+              values.push({
+                type: 'oldPortfolio',
+                value: tooltipData.oldPortfolioValue,
+                label: t('expenseChart.oldPortfolioValue'),
+                color: 'linear-gradient(to right, #10b981, #34d399)',
+                textColor: tooltipData.oldPortfolioValue >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400',
+                additionalInfo: `${t('expenseChart.oldPortfolioLifetimeIncome')}: ${formatCurrency((tooltipData.oldPortfolioValue * (investmentPlan.old_portfolio_profitability/100))/12, investmentPlan?.currency as CurrencyCode)}/${t('common.perMonth')}`
+              })
+            }
+            
+            // Ordenar por valor absoluto (maior primeiro)
+            values.sort((a, b) => Math.abs(b.value) - Math.abs(a.value))
+            
+            // Renderizar valores ordenados
+            return values.map((item, index) => (
+              <div key={item.type} className="flex items-center gap-2 mb-1">
+                <div className="w-3 h-3 rounded-full" style={{ background: item.color }} />
+                <div className="flex flex-col">
+                  <span className="text-gray-600 dark:text-gray-300 text-xs font-medium">{item.label}</span>
+                  <span className={`text-sm font-semibold ${item.textColor}`}>{formatCurrency(item.value, investmentPlan?.currency as CurrencyCode)}</span>
+                  {item.additionalInfo && (
+                    <span className="text-xs text-gray-500 dark:text-gray-400">{item.additionalInfo}</span>
+                  )}
+                </div>
               </div>
-            </div>
-          )}
-          {tooltipData.projectedValue !== undefined && (
-            <div className="flex items-center gap-2 mb-1">
-              <div className="w-3 h-3 rounded-full" style={{ background: 'linear-gradient(to right, #f97316, #fb923c)' }} />
-              <div className="flex flex-col">
-                <span className="text-gray-600 dark:text-gray-300 text-xs font-medium">{t('expenseChart.projectedValue')}</span>
-                <span className={`text-sm font-semibold ${tooltipData.projectedValue >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>{formatCurrency(tooltipData.projectedValue, investmentPlan?.currency as CurrencyCode)}</span>
-                <span className="text-xs text-gray-500 dark:text-gray-400">{t('expenseChart.plannedLifetimeIncome')}: {formatCurrency((tooltipData.projectedValue * (investmentPlan.expected_return/100))/12, investmentPlan?.currency as CurrencyCode)}/{t('common.perMonth')}</span>
-              </div>
-            </div>
-          )}
+            ))
+          })()}
           {tooltipData.objectives && tooltipData.objectives.length > 0 && (
             <>
-              <div className="text-gray-800 font-semibold mt-2 mb-1">{t('financialGoals.title')} / {t('events.title')}:</div>
+              <div className="text-gray-800 dark:text-gray-200 font-semibold mt-2 mb-1">{t('financialGoals.title')} / {t('events.title')}:</div>
               {tooltipData.objectives.map((obj, idx) => {
                 const IconComponent = getIconComponent(obj.icon)
                 const isEvent = obj.icon === 'goal' || obj.icon === 'contribution' || obj.icon === 'event'
@@ -698,7 +762,7 @@ export default function PatrimonialProjectionChart({
                 else iconLabel = t(`events.icons.${obj.icon}`) || obj.icon
                 const date = objCast.date ? formatDate(objCast.date) : ''
                 return (
-                  <div key={obj.id} className="mb-2 p-2 rounded border border-gray-100 bg-gray-50">
+                  <div key={obj.id} className="mb-2 p-2 rounded border border-gray-100 bg-gray-50 dark:bg-gray-900/80 dark:border-gray-700">
                     <div className="flex items-center gap-2 mb-1">
                       <span style={{ fontSize: 16, color: color === 'text-green-600' ? '#16a34a' : '#dc2626', display: 'flex', alignItems: 'center' }}>
                         <IconComponent size={16} color={color === 'text-green-600' ? '#16a34a' : '#dc2626'} style={{ marginRight: 4 }} />

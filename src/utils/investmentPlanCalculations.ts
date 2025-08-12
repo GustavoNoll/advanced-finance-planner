@@ -15,6 +15,8 @@ export type FormData = {
   limitAge: string;
   legacyAmount: string;
   currency: 'BRL' | 'USD' | 'EUR';
+  oldPortfolioProfitability: string | null;
+  hasOldPortfolio: boolean;
 };
 
 export type Calculations = {

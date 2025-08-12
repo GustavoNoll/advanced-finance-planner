@@ -1,5 +1,6 @@
 import { fetchIPCARates } from './bcb-api';
 import { calculateCompoundedRates, yearlyReturnRateToMonthlyReturnRate } from './financial-math';
+import { FinancialRecord, InvestmentPlan } from '@/types/financial';
 
 /**
  * Formats a date to the Brazilian format (DD/MM/YYYY) required by the BCB API
@@ -108,4 +109,62 @@ export function calculatePlanAccumulatedInflation(
     
     return Math.pow(1 + monthlyInflation, monthsToRetirement);
   }
+} 
+
+/**
+ * Calculates inflation-adjusted value for a given date range
+ * @param value - The value to adjust
+ * @param baseYear - Base year for inflation calculation
+ * @param baseMonth - Base month for inflation calculation
+ * @param targetYear - Target year for inflation calculation
+ * @param targetMonth - Target month for inflation calculation
+ * @param monthlyInflationRate - Monthly inflation rate as decimal
+ * @param allFinancialRecords - All financial records for historical inflation calculation
+ * @returns The inflation-adjusted value
+ */
+export function calculateInflationAdjustedValue(
+  value: number | null | undefined,
+  baseYear: number,
+  baseMonth: number,
+  targetYear: number,
+  targetMonth: number,
+  monthlyInflationRate: number,
+  allFinancialRecords?: FinancialRecord[]
+): number | null | undefined {
+  if (value === null || value === undefined) return value;
+  
+  const monthsDiff = (targetYear - baseYear) * 12 + (targetMonth - baseMonth);
+  
+  if (monthsDiff <= 0) {
+    // For past dates, calculate inflation from historical records
+    if (allFinancialRecords) {
+      const recordsBetween = allFinancialRecords.filter(record => {
+        const recordToTargetMonthDiff = (record.record_year - targetYear) * 12 + (record.record_month - targetMonth);
+        return recordToTargetMonthDiff < 0;
+      });
+      
+      const inflationFactor = 1 + (calculateCompoundedRates(recordsBetween.map(record => record.target_rentability/100)) || 1);
+      if (inflationFactor !== 1) return value / inflationFactor;
+    }
+    return value;
+  }
+  
+  // For real values, we want to show the value in terms of current purchasing power
+  // So we deflate future values to present value
+  const adjustedValue = value / Math.pow(1 + monthlyInflationRate, monthsDiff);
+  
+  return adjustedValue;
+}
+
+/**
+ * Gets the base year and month from the investment plan's initial date
+ * @param investmentPlan - The investment plan containing plan_initial_date
+ * @returns Object with baseYear and baseMonth
+ */
+export function getInvestmentPlanBaseDate(investmentPlan: InvestmentPlan): { baseYear: number; baseMonth: number } {
+  const planStartDate = new Date(investmentPlan.plan_initial_date);
+  return {
+    baseYear: planStartDate.getFullYear(),
+    baseMonth: planStartDate.getMonth() + 1
+  };
 } 

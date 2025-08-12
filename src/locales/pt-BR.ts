@@ -88,7 +88,10 @@ export const ptBR = {
         BRL: "Real Brasileiro (R$)",
         USD: "Dólar Americano ($)",
         EUR: "Euro (€)"
-      }
+      },
+      hasOldPortfolio: "Cliente possui carteira anterior",
+      oldPortfolioProfitability: "Rentabilidade da Carteira Anterior (IPCA+)",
+      selectProfitability: "Selecione a rentabilidade"
     },
     planTypes: {
       endAt120: "Encerrar",
@@ -164,6 +167,11 @@ export const ptBR = {
         amount: "R$ {{value}}",
         percentage: "+{{value}}%",
         tooltip: "Rendimentos do portfólio."
+      },
+      retirementBalance: {
+        title: "Diferença na Aposentadoria",
+        subtitle: "Carteira Atual vs. Anterior",
+        tooltip: "Diferença entre o valor atual e o valor da carteira anterior no ano de aposentadoria."
       }
     },
     charts: {
@@ -489,6 +497,7 @@ export const ptBR = {
       accumulatedIPCAReturn: "Retorno IPC-A Acumulado",
       accumulatedUSCPIReturn: "Retorno CPI EUA Acumulado",
       accumulatedEuroCPIReturn: "Retorno CPI Euro Acumulado",
+      accumulatedOldPortfolioReturn: "Antiga Rentabilidade Acumulada",
       accumulatedTargetReturn: "Rentabilidade Alvo Acumulada",
       endBalance: "Saldo Final",
       contribution: "Contribuição",
@@ -553,6 +562,7 @@ export const ptBR = {
     actualValueProjection: "Evolução Projetada",
     projectedValue: "Projeção Financeira",
     projectedValueReal: "Projeção Financeira Real",
+    oldPortfolioValue: "Portfólio Anterior",
     years: "anos",
     goalAchievement: "Meta atingida",
     realValues: "Valores Reais",
@@ -571,6 +581,7 @@ export const ptBR = {
     projectedLifetimeIncome: "Renda Vitalícia Projetada",
     plannedLifetimeIncome: "Renda Vitalícia Planejada",
     advancedOptions: "Opções Avançadas",
+    oldPortfolioLifetimeIncome: "Renda Vitalícia do Portfólio Anterior",
     valueType: "Tipo de Valor",
     display: "Exibição",
     noNegativeValues: "Sem Valores Negativos",
@@ -581,7 +592,9 @@ export const ptBR = {
     newDepositValue: "Novo valor (valor inicial do plano: {{value}})",
     newWithdrawValue: "Novo valor (valor inicial do plano: {{value}})",
     changeDate: "Data da mudança",
-    chartOptionsHelp: "O valor informado será aplicado a partir da data especificada, sem considerar inflação acumulada desde o início do plano. A inflação será aplicada apenas a partir da data da mudança."
+    chartOptionsHelp: "O valor informado será aplicado a partir da data especificada, sem considerar inflação acumulada desde o início do plano. A inflação será aplicada apenas a partir da data da mudança.",
+    showOldPortfolio: "Mostrar Portfólio Anterior",
+    showOldPortfolioHelp: "Mostra ou oculta a linha do portfólio anterior no gráfico. Esta linha representa o valor que o cliente já possuía antes de iniciar o plano de investimento."
   },
   budgetCategories: {
     categories: {

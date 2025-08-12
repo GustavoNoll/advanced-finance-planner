@@ -268,15 +268,22 @@ export const InvestmentPlanShow = () => {
               )}
 
               {plan.plan_type === "3" && (
-                <div>
-                  <p className="text-sm text-muted-foreground">{t('investmentPlan.form.keepAge')}</p>
-                  <p className="font-medium">{plan.limit_age} {t('investmentPlan.details.clientInfo.years')}</p>
-                </div>
-              )}
-            </div>
-          </DashboardCard>
-        </div>
-      </main>
-    </div>
-  );
+                              <div>
+                <p className="text-sm text-muted-foreground">{t('investmentPlan.form.keepAge')}</p>
+                <p className="font-medium">{plan.limit_age} {t('investmentPlan.details.clientInfo.years')}</p>
+              </div>
+            )}
+
+            {plan.old_portfolio_profitability !== null && (
+              <div>
+                <p className="text-sm text-muted-foreground">{t('investmentPlan.form.oldPortfolioProfitability')}</p>
+                <p className="font-medium">IPCA + {plan.old_portfolio_profitability}%</p>
+              </div>
+            )}
+          </div>
+        </DashboardCard>
+      </div>
+    </main>
+  </div>
+);
 };
