@@ -167,6 +167,11 @@ export const ptBR = {
         amount: "R$ {{value}}",
         percentage: "+{{value}}%",
         tooltip: "Rendimentos do portfólio."
+      },
+      retirementBalance: {
+        title: "Diferença na Aposentadoria",
+        subtitle: "Carteira Atual vs. Anterior",
+        tooltip: "Diferença entre o valor atual e o valor da carteira anterior no ano de aposentadoria."
       }
     },
     charts: {
@@ -576,6 +581,7 @@ export const ptBR = {
     projectedLifetimeIncome: "Renda Vitalícia Projetada",
     plannedLifetimeIncome: "Renda Vitalícia Planejada",
     advancedOptions: "Opções Avançadas",
+    oldPortfolioLifetimeIncome: "Renda Vitalícia do Portfólio Anterior",
     valueType: "Tipo de Valor",
     display: "Exibição",
     noNegativeValues: "Sem Valores Negativos",

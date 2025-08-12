@@ -681,35 +681,60 @@ export default function PatrimonialProjectionChart({
               })()}
             </span>
           </div>
-          {tooltipData.actualValue !== undefined && (
-            <div className="flex items-center gap-2 mb-1">
-              <div className="w-3 h-3 rounded-full" style={{ background: 'linear-gradient(to right, #3b82f6, #60a5fa)' }} />
-              <div className="flex flex-col">
-                <span className="text-gray-600 dark:text-gray-300 text-xs font-medium">{t('expenseChart.actualValue')}</span>
-                <span className={`text-sm font-semibold ${tooltipData.actualValue >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>{formatCurrency(tooltipData.actualValue, investmentPlan?.currency as CurrencyCode)}</span>
-                <span className="text-xs text-gray-500 dark:text-gray-400">{t('expenseChart.projectedLifetimeIncome')}:{t('expenseChart.lifetimeIncome')}: {formatCurrency((tooltipData.actualValue * (investmentPlan.expected_return/100))/12, investmentPlan?.currency as CurrencyCode)}/{t('common.perMonth')}</span>
+          {(() => {
+            // Criar array com todos os valores disponíveis para ordenação
+            const values = []
+            
+            if (tooltipData.actualValue !== undefined) {
+              values.push({
+                type: 'actual',
+                value: tooltipData.actualValue,
+                label: t('expenseChart.actualValue'),
+                color: 'linear-gradient(to right, #3b82f6, #60a5fa)',
+                textColor: tooltipData.actualValue >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400',
+                additionalInfo: `${t('expenseChart.lifetimeIncome')}: ${formatCurrency((tooltipData.actualValue * (investmentPlan.expected_return/100))/12, investmentPlan?.currency as CurrencyCode)}/${t('common.perMonth')}`
+              })
+            }
+            
+            if (tooltipData.projectedValue !== undefined) {
+              values.push({
+                type: 'projected',
+                value: tooltipData.projectedValue,
+                label: t('expenseChart.projectedValue'),
+                color: 'linear-gradient(to right, #f97316, #fb923c)',
+                textColor: tooltipData.projectedValue >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400',
+                additionalInfo: `${t('expenseChart.plannedLifetimeIncome')}: ${formatCurrency((tooltipData.projectedValue * (investmentPlan.expected_return/100))/12, investmentPlan?.currency as CurrencyCode)}/${t('common.perMonth')}`
+              })
+            }
+            
+            if (showOldPortfolio && tooltipData.oldPortfolioValue !== undefined && tooltipData.oldPortfolioValue !== null) {
+              values.push({
+                type: 'oldPortfolio',
+                value: tooltipData.oldPortfolioValue,
+                label: t('expenseChart.oldPortfolioValue'),
+                color: 'linear-gradient(to right, #10b981, #34d399)',
+                textColor: tooltipData.oldPortfolioValue >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400',
+                additionalInfo: `${t('expenseChart.oldPortfolioLifetimeIncome')}: ${formatCurrency((tooltipData.oldPortfolioValue * (investmentPlan.old_portfolio_profitability/100))/12, investmentPlan?.currency as CurrencyCode)}/${t('common.perMonth')}`
+              })
+            }
+            
+            // Ordenar por valor absoluto (maior primeiro)
+            values.sort((a, b) => Math.abs(b.value) - Math.abs(a.value))
+            
+            // Renderizar valores ordenados
+            return values.map((item, index) => (
+              <div key={item.type} className="flex items-center gap-2 mb-1">
+                <div className="w-3 h-3 rounded-full" style={{ background: item.color }} />
+                <div className="flex flex-col">
+                  <span className="text-gray-600 dark:text-gray-300 text-xs font-medium">{item.label}</span>
+                  <span className={`text-sm font-semibold ${item.textColor}`}>{formatCurrency(item.value, investmentPlan?.currency as CurrencyCode)}</span>
+                  {item.additionalInfo && (
+                    <span className="text-xs text-gray-500 dark:text-gray-400">{item.additionalInfo}</span>
+                  )}
+                </div>
               </div>
-            </div>
-          )}
-          {tooltipData.projectedValue !== undefined && (
-            <div className="flex items-center gap-2 mb-1">
-              <div className="w-3 h-3 rounded-full" style={{ background: 'linear-gradient(to right, #f97316, #fb923c)' }} />
-              <div className="flex flex-col">
-                <span className="text-gray-600 dark:text-gray-300 text-xs font-medium">{t('expenseChart.projectedValue')}</span>
-                <span className={`text-sm font-semibold ${tooltipData.projectedValue >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>{formatCurrency(tooltipData.projectedValue, investmentPlan?.currency as CurrencyCode)}</span>
-                <span className="text-xs text-gray-500 dark:text-gray-400">{t('expenseChart.plannedLifetimeIncome')}: {formatCurrency((tooltipData.projectedValue * (investmentPlan.expected_return/100))/12, investmentPlan?.currency as CurrencyCode)}/{t('common.perMonth')}</span>
-              </div>
-            </div>
-          )}
-          {showOldPortfolio && tooltipData.oldPortfolioValue !== undefined && tooltipData.oldPortfolioValue !== null && (
-            <div className="flex items-center gap-2 mb-1">
-              <div className="w-3 h-3 rounded-full" style={{ background: 'linear-gradient(to right, #10b981, #34d399)' }} />
-              <div className="flex flex-col">
-                <span className="text-gray-600 dark:text-gray-300 text-xs font-medium">{t('expenseChart.oldPortfolioValue')}</span>
-                <span className={`text-sm font-semibold ${tooltipData.oldPortfolioValue >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>{formatCurrency(tooltipData.oldPortfolioValue, investmentPlan?.currency as CurrencyCode)}</span>
-              </div>
-            </div>
-          )}
+            ))
+          })()}
           {tooltipData.objectives && tooltipData.objectives.length > 0 && (
             <>
               <div className="text-gray-800 dark:text-gray-200 font-semibold mt-2 mb-1">{t('financialGoals.title')} / {t('events.title')}:</div>

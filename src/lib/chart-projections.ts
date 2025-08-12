@@ -183,6 +183,17 @@ export function generateProjectionData(
         eventsForChart,
       );
 
+      if (oldPortfolioProfitability) {
+        oldPortfolioBalance = handleMonthlyGoalsAndEvents(
+          oldPortfolioBalance,
+          year,
+          currentMonthNumber - 1,
+          accumulatedInflation,
+          goalsForChart,
+          eventsForChart,
+        );
+      }
+
 
       if (historicalRecord) {
         lastHistoricalRecord = new Date(year, month + 1);

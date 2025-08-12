@@ -2,7 +2,7 @@ import { DashboardCard } from "@/components/DashboardCard";
 import { ExpenseChart } from "@/components/ExpenseChart";
 import { SavingsGoal } from "@/components/SavingsGoal";
 import { MonthlyView } from "@/components/MonthlyView";
-import { Briefcase, LineChart, PiggyBank, Target, Trophy, Calendar, TrendingUp, Info, User, History } from "lucide-react";
+import { Briefcase, LineChart, PiggyBank, Target, Trophy, Calendar, TrendingUp, Info, User, History, Scale } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -413,6 +413,72 @@ const Finances = ({
     JSON.stringify(projectionData)
   ]);
 
+  // Calculate retirement balance difference
+  const retirementBalanceData = useMemo(() => {
+    if (!originalProjectionData || !investmentPlan || !clientProfile || !allFinancialRecords) {
+      return {
+        nominalDifference: 0,
+        percentageDifference: 0,
+        currentBalance: 0,
+        oldPortfolioBalance: 0
+      };
+    }
+
+    try {
+      // Find the retirement year data
+      const retirementDate = new Date(investmentPlan.plan_end_accumulation_date);
+      const retirementYear = originalProjectionData.find(year => year.year === retirementDate.getFullYear());
+      
+      if (!retirementYear) {
+        return {
+          nominalDifference: 0,
+          percentageDifference: 0,
+          currentBalance: 0,
+          oldPortfolioBalance: 0
+        };
+      }
+
+      // Get the month before retirement (last accumulation month)
+      const retirementMonthIndex = retirementYear.months?.findIndex(month => month.month === retirementDate.getMonth() + 1);
+      const monthBeforeRetirement = retirementYear.months?.[retirementMonthIndex !== undefined && retirementMonthIndex > 0 ? retirementMonthIndex - 1 : 0];
+
+      if (!monthBeforeRetirement) {
+        return {
+          nominalDifference: 0,
+          percentageDifference: 0,
+          currentBalance: 0,
+          oldPortfolioBalance: 0
+        };
+      }
+
+      const currentBalance = monthBeforeRetirement.balance;
+      const oldPortfolioBalance = monthBeforeRetirement.old_portfolio_balance || 0;
+
+      // Calculate nominal difference (current vs old portfolio)
+      const nominalDifference = currentBalance - oldPortfolioBalance;
+
+      // Calculate percentage difference
+      const percentageDifference = oldPortfolioBalance > 0 
+        ? ((currentBalance - oldPortfolioBalance) / oldPortfolioBalance) * 100 
+        : 0;
+
+      return {
+        nominalDifference,
+        percentageDifference,
+        currentBalance,
+        oldPortfolioBalance
+      };
+    } catch (error) {
+      console.error('Error calculating retirement balance difference:', error);
+      return {
+        nominalDifference: 0,
+        percentageDifference: 0,
+        currentBalance: 0,
+        oldPortfolioBalance: 0
+      };
+    }
+  }, [originalProjectionData, investmentPlan, clientProfile, allFinancialRecords]);
+
   const calculateMonthlyContributions = useCallback((period: TimePeriod = 'all') => {
     if (!processedRecords.financialRecords?.length) return 0;
 
@@ -481,7 +547,7 @@ const Finances = ({
 
   return (
     <>
-      <div className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8 py-6">
+      <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-6">
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
           <Link 
             to={`/financial-records${clientId ? `/${clientId}` : ''}`} 
@@ -561,7 +627,7 @@ const Finances = ({
       </div>
 
       {/* Highlights Section */}
-      <div className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8 py-4">
+      <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-4">
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
           {calculateHighlights().map((highlight, index) => {
             function getHighlightBgClasses(i: number): string {
@@ -587,8 +653,12 @@ const Finances = ({
         </div>
       </div>
 
-      <main className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <main className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
+        <div className={`grid gap-6 ${
+          investmentPlan?.old_portfolio_profitability 
+            ? 'grid-cols-1 md:grid-cols-2 lg:grid-cols-4' 
+            : 'grid-cols-1 md:grid-cols-3'
+        }`}>
           <DashboardCard 
             className="transform transition-all duration-300 hover:scale-[1.02] hover:shadow-2xl bg-gradient-to-br from-white/95 via-slate-50/90 to-blue-50/80 dark:from-gray-900/90 dark:via-gray-900/80 dark:to-slate-800/70 backdrop-blur-sm border border-gray-100/50 dark:border-gray-800 rounded-xl shadow-lg hover:border-blue-100/50 dark:hover:border-gray-700"
             title={
@@ -635,13 +705,13 @@ const Finances = ({
             className="transform transition-all duration-300 hover:scale-[1.02] hover:shadow-2xl bg-gradient-to-br from-white/95 via-slate-50/90 to-blue-50/80 dark:from-gray-900/90 dark:via-gray-900/80 dark:to-slate-800/70 backdrop-blur-sm border border-gray-100/50 dark:border-gray-800 rounded-xl shadow-lg hover:border-blue-100/50 dark:hover:border-gray-700"
             title={
               <div className="flex items-center justify-between w-full">
-                <div className="flex items-center gap-2">
-                  <span className="text-gray-900 dark:text-gray-100 font-medium">
+                <div className="flex items-center gap-2 flex-1 min-w-0">
+                  <span className="text-gray-900 dark:text-gray-100 font-medium truncate">
                     {t('dashboard.cards.contributions.title')}
                   </span>
                   <HoverCard>
                     <HoverCardTrigger>
-                      <Info className="h-4 w-4 text-gray-400 dark:text-gray-300 cursor-help hover:text-blue-600 dark:hover:text-blue-400 transition-colors" />
+                      <Info className="h-4 w-4 text-gray-400 dark:text-gray-300 cursor-help hover:text-blue-600 dark:hover:text-blue-400 transition-colors flex-shrink-0" />
                     </HoverCardTrigger>
                     <HoverCardContent className="w-80 bg-white dark:bg-gray-900 shadow-lg rounded-lg">
                       <p className="text-sm text-gray-600 dark:text-gray-300">
@@ -651,7 +721,7 @@ const Finances = ({
                   </HoverCard>
                 </div>
                 <Select value={contributionPeriod} onValueChange={(value) => setContributionPeriod(value as TimePeriod)}>
-                  <SelectTrigger className="w-[150px] h-8 text-sm border border-gray-200 dark:border-gray-700 rounded-lg px-2 bg-white/90 dark:bg-gray-900/80 text-gray-700 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent shadow-sm hover:border-blue-200 dark:hover:border-gray-600 transition-colors ml-auto">
+                  <SelectTrigger className="w-[120px] h-8 text-sm border border-gray-200 dark:border-gray-700 rounded-lg px-2 bg-white/90 dark:bg-gray-900/80 text-gray-700 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent shadow-sm hover:border-blue-200 dark:hover:border-gray-600 transition-colors ml-auto">
                     <SelectValue placeholder={t('common.selectPeriod')} />
                   </SelectTrigger>
                   <SelectContent>
@@ -665,7 +735,7 @@ const Finances = ({
             }
             icon={PiggyBank}
           >
-            <div className="space-y-2">
+            <div className="space-y-3">
               <p className={`text-2xl font-bold drop-shadow-sm ${
                 investmentPlan?.required_monthly_deposit && 
                 totalContribution >= investmentPlan.required_monthly_deposit 
@@ -674,7 +744,7 @@ const Finances = ({
               }`}>
                 {formatCurrency(totalContribution, investmentPlan?.currency as CurrencyCode)}
               </p>
-              <p className="text-sm text-muted-foreground">
+              <p className="text-sm text-gray-600 dark:text-gray-400 font-medium break-words">
                 {t('dashboard.cards.contributions.total')}
               </p>
             </div>
@@ -684,13 +754,13 @@ const Finances = ({
             className="transform transition-all duration-300 hover:scale-[1.02] hover:shadow-2xl bg-gradient-to-br from-white/95 via-slate-50/90 to-blue-50/80 dark:from-gray-900/90 dark:via-gray-900/80 dark:to-slate-800/70 backdrop-blur-sm border border-gray-100/50 dark:border-gray-800 rounded-xl shadow-lg hover:border-blue-100/50 dark:hover:border-gray-700"
             title={
               <div className="flex items-center justify-between w-full">
-                <div className="flex items-center gap-2">
-                  <span className="text-gray-900 dark:text-gray-100 font-medium">
+                <div className="flex items-center gap-2 flex-1 min-w-0">
+                  <span className="text-gray-900 dark:text-gray-100 font-medium truncate">
                     {t('dashboard.cards.totalReturns.title')}
                   </span>
                   <HoverCard>
                     <HoverCardTrigger>
-                      <Info className="h-4 w-4 text-gray-400 dark:text-gray-300 cursor-help hover:text-blue-600 dark:hover:text-blue-400 transition-colors" />
+                      <Info className="h-4 w-4 text-gray-400 dark:text-gray-300 cursor-help hover:text-blue-600 dark:hover:text-blue-400 transition-colors flex-shrink-0" />
                     </HoverCardTrigger>
                     <HoverCardContent className="w-80 bg-white dark:bg-gray-900 shadow-lg rounded-lg">
                       <p className="text-sm text-gray-600 dark:text-gray-300">
@@ -700,7 +770,7 @@ const Finances = ({
                   </HoverCard>
                 </div>
                 <Select value={selectedPeriod} onValueChange={(value) => setSelectedPeriod(value as TimePeriod)}>
-                  <SelectTrigger className="w-[150px] h-8 text-sm border border-gray-200 dark:border-gray-700 rounded-lg px-2 bg-white/90 dark:bg-gray-900/80 text-gray-700 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent shadow-sm hover:border-blue-200 dark:hover:border-gray-600 transition-colors ml-auto">
+                  <SelectTrigger className="w-[120px] h-8 text-sm border border-gray-200 dark:border-gray-700 rounded-lg px-2 bg-white/90 dark:bg-gray-900/80 text-gray-700 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent shadow-sm hover:border-blue-200 dark:hover:border-gray-600 transition-colors ml-auto">
                     <SelectValue placeholder={t('common.selectPeriod')} />
                   </SelectTrigger>
                   <SelectContent>
@@ -735,6 +805,55 @@ const Finances = ({
               </div>
             </div>
           </DashboardCard>
+          
+          {investmentPlan?.old_portfolio_profitability && (
+            <DashboardCard 
+              className="transform transition-all duration-300 hover:scale-[1.02] hover:shadow-2xl bg-gradient-to-br from-white/95 via-slate-50/90 to-blue-50/80 dark:from-gray-900/90 dark:via-gray-900/80 dark:to-slate-800/70 backdrop-blur-sm border border-gray-100/50 dark:border-gray-800 rounded-xl shadow-lg hover:border-blue-100/50 dark:hover:border-gray-700"
+              title={
+                <div className="flex items-center justify-between w-full">
+                  <div className="flex items-center gap-2">
+                    <span className="text-gray-900 dark:text-gray-100 font-medium">
+                      {t('dashboard.cards.retirementBalance.title')}
+                    </span>
+                    <HoverCard>
+                      <HoverCardTrigger>
+                        <Info className="h-4 w-4 text-gray-400 dark:text-gray-300 cursor-help hover:text-blue-600 dark:hover:text-blue-400 transition-colors" />
+                      </HoverCardTrigger>
+                      <HoverCardContent className="w-80 bg-white dark:bg-gray-900 shadow-lg rounded-lg">
+                        <p className="text-sm text-gray-600 dark:text-gray-300">
+                          {t('dashboard.cards.retirementBalance.tooltip')}
+                        </p>
+                      </HoverCardContent>
+                    </HoverCard>
+                  </div>
+                </div>
+              }
+              icon={Scale}
+            >
+              <div className="space-y-3">
+                <div className="space-y-1">
+                  <p className={`text-2xl font-bold drop-shadow-sm ${
+                    retirementBalanceData.nominalDifference >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'
+                  }`}>
+                    {formatCurrency(retirementBalanceData.nominalDifference, investmentPlan?.currency as CurrencyCode)}
+                  </p>
+                </div>
+                
+                <div className={`flex items-center gap-2 ${
+                  retirementBalanceData.percentageDifference >= 0 ? 'bg-gradient-to-r from-emerald-50 via-green-50 to-emerald-100/50 dark:from-emerald-900/30 dark:via-emerald-900/20 dark:to-emerald-900/10' : 'bg-gradient-to-r from-rose-50 via-red-50 to-rose-100/50 dark:from-rose-900/30 dark:via-rose-900/20 dark:to-rose-900/10'
+                } rounded-full px-3 py-1 w-fit shadow-sm backdrop-blur-sm border border-white/50 dark:border-gray-800`}>
+                  <LineChart className={`h-4 w-4 ${
+                    retirementBalanceData.percentageDifference >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'
+                  }`} />
+                  <p className={`text-sm font-medium ${
+                    retirementBalanceData.percentageDifference >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'
+                  }`}>
+                    {retirementBalanceData.percentageDifference >= 0 ? '+' : ''}{retirementBalanceData.percentageDifference.toFixed(2)}%
+                  </p>
+                </div>
+              </div>
+            </DashboardCard>
+          )}
         </div>
 
         <div className="transform transition-all duration-300 hover:scale-[1.01] hover:shadow-2xl bg-gradient-to-br from-white/95 via-slate-50/90 to-blue-50/80 dark:from-gray-900/90 dark:via-gray-900/80 dark:to-slate-800/70 backdrop-blur-sm rounded-xl shadow-lg p-6 border border-gray-100/50 dark:border-gray-800 hover:border-blue-100/50 dark:hover:border-gray-700">

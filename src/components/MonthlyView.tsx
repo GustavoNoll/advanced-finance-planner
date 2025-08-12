@@ -579,29 +579,65 @@ export const MonthlyView = ({
                       boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1)',
                       padding: '0.75rem',
                     }}
-                    formatter={(value: number, name: string, props: { color?: string }) => [
-                      <div className="flex items-center gap-2">
-                        <div 
-                          className="w-3 h-3 rounded-full" 
-                          style={{ 
-                            background: name === t('monthlyView.chart.accumulatedReturn') ? 'linear-gradient(to right, #22c55e, #4ade80)' :
-                                      name === t('monthlyView.chart.accumulatedTargetReturn') ? 'linear-gradient(to right, #f43f5e, #fb7185)' :
-                                      name === t('monthlyView.chart.accumulatedCDIReturn') ? 'linear-gradient(to right, #3b82f6, #60a5fa)' :
-                                      name === t('monthlyView.chart.accumulatedIPCAReturn') ? 'linear-gradient(to right, #eab308, #facc15)' :
-                                      name === t('monthlyView.chart.accumulatedUSCPIReturn') ? 'linear-gradient(to right, #8b5cf6, #c4b5fd)' :
-                                      name === t('monthlyView.chart.accumulatedEuroCPIReturn') ? 'linear-gradient(to right, #ec4899, #f472b6)' :
-                                      name === t('monthlyView.chart.accumulatedOldPortfolioReturn') ? 'linear-gradient(to right, #c2410c, #ea580c)' :
-                                      'linear-gradient(to right, #eab308, #facc15)'
-                          }}
-                        />
-                        <div className="flex flex-col">
-                          <span className="text-gray-600 dark:text-gray-300 text-sm font-medium">{name}</span>
-                          <span className={`text-gray-900 dark:text-gray-100 font-semibold ${value >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
-                            {value >= 0 ? '↑' : '↓'} {Math.abs(value).toFixed(2)}%
-                          </span>
-                        </div>
-                      </div>
-                    ]}
+                    content={({ active, payload, label }) => {
+                      if (active && payload && payload.length) {
+                        // Sort payload by value (percentage) in descending order
+                        const sortedPayload = [...payload].sort((a, b) => {
+                          const valueA = typeof a.value === 'number' ? a.value : 0;
+                          const valueB = typeof b.value === 'number' ? b.value : 0;
+                          return valueB - valueA;
+                        });
+
+                        return (
+                          <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg p-3 shadow-lg">
+                            <p className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-2">{label}</p>
+                            <div className="space-y-2">
+                                                             {sortedPayload.map((entry, index) => {
+                                 const value = typeof entry.value === 'number' ? entry.value : 0;
+                                 const name = String(entry.name || '');
+                                
+                                const getColor = (name: string) => {
+                                  switch (name) {
+                                    case t('monthlyView.chart.accumulatedReturn'):
+                                      return 'linear-gradient(to right, #22c55e, #4ade80)';
+                                    case t('monthlyView.chart.accumulatedTargetReturn'):
+                                      return 'linear-gradient(to right, #f43f5e, #fb7185)';
+                                    case t('monthlyView.chart.accumulatedCDIReturn'):
+                                      return 'linear-gradient(to right, #3b82f6, #60a5fa)';
+                                    case t('monthlyView.chart.accumulatedIPCAReturn'):
+                                      return 'linear-gradient(to right, #eab308, #facc15)';
+                                    case t('monthlyView.chart.accumulatedUSCPIReturn'):
+                                      return 'linear-gradient(to right, #8b5cf6, #c4b5fd)';
+                                    case t('monthlyView.chart.accumulatedEuroCPIReturn'):
+                                      return 'linear-gradient(to right, #ec4899, #f472b6)';
+                                    case t('monthlyView.chart.accumulatedOldPortfolioReturn'):
+                                      return 'linear-gradient(to right, #c2410c, #ea580c)';
+                                    default:
+                                      return 'linear-gradient(to right, #eab308, #facc15)';
+                                  }
+                                };
+
+                                return (
+                                  <div key={index} className="flex items-center gap-2">
+                                    <div 
+                                      className="w-3 h-3 rounded-full" 
+                                      style={{ background: getColor(name) }}
+                                    />
+                                    <div className="flex flex-col">
+                                      <span className="text-gray-600 dark:text-gray-300 text-sm font-medium">{name}</span>
+                                      <span className={`text-gray-900 dark:text-gray-100 font-semibold ${value >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
+                                        {value >= 0 ? '↑' : '↓'} {Math.abs(value).toFixed(2)}%
+                                      </span>
+                                    </div>
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          </div>
+                        );
+                      }
+                      return null;
+                    }}
                     labelStyle={{
                       color: isDark ? '#e5e7eb' : '#1f2937',
                       fontWeight: '600',
@@ -735,7 +771,7 @@ export const MonthlyView = ({
                       activeDot={{ 
                         r: 8, 
                         strokeWidth: 2,
-                        stroke: '#ea580c',
+                        stroke: '#c2410c',
                         fill: 'white',
                         filter: 'url(#shadow)'
                       }}
