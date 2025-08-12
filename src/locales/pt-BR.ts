@@ -556,6 +556,7 @@ export const ptBR = {
     actualValueProjection: "Evolução Projetada",
     projectedValue: "Projeção Financeira",
     projectedValueReal: "Projeção Financeira Real",
+    oldPortfolioValue: "Portfólio Anterior",
     years: "anos",
     goalAchievement: "Meta atingida",
     realValues: "Valores Reais",
@@ -584,7 +585,9 @@ export const ptBR = {
     newDepositValue: "Novo valor (valor inicial do plano: {{value}})",
     newWithdrawValue: "Novo valor (valor inicial do plano: {{value}})",
     changeDate: "Data da mudança",
-    chartOptionsHelp: "O valor informado será aplicado a partir da data especificada, sem considerar inflação acumulada desde o início do plano. A inflação será aplicada apenas a partir da data da mudança."
+    chartOptionsHelp: "O valor informado será aplicado a partir da data especificada, sem considerar inflação acumulada desde o início do plano. A inflação será aplicada apenas a partir da data da mudança.",
+    showOldPortfolio: "Mostrar Portfólio Anterior",
+    showOldPortfolioHelp: "Mostra ou oculta a linha do portfólio anterior no gráfico. Esta linha representa o valor que o cliente já possuía antes de iniciar o plano de investimento."
   },
   budgetCategories: {
     categories: {

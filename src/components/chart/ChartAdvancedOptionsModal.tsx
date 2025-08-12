@@ -19,6 +19,8 @@ interface ChartAdvancedOptionsModalProps {
   setShowRealValues: (value: boolean) => void;
   showNegativeValues: boolean;
   setShowNegativeValues: (value: boolean) => void;
+  showOldPortfolio: boolean;
+  setShowOldPortfolio: (value: boolean) => void;
   
   // Chart options
   changeMonthlyDeposit: {
@@ -52,6 +54,8 @@ export const ChartAdvancedOptionsModal = ({
   setShowRealValues,
   showNegativeValues,
   setShowNegativeValues,
+  showOldPortfolio,
+  setShowOldPortfolio,
   changeMonthlyDeposit,
   setChangeMonthlyDeposit,
   changeMonthlyWithdraw,
@@ -92,12 +96,35 @@ export const ChartAdvancedOptionsModal = ({
           </div>
           <div>
             <div className="text-xs font-semibold text-gray-500 dark:text-gray-300 mb-2 uppercase tracking-wider">{t('expenseChart.display')}</div>
-            <div className="flex items-center justify-between">
-              <span className="text-sm font-medium text-gray-700 dark:text-gray-200">{t('expenseChart.noNegativeValues')}</span>
-              <Switch
-                checked={!showNegativeValues}
-                onCheckedChange={v => setShowNegativeValues(!v)}
-              />
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <span className="text-sm font-medium text-gray-700 dark:text-gray-200">{t('expenseChart.noNegativeValues')}</span>
+                <Switch
+                  checked={!showNegativeValues}
+                  onCheckedChange={v => setShowNegativeValues(!v)}
+                />
+              </div>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <span className="text-sm font-medium text-gray-700 dark:text-gray-200">{t('expenseChart.showOldPortfolio')}</span>
+                  <HoverCard>
+                    <HoverCardTrigger asChild>
+                      <button className="text-gray-400 dark:text-gray-300 hover:text-gray-600 dark:hover:text-gray-100 transition-colors" tabIndex={-1} type="button">
+                        <HelpCircle className="w-4 h-4" />
+                      </button>
+                    </HoverCardTrigger>
+                    <HoverCardContent className="max-w-xs bg-white dark:bg-gray-900">
+                      <p className="text-sm text-gray-600 dark:text-gray-300">
+                        {t('expenseChart.showOldPortfolioHelp')}
+                      </p>
+                    </HoverCardContent>
+                  </HoverCard>
+                </div>
+                <Switch
+                  checked={showOldPortfolio}
+                  onCheckedChange={setShowOldPortfolio}
+                />
+              </div>
             </div>
           </div>
           

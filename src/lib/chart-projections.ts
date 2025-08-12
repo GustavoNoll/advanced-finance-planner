@@ -17,6 +17,7 @@ interface MonthlyProjectionData {
   balance: number;
   projected_lifetime_withdrawal: number;
   planned_lifetime_withdrawal: number;
+  old_portfolio_balance: number | null;
   retirement: boolean;
   planned_balance: number;
   returns?: number;
@@ -36,6 +37,7 @@ export interface YearlyProjectionData {
   projected_lifetime_withdrawal: number;
   planned_balance: number;
   planned_lifetime_withdrawal: number;
+  old_portfolio_balance: number | null;
   months?: MonthlyProjectionData[];
   isRetirementTransitionYear?: boolean;
   hasHistoricalData: boolean;
@@ -75,6 +77,9 @@ export function generateProjectionData(
   const goalsForChart = processGoals(goals);
   const eventsForChart = processEvents(events);
 
+  const oldPortfolioProfitability = investmentPlan.old_portfolio_profitability;
+  let oldPortfolioBalance = null;
+
   const birthDate = new Date(profile.birth_date);
   const birthYear = birthDate.getFullYear();
   
@@ -89,6 +94,9 @@ export function generateProjectionData(
   
   let projectedBalance = initialRecords[0]?.ending_balance || investmentPlan.initial_amount;
   let plannedBalance = investmentPlan.initial_amount;
+  if (oldPortfolioProfitability) { // if the user has an old portfolio, we need to add the initial amount to the planned balance
+    oldPortfolioBalance = investmentPlan.initial_amount;
+  }
   let currentMonthlyDeposit = investmentPlan.monthly_deposit;
   let currentMonthlyWithdrawal = investmentPlan.desired_income;
   
@@ -99,6 +107,7 @@ export function generateProjectionData(
   // Default to the estimated inflation rate if no IPCA data is available
   const defaultMonthlyInflationRate = yearlyReturnRateToMonthlyReturnRate(investmentPlan.inflation/100);
   const monthlyExpectedReturnRate = yearlyReturnRateToMonthlyReturnRate(investmentPlan.expected_return/100);
+  const monthlyOldPortfolioExpectedReturnRate = yearlyReturnRateToMonthlyReturnRate(oldPortfolioProfitability/100);
   let accumulatedInflation = 1;
   
   // Create a map of IPCA rates by year and month for easy lookup
@@ -151,6 +160,7 @@ export function generateProjectionData(
       
       // Calculate the monthly return rate based on the expected return and inflation
       const monthlyReturnRate = calculateCompoundedRates([monthlyExpectedReturnRate, monthlyInflationRate]);
+      const monthlyOldPortfolioReturnRate = calculateCompoundedRates([monthlyOldPortfolioExpectedReturnRate, monthlyInflationRate]);
 
       if (investmentPlan.adjust_contribution_for_inflation && !isRetirementAge) {
         currentMonthlyDeposit *= (1 + monthlyInflationRate);
@@ -177,6 +187,9 @@ export function generateProjectionData(
       if (historicalRecord) {
         lastHistoricalRecord = new Date(year, month + 1);
         plannedBalance = ((plannedBalance) * (1 + monthlyReturnRate) + (currentMonthlyDeposit));
+        if (oldPortfolioProfitability) {
+          oldPortfolioBalance = ((oldPortfolioBalance) * (1 + monthlyOldPortfolioReturnRate) + (currentMonthlyDeposit));
+        }
         return {
           month: currentMonthNumber,
           contribution: historicalRecord.monthly_contribution > 0 ? historicalRecord.monthly_contribution : 0,
@@ -191,12 +204,16 @@ export function generateProjectionData(
           planned_lifetime_withdrawal: plannedBalance / (investmentPlan.expected_return/100),
           effectiveRate: monthlyReturnRate,
           ipcaRate: monthlyInflationRate,
-          accumulatedInflation: accumulatedInflation
+          accumulatedInflation: accumulatedInflation,
+          old_portfolio_balance: oldPortfolioBalance
         };
       }
 
       if (isInPast) {
         plannedBalance = (plannedBalance) * (1 + monthlyReturnRate) + (currentMonthlyDeposit);
+        if (oldPortfolioProfitability) {
+          oldPortfolioBalance = ((oldPortfolioBalance) * (1 + monthlyOldPortfolioReturnRate) + (currentMonthlyDeposit));
+        }
         return {
           month: currentMonthNumber,
           contribution: 0,
@@ -211,7 +228,8 @@ export function generateProjectionData(
           effectiveRate: monthlyReturnRate,
           difference_from_planned_balance: plannedBalance - projectedBalance,
           ipcaRate: monthlyInflationRate,
-          accumulatedInflation: accumulatedInflation
+          accumulatedInflation: accumulatedInflation,
+          old_portfolio_balance: oldPortfolioBalance
         };
       }
 
@@ -234,6 +252,9 @@ export function generateProjectionData(
         
         projectedBalance = (projectedBalance - withdrawal) * (1 + monthlyReturnRate);
         plannedBalance = (plannedBalance - withdrawal) * (1 + monthlyReturnRate);
+        if (oldPortfolioProfitability) {
+          oldPortfolioBalance =  (oldPortfolioBalance - withdrawal) * (1 + monthlyOldPortfolioReturnRate);
+        }
 
         return {
           month: currentMonthNumber,
@@ -250,12 +271,16 @@ export function generateProjectionData(
           retirement: isRetirementAge,
           effectiveRate: monthlyReturnRate,
           ipcaRate: monthlyInflationRate,
-          accumulatedInflation: accumulatedInflation
+          accumulatedInflation: accumulatedInflation,
+          old_portfolio_balance: oldPortfolioBalance
         };
       }
 
       projectedBalance = (projectedBalance) * (1 + monthlyReturnRate) + (currentMonthlyDeposit);
       plannedBalance = (plannedBalance) * (1 + monthlyReturnRate) + (currentMonthlyDeposit);
+      if (oldPortfolioProfitability) {
+        oldPortfolioBalance = ((oldPortfolioBalance) * (1 + monthlyOldPortfolioReturnRate) + (currentMonthlyDeposit));
+      }
       return {
         month: currentMonthNumber,
         contribution: currentMonthlyDeposit,
@@ -271,7 +296,8 @@ export function generateProjectionData(
         monthlyReturnRate,
         ipcaRate: monthlyInflationRate,
         effectiveRate: monthlyReturnRate,
-        accumulatedInflation: accumulatedInflation
+        accumulatedInflation: accumulatedInflation,
+        old_portfolio_balance: oldPortfolioBalance
       };
     }).filter(Boolean) as MonthlyProjectionData[];
 
@@ -301,7 +327,8 @@ export function generateProjectionData(
         difference_from_planned_balance: lastMonth.difference_from_planned_balance,
         goalsEventsImpact: yearlyGoalsEventsImpact,
         ipcaRate: calculateCompoundedRates(monthlyData.map(month => month.ipcaRate || 0)),
-        effectiveRate: calculateCompoundedRates(monthlyData.map(month => month.effectiveRate))
+        effectiveRate: calculateCompoundedRates(monthlyData.map(month => month.effectiveRate)),
+        old_portfolio_balance: lastMonth.old_portfolio_balance || null
       });
     }
   }
@@ -333,6 +360,7 @@ export function generateChartProjections(
       month: monthData.month as MonthNumber,
       actualValue: monthData.balance,
       projectedValue: monthData.planned_balance,
+      oldPortfolioValue: monthData.old_portfolio_balance,
       realDataPoint: monthData.isHistorical
     })) || []
   );

@@ -27,6 +27,7 @@ type MonthlyData = {
   month: number
   actualValue: number
   projectedValue: number
+  oldPortfolioValue?: number | null
   realDataPoint?: boolean
 }
 
@@ -48,6 +49,7 @@ type PatrimonialProjectionChartProps = {
   selectedYears: number[]
   showNominalValues: boolean
   hideNegativeValues: boolean
+  showOldPortfolio: boolean
   investmentPlan: InvestmentPlan
   onSubmitGoal: (values: GoalFormValues) => Promise<void>
   onSubmitEvent: (values: EventFormValues) => Promise<void>
@@ -139,6 +141,7 @@ export default function PatrimonialProjectionChart({
   selectedYears,
   showNominalValues,
   hideNegativeValues,
+  showOldPortfolio,
   investmentPlan,
   width = '100%',
   height = 400,
@@ -162,11 +165,16 @@ export default function PatrimonialProjectionChart({
     let filtered = monthlyData.filter((d) => selectedYears.includes(d.year))
 
     if (hideNegativeValues) {
-      filtered = filtered.filter((d) => d.actualValue >= 0 && d.projectedValue >= 0)
+      filtered = filtered.filter((d) => {
+        const actualValueValid = d.actualValue >= 0
+        const projectedValueValid = d.projectedValue >= 0
+        const oldPortfolioValueValid = !showOldPortfolio || d.oldPortfolioValue === null || d.oldPortfolioValue === undefined || d.oldPortfolioValue >= 0
+        return actualValueValid && projectedValueValid && oldPortfolioValueValid
+      })
     }
 
     return filtered
-  }, [monthlyData, selectedYears, hideNegativeValues])
+  }, [monthlyData, selectedYears, hideNegativeValues, showOldPortfolio])
 
   // Preparar dados para o gráfico
   const chartData = useMemo(() => {
@@ -174,12 +182,13 @@ export default function PatrimonialProjectionChart({
       date: getDateFromMonthYear(d.year, d.month),
       actualValue: showNominalValues ? d.actualValue : d.actualValue * 0.85, // Simulando ajuste por inflação
       projectedValue: showNominalValues ? d.projectedValue : d.projectedValue * 0.85,
+      oldPortfolioValue: showOldPortfolio && d.oldPortfolioValue ? (showNominalValues ? d.oldPortfolioValue : d.oldPortfolioValue * 0.85) : null,
       age: d.age,
       year: d.year,
       month: d.month,
       realDataPoint: d.realDataPoint,
     }))
-  }, [filteredData, showNominalValues])
+  }, [filteredData, showNominalValues, showOldPortfolio])
 
   // Preparar dados de objetivos
   const objectivePoints = useMemo(() => {
@@ -231,6 +240,7 @@ export default function PatrimonialProjectionChart({
     const allValues = [
       ...chartData.map((d) => d.actualValue),
       ...chartData.map((d) => d.projectedValue),
+      ...(showOldPortfolio ? chartData.map((d) => d.oldPortfolioValue).filter(v => v !== null && v !== undefined) : []),
       ...objectivePoints.map((d) => d.value),
     ]
 
@@ -242,13 +252,14 @@ export default function PatrimonialProjectionChart({
       domain: [minValue, maxValue],
       nice: true,
     })
-  }, [chartData, objectivePoints, innerHeight, hideNegativeValues])
+  }, [chartData, objectivePoints, innerHeight, hideNegativeValues, showOldPortfolio])
 
   // Tooltip
   const { tooltipData, tooltipLeft, tooltipTop, tooltipOpen, showTooltip, hideTooltip } = useTooltip<{
     date: Date
     actualValue?: number
     projectedValue?: number
+    oldPortfolioValue?: number
     objectives?: { value: number; icon: string; id: string }[]
   }>()
 
@@ -299,6 +310,7 @@ export default function PatrimonialProjectionChart({
             date: d.date,
             actualValue: d.actualValue,
             projectedValue: d.projectedValue,
+            oldPortfolioValue: d.oldPortfolioValue,
           },
           tooltipLeft: x,
           tooltipTop: valueScale(d.actualValue || d.projectedValue),
@@ -447,6 +459,18 @@ export default function PatrimonialProjectionChart({
               stroke="#f97316"
               strokeWidth={2}
               strokeDasharray="8,4"
+              curve={curveMonotoneX}
+            />
+          )}
+          {/* Linha do portfólio anterior - verde tracejado */}
+          {showOldPortfolio && sortedData.length > 1 && sortedData.some(d => d.oldPortfolioValue !== null && d.oldPortfolioValue !== undefined) && (
+            <LinePath
+              data={sortedData.filter(d => d.oldPortfolioValue !== null && d.oldPortfolioValue !== undefined)}
+              x={d => dateScale(d.date) ?? 0}
+              y={d => valueScale(d.oldPortfolioValue) ?? 0}
+              stroke="#10b981"
+              strokeWidth={2}
+              strokeDasharray="4,4"
               curve={curveMonotoneX}
             />
           )}
@@ -620,6 +644,12 @@ export default function PatrimonialProjectionChart({
           <div className="w-6 h-0.5 bg-orange-500" style={{ borderTop: "2px dashed #f97316" }}></div>
           <span className="text-sm text-gray-600 dark:text-gray-300">Projeção Financeira</span>
         </div>
+        {showOldPortfolio && sortedData.some(d => d.oldPortfolioValue !== null && d.oldPortfolioValue !== undefined) && (
+          <div className="flex items-center gap-2">
+            <div className="w-6 h-0.5 bg-green-500" style={{ borderTop: "2px dashed #10b981" }}></div>
+            <span className="text-sm text-gray-600 dark:text-gray-300">{t('expenseChart.oldPortfolioValue')}</span>
+          </div>
+        )}
       </div>
 
       {/* Tooltip */}
@@ -668,6 +698,15 @@ export default function PatrimonialProjectionChart({
                 <span className="text-gray-600 dark:text-gray-300 text-xs font-medium">{t('expenseChart.projectedValue')}</span>
                 <span className={`text-sm font-semibold ${tooltipData.projectedValue >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>{formatCurrency(tooltipData.projectedValue, investmentPlan?.currency as CurrencyCode)}</span>
                 <span className="text-xs text-gray-500 dark:text-gray-400">{t('expenseChart.plannedLifetimeIncome')}: {formatCurrency((tooltipData.projectedValue * (investmentPlan.expected_return/100))/12, investmentPlan?.currency as CurrencyCode)}/{t('common.perMonth')}</span>
+              </div>
+            </div>
+          )}
+          {showOldPortfolio && tooltipData.oldPortfolioValue !== undefined && tooltipData.oldPortfolioValue !== null && (
+            <div className="flex items-center gap-2 mb-1">
+              <div className="w-3 h-3 rounded-full" style={{ background: 'linear-gradient(to right, #10b981, #34d399)' }} />
+              <div className="flex flex-col">
+                <span className="text-gray-600 dark:text-gray-300 text-xs font-medium">{t('expenseChart.oldPortfolioValue')}</span>
+                <span className={`text-sm font-semibold ${tooltipData.oldPortfolioValue >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>{formatCurrency(tooltipData.oldPortfolioValue, investmentPlan?.currency as CurrencyCode)}</span>
               </div>
             </div>
           )}

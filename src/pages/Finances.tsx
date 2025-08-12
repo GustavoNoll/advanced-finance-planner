@@ -53,6 +53,7 @@ const Finances = ({
   const [showAdvancedOptions, setShowAdvancedOptions] = useState(false);
   const [showRealValues, setShowRealValues] = useState<boolean>(false);
   const [showNegativeValues, setShowNegativeValues] = useState<boolean>(false);
+  const [showOldPortfolio, setShowOldPortfolio] = useState<boolean>(true);
   const queryClient = useQueryClient();
 
   const { data: allFinancialRecords, isLoading: isFinancialRecordsLoading } = useQuery({
@@ -747,6 +748,7 @@ const Finances = ({
               onProjectionDataChange={handleProjectionDataChange}
               showRealValues={showRealValues}
               showNegativeValues={showNegativeValues}
+              showOldPortfolio={showOldPortfolio}
               onOpenAdvancedOptions={() => setShowAdvancedOptions(true)}
             />
           ) : (
@@ -828,6 +830,8 @@ const Finances = ({
         setShowRealValues={setShowRealValues}
         showNegativeValues={showNegativeValues}
         setShowNegativeValues={setShowNegativeValues}
+        showOldPortfolio={showOldPortfolio}
+        setShowOldPortfolio={setShowOldPortfolio}
         changeMonthlyDeposit={chartOptionsHook.changeMonthlyDeposit}
         setChangeMonthlyDeposit={chartOptionsHook.setChangeMonthlyDeposit}
         changeMonthlyWithdraw={chartOptionsHook.changeMonthlyWithdraw}

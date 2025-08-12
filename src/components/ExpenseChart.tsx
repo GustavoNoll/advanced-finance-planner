@@ -31,6 +31,7 @@ interface ExpenseChartProps {
   onProjectionDataChange?: () => void;
   showRealValues?: boolean;
   showNegativeValues?: boolean;
+  showOldPortfolio?: boolean;
   onOpenAdvancedOptions?: () => void;
 }
 
@@ -91,6 +92,7 @@ function getRawChartData({
   events?: ProjectedEvent[]
 }): ChartDataPoint[] {
   if (projectionData) {
+    console.log('projectionData', projectionData);
     return projectionData.flatMap(yearData =>
       yearData.months?.map(monthData => ({
         age: yearData.age.toString(),
@@ -98,6 +100,7 @@ function getRawChartData({
         month: monthData.month as MonthNumber,
         actualValue: monthData.balance,
         projectedValue: monthData.planned_balance,
+        oldPortfolioValue: monthData.old_portfolio_balance,
         realDataPoint: monthData.isHistorical
       })) || []
     )
@@ -168,6 +171,7 @@ function adjustChartData({
         ...point,
         actualValue: showNegativeValues ? point.actualValue : Math.max(0, point.actualValue),
         projectedValue: showNegativeValues ? point.projectedValue : Math.max(0, point.projectedValue),
+        oldPortfolioValue: point.oldPortfolioValue ? (showNegativeValues ? point.oldPortfolioValue : Math.max(0, point.oldPortfolioValue)) : null,
       }
     }
     const adjustedActualValue = point.realDataPoint
@@ -188,10 +192,19 @@ function adjustChartData({
       point.month,
       monthlyInflation
     );
+    const adjustedOldPortfolioValue = calculateInflationAdjustedValue(
+      point.oldPortfolioValue,
+      baseYear,
+      baseMonth,
+      point.year,
+      point.month,
+      monthlyInflation
+    );
     return {
       ...point,
       actualValue: showNegativeValues ? adjustedActualValue : Math.max(0, adjustedActualValue),
       projectedValue: showNegativeValues ? adjustedProjectedValue : Math.max(0, adjustedProjectedValue),
+      oldPortfolioValue: point.oldPortfolioValue ? (showNegativeValues ? adjustedOldPortfolioValue : Math.max(0, adjustedOldPortfolioValue)) : null,
     }
   })
 }
@@ -322,6 +335,7 @@ export const ExpenseChart = ({
   onProjectionDataChange,
   showRealValues = false,
   showNegativeValues = false,
+  showOldPortfolio = false,
   onOpenAdvancedOptions
 }: ExpenseChartProps) => {
   const { t } = useTranslation();
@@ -769,6 +783,7 @@ export const ExpenseChart = ({
             month: d.month,
             actualValue: d.actualValue,
             projectedValue: d.projectedValue,
+            oldPortfolioValue: d.oldPortfolioValue,
             realDataPoint: d.realDataPoint,
           }))}
           objectives={[
@@ -798,6 +813,7 @@ export const ExpenseChart = ({
           selectedYears={Array.from(new Set(chartData.map(d => d.year)))}
           showNominalValues={!showRealValues}
           hideNegativeValues={!showNegativeValues}
+          showOldPortfolio={showOldPortfolio}
           investmentPlan={investmentPlan}
           handleEditItem={(item) => {
             // Try to find the matching goal or event by id
