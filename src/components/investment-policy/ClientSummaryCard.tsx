@@ -1,5 +1,6 @@
 import { Card } from '@/components/ui/card';
-import { Profile, InvestmentPlan, Policy } from '@/types/financial';
+import { Profile, InvestmentPlan } from '@/types/financial';
+import { InvestmentPolicyData } from '@/services/investment-policy.service';
 import { UserCircle2, Briefcase, PiggyBank, CreditCard, ShieldCheck } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { calculateAge } from '@/lib/utils';
@@ -8,14 +9,14 @@ import { RISK_PROFILES } from '@/constants/riskProfiles';
 interface ClientSummaryCardProps {
   clientProfile: Profile;
   investmentPlan: InvestmentPlan;
-  policy?: Policy;
+  policy?: InvestmentPolicyData;
 }
 
 export function ClientSummaryCard({ clientProfile, policy }: ClientSummaryCardProps) {
   const { t } = useTranslation();
 
   // Patrimonial
-  const patrimonial = policy?.patrimonial_situations || {};
+  const patrimonial = policy?.patrimonial_situations?.[0] || {};
   const investments = patrimonial?.investments?.properties?.reduce((acc: number, i: { value: number }) => acc + (i.value || 0), 0) || 0;
   const liquidInvestments = patrimonial?.investments?.liquid_investments?.reduce((acc: number, i: { value: number }) => acc + (i.value || 0), 0) || 0;
   const participations = patrimonial?.investments?.participations?.reduce((acc: number, i: { value: number }) => acc + (i.value || 0), 0) || 0;
@@ -26,29 +27,29 @@ export function ClientSummaryCard({ clientProfile, policy }: ClientSummaryCardPr
   const totalPatrimony = investments + liquidInvestments + participations + emergencyReserve + properties + vehicles + valuableGoods;
 
   // Budget
-  const budget = policy?.budgets || {};
+  const budget = policy?.budgets?.[0] || {};
   const income = (budget?.incomes || []).reduce((acc: number, i: { amount: number }) => acc + (i.amount || 0), 0) || 0;
   const expenses = (budget?.expenses || []).reduce((acc: number, i: { amount: number }) => acc + (i.amount || 0), 0) || 0;
   const savings = budget?.savings || 0;
 
   // Life stage
-  const lifeStage = policy?.life_information?.life_stage || '';
+  const lifeStage = policy?.life_information?.[0]?.life_stage || '';
 
   // Family
-  const family = policy?.family_structures || {};
+  const family = policy?.family_structures?.[0] || {};
   const maritalStatus = family?.marital_status;
   const children = family?.children || [];
 
   // Objectives
-  const objectives = policy?.life_information?.objectives || [];
+  const objectives = policy?.life_information?.[0]?.objectives || [];
 
   // Hobbies
-  const hobbies = policy?.life_information?.hobbies || [];
+  const hobbies = policy?.life_information?.[0]?.hobbies || [];
   // Insurances
-  const insurances = policy?.life_information?.insurances || [];
+  const insurances = policy?.life_information?.[0]?.insurances || [];
 
   // Risk Profile
-  const riskProfileValue = policy?.investment_preferences?.risk_profile;
+  const riskProfileValue = policy?.investment_preferences?.[0]?.risk_profile;
   const riskProfileLabel =
     RISK_PROFILES.BRL.find((p) => p.value === riskProfileValue)?.label || t('clientSummary.noData');
 

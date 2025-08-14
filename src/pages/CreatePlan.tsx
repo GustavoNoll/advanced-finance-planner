@@ -3,18 +3,16 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useNavigate, useSearchParams, Link } from "react-router-dom";
-import { useToast } from "@/components/ui/use-toast";
-import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/components/auth/AuthProvider";
 import { ptBR } from "@/locales/pt-BR";
 import { RISK_PROFILES } from '@/constants/riskProfiles';
-import { ArrowLeft, ChevronDown, ChevronRight } from "lucide-react";
+import { ArrowLeft } from "lucide-react";
 import { useTranslation } from "react-i18next";
-import { calculateFutureValues, isCalculationReady, type FormData, type Calculations } from '@/utils/investmentPlanCalculations';
+import { type FormData } from '@/utils/investmentPlanCalculations';
 import CurrencyInput from 'react-currency-input-field';
 import { formatCurrency, CurrencyCode, getCurrencySymbol } from "@/utils/currency";
-import { calculateAge, calculateEndDate, calculateFinalAge } from '@/utils/dateUtils';
 import { handleAgeDateSync, handleFormChange } from '@/utils/formUtils';
+import { useProfileData, usePlanCreation, usePlanCalculations, useAgeOptions } from '@/hooks/usePlanCreation';
 
 export const CreatePlan = () => {
   const { t } = useTranslation();
@@ -22,9 +20,7 @@ export const CreatePlan = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const clientId = searchParams.get('client_id') || user?.id;
-  const { toast } = useToast();
   const [loading, setLoading] = useState(false);
-  const [planCreated, setPlanCreated] = useState(false);
   const [birthDate, setBirthDate] = useState<Date | null>(null);
   const [formData, setFormData] = useState<FormData>({
     initialAmount: "",
@@ -45,92 +41,40 @@ export const CreatePlan = () => {
     hasOldPortfolio: false,
   });
 
-  const [calculations, setCalculations] = useState<Calculations | null>(null);
   const [expandedRow, setExpandedRow] = useState<string | null>(null);
   const [isSyncing, setIsSyncing] = useState(false);
   const [updateSource, setUpdateSource] = useState<'age' | 'date' | null>(null);
 
-  useEffect(() => {
-    if (isCalculationReady(formData) && birthDate) {
-      setCalculations(calculateFutureValues(formData, birthDate));
-    }
-  }, [formData, birthDate]);
-
-  useEffect(() => {
-    const checkExistingPlan = async () => {
-      if (!clientId || loading || planCreated) return;
-
-      try {
-        const { data, error } = await supabase
-          .from('investment_plans')
-          .select('*')
-          .eq('user_id', clientId);
-
-        if (error) throw error;
-
-        if (data && data.length > 0) {
-          toast({
-            title: "Plan already exists",
-            description: "This client already has an investment plan. Redirecting to edit page...",
-          });
-          navigate(`/edit-plan/${data[0].id}`);
-        }
-      } catch (error: unknown) {
-        console.error('Error checking existing plan:', error);
-        toast({
-          title: "Error",
-          description: error instanceof Error ? error.message : String(error),
-          variant: "destructive",
-        });
-      }
-    };
-
-    checkExistingPlan();
-  }, [clientId, toast, loading, planCreated]);
+  // Hooks para dados e mutações
+  const { profileData } = useProfileData(clientId || '');
+  const { createPlan } = usePlanCreation();
+  const { calculations } = usePlanCalculations(formData, birthDate);
+  const { ageOptions } = useAgeOptions(birthDate);
 
   useEffect(() => {
     const fetchProfileAndSetDate = async () => {
-      if (!clientId) return;
+      if (!clientId || !profileData?.birth_date) return;
 
-      try {
-        const { data, error } = await supabase
-          .from('profiles')
-          .select('birth_date')
-          .eq('id', clientId)
-          .single();
-
-        if (error) throw error;
-
-        if (data?.birth_date) {
-          const birthDate = new Date(data.birth_date);
-          setBirthDate(birthDate);
-          
-          const today = new Date();
-          let age = today.getFullYear() - birthDate.getFullYear();
-          const monthDiff = today.getMonth() - birthDate.getMonth();
-          
-          if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
-            age--;
-          }
-
-          setFormData((prev) => ({
-            ...prev,
-            plan_initial_date: today.toISOString().split('T')[0],
-            finalAge: (age + 30).toString(),
-          }));
-        }
-      } catch (error) {
-        console.error('Error fetching profile:', error);
-        toast({
-          title: "Error",
-          description: "Failed to fetch client's data",
-          variant: "destructive",
-        });
+      const birthDate = new Date(profileData.birth_date);
+      setBirthDate(birthDate);
+      
+      const today = new Date();
+      let age = today.getFullYear() - birthDate.getFullYear();
+      const monthDiff = today.getMonth() - birthDate.getMonth();
+      
+      if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
+        age--;
       }
+
+      setFormData((prev) => ({
+        ...prev,
+        plan_initial_date: today.toISOString().split('T')[0],
+        finalAge: (age + 30).toString(),
+      }));
     };
 
     fetchProfileAndSetDate();
-  }, [clientId, toast]);
+  }, [clientId, profileData]);
 
   const handleAgeDateChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
@@ -166,72 +110,44 @@ export const CreatePlan = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!birthDate) {
-      toast({
-        title: "Error",
-        description: "Birth date is required",
-        variant: "destructive",
-      });
+    if (!birthDate || !clientId) {
       return;
     }
     setLoading(true);
 
     try {
-      const calculations = calculateFutureValues(formData, birthDate);
-      
-      const adjustedDate = new Date(formData.plan_initial_date);
-      adjustedDate.setDate(adjustedDate.getDate() + 1);
-      const adjustedEndDate = new Date(formData.planEndAccumulationDate);
-      adjustedEndDate.setDate(adjustedEndDate.getDate() + 1);
-      
-      const { error } = await supabase.from("investment_plans").insert([
-        {
-          user_id: clientId,
-          initial_amount: parseFloat(formData.initialAmount.replace(',', '.')),
-          plan_initial_date: adjustedDate.toISOString().split('T')[0],
-          plan_end_accumulation_date: adjustedEndDate.toISOString().split('T')[0],
-          final_age: parseInt(formData.finalAge),
-          monthly_deposit: parseFloat(formData.monthlyDeposit.replace(',', '.')),
-          desired_income: parseFloat(formData.desiredIncome.replace(',', '.')),
-          expected_return: parseFloat(formData.expectedReturn.replace(',', '.')),
-          inflation: parseFloat(formData.inflation.replace(',', '.')),
-          plan_type: formData.planType,
-          future_value: calculations.futureValue,
-          inflation_adjusted_income: calculations.inflationAdjustedIncome,
-          required_monthly_deposit: calculations.requiredMonthlyDeposit,
-          present_future_value: calculations.presentFutureValue,
-          status: "active",
-          adjust_contribution_for_inflation: formData.adjustContributionForInflation,
-          adjust_income_for_inflation: formData.adjustIncomeForInflation,
-          limit_age: formData.limitAge,
-          legacy_amount: formData.planType === "2" ? parseFloat(formData.legacyAmount.replace(',', '.')) : null,
-          currency: formData.currency,
-          old_portfolio_profitability: formData.hasOldPortfolio && formData.oldPortfolioProfitability 
-            ? parseInt(formData.oldPortfolioProfitability) 
-            : null,
-        },
-      ]);
+      const planData = {
+        user_id: clientId,
+        initial_amount: parseFloat(formData.initialAmount.replace(',', '.')),
+        plan_initial_date: formData.plan_initial_date,
+        plan_end_accumulation_date: formData.planEndAccumulationDate,
+        final_age: parseInt(formData.finalAge),
+        monthly_deposit: parseFloat(formData.monthlyDeposit.replace(',', '.')),
+        desired_income: parseFloat(formData.desiredIncome.replace(',', '.')),
+        expected_return: parseFloat(formData.expectedReturn.replace(',', '.')),
+        inflation: parseFloat(formData.inflation.replace(',', '.')),
+        plan_type: formData.planType,
+        adjust_contribution_for_inflation: formData.adjustContributionForInflation,
+        adjust_income_for_inflation: formData.adjustIncomeForInflation,
+        limit_age: parseInt(formData.limitAge),
+        legacy_amount: formData.planType === "2" ? parseFloat(formData.legacyAmount.replace(',', '.')) : undefined,
+        currency: formData.currency,
+        old_portfolio_profitability: formData.hasOldPortfolio && formData.oldPortfolioProfitability 
+          ? parseInt(formData.oldPortfolioProfitability) 
+          : null,
+      };
 
-      if (error) throw error;
-
-      setPlanCreated(true);
-      
-      toast({
-        title: "Success",
-        description: t('investmentPlan.create.success'),
-      });
+      await createPlan.mutateAsync({ planData, birthDate });
 
       if (searchParams.get('client_id')) {
+        console.log('clientId', clientId);
         navigate(`/client/${clientId}`);
       } else {
+        console.log('clientId', clientId);
         navigate("/");
       }
-    } catch (error: unknown) {
-      toast({
-        title: "Error",
-        description: error instanceof Error ? error.message : String(error),
-        variant: "destructive",
-      });
+    } catch (error) {
+      console.error('Error creating plan:', error);
     } finally {
       setLoading(false);
     }
@@ -324,17 +240,11 @@ export const CreatePlan = () => {
                       required
                     >
                       <option value="">{t('investmentPlan.form.selectAge')}</option>
-                      {birthDate && Array.from({ length: 121 - (new Date().getFullYear() - new Date(birthDate).getFullYear()) }, (_, i) => {
-                        const currentAge = new Date().getFullYear() - new Date(birthDate).getFullYear();
-                        const monthDiff = new Date().getMonth() - new Date(birthDate).getMonth();
-                        const adjustedCurrentAge = monthDiff < 0 ? currentAge - 1 : currentAge;
-                        const age = adjustedCurrentAge + i;
-                        return (
-                          <option key={age} value={age}>
-                            {age} {t('investmentPlan.form.years')}
-                          </option>
-                        );
-                      })}
+                      {ageOptions.map((option) => (
+                        <option key={option.value} value={option.value}>
+                          {option.label}
+                        </option>
+                      ))}
                     </select>
                     <div className="flex gap-2">
                       <select
@@ -603,13 +513,13 @@ export const CreatePlan = () => {
             <h3 className="text-lg font-semibold mb-4 text-foreground">
               {t('investmentPlan.create.calculations.title')}
             </h3>
-            {isCalculationReady(formData) ? (
+            {calculations ? (
               <div className="space-y-4">
                 <div className="flex justify-between p-3 bg-card rounded-lg border border-border">
                   <div className="flex items-center gap-2">
                     <span className="text-sm text-muted-foreground">{t('investmentPlan.create.calculations.inflationAdjustedIncome')}:</span>
                   </div>
-                  <span className="font-medium">{formatCurrency(calculations?.inflationAdjustedIncome || 0, formData.currency)}/mês</span>
+                  <span className="font-medium">{formatCurrency(calculations.inflationAdjustedIncome, formData.currency)}/mês</span>
                 </div>
                 
                 <div className="flex justify-between p-3 bg-card rounded-lg border border-border">
@@ -617,7 +527,7 @@ export const CreatePlan = () => {
                     <span className="text-sm text-muted-foreground">{t('investmentPlan.create.calculations.requiredFutureValue')}:</span>
                   </div>
                   <span className="font-medium">
-                    {formatCurrency(calculations?.futureValue || 0, formData.currency)}
+                    {formatCurrency(calculations.futureValue, formData.currency)}
                   </span>
                 </div>
 
@@ -629,7 +539,7 @@ export const CreatePlan = () => {
                     <div className="flex items-center gap-2">
                       <span className="text-sm text-muted-foreground">{t('investmentPlan.create.calculations.totalMonthlyReturn')}:</span>
                     </div>
-                    <span className="font-medium">{formatCurrency(calculations?.totalMonthlyReturn || 0, formData.currency)}</span>
+                    <span className="font-medium">{formatCurrency(calculations.totalMonthlyReturn, formData.currency)}</span>
                   </div>
                   {expandedRow === 'return' && (
                     <div className="px-3 pb-3 space-y-2 border-t border-border">
@@ -637,13 +547,13 @@ export const CreatePlan = () => {
                         <div className="flex items-center gap-2">
                           <span className="text-sm text-muted-foreground">{t('investmentPlan.create.calculations.monthlyRealReturn')}:</span>
                         </div>
-                        <span className="font-medium">{formatCurrency(calculations?.realReturn || 0, formData.currency)}</span>
+                        <span className="font-medium">{formatCurrency(calculations.realReturn, formData.currency)}</span>
                       </div>
                       <div className="flex justify-between">
                         <div className="flex items-center gap-2">
                           <span className="text-sm text-muted-foreground">{t('investmentPlan.create.calculations.monthlyInflationReturn')}:</span>
                         </div>
-                        <span className="font-medium">{formatCurrency(calculations?.inflationReturn || 0, formData.currency)}</span>
+                        <span className="font-medium">{formatCurrency(calculations.inflationReturn, formData.currency)}</span>
                       </div>
                     </div>
                   )}
@@ -654,7 +564,7 @@ export const CreatePlan = () => {
                     <span className="text-sm text-muted-foreground">{t('investmentPlan.create.calculations.requiredMonthlyDeposit')}:</span>
                   </div>
                   <span className="font-medium">
-                    {formatCurrency(calculations?.requiredMonthlyDeposit || 0, formData.currency)}
+                    {formatCurrency(calculations.requiredMonthlyDeposit, formData.currency)}
                   </span>
                 </div>
               </div>

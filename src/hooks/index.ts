@@ -1,5 +1,13 @@
 export { useFinancialRecords, useGoalsAndEvents, useFinancialMetrics, useFinancialHighlights } from './useFinancialData'
 export { useProjectionData, useAllProjectionMetrics } from './useProjectionData'
 export { useGoals, useEvents, useGoalMutations, useEventMutations } from './useGoalsEventsManagement'
+export { useInvestmentPlan, useInvestmentPlansByUserId, useInvestmentPlansByBrokerId, useInvestmentPlanMutations, usePlanAccess } from './useInvestmentPlan'
+export { useInvestmentPolicy, usePolicySectionData, useInvestmentPolicyMutations, usePolicyCompleteness } from './useInvestmentPolicy'
+export { useFinancialRecords as useFinancialRecordsManagement, useInvestmentPlan as useInvestmentPlanForRecords, useFinancialRecordsMutations } from './useFinancialRecordsManagement'
+export { useCurrentUserProfile, useClientMutations, useClientsByBroker, useClientById, useBrokerAccess } from './useClientManagement'
+export { useExistingPlan, useProfileData, usePlanCreation, usePlanCalculations, useAgeOptions } from './usePlanCreation'
 
 export type { GoalsStats, EventsStats } from './useGoalsEventsManagement'
+export type { InvestmentPlanStats } from './useInvestmentPlan'
+export type { PolicyStats } from './useInvestmentPolicy'
+export type { FinancialRecordsStats } from './useFinancialRecordsManagement'

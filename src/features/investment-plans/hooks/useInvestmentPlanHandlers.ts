@@ -1,14 +1,14 @@
 import { useCallback } from 'react'
 import { handleAgeDateSync, handleFormChange } from '@/utils/formUtils'
 import { RISK_PROFILES } from '@/constants/riskProfiles'
-import type { InvestmentPlanFormData } from '@/features/investment-plans/types/investment-plan'
+import type { FormData } from '@/utils/investmentPlanCalculations'
 
 interface UseInvestmentPlanHandlersProps {
-  formData: InvestmentPlanFormData
+  formData: FormData
   birthDate: Date | null
   isSyncing: boolean
   updateSource: 'age' | 'date' | null
-  setFormData: React.Dispatch<React.SetStateAction<InvestmentPlanFormData>>
+  setFormData: React.Dispatch<React.SetStateAction<FormData>>
   setIsSyncing: (syncing: boolean) => void
   setUpdateSource: (source: 'age' | 'date' | null) => void
 }
@@ -58,7 +58,7 @@ export function useInvestmentPlanHandlers({
   }, [formData.currency, setFormData])
 
   // Handle form data changes (for currency inputs)
-  const handleFormDataChange = useCallback((data: Partial<InvestmentPlanFormData>) => {
+  const handleFormDataChange = useCallback((data: Partial<FormData>) => {
     setFormData(prev => ({ ...prev, ...data }))
   }, [setFormData])
 

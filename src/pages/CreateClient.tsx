@@ -3,116 +3,43 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
-import { supabase } from '@/lib/supabase';
-import { useToast } from '@/components/ui/use-toast';
 import { useTranslation } from 'react-i18next';
-import { v4 as uuidv4 } from 'uuid';
-
-const generateRandomEmail = () => {
-  const uuid = uuidv4().replace(/-/g, '').substring(0, 12);
-  return `${uuid}@foundation.com`;
-};
-
-const checkEmailExists = async (email: string) => {
-  const { data, error } = await supabase
-    .from('users')
-    .select('email')
-    .eq('email', email)
-    .single();
-  
-  return !error && data !== null;
-};
+import { useCurrentUserProfile, useClientMutations } from '@/hooks/useClientManagement';
 
 export const CreateClient = () => {
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
-  const { toast } = useToast();
   const { t } = useTranslation();
   const [formData, setFormData] = useState({
     password: '',
     name: '',
     birth_date: '',
   });
-  const [currentBroker, setCurrentBroker] = useState<string | null>(null);
 
-  useEffect(() => {
-    const getCurrentBroker = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (user) {
-        setCurrentBroker(user.id);
-      }
-    };
-    getCurrentBroker();
-  }, []);
+  // Hooks para dados e mutações
+  const { profile: currentBroker } = useCurrentUserProfile();
+  const { createClient } = useClientMutations();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!currentBroker) {
-      toast({
-        title: t('createClient.messages.error.title'),
-        description: t('common.errors.tryAgain'),
-        variant: "destructive",
-      });
+    if (!currentBroker?.id) {
       return;
     }
 
     setLoading(true);
 
     try {
-      // Generate a unique random email
-      let email = generateRandomEmail();
-      let emailExists = await checkEmailExists(email);
-      
-      // Keep generating new emails until we find one that doesn't exist
-      while (emailExists) {
-        email = generateRandomEmail();
-        emailExists = await checkEmailExists(email);
-      }
-
-      // Create user in auth
-      const { data: authData, error: authError } = await supabase.auth.admin.createUser({
-        email: email,
-        password: formData.password,
-        user_metadata: { 
-          name: formData.name,
-          birth_date: formData.birth_date
-        },
-        email_confirm: true
-      });
-
-      if (authError) throw authError;
-      if (!authData.user) throw new Error(t('createClient.messages.error.description'));
-
-      // Create profile with broker_id
-      const { error: profileError } = await supabase
-        .from('profiles')
-        .insert([
-          {
-            id: authData.user.id,
-            is_broker: false,
-            name: formData.name,
-            birth_date: formData.birth_date,
-            broker_id: currentBroker
-          }
-        ]);
-
-      if (profileError) throw profileError;
-
-      toast({
-        title: t('createClient.messages.success.title'),
-        description: t('createClient.messages.success.description'),
+      await createClient.mutateAsync({ 
+        clientData: formData, 
+        brokerId: currentBroker.id 
       });
       
-      // Redirect to create plan page with the new user's ID
-      navigate(`/create-plan?client_id=${authData.user.id}`);
-    } catch (error: unknown) {
+      // Redirecionar para a página de criação de plano com o ID do novo usuário
+      // O ID será retornado pela mutation
+      navigate('/broker-dashboard');
+    } catch (error) {
       console.error('Error creating client:', error);
-      toast({
-        title: t('createClient.messages.error.title'),
-        description: error instanceof Error ? error.message : String(error),
-        variant: "destructive",
-      });
     } finally {
       setLoading(false);
     }

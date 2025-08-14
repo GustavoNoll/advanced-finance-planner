@@ -5,10 +5,10 @@ import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/components/auth/AuthProvider'
 import { calculateFutureValues } from '@/utils/investmentPlanCalculations'
 import { useTranslation } from 'react-i18next'
-import type { InvestmentPlanFormData } from '@/features/investment-plans/types/investment-plan'
+import type { FormData } from '@/utils/investmentPlanCalculations'
 
 interface UseInvestmentPlanOperationsProps {
-  formData: InvestmentPlanFormData
+  formData: FormData
   birthDate: Date | null
   setLoading: (loading: boolean) => void
   setIsLoadingData: (loading: boolean) => void

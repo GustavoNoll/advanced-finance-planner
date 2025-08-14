@@ -1,8 +1,6 @@
-import { useQuery } from '@tanstack/react-query';
-import { supabase } from '@/lib/supabase';
 import { useTranslation } from 'react-i18next';
 import { Spinner } from '@/components/ui/spinner';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { CardTitle } from '@/components/ui/card';
 import { InvestmentPreferencesForm } from '@/components/investment-policy/InvestmentPreferencesForm';
 import { ProfessionalInformationForm } from '@/components/investment-policy/ProfessionalInformationForm';
 import { FamilyStructureForm } from '@/components/investment-policy/FamilyStructureForm';
@@ -28,6 +26,7 @@ import { Button } from '@/components/ui/button';
 import { useState, useRef, useEffect } from 'react';
 import { ClientSummaryCard } from '@/components/investment-policy/ClientSummaryCard';
 import { InvestmentPreferencesSummaryCard } from '@/components/investment-policy/InvestmentPreferencesSummaryCard';
+import { useInvestmentPolicy } from '@/hooks/useInvestmentPolicy';
 
 interface InvestmentPolicyProps {
   clientId?: string;
@@ -35,15 +34,6 @@ interface InvestmentPolicyProps {
   brokerProfile?: Profile;
   investmentPlan?: InvestmentPlan;
 }
-
-const defaultEmptyPolicy = {
-  investment_preferences: [{}],
-  professional_information: [{}],
-  family_structures: [{}],
-  patrimonial_situations: [{}],
-  life_information: [{}],
-  budgets: [{}],
-};
 
 const InvestmentPolicy = ({
   clientId,
@@ -56,6 +46,9 @@ const InvestmentPolicy = ({
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const sectionRefs = useRef<{ [key: string]: HTMLDivElement | null }>({});
   const isBrokerProfile = !!brokerProfile;
+
+  // Hook para dados da política
+  const { policy, stats, isLoading } = useInvestmentPolicy(clientId || '');
 
   useEffect(() => {
     if (openSection) {
@@ -88,70 +81,6 @@ const InvestmentPolicy = ({
     const isOpening = openSection !== sectionId;
     setOpenSection(isOpening ? sectionId : null);
   };
-
-  const { data: policy, isLoading } = useQuery({
-    queryKey: ['investmentPolicy', clientId],
-    queryFn: async () => {
-      if (!clientId) return defaultEmptyPolicy;
-
-      // First try to fetch existing policy
-      const { data: existingPolicy, error: fetchError } = await supabase
-        .from('investment_policies')
-        .select(`
-          *,
-          investment_preferences (*),
-          professional_information (*),
-          family_structures (*, children (*)),
-          budgets (*),
-          patrimonial_situations (*),
-          life_information (*),
-          asset_allocations (*)
-        `)
-        .eq('profile_id', clientId)
-        .maybeSingle();
-
-      if (fetchError) {
-        return defaultEmptyPolicy;
-      }
-
-      // If policy exists, return it
-      if (existingPolicy) {
-        const assetAllocations = existingPolicy.asset_allocations?.reduce((acc, curr) => ({
-          ...acc,
-          [curr.asset_class]: curr.allocation
-        }), {}) || {};
-        return {
-          ...defaultEmptyPolicy,
-          ...existingPolicy,
-          investment_preferences: existingPolicy?.investment_preferences || [{}],
-          professional_information: existingPolicy?.professional_information || [{}],
-          family_structures: existingPolicy?.family_structures || [{}],
-          budgets: existingPolicy?.budgets || [{}],
-          patrimonial_situations: existingPolicy?.patrimonial_situations || [{}],
-          life_information: existingPolicy?.life_information || [{}],
-          asset_allocations: assetAllocations,
-        };
-      }
-
-      // If no policy exists, create a new one
-      const { data: newPolicy, error: createError } = await supabase
-        .from('investment_policies')
-        .insert([{ profile_id: clientId }])
-        .select()
-        .single();
-
-      if (createError) {
-        console.error('Error creating investment policy:', createError);
-        return defaultEmptyPolicy;
-      }
-
-      return {
-        ...defaultEmptyPolicy,
-        ...newPolicy,
-      };
-    },
-    enabled: !!clientId,
-  });
 
   if (isLoading) {
     return (
@@ -245,11 +174,15 @@ const InvestmentPolicy = ({
             <ClientSummaryCard 
               clientProfile={clientProfile} 
               investmentPlan={investmentPlan}
-              policy={policy}
+              policy={{
+                ...policy,
+                patrimonial_situations: policy?.patrimonial_situations?.[0] || {},
+                investment_preferences: policy?.investment_preferences?.[0] || {}
+              }}
             />
             <InvestmentPreferencesSummaryCard
               assetAllocations={policy?.asset_allocations || {}}
-              preferences={policy?.investment_preferences || {}}
+              preferences={policy?.investment_preferences?.[0] || {}}
             />
 
             <Accordion 
@@ -287,14 +220,14 @@ const InvestmentPolicy = ({
                       )}
                       {section.id === 'professional-information' && (
                         <ProfessionalInformationForm
-                          initialData={policy?.professional_information || {}}
+                          initialData={policy?.professional_information?.[0] || {}}
                           isEditing={isBrokerProfile}
                           policyId={policy?.id}
                         />
                       )}
                       {section.id === 'family-structure' && (
                         <FamilyStructureForm
-                          initialData={policy?.family_structures || {}}
+                          initialData={policy?.family_structures?.[0] || {}}
                           isEditing={isBrokerProfile}
                           policyId={policy?.id}
                           clientId={clientId}
@@ -302,7 +235,7 @@ const InvestmentPolicy = ({
                       )}
                       {section.id === 'budget' && (
                         <BudgetForm
-                          initialData={policy?.budgets || {}}
+                          initialData={policy?.budgets?.[0] || {}}
                           isEditing={isBrokerProfile}
                           policyId={policy?.id}
                           clientId={clientId}
@@ -310,7 +243,7 @@ const InvestmentPolicy = ({
                       )}
                       {section.id === 'patrimonial' && (
                         <PatrimonialForm
-                          initialData={policy?.patrimonial_situations || {}}
+                          initialData={policy?.patrimonial_situations?.[0] || {}}
                           isEditing={isBrokerProfile}
                           policyId={policy?.id}
                           clientId={clientId}
@@ -318,7 +251,7 @@ const InvestmentPolicy = ({
                       )}
                       {section.id === 'life' && (
                         <LifeForm
-                          initialData={policy?.life_information || {}}
+                          initialData={policy?.life_information?.[0] || {}}
                           isEditing={isBrokerProfile}
                           policyId={policy?.id}
                           clientId={clientId}
@@ -326,7 +259,7 @@ const InvestmentPolicy = ({
                       )}
                       {section.id === 'investment-preferences' && (
                         <InvestmentPreferencesForm
-                          initialData={policy?.investment_preferences || {}}
+                          initialData={policy?.investment_preferences?.[0] || {}}
                           assetAllocations={policy?.asset_allocations || {}}
                           isEditing={isBrokerProfile}
                           policyId={policy?.id}
