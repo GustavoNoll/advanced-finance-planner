@@ -1,155 +1,56 @@
 import { useState } from "react";
-import { useParams, Link, useLocation } from "react-router-dom";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { supabase } from "@/lib/supabase";
-import { Button } from "@/components/ui/button";
-import { useToast } from "@/components/ui/use-toast";
-import { Spinner } from "@/components/ui/spinner";
-import { ArrowLeft, Plus } from "lucide-react";
-import { Card } from "@/components/ui/card";
+import { useParams, useLocation } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { EventCard } from '@/components/events/EventCard';
-import { FinancialItemForm } from '@/components/chart/FinancialItemForm';
+import { Spinner } from "@/components/ui/spinner";
 import { CurrencyCode } from "@/utils/currency";
-import { FinancialItemFormValues, ProjectedEvent } from "@/types/financial";
+import { ProjectedEvent, FinancialItemFormValues } from "@/types/financial";
+import { 
+  GoalsEventsHeader, 
+  AddItemButton, 
+  ItemFormSection, 
+  ItemsList 
+} from "@/components/goals-events";
+import { useEvents, useEventMutations } from "@/hooks/useGoalsEventsManagement";
 
 const Events = () => {
   const { id: userId } = useParams();
   const location = useLocation();
   const [currency, setCurrency] = useState<CurrencyCode | null>(location.state?.currency || null);
-  const { toast } = useToast();
   const { t } = useTranslation();
-  const queryClient = useQueryClient();
   const [showAddForm, setShowAddForm] = useState(false);
   const [showCompleted, setShowCompleted] = useState(false);
   const [editingEvent, setEditingEvent] = useState<ProjectedEvent | null>(null);
 
-  const { data: events, isLoading } = useQuery({
-    queryKey: ["events", userId],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("events")
-        .select("*")
-        .eq("profile_id", userId)
-        .order('year', { ascending: true })
-        .order('month', { ascending: true });
+  // Hooks para dados e mutações
+  const { projectedEvents, completedEvents, isLoading } = useEvents(userId || '');
+  const { createEvent, updateEvent, deleteEvent, toggleEventStatus } = useEventMutations(userId || '');
 
-      if (error) throw error;
-      return data;
-    },
-  });
+  // Handlers
+  const handleSubmit = (values: FinancialItemFormValues) => {
+    if (editingEvent) {
+      updateEvent.mutate({ eventId: editingEvent.id, values });
+    } else {
+      createEvent.mutate(values);
+    }
+  };
 
-  const createEvent = useMutation({
-    mutationFn: async (values: FinancialItemFormValues) => {
-      const assetValue = parseFloat(values.asset_value.replace(/[^\d.,-]/g, '').replace(',', '.'));
-      
-      const { data, error } = await supabase.from("events").insert([
-        {
-          profile_id: userId,
-          name: values.name,
-          icon: values.icon,
-          asset_value: assetValue,
-          month: parseInt(values.month),
-          year: parseInt(values.year),
-          status: 'pending',
-          payment_mode: values.payment_mode,
-          installment_count: values.installment_count ? parseInt(values.installment_count) : null,
-          installment_interval: values.installment_interval ? parseInt(values.installment_interval) : null,
-        },
-      ]);
+  const handleCancel = () => {
+    setShowAddForm(false);
+    setEditingEvent(null);
+  };
 
-      if (error) throw error;
-      return data;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["events"] });
-      setShowAddForm(false);
-      toast({
-        title: t("events.messages.createSuccess"),
-      });
-    },
-    onError: () => {
-      toast({
-        title: t("events.messages.createError"),
-        variant: "destructive",
-      });
-    },
-  });
+  const handleDelete = (eventId: string) => {
+    deleteEvent.mutate(eventId);
+  };
 
-  const updateEvent = useMutation({
-    mutationFn: async (values: FinancialItemFormValues) => {
-      if (!editingEvent) throw new Error('No event selected for editing');
-      
-      const assetValue = parseFloat(values.asset_value.replace(/[^\d.,-]/g, '').replace(',', '.'));
-      
-      const { data, error } = await supabase
-        .from("events")
-        .update({
-          name: values.name,
-          icon: values.icon,
-          asset_value: assetValue,
-          month: parseInt(values.month),
-          year: parseInt(values.year),
-          payment_mode: values.payment_mode,
-          installment_count: values.installment_count ? parseInt(values.installment_count) : null,
-          installment_interval: values.installment_interval ? parseInt(values.installment_interval) : null,
-        })
-        .eq("id", editingEvent.id);
+  const handleToggleStatus = (eventId: string, status: 'pending' | 'completed') => {
+    toggleEventStatus.mutate({ eventId, status });
+  };
 
-      if (error) throw error;
-      return data;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["events"] });
-      setEditingEvent(null);
-      toast({
-        title: t("events.messages.updateSuccess"),
-      });
-    },
-    onError: () => {
-      toast({
-        title: t("events.messages.updateError"),
-        variant: "destructive",
-      });
-    },
-  });
-
-  const deleteEvent = useMutation({
-    mutationFn: async (eventId: string) => {
-      const { error } = await supabase
-        .from("events")
-        .delete()
-        .eq("id", eventId);
-
-      if (error) throw error;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["events"] });
-      toast({
-        title: t("events.messages.deleteSuccess"),
-      });
-    },
-    onError: () => {
-      toast({
-        title: t("events.messages.deleteError"),
-        variant: "destructive",
-      });
-    },
-  });
-
-  const toggleEventStatus = useMutation({
-    mutationFn: async ({ eventId, status }: { eventId: string; status: 'pending' | 'completed' }) => {
-      const { error } = await supabase
-        .from("events")
-        .update({ status })
-        .eq("id", eventId);
-
-      if (error) throw error;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["events"] });
-    },
-  });
+  const handleEdit = (event: ProjectedEvent) => {
+    setEditingEvent(event);
+    setShowAddForm(false);
+  };
 
   if (isLoading) {
     return (
@@ -159,131 +60,45 @@ const Events = () => {
     );
   }
 
-  const projectedEvents = events?.filter(event => event.status === 'pending') || [];
-  const completedEvents = events?.filter(event => event.status === 'completed') || [];
-
   return (
     <div className="min-h-screen bg-background">
-      <header className="bg-background border-b border-border">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-          <div className="flex items-center justify-between">
-            <div className="w-1/3">
-              <Link to={userId ? `/client/${userId}` : "/"}>
-                <Button variant="ghost" className="text-muted-foreground hover:text-foreground">
-                  <ArrowLeft className="h-4 w-4" />
-                </Button>
-              </Link>
-            </div>
-
-            <div className="flex flex-col items-center w-1/3">
-              <h1 className="text-xl font-semibold text-foreground">{t("events.title")}</h1>
-            </div>
-
-            <div className="w-1/3" />
-          </div>
-        </div>
-      </header>
+      <GoalsEventsHeader 
+        title={t("events.title")} 
+        userId={userId} 
+      />
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
         <div className="grid grid-cols-1 gap-4">
-          <Button 
-            variant="ghost"
+          <AddItemButton
             onClick={() => setShowAddForm(!showAddForm)}
-            className="w-full h-14 flex flex-col items-center justify-center gap-1 bg-gradient-to-br from-card to-muted hover:from-accent hover:to-accent/60 shadow-sm hover:shadow transition-all duration-200 border border-border"
-          >
-            <div className="flex items-center gap-2">
-              <Plus className="h-4 w-4 text-blue-600 dark:text-blue-400" />
-              <span className="text-sm font-medium text-foreground">{t("events.addNew")}</span>
-            </div>
-          </Button>
+            label={t("events.addNew")}
+          />
 
-          {(showAddForm || editingEvent) && (
-            <Card className="p-4 bg-card shadow-sm border border-border">
-              <FinancialItemForm
-                type="event"
-                onSubmit={(values) => editingEvent ? updateEvent.mutate(values) : createEvent.mutate(values)}
-                onCancel={() => {
-                  setShowAddForm(false);
-                  setEditingEvent(null);
-                }}
-                isSubmitting={createEvent.isPending || updateEvent.isPending}
-                currency={currency as CurrencyCode}
-                showTypeSelector={false}
-                initialValues={editingEvent ? {
-                  name: editingEvent.name,
-                  icon: editingEvent.icon,
-                  asset_value: editingEvent.asset_value.toString(),
-                  month: editingEvent.month.toString(),
-                  year: editingEvent.year.toString(),
-                  payment_mode: editingEvent.payment_mode,
-                  installment_count: editingEvent.installment_count?.toString() || '',
-                  installment_interval: editingEvent.installment_interval?.toString() || '1',
-                } : undefined}
-              />
-            </Card>
-          )}
+          <ItemFormSection
+            showForm={showAddForm}
+            type="event"
+            currency={currency as CurrencyCode}
+            isSubmitting={createEvent.isPending || updateEvent.isPending}
+            editingItem={editingEvent}
+            onSubmit={handleSubmit}
+            onCancel={handleCancel}
+          />
         </div>
       </div>
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="space-y-6">
-          <div className="space-y-4">
-            <h2 className="text-lg font-medium">{t("events.projected")}</h2>
-            {projectedEvents.map((event) => (
-              <EventCard
-                key={event.id}
-                event={event}
-                currency={currency as CurrencyCode}
-                onDelete={() => {
-                  if (window.confirm(t("common.confirmDelete"))) {
-                    deleteEvent.mutate(event.id);
-                  }
-                }}
-                onToggleStatus={() => {
-                  toggleEventStatus.mutate({
-                    eventId: event.id,
-                    status: event.status === 'pending' ? 'completed' : 'pending'
-                  });
-                }}
-                onEdit={() => setEditingEvent(event)}
-              />
-            ))}
-          </div>
-
-          <div>
-            <Button
-              variant="ghost"
-              onClick={() => setShowCompleted(!showCompleted)}
-              className="w-full justify-start text-muted-foreground"
-            >
-              {showCompleted ? t("events.hideCompleted") : t("events.showCompleted")}
-            </Button>
-            
-            {showCompleted && completedEvents.length > 0 && (
-              <div className="mt-4 space-y-4">
-                {completedEvents.map((event) => (
-                  <EventCard
-                    key={event.id}
-                    event={event}
-                    currency={currency as CurrencyCode}
-                    onDelete={() => {
-                      if (window.confirm(t("common.confirmDelete"))) {
-                        deleteEvent.mutate(event.id);
-                      }
-                    }}
-                    onToggleStatus={() => {
-                      toggleEventStatus.mutate({
-                        eventId: event.id,
-                        status: event.status === 'pending' ? 'completed' : 'pending'
-                      });
-                    }}
-                    onEdit={() => setEditingEvent(event)}
-                  />
-                ))}
-              </div>
-            )}
-          </div>
-        </div>
+        <ItemsList
+          type="event"
+          projectedItems={projectedEvents}
+          completedItems={completedEvents}
+          currency={currency as CurrencyCode}
+          showCompleted={showCompleted}
+          onToggleShowCompleted={() => setShowCompleted(!showCompleted)}
+          onDelete={handleDelete}
+          onToggleStatus={handleToggleStatus}
+          onEdit={handleEdit}
+          t={t}
+        />
       </main>
     </div>
   );
