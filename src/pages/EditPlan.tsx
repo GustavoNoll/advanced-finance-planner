@@ -563,7 +563,8 @@ export const EditPlan = () => {
                           className="w-full h-10 rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
                           required={formData.hasOldPortfolio}
                         >
-                                                  <option value="">{t('investmentPlan.form.selectProfitability')}</option>
+                        <option value="">{t('investmentPlan.form.selectProfitability')}</option>
+                        <option value="0">IPCA + 0%</option>
                         <option value="1">IPCA + 1%</option>
                         <option value="2">IPCA + 2%</option>
                         <option value="3">IPCA + 3%</option>
@@ -572,13 +573,6 @@ export const EditPlan = () => {
                         <option value="6">IPCA + 6%</option>
                         <option value="7">IPCA + 7%</option>
                         <option value="8">IPCA + 8%</option>
-                        <option value="9">IPCA + 9%</option>
-                        <option value="10">IPCA + 10%</option>
-                        <option value="11">IPCA + 11%</option>
-                        <option value="12">IPCA + 12%</option>
-                        <option value="13">IPCA + 13%</option>
-                        <option value="14">IPCA + 14%</option>
-                        <option value="15">IPCA + 15%</option>
                         </select>
                       </div>
                     )}

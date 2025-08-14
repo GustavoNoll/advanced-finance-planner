@@ -522,6 +522,7 @@ export const CreatePlan = () => {
                         required={formData.hasOldPortfolio}
                       >
                         <option value="">{t('investmentPlan.form.selectProfitability')}</option>
+                        <option value="0">IPCA + 0%</option>
                         <option value="1">IPCA + 1%</option>
                         <option value="2">IPCA + 2%</option>
                         <option value="3">IPCA + 3%</option>
@@ -530,13 +531,6 @@ export const CreatePlan = () => {
                         <option value="6">IPCA + 6%</option>
                         <option value="7">IPCA + 7%</option>
                         <option value="8">IPCA + 8%</option>
-                        <option value="9">IPCA + 9%</option>
-                        <option value="10">IPCA + 10%</option>
-                        <option value="11">IPCA + 11%</option>
-                        <option value="12">IPCA + 12%</option>
-                        <option value="13">IPCA + 13%</option>
-                        <option value="14">IPCA + 14%</option>
-                        <option value="15">IPCA + 15%</option>
                       </select>
                     </div>
                   )}
