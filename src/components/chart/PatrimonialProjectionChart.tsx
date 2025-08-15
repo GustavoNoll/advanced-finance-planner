@@ -57,6 +57,7 @@ type PatrimonialProjectionChartProps = {
   handleEditItem: (item: ObjectivePoint) => void
   birthDate?: string
   zoomLevel?: string
+  isSimulation?: boolean
 }
 
 // Função para converter mês e ano em objeto Date
@@ -151,6 +152,7 @@ export default function PatrimonialProjectionChart({
   handleEditItem,
   birthDate,
   zoomLevel,
+  isSimulation = false,
 }: PatrimonialProjectionChartProps & { width?: string | number; height?: string | number }) {
   const { t } = useTranslation()
   // Dimensões do gráfico
@@ -180,9 +182,9 @@ export default function PatrimonialProjectionChart({
   const chartData = useMemo(() => {
     return filteredData.map((d) => ({
       date: getDateFromMonthYear(d.year, d.month),
-      actualValue: showNominalValues ? d.actualValue : d.actualValue * 0.85, // Simulando ajuste por inflação
-      projectedValue: showNominalValues ? d.projectedValue : d.projectedValue * 0.85,
-      oldPortfolioValue: showOldPortfolio && d.oldPortfolioValue ? (showNominalValues ? d.oldPortfolioValue : d.oldPortfolioValue * 0.85) : null,
+      actualValue: d.actualValue,
+      projectedValue: d.projectedValue,
+      oldPortfolioValue: showOldPortfolio ? d.oldPortfolioValue : null,
       age: d.age,
       year: d.year,
       month: d.month,
@@ -352,6 +354,7 @@ export default function PatrimonialProjectionChart({
 
   // Clique no gráfico para adicionar evento/objetivo
   function handleChartClick(event: React.MouseEvent<SVGRectElement>) {
+    if (isSimulation) return // Desabilitar clique em simulação
     if (!chartData.length) return
     const { x, y } = localPoint(event) || { x: 0, y: 0 }
     // Só abre modal se clicar na metade inferior do gráfico
@@ -404,7 +407,7 @@ export default function PatrimonialProjectionChart({
 
           {/* Linha dos valores reais/projetados - azul gradiente, curva única */}
           {/* Linha azul real (sólida, escura) */}
-          {realPoints.length > 1 && (
+          {!isSimulation && realPoints.length > 1 && (
             <LinePath
               data={realPoints}
               x={d => dateScale(d.date) ?? 0}
@@ -415,7 +418,7 @@ export default function PatrimonialProjectionChart({
             />
           )}
           {/* Linha azul não real (clara, pontilhada) - segmento único após último real ou todos os pontos se não houver real */}
-          {(() => {
+          {!isSimulation && (() => {
             if (!realPoints.length && sortedData.length > 1) {
               // Não há pontos reais, mostrar linha clara para todos os pontos
               return (
@@ -591,6 +594,7 @@ export default function PatrimonialProjectionChart({
                       pointerEvents: 'auto',
                     }}
                     onClick={(e) => {
+                      if (isSimulation) return // Desabilitar clique em simulação
                       e.stopPropagation();
                       if (group.objectives.length === 1) {
                         handleEditItem(group.objectives[0])
@@ -636,10 +640,12 @@ export default function PatrimonialProjectionChart({
 
       {/* Legenda inferior */}
       <div className="flex items-center justify-center gap-8 mt-4 pb-4">
-        <div className="flex items-center gap-2">
-          <div className="w-6 h-0.5 bg-blue-500"></div>
-          <span className="text-sm text-gray-600 dark:text-gray-300">Evolução Real</span>
-        </div>
+        {!isSimulation && (
+          <div className="flex items-center gap-2">
+            <div className="w-6 h-0.5 bg-blue-500"></div>
+            <span className="text-sm text-gray-600 dark:text-gray-300">Evolução Real</span>
+          </div>
+        )}
         <div className="flex items-center gap-2">
           <div className="w-6 h-0.5 bg-orange-500" style={{ borderTop: "2px dashed #f97316" }}></div>
           <span className="text-sm text-gray-600 dark:text-gray-300">Projeção Financeira</span>
@@ -685,7 +691,7 @@ export default function PatrimonialProjectionChart({
             // Criar array com todos os valores disponíveis para ordenação
             const values = []
             
-            if (tooltipData.actualValue !== undefined) {
+            if (!isSimulation && tooltipData.actualValue !== undefined) {
               values.push({
                 type: 'actual',
                 value: tooltipData.actualValue,
@@ -800,20 +806,22 @@ export default function PatrimonialProjectionChart({
         </Tooltip>
       )}
 
-      {/* ChartPointDialog para adicionar evento/objetivo */}
-      <ChartPointDialog
-        open={showAddModal}
-        onOpenChange={setShowAddModal}
-        selectedPoint={selectedPoint}
-        currency={currency}
-        onSubmitGoal={onSubmitGoal}
-        onSubmitEvent={onSubmitEvent}
-        onCancel={() => setShowAddModal(false)}
-        type="goal"
-      />
+      {/* ChartPointDialog para adicionar evento/objetivo - desabilitado em simulação */}
+      {!isSimulation && (
+        <ChartPointDialog
+          open={showAddModal}
+          onOpenChange={setShowAddModal}
+          selectedPoint={selectedPoint}
+          currency={currency}
+          onSubmitGoal={onSubmitGoal}
+          onSubmitEvent={onSubmitEvent}
+          onCancel={() => setShowAddModal(false)}
+          type="goal"
+        />
+      )}
 
-      {/* Modal de seleção de objetivo */}
-      {showSelectObjectiveModal && (
+      {/* Modal de seleção de objetivo - desabilitado em simulação */}
+      {!isSimulation && showSelectObjectiveModal && (
         <div
           className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-30"
           tabIndex={-1}

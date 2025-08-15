@@ -1,5 +1,5 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { TrendingUp, User, Calendar, Clock, Search, X, Share2, ChevronRight, Trash2 } from 'lucide-react';
+import { TrendingUp, User, Calendar, Clock, Search, X, Share2, ChevronRight, Trash2, Calculator } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import {
   Tooltip,
@@ -244,6 +244,7 @@ export const ClientList = ({
                   </div>
                   <div className="flex items-center gap-8 ml-auto">
                     <div className="flex items-center gap-4">
+
                       <TooltipProvider>
                         <Tooltip>
                           <TooltipTrigger asChild>
@@ -329,6 +330,7 @@ export const ClientList = ({
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
     </>
   );
 };

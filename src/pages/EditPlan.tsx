@@ -383,15 +383,15 @@ export const EditPlan = () => {
                           required={formData.hasOldPortfolio}
                         >
                         <option value="">{t('investmentPlan.form.selectProfitability')}</option>
-                        <option value="0">IPCA + 0%</option>
-                        <option value="1">IPCA + 1%</option>
-                        <option value="2">IPCA + 2%</option>
-                        <option value="3">IPCA + 3%</option>
-                        <option value="4">IPCA + 4%</option>
-                        <option value="5">IPCA + 5%</option>
-                        <option value="6">IPCA + 6%</option>
-                        <option value="7">IPCA + 7%</option>
-                        <option value="8">IPCA + 8%</option>
+                        <option value="0">{formData.currency === 'BRL' ? 'IPCA' : 'CPI'} + 0%</option>
+                        <option value="1">{formData.currency === 'BRL' ? 'IPCA' : 'CPI'} + 1%</option>
+                        <option value="2">{formData.currency === 'BRL' ? 'IPCA' : 'CPI'} + 2%</option>
+                        <option value="3">{formData.currency === 'BRL' ? 'IPCA' : 'CPI'} + 3%</option>
+                        <option value="4">{formData.currency === 'BRL' ? 'IPCA' : 'CPI'} + 4%</option>
+                        <option value="5">{formData.currency === 'BRL' ? 'IPCA' : 'CPI'} + 5%</option>
+                        <option value="6">{formData.currency === 'BRL' ? 'IPCA' : 'CPI'} + 6%</option>
+                        <option value="7">{formData.currency === 'BRL' ? 'IPCA' : 'CPI'} + 7%</option>
+                        <option value="8">{formData.currency === 'BRL' ? 'IPCA' : 'CPI'} + 8%</option>
                         </select>
                       </div>
                     )}

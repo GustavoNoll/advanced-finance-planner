@@ -3,8 +3,9 @@ import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/lib/supabase';
 import { useToast } from '@/components/ui/use-toast';
-import { Plus, LogOut, Share2, Trash2 } from 'lucide-react';
+import { Plus, LogOut, Share2, Trash2, Calculator } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
+
 import { SummaryMetrics } from '@/components/broker-dashboard/metrics/SummaryMetrics';
 import { WealthDistributionChart } from '@/components/broker-dashboard/charts/WealthDistributionChart';
 import { PlanningMetrics } from '@/components/broker-dashboard/metrics/PlanningMetrics';
@@ -105,6 +106,8 @@ export const BrokerDashboard = () => {
       lowReturns: 0
     }
   });
+
+
 
   // Combined initialization effect
   useEffect(() => {
@@ -405,6 +408,11 @@ export const BrokerDashboard = () => {
     }
   };
 
+  const handleSimulationClick = () => {
+    // Navigate to simulation page
+    navigate('/simulation');
+  };
+
   if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -441,7 +449,7 @@ export const BrokerDashboard = () => {
                     initial={brokerProfile?.name?.[0] || ''} 
                     color="bluePrimary"
                   />
-                  <span className="text-sm font-medium text-gray-700">{t('brokerDashboard.myProfile')}</span>
+                  <span className="text-sm font-medium text-gray-700 dark:text-gray-300">{t('brokerDashboard.myProfile')}</span>
                 </div>
               </Button>
               
@@ -449,10 +457,20 @@ export const BrokerDashboard = () => {
                 variant="outline" 
                 size="default"
                 onClick={handleLogout}
-                className="flex items-center gap-2 hover:bg-red-50 hover:text-red-600 hover:border-red-200 transition-all duration-200"
+                className="flex items-center gap-2 bg-red-50 hover:bg-red-100 text-red-600 border-red-200 hover:border-red-300 dark:bg-red-900/20 dark:hover:bg-red-900/30 dark:text-red-400 dark:border-red-700 dark:hover:border-red-600 transition-all duration-200"
               >
                 <LogOut className="h-4 w-4" />
                 {t('common.logout')}
+              </Button>
+              
+              <Button
+                variant="outline"
+                size="default"
+                onClick={handleSimulationClick}
+                className="flex items-center gap-2 bg-green-50 hover:bg-green-100 text-green-600 border-green-200 hover:border-green-300 dark:bg-green-900/20 dark:hover:bg-green-900/30 dark:text-green-400 dark:border-green-700 dark:hover:border-green-600 transition-all duration-200"
+              >
+                <Calculator className="h-4 w-4" />
+                {t('brokerDashboard.buttons.simulation')}
               </Button>
               
               <Button
@@ -499,6 +517,8 @@ export const BrokerDashboard = () => {
           />
         </div>
       </div>
+
+
     </div>
   );
 };

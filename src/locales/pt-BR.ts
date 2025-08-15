@@ -61,6 +61,7 @@ export const ptBR = {
       }
     },
     form: {
+      birthDate: "Data de Nascimento",
       selectAge: "Selecione a idade",
       years: "anos",
       planEndAccumulationDate: "Data de Encerramento do Plano",
@@ -271,6 +272,7 @@ export const ptBR = {
     },
     buttons: {
       newClient: "Novo Cliente",
+      simulation: "Simular Projeção",
       logout: "Sair",
       search: "Buscar"
     },
@@ -291,6 +293,8 @@ export const ptBR = {
       belowRequiredContributionTooltip: "Aportes abaixo do necessário",
       lastActivity: "Última Atividade",
       shareTooltip: "Compartilhar link de acesso do cliente",
+      simulationTooltip: "Simular Projeção",
+      simulationDescription: "Visualizar gráfico de projeção sem salvar",
       deleteTooltip: "Excluir cliente",
       deleteWarning: "Esta ação não pode ser desfeita",
       deleteClient: {
@@ -354,7 +358,8 @@ export const ptBR = {
           nearRetirement: "Clientes próximos da aposentadoria",
           lowReturns: "Clientes com retornos abaixo do esperado"
         }
-      }
+      },
+
     },
     messages: {
       error: {
@@ -367,7 +372,20 @@ export const ptBR = {
     share: "Compartilhar",
     shareWithClient: "Compartilhar com Cliente",
     linkCopied: "Link copiado com sucesso!",
-    loading: "Verificando permissões..."
+    loading: "Verificando permissões...",
+    simulation: {
+      title: "Simulação de Projeção",
+      subtitle: "Simulando para {{clientName}}",
+      planParameters: "Parâmetros do Plano",
+      generateChart: "Gerar Gráfico",
+      projectionChart: "Gráfico de Projeção",
+      backToForm: "Voltar ao Formulário",
+      noClients: "Nenhum cliente disponível para simulação",
+      simulationNotice: {
+        title: "Simulação",
+        description: "Esta é uma simulação baseada nos parâmetros informados. Nenhum dado será salvo no banco de dados. Use esta ferramenta para demonstrar diferentes cenários ao cliente."
+      }
+    }
   },
   common: {
     confirmDeleteTitle: "Confirmar exclusão",
@@ -594,7 +612,9 @@ export const ptBR = {
     changeDate: "Data da mudança",
     chartOptionsHelp: "O valor informado será aplicado a partir da data especificada, sem considerar inflação acumulada desde o início do plano. A inflação será aplicada apenas a partir da data da mudança.",
     showOldPortfolio: "Mostrar Portfólio Anterior",
-    showOldPortfolioHelp: "Mostra ou oculta a linha do portfólio anterior no gráfico. Esta linha representa o valor que o cliente já possuía antes de iniciar o plano de investimento."
+    showOldPortfolioHelp: "Mostra ou oculta a linha do portfólio anterior no gráfico. Esta linha representa o valor que o cliente já possuía antes de iniciar o plano de investimento.",
+    chartOptions: "Opções do Gráfico",
+    showRealValues: "Mostrar Valores Reais"
   },
   budgetCategories: {
     categories: {
