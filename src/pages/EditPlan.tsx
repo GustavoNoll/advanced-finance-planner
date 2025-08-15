@@ -1,277 +1,129 @@
-import { useState, useEffect, useMemo, useCallback } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
-import { useNavigate, useParams, useLocation } from "react-router-dom";
-import { useToast } from "@/components/ui/use-toast";
-import { supabase } from "@/lib/supabase";
-import { useAuth } from "@/components/auth/AuthProvider";
-import { RISK_PROFILES } from '@/constants/riskProfiles';
-import { ArrowLeft } from "lucide-react";
-import { Spinner } from "@/components/ui/spinner";
-import { 
-  calculateFutureValues, 
-  isCalculationReady, 
-  type FormData as InvestmentFormData,
-  FormData
-} from '@/utils/investmentPlanCalculations';
-import { useTranslation } from "react-i18next";
-import CurrencyInput from 'react-currency-input-field';
-import { CurrencyCode, getCurrencySymbol } from "@/utils/currency";
-import { roundUpToNextMonth, calculateAge, calculateEndDate, calculateFinalAge } from '@/utils/dateUtils';
-import { handleAgeDateSync, handleFormChange } from '@/utils/formUtils';
+import { useEffect } from "react"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Input } from "@/components/ui/input"
+import { Button } from "@/components/ui/button"
+import { useNavigate, useParams } from "react-router-dom"
+import { useToast } from "@/components/ui/use-toast"
+import { ArrowLeft } from "lucide-react"
+import { Spinner } from "@/components/ui/spinner"
+import { useTranslation } from "react-i18next"
+import CurrencyInput from 'react-currency-input-field'
+import { RISK_PROFILES } from '@/constants/riskProfiles'
+import { isCalculationReady } from '@/utils/investmentPlanCalculations'
+
+// Custom hooks
+import { useInvestmentPlanState } from '@/features/investment-plans/hooks/useInvestmentPlanState'
+import { useInvestmentPlanHandlers } from '@/features/investment-plans/hooks/useInvestmentPlanHandlers'
+import { useInvestmentPlanOperations } from '@/features/investment-plans/hooks/useInvestmentPlanOperations'
+import { useInvestmentPlanFormData } from '@/features/investment-plans/hooks/useInvestmentPlanFormData'
+import { useInvestmentPlanUI } from '@/features/investment-plans/hooks/useInvestmentPlanUI'
 
 export const EditPlan = () => {
-  const { user } = useAuth();
-  const { id } = useParams();
-  const navigate = useNavigate();
-  const { toast } = useToast();
-  const [loading, setLoading] = useState(false);
-  const [isLoadingData, setIsLoadingData] = useState(true);
-  const [birthDate, setBirthDate] = useState<Date | null>(null);
-  const [formData, setFormData] = useState<FormData>({
-    initialAmount: "",
-    plan_initial_date: new Date().toISOString().split('T')[0],
-    finalAge: "",
-    planEndAccumulationDate: "",
-    monthlyDeposit: "",
-    desiredIncome: "",
-    expectedReturn: RISK_PROFILES.BRL[1].return,
-    inflation: "6.0",
-    planType: "3",
-    adjustContributionForInflation: false,
-    adjustIncomeForInflation: false,
-    limitAge: "100",
-    legacyAmount: "1000000",
-    currency: "BRL",
-    oldPortfolioProfitability: null,
-    hasOldPortfolio: false,
-  });
+  const { id } = useParams()
+  const navigate = useNavigate()
+  const { toast } = useToast()
+  const { t } = useTranslation()
 
-  const { t } = useTranslation();
-  const [expandedRow, setExpandedRow] = useState<string | null>(null);
-  const [isSyncing, setIsSyncing] = useState(false);
-  const [updateSource, setUpdateSource] = useState<'age' | 'date' | null>(null);
+  // State management
+  const {
+    loading,
+    isLoadingData,
+    birthDate,
+    formData,
+    expandedRow,
+    isSyncing,
+    updateSource,
+    calculations,
+    isCalculationReady: isCalculationReadyState,
+    setLoading,
+    setIsLoadingData,
+    setBirthDate,
+    setFormData,
+    setExpandedRow,
+    setIsSyncing,
+    setUpdateSource,
+  } = useInvestmentPlanState()
 
-  // Memoize calculations to prevent unnecessary recalculations
-  const calculations = useMemo(() => {
-    if (isCalculationReady(formData) && birthDate) {
-      return calculateFutureValues(formData, birthDate);
-    }
-    return null;
-  }, [formData, birthDate]);
+  // Form handlers
+  const {
+    handleAgeDateChange,
+    handleChange,
+    handleFormDataChange,
+  } = useInvestmentPlanHandlers({
+    formData,
+    birthDate,
+    isSyncing,
+    updateSource,
+    setFormData,
+    setIsSyncing,
+    setUpdateSource,
+  })
 
+  // Data operations
+  const {
+    fetchPlan,
+    updatePlan,
+  } = useInvestmentPlanOperations({
+    formData,
+    birthDate,
+    setLoading,
+    setIsLoadingData,
+  })
+
+  // Form data processing
+  const {
+    processPlanData,
+    validateFormData,
+  } = useInvestmentPlanFormData({
+    setFormData,
+    setBirthDate,
+  })
+
+  // UI utilities
+  const {
+    ageOptions,
+    yearOptions,
+    monthOptions,
+    currencySymbol,
+    currentMonth,
+    currentYear,
+  } = useInvestmentPlanUI({
+    birthDate,
+    formData,
+  })
+
+  // Fetch plan data on component mount
   useEffect(() => {
-    const fetchPlan = async () => {
-      if (!id) return;
-      setIsLoadingData(true);
+    const loadPlan = async () => {
+      if (!id) return
 
-      const { data, error } = await supabase
-        .from('investment_plans')
-        .select('*')
-        .eq('id', id)
-        .single();
-
-      if (error) {
-        toast({
-          title: "Error",
-          description: "Failed to fetch investment plan",
-          variant: "destructive",
-        });
-        navigate('/');
-        return;
+      const result = await fetchPlan(id)
+      if (result) {
+        processPlanData(result.plan, result.profile)
       }
-
-      const { data: profile, error: profileError } = await supabase
-        .from('profiles')
-        .select('broker_id, is_broker, birth_date')
-        .eq('id', data.user_id)
-        .single();
-
-      if (profileError) {
-        toast({
-          title: "Error",
-          description: "Failed to fetch user profile",
-          variant: "destructive",
-        });
-        navigate('/');
-        return;
-      }
-
-      setBirthDate(profile.birth_date ? new Date(profile.birth_date) : null);
-
-      const { data: actualUser, error: actualUserError } = await supabase.auth.getUser();
-
-      if (actualUserError) {
-        toast({
-          title: "Error",
-          description: "Failed to fetch user",
-        });
-      }
-
-      const { data: actualUserProfile, error: actualUserProfileError } = await supabase
-        .from('profiles')
-        .select('broker_id, is_broker')
-        .eq('id', actualUser.user.id)
-        .single();
-
-      if (actualUserProfile.is_broker && profile.broker_id !== actualUser.user.id) {
-        toast({
-          title: "Error",
-          description: "You don't have permission to edit this plan",
-          variant: "destructive",
-        });
-        navigate('/');
-        return;
-      }
-
-      if (error) throw error;
-
-      // Adjust the date to show the correct date when editing
-      const planDate = new Date(data.plan_initial_date);
-      planDate.setDate(planDate.getDate() - 1);
-
-      // Find the matching risk profile for the plan's currency
-      const profiles = RISK_PROFILES[data.currency || "BRL"];
-      const matchingProfile = profiles.find(p => parseFloat(p.return) === parseFloat(data.expected_return));
-      const defaultProfile = profiles[1]; // Use moderate as default
-
-      setFormData({
-        initialAmount: data.initial_amount.toString(),
-        plan_initial_date: planDate.toISOString().split('T')[0],
-        finalAge: data.final_age.toString(),
-        planEndAccumulationDate: data.plan_end_accumulation_date,
-        monthlyDeposit: data.monthly_deposit.toString(),
-        desiredIncome: data.desired_income.toString(),
-        expectedReturn: matchingProfile?.return || defaultProfile.return,
-        inflation: data.inflation.toString(),
-        planType: data.plan_type,
-        adjustContributionForInflation: data.adjust_contribution_for_inflation,
-        adjustIncomeForInflation: data.adjust_income_for_inflation,
-        limitAge: data.limit_age?.toString() || "",
-        legacyAmount: data.legacy_amount?.toString() || "1000000",
-        currency: data.currency || "BRL",
-        oldPortfolioProfitability: data.old_portfolio_profitability?.toString() || null,
-        hasOldPortfolio: data.old_portfolio_profitability !== null,
-      });
-    };
-
-    fetchPlan();
-  }, [id, user, navigate, toast]);
-
-  useEffect(() => {
-    if (formData.initialAmount) {
-      setIsLoadingData(false);
     }
-    if (isCalculationReady(formData) && birthDate) {
-      // Calculations are now handled by useMemo
-    }
-  }, [formData, birthDate]);
 
-  // Update the handleAgeDateChange function
-  const handleAgeDateChange = useCallback((e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-    const { name, value } = e.target;
-    if (!birthDate || isSyncing) return;
+    loadPlan()
+  }, [id, fetchPlan, processPlanData])
 
-    const result = handleAgeDateSync(name, value, birthDate, isSyncing, updateSource);
-    if (result) {
-      setIsSyncing(true);
-      setUpdateSource(name === 'finalAge' ? 'age' : 'date');
-      
-      setFormData(prev => ({
-        ...prev,
-        ...result
-      }));
-
-      setTimeout(() => {
-        setIsSyncing(false);
-        setUpdateSource(null);
-      }, 100);
-    }
-  }, [birthDate, isSyncing, updateSource]);
-
-  // Update the handleChange function
-  const handleChange = useCallback((e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-    const { name, value } = e.target;
-    const checked = (e.target as HTMLInputElement).checked;
-    
-    const newFormData = handleFormChange(name, value, checked, formData.currency, RISK_PROFILES);
-    setFormData(prev => ({
-      ...prev,
-      ...newFormData
-    }));
-  }, [formData.currency]);
-
+  // Handle form submission
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!birthDate) {
+    e.preventDefault()
+    
+    if (!id) return
+
+    const errors = validateFormData(formData, birthDate)
+    if (errors.length > 0) {
       toast({
-        title: "Error",
-        description: "Birth date is required",
+        title: "Validation Error",
+        description: errors.join(", "),
         variant: "destructive",
-      });
-      return;
+      })
+      return
     }
-    setLoading(true);
 
-    try {
-      const calculations = calculateFutureValues(formData, birthDate);
-      
-      // Adjust the date to prevent UTC offset
-      const adjustedDate = new Date(formData.plan_initial_date);
-      adjustedDate.setDate(adjustedDate.getDate() + 1);
-
-      const adjustedEndDate = new Date(formData.planEndAccumulationDate);
-      adjustedEndDate.setDate(adjustedEndDate.getDate() + 1);
-      
-      const { error } = await supabase
-        .from("investment_plans")
-        .update({
-          initial_amount: parseFloat(formData.initialAmount.replace(',', '.')),
-          plan_initial_date: adjustedDate.toISOString().split('T')[0],
-          plan_end_accumulation_date: adjustedEndDate.toISOString().split('T')[0],
-          final_age: parseInt(formData.finalAge),
-          monthly_deposit: parseFloat(formData.monthlyDeposit.replace(',', '.')),
-          desired_income: parseFloat(formData.desiredIncome.replace(',', '.')),
-          expected_return: parseFloat(formData.expectedReturn.replace(',', '.')),
-          inflation: parseFloat(formData.inflation.replace(',', '.')),
-          plan_type: formData.planType,
-          future_value: calculations.futureValue,
-          present_future_value: calculations.presentFutureValue,
-          inflation_adjusted_income: calculations.inflationAdjustedIncome,
-          required_monthly_deposit: calculations.requiredMonthlyDeposit,
-          adjust_contribution_for_inflation: formData.adjustContributionForInflation,
-          adjust_income_for_inflation: formData.adjustIncomeForInflation,
-          limit_age: formData.limitAge ? parseInt(formData.limitAge) : null,
-          legacy_amount: formData.planType === "2" ? parseFloat(formData.legacyAmount.replace(',', '.')) : null,
-          currency: formData.currency,
-          old_portfolio_profitability: formData.hasOldPortfolio && formData.oldPortfolioProfitability 
-            ? parseInt(formData.oldPortfolioProfitability) 
-            : null,
-        })
-        .eq('id', id);
-
-      if (error) throw error;
-
-      toast({
-        title: "Success",
-        description: t('investmentPlan.edit.success'),
-      });
-
-      navigate(`/investment-plan/${id}`);
-    } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred';
-      toast({
-        title: "Error",
-        description: errorMessage,
-        variant: "destructive",
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const prefix = getCurrencySymbol(formData.currency as CurrencyCode);
+    await updatePlan(id)
+  }
 
   return (
     <div className="min-h-screen bg-background py-8">
@@ -338,13 +190,10 @@ export const EditPlan = () => {
                       name="initialAmount"
                       value={formData.initialAmount}
                       onValueChange={(value) => {
-                        setFormData(prev => ({
-                          ...prev,
-                          initialAmount: value || ''
-                        }))
+                        handleFormDataChange({ initialAmount: value || '' })
                       }}
                       placeholder="1000"
-                      prefix={prefix}
+                      prefix={currencySymbol}
                       decimalsLimit={2}
                       decimalSeparator=","
                       groupSeparator="."
@@ -366,76 +215,56 @@ export const EditPlan = () => {
                         required
                       >
                         <option value="">{t('investmentPlan.form.selectAge')}</option>
-                        {birthDate && Array.from({ length: 121 - (new Date().getFullYear() - new Date(birthDate).getFullYear()) }, (_, i) => {
-                          const currentAge = new Date().getFullYear() - new Date(birthDate).getFullYear();
-                          const monthDiff = new Date().getMonth() - new Date(birthDate).getMonth();
-                          const adjustedCurrentAge = monthDiff < 0 ? currentAge - 1 : currentAge;
-                          const age = adjustedCurrentAge + i;
-                          return (
-                            <option key={age} value={age}>
-                              {age} {t('investmentPlan.form.years')}
-                            </option>
-                          );
-                        })}
+                        {ageOptions.map(option => (
+                          <option key={option.age} value={option.age}>
+                            {option.label}
+                          </option>
+                        ))}
                       </select>
                       <div className="flex gap-2">
                         <select
                           name="month"
-                          value={new Date(formData.planEndAccumulationDate).getMonth()}
+                          value={currentMonth}
                           onChange={(e) => {
-                            const newDate = new Date(formData.planEndAccumulationDate);
-                            newDate.setMonth(parseInt(e.target.value));
-                            newDate.setDate(1); // Always set to first day of month
+                            const newDate = new Date(formData.planEndAccumulationDate)
+                            newDate.setMonth(parseInt(e.target.value))
+                            newDate.setDate(1)
                             handleAgeDateChange({
                               target: {
                                 name: 'planEndAccumulationDate',
                                 value: newDate.toISOString().split('T')[0]
                               }
-                            } as React.ChangeEvent<HTMLInputElement>);
+                            } as React.ChangeEvent<HTMLInputElement>)
                           }}
                           className="h-10 w-28 rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
                         >
-                          <option value="0">{t('date.months.january')}</option>
-                          <option value="1">{t('date.months.february')}</option>
-                          <option value="2">{t('date.months.march')}</option>
-                          <option value="3">{t('date.months.april')}</option>
-                          <option value="4">{t('date.months.may')}</option>
-                          <option value="5">{t('date.months.june')}</option>
-                          <option value="6">{t('date.months.july')}</option>
-                          <option value="7">{t('date.months.august')}</option>
-                          <option value="8">{t('date.months.september')}</option>
-                          <option value="9">{t('date.months.october')}</option>
-                          <option value="10">{t('date.months.november')}</option>
-                          <option value="11">{t('date.months.december')}</option>
+                          {monthOptions.map(month => (
+                            <option key={month.value} value={month.value}>
+                              {month.label}
+                            </option>
+                          ))}
                         </select>
                         <select
                           name="year"
-                          value={new Date(formData.planEndAccumulationDate).getFullYear()}
+                          value={currentYear}
                           onChange={(e) => {
-                            const newDate = new Date(formData.planEndAccumulationDate);
-                            newDate.setFullYear(parseInt(e.target.value));
-                            newDate.setDate(1); // Always set to first day of month
+                            const newDate = new Date(formData.planEndAccumulationDate)
+                            newDate.setFullYear(parseInt(e.target.value))
+                            newDate.setDate(1)
                             handleAgeDateChange({
                               target: {
                                 name: 'planEndAccumulationDate',
                                 value: newDate.toISOString().split('T')[0]
                               }
-                            } as React.ChangeEvent<HTMLInputElement>);
+                            } as React.ChangeEvent<HTMLInputElement>)
                           }}
                           className="h-10 w-24 rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
                         >
-                          {(() => {
-                            const currentYear = new Date().getFullYear();
-                            const years = [];
-                            for (let i = currentYear; i <= currentYear + 100; i++) {
-                              years.push(
-                                <option key={i} value={i}>
-                                  {i}
-                                </option>
-                              );
-                            }
-                            return years;
-                          })()}
+                          {yearOptions.map(option => (
+                            <option key={option.year} value={option.year}>
+                              {option.label}
+                            </option>
+                          ))}
                         </select>
                       </div>
                     </div>
@@ -449,13 +278,10 @@ export const EditPlan = () => {
                       name="monthlyDeposit"
                       value={formData.monthlyDeposit}
                       onValueChange={(value) => {
-                        setFormData(prev => ({
-                          ...prev,
-                          monthlyDeposit: value || ''
-                        }))
+                        handleFormDataChange({ monthlyDeposit: value || '' })
                       }}
                       placeholder="1000"
-                      prefix={prefix}
+                      prefix={currencySymbol}
                       decimalsLimit={2}
                       decimalSeparator=","
                       groupSeparator="."
@@ -472,13 +298,10 @@ export const EditPlan = () => {
                       name="desiredIncome"
                       value={formData.desiredIncome}
                       onValueChange={(value) => {
-                        setFormData(prev => ({
-                          ...prev,
-                          desiredIncome: value || ''
-                        }))
+                        handleFormDataChange({ desiredIncome: value || '' })
                       }}
                       placeholder="5000"
-                      prefix={prefix}
+                      prefix={currencySymbol}
                       decimalsLimit={2}
                       decimalSeparator=","
                       groupSeparator="."
@@ -534,11 +357,10 @@ export const EditPlan = () => {
                         name="hasOldPortfolio"
                         checked={formData.hasOldPortfolio}
                         onChange={(e) => {
-                          setFormData(prev => ({
-                            ...prev,
+                          handleFormDataChange({
                             hasOldPortfolio: e.target.checked,
-                            oldPortfolioProfitability: e.target.checked ? prev.oldPortfolioProfitability : null
-                          }))
+                            oldPortfolioProfitability: e.target.checked ? formData.oldPortfolioProfitability : null
+                          })
                         }}
                         className="h-4 w-4 rounded border-input text-primary focus:ring-primary"
                       />
@@ -555,24 +377,21 @@ export const EditPlan = () => {
                           name="oldPortfolioProfitability"
                           value={formData.oldPortfolioProfitability || ""}
                           onChange={(e) => {
-                            setFormData(prev => ({
-                              ...prev,
-                              oldPortfolioProfitability: e.target.value || null
-                            }))
+                            handleFormDataChange({ oldPortfolioProfitability: e.target.value || null })
                           }}
                           className="w-full h-10 rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
                           required={formData.hasOldPortfolio}
                         >
                         <option value="">{t('investmentPlan.form.selectProfitability')}</option>
-                        <option value="0">IPCA + 0%</option>
-                        <option value="1">IPCA + 1%</option>
-                        <option value="2">IPCA + 2%</option>
-                        <option value="3">IPCA + 3%</option>
-                        <option value="4">IPCA + 4%</option>
-                        <option value="5">IPCA + 5%</option>
-                        <option value="6">IPCA + 6%</option>
-                        <option value="7">IPCA + 7%</option>
-                        <option value="8">IPCA + 8%</option>
+                        <option value="0">{formData.currency === 'BRL' ? 'IPCA' : 'CPI'} + 0%</option>
+                        <option value="1">{formData.currency === 'BRL' ? 'IPCA' : 'CPI'} + 1%</option>
+                        <option value="2">{formData.currency === 'BRL' ? 'IPCA' : 'CPI'} + 2%</option>
+                        <option value="3">{formData.currency === 'BRL' ? 'IPCA' : 'CPI'} + 3%</option>
+                        <option value="4">{formData.currency === 'BRL' ? 'IPCA' : 'CPI'} + 4%</option>
+                        <option value="5">{formData.currency === 'BRL' ? 'IPCA' : 'CPI'} + 5%</option>
+                        <option value="6">{formData.currency === 'BRL' ? 'IPCA' : 'CPI'} + 6%</option>
+                        <option value="7">{formData.currency === 'BRL' ? 'IPCA' : 'CPI'} + 7%</option>
+                        <option value="8">{formData.currency === 'BRL' ? 'IPCA' : 'CPI'} + 8%</option>
                         </select>
                       </div>
                     )}
@@ -599,7 +418,7 @@ export const EditPlan = () => {
                       className="h-10"
                       onKeyDown={(e) => {
                         if (e.key === "." || e.key === ",") {
-                          e.preventDefault();
+                          e.preventDefault()
                         }
                       }}
                     />
@@ -615,13 +434,10 @@ export const EditPlan = () => {
                       name="legacyAmount"
                       value={formData.legacyAmount}
                       onValueChange={(value) => {
-                        setFormData(prev => ({
-                          ...prev,
-                          legacyAmount: value || ''
-                        }))
+                        handleFormDataChange({ legacyAmount: value || '' })
                       }}
                       placeholder="1000000"
-                      prefix={prefix}
+                      prefix={currencySymbol}
                       decimalsLimit={2}
                       decimalSeparator=","
                       groupSeparator="."
@@ -697,13 +513,13 @@ export const EditPlan = () => {
               <h3 className="text-lg font-semibold mb-4 text-foreground">
                 {t('investmentPlan.create.calculations.title')}
               </h3>
-              {isCalculationReady(formData) ? (
+              {isCalculationReadyState ? (
                 <div className="space-y-4">
                   <div className="flex justify-between p-3 bg-card rounded-lg border border-border">
                     <div className="flex items-center gap-2">
                       <span className="text-sm text-muted-foreground">{t('investmentPlan.create.calculations.inflationAdjustedIncome')}:</span>
                     </div>
-                    <span className="font-medium">{prefix} {calculations?.inflationAdjustedIncome.toLocaleString('pt-BR', { maximumFractionDigits: 2 }) || '---'}/mês</span>
+                    <span className="font-medium">{currencySymbol} {calculations?.inflationAdjustedIncome.toLocaleString('pt-BR', { maximumFractionDigits: 2 }) || '---'}/mês</span>
                   </div>
                   
                   <div className="flex justify-between p-3 bg-card rounded-lg border border-border">
@@ -711,7 +527,7 @@ export const EditPlan = () => {
                       <span className="text-sm text-muted-foreground">{t('investmentPlan.create.calculations.requiredFutureValue')}:</span>
                     </div>
                     <span className="font-medium">
-                      {prefix} {calculations?.futureValue.toLocaleString('pt-BR', { maximumFractionDigits: 2 }) || '---'}
+                      {currencySymbol} {calculations?.futureValue.toLocaleString('pt-BR', { maximumFractionDigits: 2 }) || '---'}
                     </span>
                   </div>
 
@@ -723,7 +539,7 @@ export const EditPlan = () => {
                       <div className="flex items-center gap-2">
                         <span className="text-sm text-muted-foreground">{t('investmentPlan.create.calculations.totalMonthlyReturn')}:</span>
                       </div>
-                      <span className="font-medium">{prefix} {calculations?.totalMonthlyReturn.toLocaleString('pt-BR', { maximumFractionDigits: 2 }) || '---'}</span>
+                      <span className="font-medium">{currencySymbol} {calculations?.totalMonthlyReturn.toLocaleString('pt-BR', { maximumFractionDigits: 2 }) || '---'}</span>
                     </div>
                     {expandedRow === 'return' && (
                       <div className="px-3 pb-3 space-y-2 border-t border-border">
@@ -731,13 +547,13 @@ export const EditPlan = () => {
                           <div className="flex items-center gap-2">
                             <span className="text-sm text-muted-foreground">{t('investmentPlan.create.calculations.monthlyRealReturn')}:</span>
                           </div>
-                          <span className="font-medium">{prefix} {calculations?.realReturn.toLocaleString('pt-BR', { maximumFractionDigits: 2 }) || '---'}</span>
+                          <span className="font-medium">{currencySymbol} {calculations?.realReturn.toLocaleString('pt-BR', { maximumFractionDigits: 2 }) || '---'}</span>
                         </div>
                         <div className="flex justify-between">
                           <div className="flex items-center gap-2">
                             <span className="text-sm text-muted-foreground">{t('investmentPlan.create.calculations.monthlyInflationReturn')}:</span>
                           </div>
-                          <span className="font-medium">{prefix} {calculations?.inflationReturn.toLocaleString('pt-BR', { maximumFractionDigits: 2 }) || '---'}</span>
+                          <span className="font-medium">{currencySymbol} {calculations?.inflationReturn.toLocaleString('pt-BR', { maximumFractionDigits: 2 }) || '---'}</span>
                         </div>
                       </div>
                     )}
@@ -748,7 +564,7 @@ export const EditPlan = () => {
                       <span className="text-sm text-muted-foreground">{t('investmentPlan.create.calculations.requiredMonthlyDeposit')}:</span>
                     </div>
                     <span className="font-medium">
-                      {prefix} {calculations?.requiredMonthlyDeposit.toLocaleString('pt-BR', { maximumFractionDigits: 2 }) || '---'}
+                      {currencySymbol} {calculations?.requiredMonthlyDeposit.toLocaleString('pt-BR', { maximumFractionDigits: 2 }) || '---'}
                     </span>
                   </div>
                 </div>
@@ -762,5 +578,5 @@ export const EditPlan = () => {
         </Card>
       </div>
     </div>
-  );
-};
+  )
+}

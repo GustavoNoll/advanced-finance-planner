@@ -115,6 +115,7 @@ const Index = () => {
             title: t('dashboard.messages.noPlan.title'),
             description: t('dashboard.messages.noPlan.description'),
           });
+          console.log('create-plan.id', params.id);
           navigate(`/create-plan${params.id ? `?client_id=${params.id}` : ''}`);
           return;
         }

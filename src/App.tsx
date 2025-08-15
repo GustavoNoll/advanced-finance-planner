@@ -12,6 +12,7 @@ import { CreatePlan } from "./pages/CreatePlan";
 import { EditPlan } from "./pages/EditPlan";
 import { CreateClient } from "./pages/CreateClient";
 import { InvestmentPlanShow } from "./pages/InvestmentPlan";
+import { Simulation } from "./pages/Simulation";
 import FinancialRecords from "@/pages/FinancialRecords";
 import ClientProfile from "@/pages/ClientProfile";
 import FinancialGoals from "@/pages/FinancialGoals";
@@ -81,6 +82,16 @@ function AppRoutes() {
                 <Suspense fallback={<LoadingScreen />}> 
                   <BrokerDashboard />
                 </Suspense>
+              </PageTransition>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/simulation"
+          element={
+            <ProtectedRoute>
+              <PageTransition>
+                <Simulation />
               </PageTransition>
             </ProtectedRoute>
           }
