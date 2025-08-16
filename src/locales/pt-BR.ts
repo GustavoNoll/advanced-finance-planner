@@ -379,6 +379,7 @@ export const ptBR = {
       planParameters: "Parâmetros do Plano",
       generateChart: "Gerar Gráfico",
       projectionChart: "Gráfico de Projeção",
+      projectionTable: "Tabela de Projeção",
       backToForm: "Voltar ao Formulário",
       noClients: "Nenhum cliente disponível para simulação",
       simulationNotice: {
@@ -494,6 +495,7 @@ export const ptBR = {
   monthlyView: {
     loadMore: "Carregar Mais",
     downloadCSV: "Baixar CSV",
+    downloadError: "Erro ao baixar CSV",
     noData: "Nenhum dado disponível",
     timeWindows: {
       allTime: "Todos os Tempos",

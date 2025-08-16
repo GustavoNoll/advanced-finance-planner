@@ -8,6 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { TrendingUp, ArrowLeft, Settings, Calculator } from "lucide-react";
 import { SimulationChart } from "@/components/broker-dashboard/SimulationChart";
+import { FutureProjectionTab } from "@/components/monthly-view";
 import { InvestmentPlan } from "@/types/financial";
 import { formatCurrency, CurrencyCode } from "@/utils/currency";
 import { RISK_PROFILES } from '@/constants/riskProfiles';
@@ -16,7 +17,6 @@ import { getCurrencySymbol } from "@/utils/currency";
 import { usePlanCalculations } from "@/hooks/usePlanCreation";
 import { FormData } from "@/utils/investmentPlanCalculations";
 import { Switch } from "@/components/ui/switch";
-import { Separator } from "@/components/ui/separator";
 
 interface SimulationFormData {
   initialAmount: string;
@@ -469,6 +469,28 @@ export const Simulation = () => {
                   allFinancialRecords={[]}
                   formData={formData}
                   onFormDataChange={handleFormChange}
+                />
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Projection Table Section */}
+          {simulationPlan && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-lg flex items-center gap-2">
+                  <TrendingUp className="h-5 w-5 text-blue-500" />
+                  {t('brokerDashboard.simulation.projectionTable')}
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <FutureProjectionTab
+                  investmentPlan={simulationPlan}
+                  profile={{...mockProfile, birth_date: birthDate.toISOString().split('T')[0]}}
+                  allFinancialRecords={[]}
+                  showGoalsEvents={false}
+                  showRealEvolution={false}
+                  isSimulation={true}
                 />
               </CardContent>
             </Card>
