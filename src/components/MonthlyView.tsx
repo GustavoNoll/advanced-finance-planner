@@ -195,12 +195,12 @@ export const MonthlyView = ({
         ];
         rows = data.map(record => [
           record.month,
-          record.balance.toString(),
-          record.contribution.toString(),
-          record.return.toString(),
-          `${record.percentage.toFixed(2)}%`,
-          record.endBalance.toString(),
-          `${record.targetRentability.toFixed(2)}%`
+          Number(record.balance).toFixed(2),
+          Number(record.contribution).toFixed(2),
+          Number(record.return).toFixed(4),
+          `${Number(record.percentage).toFixed(2)}%`,
+          Number(record.endBalance).toFixed(2),
+          `${Number(record.targetRentability).toFixed(4)}%`
         ]);
       } else {
         // projectionData
@@ -224,12 +224,12 @@ export const MonthlyView = ({
                 yearRow.age?.toString() ?? '',
                 yearRow.year?.toString() ?? '',
                 month.month?.toString() ?? '',
-                month.contribution > 0 ? `+${month.contribution}` : month.withdrawal > 0 ? `-${month.withdrawal}` : '-',
-                month.goalsEventsImpact?.toString() ?? '',
-                month.balance?.toString() ?? '',
-                month.planned_balance?.toString() ?? '',
-                month.ipcaRate !== undefined ? `${(month.ipcaRate * 100).toFixed(4) || ''}` : '',
-                month.effectiveRate !== undefined ? `${(month.effectiveRate * 100).toFixed(4) || ''}` : ''
+                month.contribution > 0 ? `+${Number(month.contribution).toFixed(2)}` : month.withdrawal > 0 ? `-${Number(month.withdrawal).toFixed(2)}` : '-',
+                month.goalsEventsImpact ? Number(month.goalsEventsImpact).toFixed(2) : '',
+                month.balance ? Number(month.balance).toFixed(2) : '',
+                month.planned_balance ? Number(month.planned_balance).toFixed(2) : '',
+                month.ipcaRate !== undefined ? `${(month.ipcaRate * 100).toFixed(4)}` : '',
+                month.effectiveRate !== undefined ? `${(month.effectiveRate * 100).toFixed(4)}` : ''
               ]);
             });
           } else {
@@ -238,12 +238,12 @@ export const MonthlyView = ({
               yearRow.age?.toString() ?? '',
               yearRow.year?.toString() ?? '',
               '',
-              yearRow.contribution > 0 ? `+${yearRow.contribution}` : yearRow.withdrawal > 0 ? `-${yearRow.withdrawal}` : '-',
-              yearRow.goalsEventsImpact?.toString() ?? '',
-              yearRow.balance?.toString() ?? '',
-              yearRow.planned_balance?.toString() ?? '',
-              yearRow.ipcaRate !== undefined ? `${(yearRow.ipcaRate * 100).toFixed(2) || ''}` : '',
-              yearRow.effectiveRate !== undefined ? `${(yearRow.effectiveRate * 100).toFixed(2) || ''}` : ''
+              yearRow.contribution > 0 ? `+${Number(yearRow.contribution).toFixed(2)}` : yearRow.withdrawal > 0 ? `-${Number(yearRow.withdrawal).toFixed(2)}` : '-',
+              yearRow.goalsEventsImpact ? Number(yearRow.goalsEventsImpact).toFixed(2) : '',
+              yearRow.balance ? Number(yearRow.balance).toFixed(2) : '',
+              yearRow.planned_balance ? Number(yearRow.planned_balance).toFixed(2) : '',
+              yearRow.ipcaRate !== undefined ? `${(yearRow.ipcaRate * 100).toFixed(4)}` : '',
+              yearRow.effectiveRate !== undefined ? `${(yearRow.effectiveRate * 100).toFixed(4)}` : ''
             ]);
           }
         });
