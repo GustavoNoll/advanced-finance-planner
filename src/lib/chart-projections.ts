@@ -379,8 +379,8 @@ export function generateProjectionData(
       }
 
       // Skip months after the limit age date
-      if (context.limitAgeDate && year >= context.limitAgeDate.getFullYear() ||
-        (year === context.limitAgeDate.getFullYear() && currentMonthNumber >= context.limitAgeDate.getMonth() + 1)) {
+      if (context.limitAgeDate && year > context.limitAgeDate.getFullYear() ||
+        (year === context.limitAgeDate.getFullYear() && currentMonthNumber > context.limitAgeDate.getMonth() + 1)) {
         return null;
       }
 
