@@ -7,6 +7,7 @@ import { generateProjectionData, YearlyProjectionData } from '@/lib/chart-projec
 import { FinancialRecord, InvestmentPlan, Goal, ProjectedEvent, Profile } from '@/types/financial';
 import { CartesianGrid, Line, Tooltip, LineChart as RechartsLineChart, XAxis, YAxis, Legend } from "recharts";
 import { ResponsiveContainer } from "recharts";
+import { calculateCompoundedRates, yearlyReturnRateToMonthlyReturnRate } from "@/lib/financial-math";
 
 interface ReturnChartTabProps {
   allFinancialRecords: FinancialRecord[];
@@ -114,7 +115,7 @@ export function ReturnChartTab({
     enabled: Boolean(allFinancialRecords?.length),
   });
 
-  const processRecordsForChart = (records: FinancialRecord[]) => {
+  const processRecordsForChart = (records: FinancialRecord[], investmentPlan: InvestmentPlan) => {
     const sortedRecords = records.sort((a, b) => {
       if (a.record_year !== b.record_year) {
         return b.record_year - a.record_year;
@@ -122,6 +123,9 @@ export function ReturnChartTab({
       return b.record_month - a.record_month;
     });
 
+    // old_portfolio_profitability representa IPCA + X%
+    // Se old_portfolio_profitability = 2, significa IPCA + 2%
+    const oldPortfolioSpreadMonthly = yearlyReturnRateToMonthlyReturnRate(investmentPlan.old_portfolio_profitability / 100);
     return sortedRecords.map(record => {
       const monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 
         'July', 'August', 'September', 'October', 'November', 'December'];
@@ -146,6 +150,23 @@ export function ReturnChartTab({
         rate.date.getFullYear() === record.record_year
       )?.monthlyRate ?? 0;
 
+      let rateToCalculateOldPortfolio = [];
+      switch (investmentPlan.currency) {
+        case 'USD':
+          rateToCalculateOldPortfolio = allUsCpiRates;
+          break;
+        case 'EUR':
+          rateToCalculateOldPortfolio = allEuroCpiRates;
+          break;
+        default:
+          rateToCalculateOldPortfolio = allIpcaRates;
+          break;
+      }
+      const rateToCalculateOldPortfolioMonthly = rateToCalculateOldPortfolio?.find(rate => 
+        rate.date.getMonth() + 1 === record.record_month && 
+        rate.date.getFullYear() === record.record_year
+      )?.monthlyRate ?? 0;
+      const oldPortfolioRateWithIpca = calculateCompoundedRates([rateToCalculateOldPortfolioMonthly/100, oldPortfolioSpreadMonthly]) * 100;
       return {
         monthIndex: record.record_month - 1,
         year: record.record_year,
@@ -159,7 +180,8 @@ export function ReturnChartTab({
         cdiRate,
         ipcaRate,
         usCpiRate,
-        euroCpiRate
+        euroCpiRate,
+        oldPortfolioRate: oldPortfolioRateWithIpca
       };
     }).reverse();
   };
@@ -195,14 +217,9 @@ export function ReturnChartTab({
       }, 1);
 
       // Calculate accumulated old portfolio return if available
-      let accumulatedOldPortfolioReturn = 0;
-      if (investmentPlan?.old_portfolio_profitability) {
-        const oldPortfolioMonthlyRate = investmentPlan.old_portfolio_profitability / 12; // Convert annual to monthly
-        accumulatedOldPortfolioReturn = relevantData.reduce((acc, curr) => {
-          return acc * (1 + oldPortfolioMonthlyRate / 100);
-        }, 1);
-        accumulatedOldPortfolioReturn = ((accumulatedOldPortfolioReturn - 1) * 100);
-      }
+      const accumulatedOldPortfolioReturn = relevantData.reduce((acc, curr) => {
+        return acc * (1 + curr.oldPortfolioRate / 100);
+      }, 1);
 
       return {
         ...record,
@@ -212,7 +229,7 @@ export function ReturnChartTab({
         accumulatedIPCAReturn: ((accumulatedIPCAReturn - 1) * 100),
         accumulatedUSCPIReturn: ((accumulatedUSCPIReturn - 1) * 100),
         accumulatedEuroCPIReturn: ((accumulatedEuroCPIReturn - 1) * 100),
-        accumulatedOldPortfolioReturn
+        accumulatedOldPortfolioReturn: accumulatedOldPortfolioReturn ? ((accumulatedOldPortfolioReturn - 1) * 100) : 0
       };
     });
 
@@ -244,7 +261,7 @@ export function ReturnChartTab({
   };
 
   const chartDataToUse = useMemo(() => 
-    processRecordsForChart(chartRecords),
+    processRecordsForChart(chartRecords, investmentPlan),
     [chartRecords, allCdiRates, allIpcaRates, allUsCpiRates, allEuroCpiRates]
   );
 
