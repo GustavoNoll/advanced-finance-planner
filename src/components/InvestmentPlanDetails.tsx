@@ -84,6 +84,13 @@ export function InvestmentPlanDetails({ investmentPlan, birthDate, onPlanUpdated
     return format(date, "MMMM 'de' yyyy", { locale: ptBR });
   };
 
+  const formatShortDate = (date: Date | null) => {
+    if (!date || !isValid(date)) {
+      return '';
+    }
+    return format(date, "dd/MM/yyyy");
+  };
+
   const birthDateObj = new Date(birthDate);
   const currentAge = isValid(birthDateObj) 
     ? new Date().getFullYear() - birthDateObj.getFullYear() 
@@ -93,7 +100,7 @@ export function InvestmentPlanDetails({ investmentPlan, birthDate, onPlanUpdated
     {
       icon: <UserCog className="h-4 w-4 text-emerald-600" />,
       label: t('dashboard.investmentPlan.currentAge'),
-      value: `${currentAge} ${t('dashboard.investmentPlan.years')}`,
+      value: `${currentAge} ${t('dashboard.investmentPlan.years')} (${formatShortDate(birthDateObj)})`,
       color: "text-emerald-600"
     },
     {

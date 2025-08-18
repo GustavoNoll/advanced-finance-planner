@@ -83,6 +83,7 @@ interface ProjectionContext {
   historicalRecordsMap: Map<string, FinancialRecord>;
   changeDepositDate: Date | null;
   changeWithdrawDate: Date | null;
+  limitAgeDate: Date | null;
 }
 
 function createProjectionContext(
@@ -106,6 +107,8 @@ function createProjectionContext(
   const startYear = planStartDate.getFullYear();
   const startMonth = planStartDate.getMonth() + 1;
   const endDate = new Date(investmentPlan.plan_end_accumulation_date);
+  const limitAgeDate = new Date(birthDate);
+  limitAgeDate.setFullYear(birthDate.getFullYear() + endAge);
   
   const oldPortfolioProfitability = investmentPlan.old_portfolio_profitability;
   const defaultMonthlyInflationRate = yearlyReturnRateToMonthlyReturnRate(investmentPlan.inflation / 100);
@@ -158,7 +161,8 @@ function createProjectionContext(
     ipcaRatesMap,
     historicalRecordsMap,
     changeDepositDate,
-    changeWithdrawDate
+    changeWithdrawDate,
+    limitAgeDate
   };
 }
 
@@ -371,6 +375,12 @@ export function generateProjectionData(
       
       // Skip months before the plan start month in the first year
       if (i === 0 && currentMonthNumber < context.startMonth) {
+        return null;
+      }
+
+      // Skip months after the limit age date
+      if (context.limitAgeDate && year >= context.limitAgeDate.getFullYear() ||
+        (year === context.limitAgeDate.getFullYear() && currentMonthNumber >= context.limitAgeDate.getMonth() + 1)) {
         return null;
       }
 
