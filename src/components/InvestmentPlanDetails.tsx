@@ -1,5 +1,5 @@
 import { Briefcase, Calendar, Clock, DollarSign, Target, TrendingUp, User, Heart, CalendarCheck, PiggyBank, ArrowUpRight, Wallet, Building2, Coins, Scale, ChartLine, CalendarDays, UserCog, HeartPulse, WalletCards, Pencil } from "lucide-react";
-import { InvestmentPlan } from "@/types/financial";
+import { InvestmentPlan, FinancialRecord } from "@/types/financial";
 import { format, isValid } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { useTranslation } from "react-i18next";
@@ -12,6 +12,7 @@ interface InvestmentPlanDetailsProps {
   onPlanUpdated?: () => void;
   onEditClick: () => void;
   isBroker?: boolean;
+  financialRecords?: FinancialRecord[];
 }
 
 interface PlanMetricProps {
@@ -47,7 +48,7 @@ function PlanMetric({ icon, label, value, color, duration }: PlanMetricProps) {
   );
 }
 
-export function InvestmentPlanDetails({ investmentPlan, birthDate, onPlanUpdated, onEditClick, isBroker = false }: InvestmentPlanDetailsProps) {
+export function InvestmentPlanDetails({ investmentPlan, birthDate, onPlanUpdated, onEditClick, isBroker = false, financialRecords = [] }: InvestmentPlanDetailsProps) {
   const { t } = useTranslation();
   
   if (!investmentPlan || !birthDate) {
@@ -65,16 +66,43 @@ export function InvestmentPlanDetails({ investmentPlan, birthDate, onPlanUpdated
   };
 
   const calculatePlanDuration = () => {
-    const planStartDate = new Date(investmentPlan.plan_initial_date);
+    // Se não há registros financeiros, calcula do início ao fim do plano
+    if (!financialRecords || financialRecords.length === 0) {
+      const planStartDate = new Date(investmentPlan.plan_initial_date);
+      const planEndDate = new Date(investmentPlan.plan_end_accumulation_date);
+      
+      if (!isValid(planStartDate) || !isValid(planEndDate)) {
+        return 0;
+      }
+
+      const months = (planEndDate.getFullYear() - planStartDate.getFullYear()) * 12 + 
+                    (planEndDate.getMonth() - planStartDate.getMonth());
+      return months + 1;
+    }
+
+    // Se há registros, calcula do último registro até o fim do plano
+    const sortedRecords = [...financialRecords].sort((a, b) => {
+      if (a.record_year !== b.record_year) {
+        return b.record_year - a.record_year;
+      }
+      return b.record_month - a.record_month;
+    });
+
+    const latestRecord = sortedRecords[0];
     const planEndDate = new Date(investmentPlan.plan_end_accumulation_date);
     
-    if (!isValid(planStartDate) || !planEndDate) {
+    if (!isValid(planEndDate)) {
       return 0;
     }
 
-    const months = (planEndDate.getFullYear() - planStartDate.getFullYear()) * 12 + 
-                  (planEndDate.getMonth() - planStartDate.getMonth());
-    return months + 1;
+    // Cria uma data para o último registro (último dia do mês)
+    const lastRecordDate = new Date(latestRecord.record_year, latestRecord.record_month, 0);
+    
+    const months = (planEndDate.getFullYear() - lastRecordDate.getFullYear()) * 12 + 
+                  (planEndDate.getMonth() - lastRecordDate.getMonth());
+    
+    // Retorna apenas os meses restantes (não inclui o mês atual se for o mesmo)
+    return Math.max(0, months);
   };
 
   const formatDate = (date: Date | null) => {
