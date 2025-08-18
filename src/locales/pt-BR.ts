@@ -409,6 +409,8 @@ export const ptBR = {
     saving: "Salvando..",
     addNew: "Adicionar Novos",
     custom: "Personalizado",
+    startDate: "Data Inicial",
+    endDate: "Data Final",
     months: "Meses",
     last1YearS: "1A",
     last5YearsS: "5A",
@@ -501,7 +503,8 @@ export const ptBR = {
       allTime: "Todos os Tempos",
       last6Months: "Últimos 6 Meses",
       last12Months: "Últimos 12 Meses",
-      last24Months: "Últimos 24 Meses"
+      last24Months: "Últimos 24 Meses",
+      customRange: "Período Personalizado"
     },
     title: "Desempenho Mensal",
     tabs: {
@@ -512,6 +515,7 @@ export const ptBR = {
       futureProjection: "Projeção Futura"
     },
     chart: {
+      title: "Gráfico de Retorno Acumulado",
       accumulatedReturn: "Retorno Acumulado",
       accumulatedCDIReturn: "Retorno CDI Acumulado",
       accumulatedIPCAReturn: "Retorno IPC-A Acumulado",
