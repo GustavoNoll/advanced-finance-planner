@@ -204,6 +204,7 @@ const Finances = ({
               onPlanUpdated={handlePlanUpdated}
               onEditClick={() => setIsEditModalOpen(true)}
               isBroker={brokerProfile !== undefined}
+              financialRecords={allFinancialRecords}
             />
           </DashboardCard>
         </div>

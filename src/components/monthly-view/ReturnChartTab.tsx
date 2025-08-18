@@ -2,11 +2,13 @@ import React, { useState, useEffect, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { useQuery } from "@tanstack/react-query";
 import { Select, SelectItem, SelectTrigger, SelectContent, SelectValue } from "@/components/ui/select";
+import { Input } from "@/components/ui/input";
 import { fetchCDIRates, fetchIPCARates, fetchUSCPIRates, fetchEuroCPIRates } from '@/lib/bcb-api';
 import { generateProjectionData, YearlyProjectionData } from '@/lib/chart-projections';
 import { FinancialRecord, InvestmentPlan, Goal, ProjectedEvent, Profile } from '@/types/financial';
 import { CartesianGrid, Line, Tooltip, LineChart as RechartsLineChart, XAxis, YAxis, Legend } from "recharts";
 import { ResponsiveContainer } from "recharts";
+import { calculateCompoundedRates, yearlyReturnRateToMonthlyReturnRate } from "@/lib/financial-math";
 
 interface ReturnChartTabProps {
   allFinancialRecords: FinancialRecord[];
@@ -16,6 +18,9 @@ interface ReturnChartTabProps {
   events?: ProjectedEvent[];
 }
 
+// Update the zoom level type to include custom
+type ZoomLevel = '6m' | '12m' | '24m' | 'all' | 'custom';
+
 export function ReturnChartTab({ 
   allFinancialRecords, 
   investmentPlan, 
@@ -24,7 +29,11 @@ export function ReturnChartTab({
   events
 }: ReturnChartTabProps) {
   const { t } = useTranslation();
-  const [timeWindow, setTimeWindow] = useState<6 | 12 | 24 | 0>(12);
+  const [zoomLevel, setZoomLevel] = useState<ZoomLevel>('12m');
+  const [customRange, setCustomRange] = useState<{ startDate: string, endDate: string }>({ 
+    startDate: '', 
+    endDate: '' 
+  });
   const [isDark, setIsDark] = useState<boolean>(typeof document !== 'undefined' ? document.documentElement.classList.contains('dark') : false);
   
   useEffect(() => {
@@ -33,18 +42,92 @@ export function ReturnChartTab({
     return () => window.removeEventListener('themechange', handler);
   }, []);
 
-  const chartRecords = useMemo(() => {
-    if (timeWindow === 0) return allFinancialRecords;
+  // Get filtered records based on zoom level
+  const getFilteredRecords = (records: FinancialRecord[], zoomLevel: ZoomLevel, customRange: { startDate: string, endDate: string }) => {
+    if (zoomLevel === 'all') return records;
     
-    return allFinancialRecords
-      .sort((a, b) => {
-        if (b.record_year !== a.record_year) {
-          return b.record_year - a.record_year;
+    const sortedRecords = [...records].sort((a, b) => {
+      if (a.record_year !== b.record_year) {
+        return a.record_year - b.record_year;
+      }
+      return a.record_month - b.record_month;
+    });
+
+    if (zoomLevel === 'custom' && customRange.startDate && customRange.endDate) {
+      // Parse dates correctly to avoid timezone issues
+      const [startYear, startMonth] = customRange.startDate.split('-').map(Number);
+      const [endYear, endMonth] = customRange.endDate.split('-').map(Number);
+      
+      // Create dates as first day of each month
+      const startDate = new Date(startYear, startMonth - 1, 1);
+      const endDate = new Date(endYear, endMonth - 1, 1);
+      
+      // Validate date range
+      if (startDate > endDate) {
+        return sortedRecords; // Return all records if invalid range
+      }
+      
+      
+      const filteredRecords = sortedRecords.filter(record => {
+        const recordYear = record.record_year;
+        const recordMonth = record.record_month;
+        const startYear = startDate.getFullYear();
+        const startMonth = startDate.getMonth() + 1; // getMonth() returns 0-11
+        const endYear = endDate.getFullYear();
+        const endMonth = endDate.getMonth() + 1; // getMonth() returns 0-11
+        
+        // Check if record is within the range
+        if (recordYear < startYear || (recordYear === startYear && recordMonth < startMonth)) {
+          return false;
         }
-        return b.record_month - a.record_month;
-      })
-      .slice(0, timeWindow);
-  }, [allFinancialRecords, timeWindow]);
+        if (recordYear > endYear || (recordYear === endYear && recordMonth > endMonth)) {
+          return false;
+        }
+        
+        return true;
+      });
+      
+      console.log('Records after filter:', filteredRecords.length);
+      console.log('Filtered records:', filteredRecords.map(r => `${r.record_month}/${r.record_year}`));
+      
+      return filteredRecords;
+    }
+
+    // Convert zoom level to months
+    const monthsMap = {
+      '6m': 6,
+      '12m': 12,
+      '24m': 24,
+    };
+
+    const months = monthsMap[zoomLevel] || 12;
+    // Get the last N months from the sorted records
+    return sortedRecords.slice(-months);
+  };
+
+  const chartRecords = useMemo(() => {
+    return getFilteredRecords(allFinancialRecords, zoomLevel, customRange);
+  }, [allFinancialRecords, zoomLevel, customRange]);
+
+  // Get available date range for custom selection
+  const availableDateRange = useMemo(() => {
+    if (allFinancialRecords.length === 0) return { min: '', max: '' };
+    
+    const sortedRecords = [...allFinancialRecords].sort((a, b) => {
+      if (a.record_year !== b.record_year) {
+        return a.record_year - b.record_year;
+      }
+      return a.record_month - b.record_month;
+    });
+
+    const firstRecord = sortedRecords[0];
+    const lastRecord = sortedRecords[sortedRecords.length - 1];
+
+    const minDate = `${firstRecord.record_year}-${firstRecord.record_month.toString().padStart(2, '0')}`;
+    const maxDate = `${lastRecord.record_year}-${lastRecord.record_month.toString().padStart(2, '0')}`;
+
+    return { min: minDate, max: maxDate };
+  }, [allFinancialRecords]);
 
   const { data: allCdiRates } = useQuery({
     queryKey: ['allCdiRates'],
@@ -114,14 +197,17 @@ export function ReturnChartTab({
     enabled: Boolean(allFinancialRecords?.length),
   });
 
-  const processRecordsForChart = (records: FinancialRecord[]) => {
+  const processRecordsForChart = (records: FinancialRecord[], investmentPlan: InvestmentPlan) => {
     const sortedRecords = records.sort((a, b) => {
       if (a.record_year !== b.record_year) {
-        return b.record_year - a.record_year;
+        return a.record_year - b.record_year;
       }
-      return b.record_month - a.record_month;
+      return a.record_month - b.record_month;
     });
 
+    // old_portfolio_profitability representa IPCA + X%
+    // Se old_portfolio_profitability = 2, significa IPCA + 2%
+    const oldPortfolioSpreadMonthly = yearlyReturnRateToMonthlyReturnRate(investmentPlan.old_portfolio_profitability / 100);
     return sortedRecords.map(record => {
       const monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 
         'July', 'August', 'September', 'October', 'November', 'December'];
@@ -146,6 +232,23 @@ export function ReturnChartTab({
         rate.date.getFullYear() === record.record_year
       )?.monthlyRate ?? 0;
 
+      let rateToCalculateOldPortfolio = [];
+      switch (investmentPlan.currency) {
+        case 'USD':
+          rateToCalculateOldPortfolio = allUsCpiRates;
+          break;
+        case 'EUR':
+          rateToCalculateOldPortfolio = allEuroCpiRates;
+          break;
+        default:
+          rateToCalculateOldPortfolio = allIpcaRates;
+          break;
+      }
+      const rateToCalculateOldPortfolioMonthly = rateToCalculateOldPortfolio?.find(rate => 
+        rate.date.getMonth() + 1 === record.record_month && 
+        rate.date.getFullYear() === record.record_year
+      )?.monthlyRate ?? 0;
+      const oldPortfolioRateWithIpca = calculateCompoundedRates([rateToCalculateOldPortfolioMonthly/100, oldPortfolioSpreadMonthly]) * 100;
       return {
         monthIndex: record.record_month - 1,
         year: record.record_year,
@@ -159,16 +262,16 @@ export function ReturnChartTab({
         cdiRate,
         ipcaRate,
         usCpiRate,
-        euroCpiRate
+        euroCpiRate,
+        oldPortfolioRate: oldPortfolioRateWithIpca
       };
-    }).reverse();
+    });
   };
 
   const calculateAccumulatedReturns = (data: ReturnType<typeof processRecordsForChart>) => {
     if (data.length === 0) return [];
     const processedData = data.map((record, index, array) => {
-      const startIndex = timeWindow === 0 ? 0 : Math.max(0, array.length - timeWindow );
-      const relevantData = array.slice(startIndex, index + 1);
+      const relevantData = array.slice(0, index + 1);
       
       const accumulatedReturn = relevantData.reduce((acc, curr) => {
         return acc * (1 + curr.percentage / 100);
@@ -195,14 +298,9 @@ export function ReturnChartTab({
       }, 1);
 
       // Calculate accumulated old portfolio return if available
-      let accumulatedOldPortfolioReturn = 0;
-      if (investmentPlan?.old_portfolio_profitability) {
-        const oldPortfolioMonthlyRate = investmentPlan.old_portfolio_profitability / 12; // Convert annual to monthly
-        accumulatedOldPortfolioReturn = relevantData.reduce((acc, curr) => {
-          return acc * (1 + oldPortfolioMonthlyRate / 100);
-        }, 1);
-        accumulatedOldPortfolioReturn = ((accumulatedOldPortfolioReturn - 1) * 100);
-      }
+      const accumulatedOldPortfolioReturn = relevantData.reduce((acc, curr) => {
+        return acc * (1 + curr.oldPortfolioRate / 100);
+      }, 1);
 
       return {
         ...record,
@@ -212,65 +310,151 @@ export function ReturnChartTab({
         accumulatedIPCAReturn: ((accumulatedIPCAReturn - 1) * 100),
         accumulatedUSCPIReturn: ((accumulatedUSCPIReturn - 1) * 100),
         accumulatedEuroCPIReturn: ((accumulatedEuroCPIReturn - 1) * 100),
-        accumulatedOldPortfolioReturn
+        accumulatedOldPortfolioReturn: accumulatedOldPortfolioReturn ? ((accumulatedOldPortfolioReturn - 1) * 100) : 0
       };
     });
 
     // Create a synthetic data point for the month before the first record
-    const firstRecord = { ...processedData[0] };
-    const month = firstRecord.monthIndex;
-    const year = firstRecord.year;
-    const monthNames = ['january', 'february', 'march', 'april', 'may', 'june', 
-      'july', 'august', 'september', 'october', 'november', 'december'];
-    const previousMonth = month === 0 ? 'december' : monthNames[month - 1];
-    const previousYear = month === 0 ? year - 1 : year;
-    firstRecord.month = `${t(`monthlyView.table.months.${previousMonth.toLowerCase()}`)}/${previousYear}`;
-    const syntheticDataPoint = {
-      ...firstRecord,
-      accumulatedPercentage: 0,
-      accumulatedTargetRentability: 0,
-      accumulatedCDIReturn: 0,
-      accumulatedIPCAReturn: 0,
-      accumulatedUSCPIReturn: 0,
-      accumulatedEuroCPIReturn: 0,
-      accumulatedOldPortfolioReturn: 0
-    };
-    return [syntheticDataPoint, ...processedData];
-  };
-
-  const getFilteredChartData = (data: ReturnType<typeof calculateAccumulatedReturns>) => {
-    if (timeWindow === 0) return data;
-    return data.slice(-Math.min(timeWindow + 1, data.length));
+    if (processedData.length > 0) {
+      const firstRecord = { ...processedData[0] };
+      const month = firstRecord.monthIndex;
+      const year = firstRecord.year;
+      const monthNames = ['january', 'february', 'march', 'april', 'may', 'june', 
+        'july', 'august', 'september', 'october', 'november', 'december'];
+      const previousMonth = month === 0 ? 'december' : monthNames[month - 1];
+      const previousYear = month === 0 ? year - 1 : year;
+      firstRecord.month = `${t(`monthlyView.table.months.${previousMonth.toLowerCase()}`)}/${previousYear}`;
+      const syntheticDataPoint = {
+        ...firstRecord,
+        accumulatedPercentage: 0,
+        accumulatedTargetRentability: 0,
+        accumulatedCDIReturn: 0,
+        accumulatedIPCAReturn: 0,
+        accumulatedUSCPIReturn: 0,
+        accumulatedEuroCPIReturn: 0,
+        accumulatedOldPortfolioReturn: 0
+      };
+      return [syntheticDataPoint, ...processedData];
+    }
+    
+    return processedData;
   };
 
   const chartDataToUse = useMemo(() => 
-    processRecordsForChart(chartRecords),
+    processRecordsForChart(chartRecords, investmentPlan),
     [chartRecords, allCdiRates, allIpcaRates, allUsCpiRates, allEuroCpiRates]
   );
 
   const accumulatedReturns = useMemo(() => {
     return calculateAccumulatedReturns(chartDataToUse);
-  }, [chartDataToUse, timeWindow]);
+  }, [chartDataToUse]);
 
   const filteredChartData = useMemo(() => 
-    getFilteredChartData(accumulatedReturns),
-    [accumulatedReturns, timeWindow]
+    accumulatedReturns,
+    [accumulatedReturns]
   );
 
   return (
     <div className="space-y-4">
-      <div className="flex justify-end gap-2 mb-4">
-        <Select value={timeWindow.toString()} onValueChange={(value) => setTimeWindow(Number(value) as typeof timeWindow)}>
-          <SelectTrigger className="w-[150px] h-8 text-sm border border-gray-200 dark:border-gray-700 rounded-lg px-2 bg-white/90 dark:bg-gray-900/80 text-gray-700 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent shadow-sm hover:border-blue-200 dark:hover:border-gray-600 transition-colors ml-auto">
-            <SelectValue placeholder={t('common.selectPeriod')} />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="6">{t('monthlyView.timeWindows.last6Months')}</SelectItem>
-            <SelectItem value="12">{t('monthlyView.timeWindows.last12Months')}</SelectItem>
-            <SelectItem value="24">{t('monthlyView.timeWindows.last24Months')}</SelectItem>
-            <SelectItem value="0">{t('monthlyView.timeWindows.allTime')}</SelectItem>
-          </SelectContent>
-        </Select> 
+      <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 mb-4">
+        <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
+          {t('monthlyView.chart.title')}
+        </h2>
+        
+        <div className="flex flex-col gap-4">
+          <div className="inline-flex items-center rounded-md border border-gray-200 dark:border-gray-700 p-1 bg-gray-50 dark:bg-gray-900/80">
+            <button
+              onClick={() => setZoomLevel('6m')}
+              className={`px-3 py-1.5 text-sm font-medium rounded-md transition-colors ${
+                zoomLevel === '6m' 
+                  ? 'bg-white dark:bg-gray-800 text-blue-600 dark:text-blue-400 shadow-sm' 
+                  : 'text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100'
+              }`}
+            >
+              {t('monthlyView.timeWindows.last6Months')}
+            </button>
+            <button
+              onClick={() => setZoomLevel('12m')}
+              className={`px-3 py-1.5 text-sm font-medium rounded-md transition-colors ${
+                zoomLevel === '12m' 
+                  ? 'bg-white dark:bg-gray-800 text-blue-600 dark:text-blue-400 shadow-sm' 
+                  : 'text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100'
+              }`}
+            >
+              {t('monthlyView.timeWindows.last12Months')}
+            </button>
+            <button
+              onClick={() => setZoomLevel('24m')}
+              className={`px-3 py-1.5 text-sm font-medium rounded-md transition-colors ${
+                zoomLevel === '24m' 
+                  ? 'bg-white dark:bg-gray-800 text-blue-600 dark:text-blue-400 shadow-sm' 
+                  : 'text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100'
+              }`}
+            >
+              {t('monthlyView.timeWindows.last24Months')}
+            </button>
+            <button
+              onClick={() => setZoomLevel('all')}
+              className={`px-3 py-1.5 text-sm font-medium rounded-md transition-colors ${
+                zoomLevel === 'all' 
+                  ? 'bg-white dark:bg-gray-800 text-blue-600 dark:text-blue-400 shadow-sm' 
+                  : 'text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100'
+              }`}
+            >
+              {t('monthlyView.timeWindows.allTime')}
+            </button>
+            <button
+              onClick={() => setZoomLevel('custom')}
+              className={`px-3 py-1.5 text-sm font-medium rounded-md transition-colors ${
+                zoomLevel === 'custom' 
+                  ? 'bg-white dark:bg-gray-800 text-blue-600 dark:text-blue-400 shadow-sm' 
+                  : 'text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100'
+              }`}
+            >
+              {t('common.custom')}
+            </button>
+          </div>
+          
+          {zoomLevel === 'custom' && (
+            <div className="flex flex-col sm:flex-row gap-4 p-4 border border-gray-200 dark:border-gray-700 rounded-lg bg-gray-50 dark:bg-gray-900/50">
+              <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2">
+                <label className="text-sm font-medium text-gray-700 dark:text-gray-300 whitespace-nowrap">
+                  {t('common.startDate')}:
+                </label>
+                <Input
+                  type="month"
+                  value={customRange.startDate}
+                  onChange={(e) => setCustomRange({ ...customRange, startDate: e.target.value })}
+                  className="w-full sm:w-[150px] h-8 text-sm border border-gray-200 dark:border-gray-700 rounded-lg px-2 bg-white/90 dark:bg-gray-900/80 text-gray-700 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent shadow-sm hover:border-blue-200 dark:hover:border-gray-600 transition-colors"
+                  min={availableDateRange.min}
+                  max={availableDateRange.max}
+                />
+              </div>
+              <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2">
+                <label className="text-sm font-medium text-gray-700 dark:text-gray-300 whitespace-nowrap">
+                  {t('common.endDate')}:
+                </label>
+                <Input
+                  type="month"
+                  value={customRange.endDate}
+                  onChange={(e) => setCustomRange({ ...customRange, endDate: e.target.value })}
+                  className="w-full sm:w-[150px] h-8 text-sm border border-gray-200 dark:border-gray-700 rounded-lg px-2 bg-white/90 dark:bg-gray-900/80 text-gray-700 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent shadow-sm hover:border-blue-200 dark:hover:border-gray-600 transition-colors"
+                  min={availableDateRange.min}
+                  max={availableDateRange.max}
+                />
+              </div>
+              <div className="flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400">
+                <span>📅</span>
+                <span>
+                  {availableDateRange.min && availableDateRange.max 
+                    ? `Período disponível: ${availableDateRange.min.split('-')[1]}/${availableDateRange.min.split('-')[0]} a ${availableDateRange.max.split('-')[1]}/${availableDateRange.max.split('-')[0]}`
+                    : 'Selecione um período'
+                  }
+                </span>
+              </div>
+            </div>
+          )}
+        </div>
       </div>
       <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-100 dark:border-gray-800 shadow-sm p-4">
         <ResponsiveContainer width="100%" height={400}>
