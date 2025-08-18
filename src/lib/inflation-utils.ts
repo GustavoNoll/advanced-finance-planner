@@ -1,6 +1,7 @@
 import { fetchIPCARates } from './bcb-api';
 import { calculateCompoundedRates, yearlyReturnRateToMonthlyReturnRate } from './financial-math';
 import { FinancialRecord, InvestmentPlan } from '@/types/financial';
+import { createDateWithoutTimezone } from '@/utils/dateUtils';
 
 /**
  * Formats a date to the Brazilian format (DD/MM/YYYY) required by the BCB API
@@ -162,7 +163,7 @@ export function calculateInflationAdjustedValue(
  * @returns Object with baseYear and baseMonth
  */
 export function getInvestmentPlanBaseDate(investmentPlan: InvestmentPlan): { baseYear: number; baseMonth: number } {
-  const planStartDate = new Date(investmentPlan.plan_initial_date);
+  const planStartDate = createDateWithoutTimezone(investmentPlan.plan_initial_date);
   return {
     baseYear: planStartDate.getFullYear(),
     baseMonth: planStartDate.getMonth() + 1

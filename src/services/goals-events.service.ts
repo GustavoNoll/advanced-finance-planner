@@ -1,4 +1,5 @@
 import { supabase } from '@/lib/supabase'
+import { createDateWithoutTimezone } from '@/utils/dateUtils'
 
 export interface GoalsAndEvents {
   goals: any[]
@@ -17,7 +18,7 @@ export class GoalsEventsService {
   static async fetchCounters(userId: string): Promise<Counters> {
     if (!userId) return { goals: 0, events: 0 }
     
-    const today = new Date()
+    const today = createDateWithoutTimezone(new Date())
     const currentYear = today.getFullYear()
     const currentMonth = today.getMonth() + 1
 
@@ -124,16 +125,16 @@ export class GoalsEventsService {
   static filterGoalsByPeriod(goals: any[], period: 'all' | '6m' | '12m' | '24m'): any[] {
     if (period === 'all') return goals
 
-    const currentDate = new Date()
+    const currentDate = createDateWithoutTimezone(new Date())
     const months = parseInt(period)
-    const cutoffDate = new Date(
+    const cutoffDate = createDateWithoutTimezone(new Date(
       currentDate.getFullYear(),
       currentDate.getMonth() - months,
       1
-    )
+    ))
 
     return goals.filter(goal => {
-      const goalDate = new Date(goal.year, goal.month - 1, 1)
+      const goalDate = createDateWithoutTimezone(new Date(goal.year, goal.month - 1, 1))
       return goalDate >= cutoffDate
     })
   }
@@ -144,16 +145,16 @@ export class GoalsEventsService {
   static filterEventsByPeriod(events: any[], period: 'all' | '6m' | '12m' | '24m'): any[] {
     if (period === 'all') return events
 
-    const currentDate = new Date()
+    const currentDate = createDateWithoutTimezone(new Date())
     const months = parseInt(period)
-    const cutoffDate = new Date(
+    const cutoffDate = createDateWithoutTimezone(new Date(
       currentDate.getFullYear(),
       currentDate.getMonth() - months,
       1
-    )
+    ))
 
     return events.filter(event => {
-      const eventDate = new Date(event.year, event.month - 1, 1)
+      const eventDate = createDateWithoutTimezone(new Date(event.year, event.month - 1, 1))
       return eventDate >= cutoffDate
     })
   }

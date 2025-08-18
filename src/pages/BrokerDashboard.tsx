@@ -5,6 +5,7 @@ import { supabase } from '@/lib/supabase';
 import { useToast } from '@/components/ui/use-toast';
 import { Plus, LogOut, Share2, Trash2, Calculator } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
+import { createDateWithoutTimezone } from '@/utils/dateUtils';
 
 import { SummaryMetrics } from '@/components/broker-dashboard/metrics/SummaryMetrics';
 import { WealthDistributionChart } from '@/components/broker-dashboard/charts/WealthDistributionChart';
@@ -215,8 +216,8 @@ export const BrokerDashboard = () => {
 
     // Calculate average age using birth_date from the view
     const averageAge = usersWithPlan.reduce((sum, user) => {
-      const birthDate = new Date(user.birth_date);
-      const today = new Date();
+      const birthDate = createDateWithoutTimezone(user.birth_date);
+      const today = createDateWithoutTimezone(new Date());
       const age = today.getFullYear() - birthDate.getFullYear();
       return sum + age;
     }, 0) / usersWithPlan.length;
@@ -230,12 +231,12 @@ export const BrokerDashboard = () => {
   };
 
   const calculateTrendMetrics = async (users: UserProfileInvestment[]) => {
-    const today = new Date();
-    const firstDayOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
+    const today = createDateWithoutTimezone(new Date());
+    const firstDayOfMonth = createDateWithoutTimezone(new Date(today.getFullYear(), today.getMonth(), 1));
 
     // New clients this month
     const newClientsThisMonth = users.filter(user => {
-      const createdAt = new Date(user.financial_created_at || '');
+      const createdAt = createDateWithoutTimezone(user.financial_created_at || '');
       return createdAt >= firstDayOfMonth;
     }).length;
 

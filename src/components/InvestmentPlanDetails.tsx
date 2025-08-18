@@ -5,6 +5,7 @@ import { ptBR } from "date-fns/locale";
 import { useTranslation } from "react-i18next";
 import { formatCurrency } from '@/utils/currency';
 import { Button } from './ui/button';
+import { createDateWithoutTimezone, createDateFromYearMonth } from '@/utils/dateUtils';
 
 interface InvestmentPlanDetailsProps {
   investmentPlan: InvestmentPlan | null;
@@ -55,23 +56,35 @@ export function InvestmentPlanDetails({ investmentPlan, birthDate, onPlanUpdated
     return null;
   }
 
+  // Helper function to parse date strings as local dates without timezone conversion
+  const parseLocalDate = (dateString: string | null | undefined) => {
+    if (!dateString) {
+      return null;
+    }
+    return createDateWithoutTimezone(dateString);
+  };
+
   const calculateDate = (age: number) => {
-    const birthDateObj = new Date(birthDate);
+    const birthDateObj = createDateWithoutTimezone(birthDate);
     if (!isValid(birthDateObj)) {
       return null;
     }
-    const targetDate = new Date(birthDateObj);
-    targetDate.setFullYear(birthDateObj.getFullYear() + age);
+    // Create a local date without timezone conversion
+    const targetDate = createDateWithoutTimezone({
+      year: birthDateObj.getFullYear() + age,
+      month: birthDateObj.getMonth() + 1,
+      day: birthDateObj.getDate()
+    });
     return targetDate;
   };
 
   const calculatePlanDuration = () => {
     // Se não há registros financeiros, calcula do início ao fim do plano
     if (!financialRecords || financialRecords.length === 0) {
-      const planStartDate = new Date(investmentPlan.plan_initial_date);
-      const planEndDate = new Date(investmentPlan.plan_end_accumulation_date);
+      const planStartDate = parseLocalDate(investmentPlan.plan_initial_date);
+      const planEndDate = parseLocalDate(investmentPlan.plan_end_accumulation_date);
       
-      if (!isValid(planStartDate) || !isValid(planEndDate)) {
+      if (!planStartDate || !planEndDate || !isValid(planStartDate) || !isValid(planEndDate)) {
         return 0;
       }
 
@@ -89,14 +102,14 @@ export function InvestmentPlanDetails({ investmentPlan, birthDate, onPlanUpdated
     });
 
     const latestRecord = sortedRecords[0];
-    const planEndDate = new Date(investmentPlan.plan_end_accumulation_date);
+    const planEndDate = parseLocalDate(investmentPlan.plan_end_accumulation_date);
     
-    if (!isValid(planEndDate)) {
+    if (!planEndDate || !isValid(planEndDate)) {
       return 0;
     }
 
     // Cria uma data para o último registro (último dia do mês)
-    const lastRecordDate = new Date(latestRecord.record_year, latestRecord.record_month, 0);
+    const lastRecordDate = createDateFromYearMonth(latestRecord.record_year, latestRecord.record_month);
     
     const months = (planEndDate.getFullYear() - lastRecordDate.getFullYear()) * 12 + 
                   (planEndDate.getMonth() - lastRecordDate.getMonth());
@@ -109,20 +122,29 @@ export function InvestmentPlanDetails({ investmentPlan, birthDate, onPlanUpdated
     if (!date || !isValid(date)) {
       return '';
     }
-    return format(date, "MMMM 'de' yyyy", { locale: ptBR });
+    // Ensure the date is treated as local date without timezone conversion
+    const localDate = createDateWithoutTimezone(date);
+    return format(localDate, "MMMM 'de' yyyy", { locale: ptBR });
   };
 
   const formatShortDate = (date: Date | null) => {
     if (!date || !isValid(date)) {
       return '';
     }
-    return format(date, "dd/MM/yyyy");
+    // Ensure the date is treated as local date without timezone conversion
+    const localDate = createDateWithoutTimezone(date);
+    return format(localDate, "dd/MM/yyyy");
   };
 
-  const birthDateObj = new Date(birthDate);
+  // Parse birthDate as local date to avoid timezone issues
+  const birthDateObj = createDateWithoutTimezone(birthDate);
   const currentAge = isValid(birthDateObj) 
-    ? new Date().getFullYear() - birthDateObj.getFullYear() 
+    ? createDateWithoutTimezone(new Date()).getFullYear() - birthDateObj.getFullYear() 
     : 0;
+
+  // Parse dates once to avoid multiple calls
+  const planStartDate = parseLocalDate(investmentPlan.plan_initial_date);
+  const planEndDate = parseLocalDate(investmentPlan.plan_end_accumulation_date);
 
   const timelineMetrics: PlanMetricProps[] = [
     {
@@ -134,14 +156,14 @@ export function InvestmentPlanDetails({ investmentPlan, birthDate, onPlanUpdated
     {
       icon: <CalendarDays className="h-4 w-4 text-blue-600" />,
       label: t('dashboard.investmentPlan.planStart'),
-      value: formatDate(new Date(investmentPlan.plan_initial_date)).charAt(0).toUpperCase() + formatDate(new Date(investmentPlan.plan_initial_date)).slice(1),
+      value: formatDate(planStartDate) ? formatDate(planStartDate)!.charAt(0).toUpperCase() + formatDate(planStartDate)!.slice(1) : '',
       color: "text-blue-600",
       duration: `${calculatePlanDuration()} ${t('dashboard.investmentPlan.months')}`
     },
     {
       icon: <CalendarDays className="h-4 w-4 text-blue-600" />,
       label: t('dashboard.investmentPlan.finalAge'),
-      value: `${investmentPlan.final_age} ${t('dashboard.investmentPlan.years')} (${formatDate(new Date(investmentPlan.plan_end_accumulation_date))})`,
+      value: `${investmentPlan.final_age} ${t('dashboard.investmentPlan.years')} (${formatDate(planEndDate) || ''})`,
       color: "text-blue-600"
     },
     {

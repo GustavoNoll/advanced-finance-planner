@@ -1,4 +1,4 @@
-import { calculateEndDate, calculateFinalAge } from './dateUtils';
+import { calculateEndDate, calculateFinalAge, createDateWithoutTimezone } from './dateUtils';
 
 interface RiskProfile {
   return: string;
@@ -62,9 +62,9 @@ export function handleAgeDateSync(
   } else if (name === 'planEndAccumulationDate') {
     if (updateSource === 'age') return null;
     
-    if (!value || isNaN(new Date(value).getTime())) return null;
+    if (!value || isNaN(createDateWithoutTimezone(value).getTime())) return null;
     
-    const endDate = new Date(value);
+    const endDate = createDateWithoutTimezone(value);
     const age = calculateFinalAge(birthDate, endDate);
     
     return {

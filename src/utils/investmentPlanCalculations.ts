@@ -1,4 +1,5 @@
 import { calculateCompoundedRates, yearlyReturnRateToMonthlyReturnRate } from "@/lib/financial-math";
+import { createDateWithoutTimezone } from '@/utils/dateUtils';
 
 export type FormData = {
   initialAmount: string;
@@ -44,9 +45,9 @@ export const isCalculationReady = (data: FormData) => {
 
 export const calculateFutureValues = (data: FormData, birthDate: Date): Calculations => {
   const initialAmount = parseFloat(data.initialAmount.replace(',', '.')) || 0;
-  const planInitialDate = new Date(data.plan_initial_date);
+  const planInitialDate = createDateWithoutTimezone(data.plan_initial_date);
   const finalAge = parseFloat(data.finalAge) || 0;
-  const planEndAccumulationDate = data.planEndAccumulationDate ? new Date(data.planEndAccumulationDate) : null;
+  const planEndAccumulationDate = data.planEndAccumulationDate ? createDateWithoutTimezone(data.planEndAccumulationDate) : null;
   const desiredIncome = parseFloat(data.desiredIncome.replace(',', '.')) || 0;
   const expectedReturn = parseFloat(data.expectedReturn.replace(',', '.')) / 100;
   const monthlyDeposit = parseFloat(data.monthlyDeposit.replace(',', '.')) || 0;
@@ -77,7 +78,7 @@ export const calculateFutureValues = (data: FormData, birthDate: Date): Calculat
   };
   
   // vars
-  const planStartDate = new Date(planInitialDate);
+  const planStartDate = createDateWithoutTimezone(planInitialDate);
   const yearDiff = planStartDate.getFullYear() - birthDate.getFullYear();
   const monthDiff = planStartDate.getMonth() - birthDate.getMonth();
   const initialAge = yearDiff + (monthDiff / 12);

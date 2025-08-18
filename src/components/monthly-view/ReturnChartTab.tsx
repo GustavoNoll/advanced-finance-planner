@@ -9,6 +9,7 @@ import { FinancialRecord, InvestmentPlan, Goal, ProjectedEvent, Profile } from '
 import { CartesianGrid, Line, Tooltip, LineChart as RechartsLineChart, XAxis, YAxis, Legend } from "recharts";
 import { ResponsiveContainer } from "recharts";
 import { calculateCompoundedRates, yearlyReturnRateToMonthlyReturnRate } from "@/lib/financial-math";
+import { createDateWithoutTimezone, createDateFromYearMonth } from '@/utils/dateUtils';
 
 interface ReturnChartTabProps {
   allFinancialRecords: FinancialRecord[];
@@ -59,8 +60,8 @@ export function ReturnChartTab({
       const [endYear, endMonth] = customRange.endDate.split('-').map(Number);
       
       // Create dates as first day of each month
-      const startDate = new Date(startYear, startMonth - 1, 1);
-      const endDate = new Date(endYear, endMonth - 1, 1);
+      const startDate = createDateFromYearMonth(startYear, startMonth);
+      const endDate = createDateFromYearMonth(endYear, endMonth);
       
       // Validate date range
       if (startDate > endDate) {

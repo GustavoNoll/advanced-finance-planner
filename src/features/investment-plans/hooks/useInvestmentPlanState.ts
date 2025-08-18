@@ -2,6 +2,7 @@ import { useState, useMemo } from 'react'
 import { calculateFutureValues, isCalculationReady } from '@/utils/investmentPlanCalculations'
 import { RISK_PROFILES } from '@/constants/riskProfiles'
 import type { FormData } from '@/utils/investmentPlanCalculations'
+import { createDateWithoutTimezone } from '@/utils/dateUtils'
 
 export function useInvestmentPlanState() {
   const [loading, setLoading] = useState(false)
@@ -9,7 +10,7 @@ export function useInvestmentPlanState() {
   const [birthDate, setBirthDate] = useState<Date | null>(null)
   const [formData, setFormData] = useState<FormData>({
     initialAmount: "",
-    plan_initial_date: new Date().toISOString().split('T')[0],
+    plan_initial_date: createDateWithoutTimezone(new Date()).toISOString().split('T')[0],
     finalAge: "",
     planEndAccumulationDate: "",
     monthlyDeposit: "",

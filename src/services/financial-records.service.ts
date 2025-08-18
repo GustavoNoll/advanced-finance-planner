@@ -1,5 +1,6 @@
 import { supabase } from '@/lib/supabase'
 import { FinancialRecord } from '@/types/financial'
+import { createDateWithoutTimezone } from '@/utils/dateUtils'
 
 export interface ProcessedFinancialRecords {
   financialRecords: FinancialRecord[]
@@ -48,8 +49,8 @@ export class FinancialRecordsService {
       }
     }
 
-    const currentMonth = new Date().getMonth() + 1
-    const currentYear = new Date().getFullYear()
+    const currentMonth = createDateWithoutTimezone(new Date()).getMonth() + 1
+    const currentYear = createDateWithoutTimezone(new Date()).getFullYear()
     
     // Cria uma cópia dos registros
     const financialRecords = [...records]
@@ -82,16 +83,16 @@ export class FinancialRecordsService {
   static filterRecordsByPeriod(records: FinancialRecord[], period: 'all' | '6m' | '12m' | '24m'): FinancialRecord[] {
     if (period === 'all') return records
 
-    const currentDate = new Date()
+    const currentDate = createDateWithoutTimezone(new Date())
     const months = parseInt(period)
-    const cutoffDate = new Date(
+    const cutoffDate = createDateWithoutTimezone(new Date(
       currentDate.getFullYear(),
       currentDate.getMonth() - months,
       1
-    )
+    ))
 
     return records.filter(record => {
-      const recordDate = new Date(record.record_year, record.record_month - 1, 1)
+      const recordDate = createDateWithoutTimezone(new Date(record.record_year, record.record_month - 1, 1))
       return recordDate >= cutoffDate
     })
   }

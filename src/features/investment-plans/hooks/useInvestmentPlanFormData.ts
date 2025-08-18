@@ -1,6 +1,7 @@
 import { useCallback } from 'react'
 import { RISK_PROFILES } from '@/constants/riskProfiles'
 import type { FormData } from '@/utils/investmentPlanCalculations'
+import { createDateWithoutTimezone } from '@/utils/dateUtils'
 
 interface UseInvestmentPlanFormDataProps {
   setFormData: React.Dispatch<React.SetStateAction<FormData>>
@@ -14,10 +15,10 @@ export function useInvestmentPlanFormData({
 
   // Process fetched plan data
   const processPlanData = useCallback((planData: any, profileData: any) => {
-    setBirthDate(profileData.birth_date ? new Date(profileData.birth_date) : null)
+    setBirthDate(profileData.birth_date ? createDateWithoutTimezone(profileData.birth_date) : null)
 
     // Adjust the date to show the correct date when editing
-    const planDate = new Date(planData.plan_initial_date)
+    const planDate = createDateWithoutTimezone(planData.plan_initial_date)
     planDate.setDate(planDate.getDate() - 1)
 
     // Find the matching risk profile for the plan's currency
@@ -47,7 +48,7 @@ export function useInvestmentPlanFormData({
 
   // Process client profile data
   const processClientProfileData = useCallback((profileData: any) => {
-    setBirthDate(profileData.birth_date ? new Date(profileData.birth_date) : null)
+    setBirthDate(profileData.birth_date ? createDateWithoutTimezone(profileData.birth_date) : null)
   }, [setBirthDate])
 
   // Validate form data

@@ -2,6 +2,7 @@ import { supabase } from '@/lib/supabase'
 import { FinancialRecord, InvestmentPlan } from '@/types/financial'
 import { CurrencyCode } from '@/utils/currency'
 import { fetchIPCARates, fetchUSCPIRates, fetchEuroCPIRates } from '@/lib/bcb-api'
+import { createDateWithoutTimezone } from '@/utils/dateUtils'
 import { calculateCompoundedRates, yearlyReturnRateToMonthlyReturnRate } from '@/lib/financial-math'
 
 export interface CSVRecord {
@@ -85,7 +86,7 @@ export class FinancialRecordsManagementService {
         return null
       }
 
-      return data
+      return data as InvestmentPlan
     } catch (error) {
       console.error('Error in fetchInvestmentPlanByUserId:', error)
       return null
@@ -348,19 +349,19 @@ export class FinancialRecordsManagementService {
       // Buscar taxas de inflação apropriadas baseadas na moeda
       let response
       if (investmentPlan.currency === 'USD') {
-        response = fetchUSCPIRates(startDate, new Date().toLocaleDateString('pt-BR', {
+        response = fetchUSCPIRates(startDate, createDateWithoutTimezone(new Date()).toLocaleDateString('pt-BR', {
           day: '2-digit',
           month: '2-digit',
           year: 'numeric'
         }))
       } else if (investmentPlan.currency === 'EUR') {
-        response = fetchEuroCPIRates(startDate, new Date().toLocaleDateString('pt-BR', {
+        response = fetchEuroCPIRates(startDate, createDateWithoutTimezone(new Date()).toLocaleDateString('pt-BR', {
           day: '2-digit',
           month: '2-digit',
           year: 'numeric'
         }))
       } else {
-        response = fetchIPCARates(startDate, new Date().toLocaleDateString('pt-BR', {
+        response = fetchIPCARates(startDate, createDateWithoutTimezone(new Date()).toLocaleDateString('pt-BR', {
           day: '2-digit',
           month: '2-digit',
           year: 'numeric'
@@ -370,7 +371,7 @@ export class FinancialRecordsManagementService {
       // Criar um mapa de taxas de inflação por mês/ano para busca mais fácil
       const cpiRateMap = new Map()
       response.forEach(item => {
-        const date = new Date(item.date)
+        const date = createDateWithoutTimezone(item.date)
         const year = date.getFullYear()
         const month = date.getMonth() + 1 // JavaScript months are 0-indexed
         const key = `${year}-${month}`
