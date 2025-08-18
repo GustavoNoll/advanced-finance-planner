@@ -2,6 +2,7 @@ import { useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 import { getCurrencySymbol } from '@/utils/currency'
 import type { CurrencyCode } from '@/utils/currency'
+import { createDateWithoutTimezone } from '@/utils/dateUtils'
 
 interface UseInvestmentPlanUIProps {
   birthDate: Date | null
@@ -18,9 +19,12 @@ export function useInvestmentPlanUI({ birthDate, formData }: UseInvestmentPlanUI
   const ageOptions = useMemo(() => {
     if (!birthDate) return []
 
-    return Array.from({ length: 121 - (new Date().getFullYear() - new Date(birthDate).getFullYear()) }, (_, i) => {
-      const currentAge = new Date().getFullYear() - new Date(birthDate).getFullYear()
-      const monthDiff = new Date().getMonth() - new Date(birthDate).getMonth()
+    const currentDate = createDateWithoutTimezone(new Date())
+    const birthDateObj = createDateWithoutTimezone(birthDate)
+    
+    return Array.from({ length: 121 - (currentDate.getFullYear() - birthDateObj.getFullYear()) }, (_, i) => {
+      const currentAge = currentDate.getFullYear() - birthDateObj.getFullYear()
+      const monthDiff = currentDate.getMonth() - birthDateObj.getMonth()
       const adjustedCurrentAge = monthDiff < 0 ? currentAge - 1 : currentAge
       const age = adjustedCurrentAge + i
       return { age, label: `${age} ${t('investmentPlan.form.years')}` }
@@ -29,7 +33,7 @@ export function useInvestmentPlanUI({ birthDate, formData }: UseInvestmentPlanUI
 
   // Generate year options data
   const yearOptions = useMemo(() => {
-    const currentYear = new Date().getFullYear()
+    const currentYear = createDateWithoutTimezone(new Date()).getFullYear()
     const years = []
     for (let i = currentYear; i <= currentYear + 100; i++) {
       years.push({ year: i, label: i.toString() })
@@ -45,12 +49,12 @@ export function useInvestmentPlanUI({ birthDate, formData }: UseInvestmentPlanUI
   // Get current month and year from plan end date
   const currentMonth = useMemo(() => {
     if (!formData.planEndAccumulationDate) return 0
-    return new Date(formData.planEndAccumulationDate).getMonth()
+    return createDateWithoutTimezone(formData.planEndAccumulationDate).getMonth()
   }, [formData.planEndAccumulationDate])
 
   const currentYear = useMemo(() => {
-    if (!formData.planEndAccumulationDate) return new Date().getFullYear()
-    return new Date(formData.planEndAccumulationDate).getFullYear()
+    if (!formData.planEndAccumulationDate) return createDateWithoutTimezone(new Date()).getFullYear()
+    return createDateWithoutTimezone(formData.planEndAccumulationDate).getFullYear()
   }, [formData.planEndAccumulationDate])
 
   // Month options

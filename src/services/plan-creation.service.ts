@@ -1,6 +1,7 @@
 import { supabase } from '@/lib/supabase'
 import { InvestmentPlan } from '@/types/financial'
 import { calculateFutureValues, isCalculationReady, type FormData, type Calculations } from '@/utils/investmentPlanCalculations'
+import { createDateWithoutTimezone } from '@/utils/dateUtils'
 
 export interface PlanCreationData {
   user_id: string
@@ -99,7 +100,7 @@ export class PlanCreationService {
         adjustIncomeForInflation: planData.adjust_income_for_inflation,
         limitAge: planData.limit_age?.toString() || "100",
         legacyAmount: planData.legacy_amount?.toString() || "1000000",
-        currency: planData.currency,
+        currency: planData.currency as 'BRL' | 'USD' | 'EUR',
         oldPortfolioProfitability: planData.old_portfolio_profitability?.toString() || null,
         hasOldPortfolio: planData.old_portfolio_profitability !== null,
       }
@@ -113,9 +114,9 @@ export class PlanCreationService {
       const calculations = calculateFutureValues(formData, birthDate)
 
       // Ajustar datas (adicionar um dia para evitar problemas de timezone)
-      const adjustedDate = new Date(planData.plan_initial_date)
+      const adjustedDate = createDateWithoutTimezone(planData.plan_initial_date)
       adjustedDate.setDate(adjustedDate.getDate() + 1)
-      const adjustedEndDate = new Date(planData.plan_end_accumulation_date)
+      const adjustedEndDate = createDateWithoutTimezone(planData.plan_end_accumulation_date)
       adjustedEndDate.setDate(adjustedEndDate.getDate() + 1)
 
       // Inserir plano no banco
@@ -179,7 +180,7 @@ export class PlanCreationService {
    * Calcula a idade atual baseada na data de nascimento
    */
   static calculateCurrentAge(birthDate: Date): number {
-    const today = new Date()
+          const today = createDateWithoutTimezone(new Date())
     let age = today.getFullYear() - birthDate.getFullYear()
     const monthDiff = today.getMonth() - birthDate.getMonth()
     

@@ -11,6 +11,7 @@ import {
   HoverCardTrigger,
 } from "@/components/ui/hover-card";
 import { CurrencyCode, formatCurrency } from "@/utils/currency";
+import { createDateWithoutTimezone } from '@/utils/dateUtils';
 
 interface SavingsGoalProps {
   allFinancialRecords: FinancialRecord[];
@@ -61,9 +62,9 @@ export const SavingsGoal = ({ allFinancialRecords, investmentPlan, profile, plan
 
   const calculateProjectedAge = (): ProjectedAgeResult | 'ageNotAvailable' | 'metaNotAchieved' => {
     if (planProgressData) {
-      const birthDateObj = birthDate ? new Date(birthDate) : null;
-      const finalAgeDate = new Date(investmentPlan?.plan_end_accumulation_date);
-      if (!birthDateObj) return 'ageNotAvailable';
+      const birthDateObj = birthDate ? createDateWithoutTimezone(birthDate) : null;
+      const finalAgeDate = investmentPlan?.plan_end_accumulation_date ? createDateWithoutTimezone(investmentPlan.plan_end_accumulation_date) : null;
+      if (!birthDateObj || !finalAgeDate) return 'ageNotAvailable';
       const monthsDifference = utils.calculateMonthsBetweenDates(planProgressData.projectedRetirementDate, finalAgeDate);
       const isAheadOfSchedule = monthsDifference > 0;
       

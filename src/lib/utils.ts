@@ -16,11 +16,13 @@ export function formatCurrency(value: number): string {
   }).format(value);
 }
 
+import { createDateWithoutTimezone } from '@/utils/dateUtils';
+
 export const calculateAge = (birthDate: string | Date | null | undefined): number => {
   if (!birthDate) return 0;
   
-  const date = new Date(birthDate);
-  const today = new Date();
+  const date = createDateWithoutTimezone(birthDate);
+  const today = createDateWithoutTimezone(new Date());
   let age = today.getFullYear() - date.getFullYear();
   const monthDiff = today.getMonth() - date.getMonth();
   

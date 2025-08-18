@@ -19,6 +19,7 @@ import type { GoalFormValues, EventFormValues } from '@/types/financial'
 import { useTranslation } from 'react-i18next'
 import { CurrencyCode } from "@/utils/currency"
 import { InvestmentPlan } from "@/types/financial"
+import { createDateWithoutTimezone, createDateFromYearMonth } from '@/utils/dateUtils'
 
 // Tipos para os dados
 type MonthlyData = {
@@ -62,12 +63,12 @@ type PatrimonialProjectionChartProps = {
 
 // Função para converter mês e ano em objeto Date
 const getDateFromMonthYear = (year: number, month: number): Date => {
-  return new Date(year, month - 1, 1)
+  return createDateFromYearMonth(year, month)
 }
 
 // Função para converter string de data ISO em objeto Date
 const parseISODate = (dateString: string): Date => {
-  return new Date(dateString)
+  return createDateWithoutTimezone(dateString)
 }
 
 // Mapeamento de ícones baseado no tipo
@@ -219,7 +220,7 @@ export default function PatrimonialProjectionChart({
     if (chartData.length === 0) {
       return scaleTime<number>({
         range: [0, innerWidth],
-        domain: [new Date(), new Date()],
+        domain: [createDateWithoutTimezone(new Date()), createDateWithoutTimezone(new Date())],
       })
     }
     return scaleTime<number>({
@@ -486,7 +487,7 @@ export default function PatrimonialProjectionChart({
               // Calcule idade exata usando birthDate
               let ageLabel = ''
               if (birthDate) {
-                const birth = new Date(birthDate)
+                const birth = createDateWithoutTimezone(birthDate)
                 let age = d.getFullYear() - birth.getFullYear()
                 const m = d.getMonth() - birth.getMonth()
                 if (m < 0) age--
@@ -678,7 +679,7 @@ export default function PatrimonialProjectionChart({
             <span className="text-gray-900 dark:text-gray-100 font-semibold text-base">
               {formatDate(tooltipData.date)}
               {birthDate && tooltipData.date && (() => {
-                const birth = new Date(birthDate)
+                const birth = createDateWithoutTimezone(birthDate)
                 const d = tooltipData.date
                 let age = d.getFullYear() - birth.getFullYear()
                 const m = d.getMonth() - birth.getMonth()

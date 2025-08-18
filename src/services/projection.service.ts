@@ -2,6 +2,7 @@ import { generateProjectionData, YearlyProjectionData } from '@/lib/chart-projec
 import { processPlanProgressData, PlanProgressData } from '@/lib/plan-progress'
 import { FinancialRecord, ProjectedEvent, Goal } from '@/types/financial'
 import { Profile, InvestmentPlan } from '@/types/financial'
+import { createDateWithoutTimezone } from '@/utils/dateUtils'
 
 export interface ProjectionData {
   projectionData: YearlyProjectionData[]
@@ -92,7 +93,7 @@ export class ProjectionService {
 
     try {
       // Encontra o mês de aposentadoria e obtém os dados do mês anterior
-      const retirementDate = new Date(investmentPlan.plan_end_accumulation_date)
+      const retirementDate = createDateWithoutTimezone(investmentPlan.plan_end_accumulation_date)
       const retirementYear = projectionData.find((year: any) => year.year === retirementDate.getFullYear())
       const retirementMonthIndex = retirementYear?.months?.findIndex((month: any) => month.month === retirementDate.getMonth() + 1)
       let plannedFuturePresentValue = 0
@@ -161,7 +162,7 @@ export class ProjectionService {
 
     try {
       // Encontra os dados do ano de aposentadoria
-      const retirementDate = new Date(investmentPlan.plan_end_accumulation_date)
+      const retirementDate = createDateWithoutTimezone(investmentPlan.plan_end_accumulation_date)
       const retirementYear = projectionData.find((year: any) => year.year === retirementDate.getFullYear())
       
       if (!retirementYear) {

@@ -2,6 +2,7 @@ import { yearlyReturnRateToMonthlyReturnRate, calculateCompoundedRates } from '.
 import { ChartDataPoint, FinancialRecord, Goal, InvestmentPlan, MonthNumber, ProjectedEvent } from '@/types/financial';
 import { createIPCARatesMap } from './inflation-utils';
 import { processGoalsForChart, processEventsForChart, ProcessedGoalEvent } from '@/lib/financial-goals-processor';
+import { createDateWithoutTimezone, createDateFromYearMonth } from '@/utils/dateUtils';
 
 interface DataPoint {
   age: string;
@@ -10,7 +11,8 @@ interface DataPoint {
 }
 
 interface MonthlyProjectionData {
-  month: number;
+  month: MonthNumber;
+  year: number;
   contribution: number;
   withdrawal: number;
   isHistorical: boolean;
@@ -98,17 +100,31 @@ function createProjectionContext(
     return null;
   }
 
-  const birthDate = new Date(profile.birth_date);
+  if (!profile.birth_date) {
+    return null;
+  }
+  
+  const birthDate = createDateWithoutTimezone(profile.birth_date);
   const birthYear = birthDate.getFullYear();
-  const planStartDate = new Date(investmentPlan.plan_initial_date);
+  if (!investmentPlan.plan_initial_date) {
+    return null;
+  }
+  const planStartDate = createDateWithoutTimezone(investmentPlan.plan_initial_date);
   const initialAge = planStartDate.getFullYear() - birthYear;
   const endAge = getEndAge(investmentPlan);
   const yearsUntilEnd = endAge - initialAge;
   const startYear = planStartDate.getFullYear();
   const startMonth = planStartDate.getMonth() + 1;
-  const endDate = new Date(investmentPlan.plan_end_accumulation_date);
+  if (!investmentPlan.plan_end_accumulation_date) {
+    return null;
+  }
+  const endDate = createDateWithoutTimezone(investmentPlan.plan_end_accumulation_date);
   const limitAgeDate = new Date(birthDate);
   limitAgeDate.setFullYear(birthDate.getFullYear() + endAge);
+  // Adicionar +1 mês para incluir o mês do limite + 1
+  limitAgeDate.setMonth(limitAgeDate.getMonth() + 1);
+  // Definir como último dia do mês para incluir o mês completo
+  limitAgeDate.setDate(new Date(limitAgeDate.getFullYear(), limitAgeDate.getMonth() + 1, 0).getDate());
   
   const oldPortfolioProfitability = investmentPlan.old_portfolio_profitability;
   const defaultMonthlyInflationRate = yearlyReturnRateToMonthlyReturnRate(investmentPlan.inflation / 100);
@@ -132,10 +148,10 @@ function createProjectionContext(
 
   // Parse chart options dates
   const changeDepositDate = chartOptions?.changeMonthlyDeposit?.date 
-    ? new Date(chartOptions.changeMonthlyDeposit.date) 
+    ? createDateWithoutTimezone(chartOptions.changeMonthlyDeposit.date) 
     : null;
   const changeWithdrawDate = chartOptions?.changeMontlhyWithdraw?.date 
-    ? new Date(chartOptions.changeMontlhyWithdraw.date) 
+    ? createDateWithoutTimezone(chartOptions.changeMontlhyWithdraw.date) 
     : null;
 
   return {
@@ -165,20 +181,6 @@ function createProjectionContext(
     limitAgeDate
   };
 }
-
-function shouldApplyContribution(
-  year: number, 
-  month: number, 
-  startYear: number, 
-  startMonth: number
-): boolean {
-  // No primeiro mês do plano, não aplicar contribuição
-  if (year === startYear && month === startMonth) {
-    return false;
-  }
-  return true;
-}
-
 function calculateMonthlyRates(
   year: number,
   month: number,
@@ -216,19 +218,21 @@ function createHistoricalMonthData(
   monthlyOldPortfolioReturnRate: number,
   monthlyInflationRate: number,
   accumulatedInflation: number,
-  expectedReturn: number
+  expectedReturn: number,
+  birthYear: number
 ): MonthlyProjectionData {
   const contribution = historicalRecord.monthly_contribution > 0 ? historicalRecord.monthly_contribution : 0;
   const withdrawal = historicalRecord.monthly_contribution < 0 ? Math.abs(historicalRecord.monthly_contribution) : 0;
 
   return {
-    month,
+    month: month as MonthNumber,
+    year,
     contribution,
     withdrawal,
+    isHistorical: true,
     balance: historicalRecord.ending_balance,
     planned_balance: plannedBalance,
     goalsEventsImpact: historicalRecord.events_balance || 0,
-    isHistorical: true,
     retirement: isRetirementAge,
     difference_from_planned_balance: historicalRecord.ending_balance - plannedBalance,
     projected_lifetime_withdrawal: historicalRecord.ending_balance / (expectedReturn / 100),
@@ -242,16 +246,19 @@ function createHistoricalMonthData(
 
 function createPastMonthData(
   month: number,
+  year: number,
   plannedBalance: number,
   projectedBalance: number,
   oldPortfolioBalance: number | null,
   monthlyReturnRate: number,
   monthlyInflationRate: number,
   accumulatedInflation: number,
-  expectedReturn: number
+  expectedReturn: number,
+  birthYear: number
 ): MonthlyProjectionData {
   return {
-    month,
+    month: month as MonthNumber,
+    year,
     contribution: 0,
     withdrawal: 0,
     balance: 0,
@@ -271,6 +278,7 @@ function createPastMonthData(
 
 function createRetirementMonthData(
   month: number,
+  year: number,
   projectedBalance: number,
   plannedBalance: number,
   oldPortfolioBalance: number | null,
@@ -280,12 +288,14 @@ function createRetirementMonthData(
   accumulatedInflation: number,
   monthlyWithdrawal: number,
   goalsEventsImpact: number,
-  expectedReturn: number
+  expectedReturn: number,
+  birthYear: number
 ): MonthlyProjectionData {
   const monthlyReturn = projectedBalance * monthlyReturnRate;
 
   return {
-    month,
+    month: month as MonthNumber,
+    year,
     contribution: 0,
     withdrawal: monthlyWithdrawal,
     balance: projectedBalance,
@@ -306,6 +316,7 @@ function createRetirementMonthData(
 
 function createFutureMonthData(
   month: number,
+  year: number,
   projectedBalance: number,
   plannedBalance: number,
   oldPortfolioBalance: number | null,
@@ -314,10 +325,12 @@ function createFutureMonthData(
   accumulatedInflation: number,
   goalsEventsImpact: number,
   monthlyDeposit: number,
-  expectedReturn: number
+  expectedReturn: number,
+  birthYear: number
 ): MonthlyProjectionData {
   return {
-    month,
+    month: month as MonthNumber,
+    year,
     contribution: monthlyDeposit,
     withdrawal: 0,
     balance: projectedBalance,
@@ -366,143 +379,147 @@ export function generateProjectionData(
   let accumulatedInflation = 1;
   let lastHistoricalRecord: Date | null = null;
 
-  for (let i = 0; i <= context.yearsUntilEnd; i++) {
-    const age = context.initialAge + i;
-    const year = context.startYear + i;
+  // Inicializar data atual como a data de início do plano
+  const startDate = new Date(context.planStartDate);
+  const endDate = context.limitAgeDate || (context.birthDate ? createDateWithoutTimezone(context.birthDate) : null);
+  if (!endDate) {
+    return [];
+  }
+  endDate.setFullYear(context.birthDate.getFullYear() + context.endAge);
+  // Definir como último dia do mês para incluir o mês completo
+  endDate.setDate(new Date(endDate.getFullYear(), endDate.getMonth() + 1, 0).getDate());
+
+  // Agrupar dados por ano
+  const yearlyDataMap = new Map<number, MonthlyProjectionData[]>();
+
+  // eslint-disable-next-line prefer-const
+  let currentDate = new Date(startDate);
+  // Definir como primeiro dia do mês para começar no início do mês
+  currentDate.setDate(1);
+  while (currentDate <= endDate) {
+    const year = currentDate.getFullYear();
+    const month = currentDate.getMonth() + 1;
+  
+
+    // Check for deposit/withdrawal changes
+    if (context.changeDepositDate && 
+        context.changeDepositDate.getFullYear() === year && 
+        context.changeDepositDate.getMonth() + 1 === month) {
+      currentMonthlyDeposit = chartOptions!.changeMonthlyDeposit!.value;
+    }
     
-    const monthlyData = Array.from({ length: 12 }, (_, month) => {
-      const currentMonthNumber = month + 1;
-      
-      // Skip months before the plan start month in the first year
-      if (i === 0 && currentMonthNumber < context.startMonth) {
-        return null;
-      }
+    if (context.changeWithdrawDate && 
+        context.changeWithdrawDate.getFullYear() === year && 
+        context.changeWithdrawDate.getMonth() + 1 === month) {
+      currentMonthlyWithdrawal = chartOptions!.changeMontlhyWithdraw!.value;
+    }
 
-      // Skip months after the limit age date
-      if (context.limitAgeDate && year > context.limitAgeDate.getFullYear() ||
-        (year === context.limitAgeDate.getFullYear() && currentMonthNumber > context.limitAgeDate.getMonth() + 1)) {
-        return null;
-      }
+    const isRetirementAge = year > context.endDate.getFullYear() ||
+      (year === context.endDate.getFullYear() && month >= context.endDate.getMonth() + 2);
 
-      // Check for deposit/withdrawal changes
-      if (context.changeDepositDate && 
-          context.changeDepositDate.getFullYear() === year && 
-          context.changeDepositDate.getMonth() + 1 === currentMonthNumber) {
-        currentMonthlyDeposit = chartOptions!.changeMonthlyDeposit!.value;
-      }
-      
-      if (context.changeWithdrawDate && 
-          context.changeWithdrawDate.getFullYear() === year && 
-          context.changeWithdrawDate.getMonth() + 1 === currentMonthNumber) {
-        currentMonthlyWithdrawal = chartOptions!.changeMontlhyWithdraw!.value;
-      }
+    // Calculate rates
+    const { monthlyInflationRate, monthlyReturnRate, monthlyOldPortfolioReturnRate } = 
+      calculateMonthlyRates(
+        year, 
+        month, 
+        context.ipcaRatesMap, 
+        context.defaultMonthlyInflationRate,
+        context.monthlyExpectedReturnRate,
+        context.monthlyOldPortfolioExpectedReturnRate
+      );
+    
+    accumulatedInflation *= (1 + monthlyInflationRate);
 
-      const isRetirementAge = year > context.endDate.getFullYear() ||
-        (year === context.endDate.getFullYear() && currentMonthNumber >= context.endDate.getMonth() + 2);
+    // Adjust for inflation
+    if (investmentPlan.adjust_contribution_for_inflation && !isRetirementAge) {
+      currentMonthlyDeposit *= (1 + monthlyInflationRate);
+    }
+    if (investmentPlan.adjust_income_for_inflation) {
+      currentMonthlyWithdrawal *= (1 + monthlyInflationRate);
+    }
+    
+    // Handle goals and events for planned balance
+    plannedBalance = handleMonthlyGoalsAndEvents(
+      plannedBalance,
+      year,
+      month - 1,
+      accumulatedInflation,
+      goalsForChart,
+      eventsForChart,
+    );
 
-      // Calculate rates
-      const { monthlyInflationRate, monthlyReturnRate, monthlyOldPortfolioReturnRate } = 
-        calculateMonthlyRates(
-          year, 
-          currentMonthNumber, 
-          context.ipcaRatesMap, 
-          context.defaultMonthlyInflationRate,
-          context.monthlyExpectedReturnRate,
-          context.monthlyOldPortfolioExpectedReturnRate
-        );
-      
-      accumulatedInflation *= (1 + monthlyInflationRate);
-
-      // Adjust for inflation
-      if (investmentPlan.adjust_contribution_for_inflation && !isRetirementAge) {
-        currentMonthlyDeposit *= (1 + monthlyInflationRate);
-      }
-      if (investmentPlan.adjust_income_for_inflation) {
-        currentMonthlyWithdrawal *= (1 + monthlyInflationRate);
-      }
-      
-      // Handle goals and events for planned balance
-      plannedBalance = handleMonthlyGoalsAndEvents(
-        plannedBalance,
+    if (context.oldPortfolioProfitability) {
+      oldPortfolioBalance = handleMonthlyGoalsAndEvents(
+        oldPortfolioBalance!,
         year,
-        currentMonthNumber - 1,
+        month - 1,
         accumulatedInflation,
         goalsForChart,
         eventsForChart,
       );
+    }
 
+    // Check for historical record
+    const historicalKey = `${year}-${month}`;
+    const historicalRecord = context.historicalRecordsMap.get(historicalKey);
+    const isInPast = lastHistoricalRecord 
+      ? lastHistoricalRecord > createDateFromYearMonth(year, month) 
+      : createDateFromYearMonth(year, month) < createDateFromYearMonth(new Date().getFullYear(), new Date().getMonth() + 1);
+    let monthlyData: MonthlyProjectionData;
+
+    if (historicalRecord) {
+      console.log('historicalRecord');
+      lastHistoricalRecord = createDateFromYearMonth(year, month);
+      
+      // Apply returns and contribution (if applicable)
+      const contribution = currentMonthlyDeposit;
+      
+      plannedBalance = plannedBalance * (1 + monthlyReturnRate) + contribution;
       if (context.oldPortfolioProfitability) {
-        oldPortfolioBalance = handleMonthlyGoalsAndEvents(
-          oldPortfolioBalance!,
-          year,
-          currentMonthNumber - 1,
-          accumulatedInflation,
-          goalsForChart,
-          eventsForChart,
-        );
+        oldPortfolioBalance = oldPortfolioBalance! * (1 + monthlyOldPortfolioReturnRate) + contribution;
       }
 
-      // Check for historical record
-      const historicalKey = `${year}-${currentMonthNumber}`;
-      const historicalRecord = context.historicalRecordsMap.get(historicalKey);
-      const isInPast = lastHistoricalRecord 
-        ? lastHistoricalRecord > new Date(year, month) 
-        : new Date(year, month) < new Date();
-
-      if (historicalRecord) {
-        lastHistoricalRecord = new Date(year, month + 1);
-        
-        // Apply returns and contribution (if applicable)
-        const shouldContribute = shouldApplyContribution(year, currentMonthNumber, context.startYear, context.startMonth);
-        const contribution = shouldContribute ? currentMonthlyDeposit : 0;
-        
-        plannedBalance = plannedBalance * (1 + monthlyReturnRate) + contribution;
-        if (context.oldPortfolioProfitability) {
-          oldPortfolioBalance = oldPortfolioBalance! * (1 + monthlyOldPortfolioReturnRate) + contribution;
-        }
-
-        return createHistoricalMonthData(
-          historicalRecord,
-          currentMonthNumber,
-          year,
-          plannedBalance,
-          oldPortfolioBalance,
-          isRetirementAge,
-          monthlyReturnRate,
-          monthlyOldPortfolioReturnRate,
-          monthlyInflationRate,
-          accumulatedInflation,
-          investmentPlan.expected_return
-        );
+      monthlyData = createHistoricalMonthData(
+        historicalRecord,
+        month,
+        year,
+        plannedBalance,
+        oldPortfolioBalance,
+        isRetirementAge,
+        monthlyReturnRate,
+        monthlyOldPortfolioReturnRate,
+        monthlyInflationRate,
+        accumulatedInflation,
+        investmentPlan.expected_return,
+        context.birthYear
+      );
+    } else if (isInPast) {
+      console.log('isInPast');
+      const contribution = currentMonthlyDeposit;
+      
+      plannedBalance = plannedBalance * (1 + monthlyReturnRate) + contribution;
+      if (context.oldPortfolioProfitability) {
+        oldPortfolioBalance = oldPortfolioBalance! * (1 + monthlyOldPortfolioReturnRate) + contribution;
       }
-
-      if (isInPast) {
-        const shouldContribute = shouldApplyContribution(year, currentMonthNumber, context.startYear, context.startMonth);
-        const contribution = shouldContribute ? currentMonthlyDeposit : 0;
-        
-        plannedBalance = plannedBalance * (1 + monthlyReturnRate) + contribution;
-        if (context.oldPortfolioProfitability) {
-          oldPortfolioBalance = oldPortfolioBalance! * (1 + monthlyOldPortfolioReturnRate) + contribution;
-        }
-
-        return createPastMonthData(
-          currentMonthNumber,
-          plannedBalance,
-          projectedBalance,
-          oldPortfolioBalance,
-          monthlyReturnRate,
-          monthlyInflationRate,
-          accumulatedInflation,
-          investmentPlan.expected_return
-        );
-      }
-
+      monthlyData = createPastMonthData(
+        month,
+        year,
+        plannedBalance,
+        projectedBalance,
+        oldPortfolioBalance,
+        monthlyReturnRate,
+        monthlyInflationRate,
+        accumulatedInflation,
+        investmentPlan.expected_return,
+        context.birthYear
+      );
+    } else {
       // Future month
       const previousBalance = projectedBalance;
       projectedBalance = handleMonthlyGoalsAndEvents(
         projectedBalance,
         year,
-        currentMonthNumber - 1,
+        month - 1,
         accumulatedInflation,
         goalsForChart,
         eventsForChart,
@@ -510,7 +527,6 @@ export function generateProjectionData(
       const goalsEventsImpact = projectedBalance - previousBalance;
 
       if (isRetirementAge) {
-        const monthlyReturn = projectedBalance * monthlyReturnRate;
         const withdrawal = currentMonthlyWithdrawal;
         
         projectedBalance = (projectedBalance - withdrawal) * (1 + monthlyReturnRate);
@@ -518,9 +534,9 @@ export function generateProjectionData(
         if (context.oldPortfolioProfitability) {
           oldPortfolioBalance = (oldPortfolioBalance! - withdrawal) * (1 + monthlyOldPortfolioReturnRate);
         }
-
-        return createRetirementMonthData(
-          currentMonthNumber,
+        monthlyData = createRetirementMonthData(
+          month,
+          year,
           projectedBalance,
           plannedBalance,
           oldPortfolioBalance,
@@ -530,34 +546,49 @@ export function generateProjectionData(
           accumulatedInflation,
           withdrawal,
           goalsEventsImpact,
-          investmentPlan.expected_return
+          investmentPlan.expected_return,
+          context.birthYear
+        );
+      } else {
+        // Regular future month
+        const contribution = currentMonthlyDeposit;
+        
+        projectedBalance = projectedBalance * (1 + monthlyReturnRate) + contribution;
+        plannedBalance = plannedBalance * (1 + monthlyReturnRate) + contribution;
+        if (context.oldPortfolioProfitability) {
+          oldPortfolioBalance = oldPortfolioBalance! * (1 + monthlyOldPortfolioReturnRate) + contribution;
+        }
+        monthlyData = createFutureMonthData(
+          month,
+          year,
+          projectedBalance,
+          plannedBalance,
+          oldPortfolioBalance,
+          monthlyReturnRate,
+          monthlyInflationRate,
+          accumulatedInflation,
+          goalsEventsImpact,
+          contribution,
+          investmentPlan.expected_return,
+          context.birthYear
         );
       }
+    }
 
-      // Regular future month
-      const shouldContribute = shouldApplyContribution(year, currentMonthNumber, context.startYear, context.startMonth);
-      const contribution = shouldContribute ? currentMonthlyDeposit : 0;
-      
-      projectedBalance = projectedBalance * (1 + monthlyReturnRate) + contribution;
-      plannedBalance = plannedBalance * (1 + monthlyReturnRate) + contribution;
-      if (context.oldPortfolioProfitability) {
-        oldPortfolioBalance = oldPortfolioBalance! * (1 + monthlyOldPortfolioReturnRate) + contribution;
-      }
+    // Adicionar dados mensais ao mapa do ano
+    if (!yearlyDataMap.has(year)) {
+      yearlyDataMap.set(year, []);
+    }
+    yearlyDataMap.get(year)!.push(monthlyData);
 
-      return createFutureMonthData(
-        currentMonthNumber,
-        projectedBalance,
-        plannedBalance,
-        oldPortfolioBalance,
-        monthlyReturnRate,
-        monthlyInflationRate,
-        accumulatedInflation,
-        goalsEventsImpact,
-        contribution,
-        investmentPlan.expected_return
-      );
-    }).filter(Boolean) as MonthlyProjectionData[];
+    // Avançar para o próximo mês
+    currentDate.setMonth(currentDate.getMonth() + 1);
+  }
 
+  // Converter mapa em array de dados anuais
+  for (const [year, monthlyData] of yearlyDataMap) {
+    const age = year - context.birthYear;
+    
     if (monthlyData.length > 0) {
       const yearlyContribution = monthlyData.reduce((sum, month) => sum + month.contribution, 0);
       const yearlyWithdrawal = monthlyData.reduce((sum, month) => sum + month.withdrawal, 0);
@@ -657,7 +688,7 @@ export function generateDataPoints(
   yearsUntilEnd: number,
   birthYear: number
 ): DataPoint[] {
-  const planStartDate = new Date(investmentPlan.plan_initial_date);
+  const planStartDate = createDateWithoutTimezone(investmentPlan.plan_initial_date);
   const startYear = planStartDate.getFullYear();
   const startMonth = planStartDate.getMonth() + 1;
   const initialAge = startYear - birthYear;

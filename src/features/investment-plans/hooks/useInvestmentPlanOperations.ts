@@ -5,6 +5,7 @@ import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/components/auth/AuthProvider'
 import { calculateFutureValues } from '@/utils/investmentPlanCalculations'
 import { useTranslation } from 'react-i18next'
+import { createDateWithoutTimezone } from '@/utils/dateUtils'
 import type { FormData } from '@/utils/investmentPlanCalculations'
 
 interface UseInvestmentPlanOperationsProps {
@@ -145,10 +146,10 @@ export function useInvestmentPlanOperations({
       const calculations = calculateFutureValues(formData, birthDate)
       
       // Adjust the date to prevent UTC offset
-      const adjustedDate = new Date(formData.plan_initial_date)
+      const adjustedDate = createDateWithoutTimezone(formData.plan_initial_date)
       adjustedDate.setDate(adjustedDate.getDate() + 1)
 
-      const adjustedEndDate = new Date(formData.planEndAccumulationDate)
+      const adjustedEndDate = createDateWithoutTimezone(formData.planEndAccumulationDate)
       adjustedEndDate.setDate(adjustedEndDate.getDate() + 1)
       
       const { data, error } = await supabase
@@ -217,10 +218,10 @@ export function useInvestmentPlanOperations({
       const calculations = calculateFutureValues(formData, birthDate)
       
       // Adjust the date to prevent UTC offset
-      const adjustedDate = new Date(formData.plan_initial_date)
+      const adjustedDate = createDateWithoutTimezone(formData.plan_initial_date)
       adjustedDate.setDate(adjustedDate.getDate() + 1)
 
-      const adjustedEndDate = new Date(formData.planEndAccumulationDate)
+      const adjustedEndDate = createDateWithoutTimezone(formData.planEndAccumulationDate)
       adjustedEndDate.setDate(adjustedEndDate.getDate() + 1)
       
       const { error } = await supabase

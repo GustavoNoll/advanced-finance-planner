@@ -2,6 +2,7 @@ import { FinancialRecord, InvestmentPlan, Goal, ProjectedEvent } from "@/types/f
 import { calculateCompoundedRates, nper, yearlyReturnRateToMonthlyReturnRate, pmt, calculateFutureValue, vp } from "@/lib/financial-math";
 import { calculateAccumulatedInflation, calculatePlanAccumulatedInflation } from "./inflation-utils";
 import { processItem } from './financial-goals-processor';
+import { createDateWithoutTimezone, createDateFromYearMonth } from '@/utils/dateUtils';
 
 /**
  * Constants for date calculations
@@ -27,7 +28,7 @@ export const utils = {
    * Creates a date at a specific age based on birth date
    */
   createDateAtAge: (birthDate: Date, age: number): Date => {
-    const date = new Date(birthDate);
+    const date = createDateWithoutTimezone(birthDate);
     date.setFullYear(birthDate.getFullYear() + age);
     return date;
   },
@@ -36,7 +37,7 @@ export const utils = {
    * Adds months to a date
    */
   addMonthsToDate: (date: Date, months: number): Date => {
-    const newDate = new Date(date);
+    const newDate = createDateWithoutTimezone(date);
     newDate.setMonth(date.getMonth() + months + 1);
     return newDate;
   }
@@ -303,16 +304,16 @@ const financialCalculations = {
     let monthsToRetirementSinceNow;
     let referenceDate;
     
-    const planStartDate = new Date(investmentPlan.plan_initial_date);
-    const planEndDate = new Date(investmentPlan.plan_end_accumulation_date);
+    const planStartDate = createDateWithoutTimezone(investmentPlan.plan_initial_date);
+    const planEndDate = createDateWithoutTimezone(investmentPlan.plan_end_accumulation_date);
     const finalAgeDate = planEndDate;
     const monthsToRetirementSinceStart = utils.calculateMonthsBetweenDates(planStartDate, planEndDate);
     monthsToRetirementSinceNow = monthsToRetirementSinceStart;
     const plannedMonths = monthsToRetirementSinceStart;
     if (actualMonth === 0 && actualYear === 0) {
-      referenceDate = new Date(investmentPlan.plan_initial_date);
+      referenceDate = createDateWithoutTimezone(investmentPlan.plan_initial_date);
     } else {
-      referenceDate = new Date(actualYear, actualMonth - 1);
+      referenceDate = createDateFromYearMonth(actualYear, actualMonth);
       // Calculate difference in months
       monthsToRetirementSinceNow = utils.calculateMonthsBetweenDates(referenceDate, planEndDate)
     }
@@ -456,7 +457,7 @@ export function processPlanProgressData(
 ): PlanProgressData | null {
   if (!investmentPlan || !profile.birth_date) return null;
 
-  const birthDate = new Date(profile.birth_date);
+  const birthDate = createDateWithoutTimezone(profile.birth_date);
   const lastRecord = allFinancialRecords[0];
 
   const currentBalance = lastRecord?.ending_balance || investmentPlan.initial_amount;
@@ -464,13 +465,13 @@ export function processPlanProgressData(
   const currentProgress = (currentBalance / investmentGoal) * 100;
   
   // Calculate accumulated inflation from plan start to last record
-  const planStartDate = new Date(investmentPlan.plan_initial_date);
+  const planStartDate = createDateWithoutTimezone(investmentPlan.plan_initial_date);
   const yearDiff = planStartDate.getFullYear() - birthDate.getFullYear();
   const monthDiff = planStartDate.getMonth() - birthDate.getMonth();
   const initialAge = yearDiff + (monthDiff / 12);
   const monthsToEnd = ((investmentPlan.limit_age || 100) - initialAge) * 12;
   const planEndDate = utils.createDateAtAge(birthDate, investmentPlan.limit_age || 100);
-  const lastRecordDate = lastRecord ? new Date(lastRecord.record_year, lastRecord.record_month - 1) : new Date();
+  const lastRecordDate = lastRecord ? createDateFromYearMonth(lastRecord.record_year, lastRecord.record_month) : createDateWithoutTimezone(new Date());
   const accumulatedInflationInBalance = lastRecord?.ending_balance 
     ? calculateAccumulatedInflation(planStartDate, lastRecordDate) 
     : 1;

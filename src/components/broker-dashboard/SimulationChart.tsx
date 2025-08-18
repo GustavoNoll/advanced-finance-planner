@@ -11,6 +11,7 @@ import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
+import { createDateWithoutTimezone, createDateFromYearMonth } from '@/utils/dateUtils';
 
 interface SimulationFormData {
   initialAmount: string;
@@ -195,7 +196,7 @@ function getZoomedChartData({
   }
   
   // Get current date
-  const currentDate = new Date();
+  const currentDate = createDateWithoutTimezone(new Date());
   const currentYear = currentDate.getFullYear();
   const currentMonth = currentDate.getMonth() + 1;
 
@@ -295,7 +296,7 @@ export const SimulationChart = ({
       return Math.floor(Number(point.age)).toString();
     }
     
-    const monthName = new Date(0, point.month - 1).toLocaleString('default', { month: 'short' });
+    const monthName = createDateFromYearMonth(2000, point.month).toLocaleString('default', { month: 'short' });
     return `${Math.floor(Number(point.age))}/${monthName}`;
   };
 

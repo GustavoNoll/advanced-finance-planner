@@ -2,6 +2,47 @@ import { format, parse } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
 /**
+ * Creates a Date object without applying timezone offset
+ * This is useful when you want to work with dates as they are, without timezone conversion
+ * @param dateInput - Date string, Date object, or date components
+ * @returns Date object without timezone adjustment
+ */
+export function createDateWithoutTimezone(dateInput: string | Date | { year: number; month: number; day: number } | null | undefined): Date {
+  if (!dateInput) {
+    throw new Error(`Invalid date input: ${JSON.stringify(dateInput)}`);
+  }
+  
+  if (typeof dateInput === 'string') {
+    // Parse date string and create date without timezone
+    const [year, month, day] = dateInput.split('-').map(Number);
+    return new Date(year, month - 1, day);
+  }
+  
+  if (dateInput instanceof Date) {
+    // Create new date using the original date's components
+    return new Date(dateInput.getFullYear(), dateInput.getMonth(), dateInput.getDate());
+  }
+  
+  // Handle object with year, month, day
+  if (typeof dateInput === 'object' && dateInput !== null && 'year' in dateInput && 'month' in dateInput && 'day' in dateInput) {
+    return new Date(dateInput.year, dateInput.month - 1, dateInput.day);
+  }
+  
+  // If we reach here, the input is invalid
+  throw new Error(`Invalid date input: ${JSON.stringify(dateInput)}`);
+}
+
+/**
+ * Creates a Date object from year and month without applying timezone
+ * @param year - The year
+ * @param month - The month (1-12)
+ * @returns Date object for the first day of the month
+ */
+export function createDateFromYearMonth(year: number, month: number): Date {
+  return new Date(year, month - 1, 1);
+}
+
+/**
  * Rounds up a date to the next month if not on the first day
  * @param date - The date to round up
  * @returns The rounded up date
