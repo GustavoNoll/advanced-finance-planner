@@ -114,7 +114,7 @@ export const calculateFutureValues = (data: FormData, birthDate: Date): Calculat
   
   switch (planType) {
     case "1":
-      presentValue = vp(monthExpectedReturnRate, monthsToRetirement, -desiredIncome, 0);
+      presentValue = vp(monthExpectedReturnRate, monthsToEndMoney, -desiredIncome, 0);
       // revisar
       necessaryFutureValue = formatDecimals(inflationAdjustedIncome / monthExpectedReturnRate);
       necessaryDepositToNecessaryFutureValue = formatDecimals(pmt(monthlyTotalReturn, monthsToRetirement, -initialAmount, necessaryFutureValue), 2);
