@@ -13,6 +13,7 @@ import { useTranslation } from 'react-i18next';
 import { useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
 import { Pencil, Info } from 'lucide-react';
+import { ProfessionalInformation } from '@/services/investment-policy.service';
 
 const professionalInformationSchema = z.object({
   occupation: z.string().min(1, 'Profissão é obrigatória'),
@@ -29,7 +30,7 @@ const professionalInformationSchema = z.object({
 type ProfessionalInformationFormValues = z.infer<typeof professionalInformationSchema>;
 
 interface ProfessionalInformationFormProps {
-  initialData?: ProfessionalInformationFormValues;
+  initialData?: ProfessionalInformation;
   isEditing?: boolean;
   policyId?: string;
   clientId?: string;
@@ -62,8 +63,8 @@ export const ProfessionalInformationForm = ({
       occupation: initialData?.occupation || '',
       work_description: initialData?.work_description || '',
       work_location: initialData?.work_location || '',
-      work_regime: initialData?.work_regime || undefined,
-      tax_declaration_method: initialData?.tax_declaration_method || undefined,
+      work_regime: initialData?.work_regime,
+      tax_declaration_method: initialData?.tax_declaration_method
     },
   });
 

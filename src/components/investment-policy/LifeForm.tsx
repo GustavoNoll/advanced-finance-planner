@@ -13,6 +13,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { capitalizeFirstLetter } from '@/utils/string';
 import { useTranslation } from 'react-i18next';
 import { useState } from 'react';
+import { LifeInformation } from '@/services/investment-policy.service';
 
 const hobbySchema = z.object({
   name: z.string(),
@@ -38,7 +39,7 @@ const lifeSchema = z.object({
 type LifeFormValues = z.infer<typeof lifeSchema>;
 
 interface LifeFormProps {
-  initialData?: LifeFormValues;
+  initialData?: LifeInformation;
   isEditing?: boolean;
   policyId?: string;
   clientId?: string;
@@ -69,11 +70,11 @@ export const LifeForm = ({
   const [isEditMode, setIsEditMode] = useState(false);
   const form = useForm<LifeFormValues>({
     resolver: zodResolver(lifeSchema),
-    defaultValues: initialData || {
-      life_stage: 'accumulation',
-      hobbies: [defaultEmptyHobby],
-      objectives: [defaultEmptyObjective],
-      insurances: [],
+    defaultValues: {
+      life_stage: initialData?.life_stage,
+      hobbies: initialData?.hobbies || [defaultEmptyHobby],
+      objectives: initialData?.objectives || [defaultEmptyObjective],
+      insurances: initialData?.insurances || [],
     },
   });
 

@@ -40,7 +40,6 @@ export const EditFinancialItemDialog = ({
     installment_interval: item.installment_interval?.toString() || '1',
   };
 
-  console.log('initialValues', initialValues);
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[600px]">

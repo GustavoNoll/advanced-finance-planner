@@ -6,33 +6,21 @@ import { ASSET_CLASS_LABELS } from '@/constants/assetAllocations';
 import { useTranslation } from 'react-i18next';
 import { RISK_PROFILES } from '@/constants/riskProfiles';
 import { ShieldCheck } from 'lucide-react';
-
-interface Platform {
-  name: string;
-}
+import { InvestmentPreferences, AssetAllocation, Platform } from '@/services/investment-policy.service';
 
 interface InvestmentPreferencesSummaryCardProps {
-  assetAllocations: Record<string, number>;
-  preferences: {
-    target_return_ipca_plus?: string;
-    risk_profile?: string;
-    target_return_review?: string;
-    max_bond_maturity?: string;
-    max_fund_liquidity?: string;
-    max_acceptable_loss?: string;
-    platforms_used?: Platform[];
-  };
+  assetAllocations: AssetAllocation;
+  preferences: InvestmentPreferences;
 }
 
 export function InvestmentPreferencesSummaryCard({ assetAllocations, preferences }: InvestmentPreferencesSummaryCardProps) {
   const { t } = useTranslation();
-
   // Monta dados para o gráfico
   const chartData = Object.entries(assetAllocations || {})
-    .filter(([, value]) => value > 0)
+    .filter(([, value]) => (value as number) > 0)
     .map(([key, value]) => ({
       name: t(`investmentPreferences.assets.${key}`, { defaultValue: ASSET_CLASS_LABELS[key] || key }),
-      value,
+      value: value as number,
     }));
 
   // Cores para o gráfico
@@ -81,8 +69,6 @@ export function InvestmentPreferencesSummaryCard({ assetAllocations, preferences
             colors={donutColors}
             valueFormatter={v => `${v.toFixed(2)}%`}
             showLabel={false}
-            showLegend
-            legendPosition="bottom"
             showAnimation
             noDataText={t('common.noData', { defaultValue: '-' })}
             className="h-64 text-slate-800 dark:text-slate-200"

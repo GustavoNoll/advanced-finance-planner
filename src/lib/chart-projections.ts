@@ -468,7 +468,6 @@ export function generateProjectionData(
     let monthlyData: MonthlyProjectionData;
 
     if (historicalRecord) {
-      console.log('historicalRecord');
       lastHistoricalRecord = createDateFromYearMonth(year, month);
       
       // Apply returns and contribution (if applicable)
@@ -494,7 +493,6 @@ export function generateProjectionData(
         context.birthYear
       );
     } else if (isInPast) {
-      console.log('isInPast');
       const contribution = currentMonthlyDeposit;
       
       plannedBalance = plannedBalance * (1 + monthlyReturnRate) + contribution;

@@ -491,8 +491,6 @@ export function processPlanProgressData(
     realMonthlyInflation
   );
 
-  console.log('Debug projections:', projections);
-
   // Calcular a idade projetada em anos e meses
   const projectedDate = projections.projectedRetirementDate;
   let projectedAgeYears = projectedDate.getFullYear() - birthDate.getFullYear();

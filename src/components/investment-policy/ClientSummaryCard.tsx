@@ -16,40 +16,40 @@ export function ClientSummaryCard({ clientProfile, policy }: ClientSummaryCardPr
   const { t } = useTranslation();
 
   // Patrimonial
-  const patrimonial = policy?.patrimonial_situations?.[0] || {};
-  const investments = patrimonial?.investments?.properties?.reduce((acc: number, i: { value: number }) => acc + (i.value || 0), 0) || 0;
-  const liquidInvestments = patrimonial?.investments?.liquid_investments?.reduce((acc: number, i: { value: number }) => acc + (i.value || 0), 0) || 0;
-  const participations = patrimonial?.investments?.participations?.reduce((acc: number, i: { value: number }) => acc + (i.value || 0), 0) || 0;
-  const emergencyReserve = patrimonial?.investments?.emergency_reserve?.reduce((acc: number, i: { value: number }) => acc + (i.value || 0), 0) || 0;
-  const properties = patrimonial?.personal_assets?.properties?.reduce((acc: number, i: { value: number }) => acc + (i.value || 0), 0) || 0;
-  const vehicles = patrimonial?.personal_assets?.vehicles?.reduce((acc: number, i: { value: number }) => acc + (i.value || 0), 0) || 0;
-  const valuableGoods = patrimonial?.personal_assets?.valuable_goods?.reduce((acc: number, i: { value: number }) => acc + (i.value || 0), 0) || 0;
+  const patrimonial = policy?.patrimonial_situations || {};
+  const investments = Number(patrimonial?.investments?.properties?.reduce((acc: number, i: { value: number }) => acc + (i.value || 0), 0) || 0);
+  const liquidInvestments = Number(patrimonial?.investments?.liquid_investments?.reduce((acc: number, i: { value: number }) => acc + (i.value || 0), 0) || 0);
+  const participations = Number(patrimonial?.investments?.participations?.reduce((acc: number, i: { value: number }) => acc + (i.value || 0), 0) || 0);
+  const emergencyReserve = Number(patrimonial?.investments?.emergency_reserve?.reduce((acc: number, i: { value: number }) => acc + (i.value || 0), 0) || 0);
+  const properties = Number(patrimonial?.personal_assets?.properties?.reduce((acc: number, i: { value: number }) => acc + (i.value || 0), 0) || 0);
+  const vehicles = Number(patrimonial?.personal_assets?.vehicles?.reduce((acc: number, i: { value: number }) => acc + (i.value || 0), 0) || 0);
+  const valuableGoods = Number(patrimonial?.personal_assets?.valuable_goods?.reduce((acc: number, i: { value: number }) => acc + (i.value || 0), 0) || 0);
   const totalPatrimony = investments + liquidInvestments + participations + emergencyReserve + properties + vehicles + valuableGoods;
 
   // Budget
-  const budget = policy?.budgets?.[0] || {};
+  const budget = policy?.budgets || {};
   const income = (budget?.incomes || []).reduce((acc: number, i: { amount: number }) => acc + (i.amount || 0), 0) || 0;
   const expenses = (budget?.expenses || []).reduce((acc: number, i: { amount: number }) => acc + (i.amount || 0), 0) || 0;
   const savings = budget?.savings || 0;
 
   // Life stage
-  const lifeStage = policy?.life_information?.[0]?.life_stage || '';
+  const lifeStage = policy?.life_information?.life_stage || '';
 
   // Family
-  const family = policy?.family_structures?.[0] || {};
+  const family = policy?.family_structures || {};
   const maritalStatus = family?.marital_status;
   const children = family?.children || [];
 
   // Objectives
-  const objectives = policy?.life_information?.[0]?.objectives || [];
+  const objectives = policy?.life_information?.objectives || [];
 
   // Hobbies
-  const hobbies = policy?.life_information?.[0]?.hobbies || [];
+  const hobbies = policy?.life_information?.hobbies || [];
   // Insurances
-  const insurances = policy?.life_information?.[0]?.insurances || [];
+  const insurances = policy?.life_information?.insurances || [];
 
   // Risk Profile
-  const riskProfileValue = policy?.investment_preferences?.[0]?.risk_profile;
+  const riskProfileValue = policy?.investment_preferences?.risk_profile;
   const riskProfileLabel =
     RISK_PROFILES.BRL.find((p) => p.value === riskProfileValue)?.label || t('clientSummary.noData');
 
