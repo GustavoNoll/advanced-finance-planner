@@ -140,10 +140,8 @@ export const CreatePlan = () => {
       await createPlan.mutateAsync({ planData, birthDate });
 
       if (searchParams.get('client_id')) {
-        console.log('clientId', clientId);
         navigate(`/client/${clientId}`);
       } else {
-        console.log('clientId', clientId);
         navigate("/");
       }
     } catch (error) {

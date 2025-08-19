@@ -17,8 +17,7 @@ import { capitalizeFirstLetter } from '@/utils/string';
 import { useTranslation } from 'react-i18next';
 import { useState, useEffect, useRef } from 'react';
 import { cn } from '@/lib/utils';
-
-type AssetAllocationValue = number | string;
+import { AssetAllocation, InvestmentPreferences } from '@/services/investment-policy.service';
 
 const investmentPreferencesSchema = z.object({
   target_return_review: z.string().optional(),
@@ -29,12 +28,19 @@ const investmentPreferencesSchema = z.object({
   target_return_ipca_plus: z.string().optional(),
   stock_investment_mode: z.string().optional(),
   real_estate_funds_mode: z.string().optional(),
-  platforms_used: z.array(z.object({ name: z.string() })),
-  asset_restrictions: z.array(z.object({ name: z.string() })),
-  areas_of_interest: z.array(z.object({ name: z.string() })),
+  platforms_used: z.array(z.object({ 
+    name: z.string().min(1, 'Nome da plataforma é obrigatório')
+  })).default([]),
+  asset_restrictions: z.array(z.object({ 
+    name: z.string().min(1, 'Nome da restrição é obrigatório')
+  })).default([]),
+  areas_of_interest: z.array(z.object({ 
+    name: z.string().min(1, 'Nome da área de interesse é obrigatório')
+  })).default([]),
   risk_profile: z.enum(['CONS', 'MOD', 'ARROJ', 'AGRESSIVO']).optional(),
-  asset_allocations: z.record(z.number().min(0).max(100)).refine(
+  asset_allocations: z.record(z.number().min(0).max(100)).optional().default({}).refine(
     (allocations) => {
+      if (!allocations || Object.keys(allocations).length === 0) return true;
       const total = Object.values(allocations).reduce((sum, value) => sum + value, 0);
       return total === 100;
     },
@@ -47,8 +53,8 @@ const investmentPreferencesSchema = z.object({
 type InvestmentPreferencesFormValues = z.infer<typeof investmentPreferencesSchema>;
 
 interface InvestmentPreferencesFormProps {
-  initialData?: InvestmentPreferencesFormValues;
-  assetAllocations?: Record<string, number>;
+  initialData?: InvestmentPreferences;
+  assetAllocations?: AssetAllocation;
   isEditing?: boolean;
   policyId?: string;
   clientId?: string;
@@ -139,7 +145,21 @@ export const InvestmentPreferencesForm = ({
   const queryClient = useQueryClient();
   const [isEditMode, setIsEditMode] = useState(false);
   const [totalAllocation, setTotalAllocation] = useState(0);
-  const initialFormValues = useRef<InvestmentPreferencesFormValues | undefined>(initialData);
+  const initialFormValues = useRef<InvestmentPreferencesFormValues | undefined>({
+    target_return_review: initialData?.target_return_review || '',
+    max_bond_maturity: initialData?.max_bond_maturity || '',
+    fgc_event_feeling: initialData?.fgc_event_feeling || '',
+    max_fund_liquidity: initialData?.max_fund_liquidity || '',
+    max_acceptable_loss: initialData?.max_acceptable_loss || '',
+    target_return_ipca_plus: initialData?.target_return_ipca_plus || '',
+    stock_investment_mode: initialData?.stock_investment_mode || '',
+    real_estate_funds_mode: initialData?.real_estate_funds_mode || '',
+    platforms_used: initialData?.platforms_used || [],
+    asset_restrictions: initialData?.asset_restrictions || [],
+    areas_of_interest: initialData?.areas_of_interest || [],
+    asset_allocations: assetAllocations || {},
+    risk_profile: initialData?.risk_profile as 'CONS' | 'MOD' | 'ARROJ' | 'AGRESSIVO',
+  });
 
   const handleCancelEdit = () => {
     // Reset form to initial values
@@ -159,10 +179,43 @@ export const InvestmentPreferencesForm = ({
   const form = useForm<InvestmentPreferencesFormValues>({
     resolver: zodResolver(investmentPreferencesSchema),
     defaultValues: {
-      ...initialData,
+      target_return_review: initialData?.target_return_review || '',
+      max_bond_maturity: initialData?.max_bond_maturity || '',
+      fgc_event_feeling: initialData?.fgc_event_feeling || '',
+      max_fund_liquidity: initialData?.max_fund_liquidity || '',
+      max_acceptable_loss: initialData?.max_acceptable_loss || '',
+      target_return_ipca_plus: initialData?.target_return_ipca_plus || '',
+      stock_investment_mode: initialData?.stock_investment_mode || '',
+      real_estate_funds_mode: initialData?.real_estate_funds_mode || '',
+      platforms_used: initialData?.platforms_used || [],
+      asset_restrictions: initialData?.asset_restrictions || [],
+      areas_of_interest: initialData?.areas_of_interest || [],
+      risk_profile: initialData?.risk_profile as 'CONS' | 'MOD' | 'ARROJ' | 'AGRESSIVO',
       asset_allocations: assetAllocations || {},
     },
   });
+
+  // Reset form when initialData changes
+  useEffect(() => {
+    if (initialData) {
+      const formData = {
+        target_return_review: initialData.target_return_review || '',
+        max_bond_maturity: initialData.max_bond_maturity || '',
+        fgc_event_feeling: initialData.fgc_event_feeling || '',
+        max_fund_liquidity: initialData.max_fund_liquidity || '',
+        max_acceptable_loss: initialData.max_acceptable_loss || '',
+        target_return_ipca_plus: initialData.target_return_ipca_plus || '',
+        stock_investment_mode: initialData.stock_investment_mode || '',
+        real_estate_funds_mode: initialData.real_estate_funds_mode || '',
+        platforms_used: initialData.platforms_used || [],
+        asset_restrictions: initialData.asset_restrictions || [],
+        areas_of_interest: initialData.areas_of_interest || [],
+        risk_profile: initialData.risk_profile as 'CONS' | 'MOD' | 'ARROJ' | 'AGRESSIVO',
+        asset_allocations: assetAllocations || {},
+      };
+      form.reset(formData);
+    }
+  }, [initialData, assetAllocations, form]);
 
   const { fields: platformsFields, append: appendPlatform, remove: removePlatform } = useFieldArray({
     control: form.control,
@@ -184,6 +237,13 @@ export const InvestmentPreferencesForm = ({
     control: form.control,
     name: 'risk_profile',
   });
+
+  // Watch all form values for debugging
+  const allFormValues = useWatch({
+    control: form.control,
+  });
+
+  // console.log('allFormValues', allFormValues);
 
   // Track if this is the initial load
   const isInitialLoad = useRef(true);
@@ -233,14 +293,33 @@ export const InvestmentPreferencesForm = ({
   const handleSubmit = async (data: InvestmentPreferencesFormValues) => {
     if (!policyId) return;
 
+    // Validate asset allocations
+    const totalAllocation = Object.values(data.asset_allocations || {}).reduce((sum, value) => sum + value, 0);
+    if (totalAllocation !== 100) {
+      toast({
+        title: t('common.error'),
+        description: t('investmentPreferences.form.allocationValidation.totalMustBe100'),
+        variant: 'destructive',
+      });
+      return;
+    }
+
     try {
       // Update investment preferences (without asset allocations)
-      const { asset_allocations, ...preferencesData } = data;
+      const { asset_allocations, platforms_used, asset_restrictions, areas_of_interest, ...preferencesData } = data;
+      
+      // Filter out empty platform names
+      const filteredPlatforms = platforms_used?.filter(platform => platform.name?.trim()) || [];
+      const filteredRestrictions = asset_restrictions?.filter(restriction => restriction.name?.trim()) || [];
+      const filteredInterests = areas_of_interest?.filter(interest => interest.name?.trim()) || [];
       
       const { error: preferencesError } = await supabase
         .from('investment_preferences')
         .upsert([{ 
           ...preferencesData,
+          platforms_used: filteredPlatforms,
+          asset_restrictions: filteredRestrictions,
+          areas_of_interest: filteredInterests,
           policy_id: policyId,
         }], {
           onConflict: 'policy_id',

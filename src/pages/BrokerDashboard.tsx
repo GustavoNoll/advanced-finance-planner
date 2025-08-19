@@ -339,8 +339,6 @@ export const BrokerDashboard = () => {
         .or(`email.ilike.%${searchQuery}%,profile_name.ilike.%${searchQuery}%`)
         .order('profile_name');
       
-      console.log(users);
-      console.log(error); 
       if (error) throw error;
       
       setSearchResults(users || []);

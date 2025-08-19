@@ -88,8 +88,6 @@ export function ReturnChartTab({
         return true;
       });
       
-      console.log('Records after filter:', filteredRecords.length);
-      console.log('Filtered records:', filteredRecords.map(r => `${r.record_month}/${r.record_year}`));
       
       return filteredRecords;
     }

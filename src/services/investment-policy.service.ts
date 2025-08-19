@@ -1,14 +1,191 @@
 import { supabase } from '@/lib/supabase'
 
+// Platform interface
+export interface Platform {
+  name: string
+}
+
+// Area of interest interface
+export interface AreaOfInterest {
+  name: string
+}
+
+// Asset restriction interface
+export interface AssetRestriction {
+  name: string
+}
+
+// Child interface
+export interface Child {
+  id: string
+  name: string
+  birth_date: string
+  created_at: string
+  updated_at: string
+  family_structure_id: string
+}
+
+// Investment property interface
+export interface InvestmentProperty {
+  name: string
+  value: number
+  country: string
+  location: {
+    cep: string
+    city: string
+    state: string
+    number: string
+    street: string
+    complement: string
+    neighborhood: string
+  }
+  description: string
+}
+
+// Investment interface
+export interface Investments {
+  properties: InvestmentProperty[]
+  participations: unknown[]
+  emergency_reserve: unknown[]
+  liquid_investments: unknown[]
+}
+
+// Liabilities interface
+export interface Liabilities {
+  debts: unknown[]
+  financing: unknown[]
+}
+
+// Personal assets interface
+export interface PersonalAssets {
+  vehicles: unknown[]
+  properties: unknown[]
+  valuable_goods: unknown[]
+}
+
+// Hobby interface
+export interface Hobby {
+  name: string
+}
+
+// Insurance interface
+export interface Insurance {
+  type: string
+  company: string
+  last_review_date: string
+}
+
+// Objective interface
+export interface Objective {
+  name: string
+}
+
+// Income interface
+export interface Income {
+  amount: number
+  description: string
+}
+
+// Expense interface
+export interface Expense {
+  amount: number
+  description: string
+}
+
+// Investment preferences interface
+export interface InvestmentPreferences {
+  id?: string
+  policy_id?: string
+  created_at?: string
+  updated_at?: string
+  risk_profile?: string
+  platforms_used?: Platform[]
+  areas_of_interest?: AreaOfInterest[]
+  fgc_event_feeling?: string
+  max_bond_maturity?: string
+  asset_restrictions?: AssetRestriction[]
+  max_fund_liquidity?: string
+  max_acceptable_loss?: string
+  target_return_review?: string
+  stock_investment_mode?: string
+  real_estate_funds_mode?: string
+  target_return_ipca_plus?: string
+}
+
+// Professional information interface
+export interface ProfessionalInformation {
+  id?: string
+  policy_id?: string
+  created_at?: string
+  occupation?: string
+  updated_at?: string
+  work_regime?: 'pj' | 'clt' | 'public_servant'
+  work_location?: string
+  work_description?: string
+  tax_declaration_method?: 'simplified' | 'complete' | 'exempt'
+}
+
+// Family structure interface
+export interface FamilyStructure {
+  id?: string
+  children?: Child[]
+  policy_id?: string
+  created_at?: string
+  updated_at?: string
+  spouse_name?: string
+  has_children?: boolean
+  marital_status?: string
+  spouse_birth_date?: string
+}
+
+// Patrimonial situation interface
+export interface PatrimonialSituation {
+  id?: string
+  policy_id?: string
+  created_at?: string
+  updated_at?: string
+  investments?: Investments
+  liabilities?: Liabilities
+  personal_assets?: PersonalAssets
+}
+
+// Life information interface
+export interface LifeInformation {
+  id?: string
+  hobbies?: Hobby[]
+  policy_id?: string
+  created_at?: string
+  insurances?: Insurance[]
+  life_stage?: 'accumulation' | 'enjoyment' | 'consolidation'
+  objectives?: Objective[]
+  updated_at?: string
+}
+
+// Budget interface
+export interface Budget {
+  id?: string
+  bonus?: number | null
+  incomes?: Income[]
+  savings?: number | null
+  expenses?: Expense[]
+  dividends?: number | null
+  policy_id?: string
+  created_at?: string
+  updated_at?: string
+}
+
+// Asset allocation type alias
+export type AssetAllocation = Record<string, number>
+
 export interface InvestmentPolicyData {
   id?: string
   profile_id?: string
-  investment_preferences?: any[]
-  professional_information?: any[]
-  family_structures?: any[]
-  budgets?: any[]
-  patrimonial_situations?: any[]
-  life_information?: any[]
+  investment_preferences?: InvestmentPreferences
+  professional_information?: ProfessionalInformation
+  family_structures?: FamilyStructure
+  budgets?: Budget
+  patrimonial_situations?: PatrimonialSituation
+  life_information?: LifeInformation
   asset_allocations?: Record<string, number>
   created_at?: string
   updated_at?: string
@@ -17,7 +194,7 @@ export interface InvestmentPolicyData {
 export interface PolicySectionData {
   id?: string
   policy_id?: string
-  [key: string]: any
+  [key: string]: unknown
 }
 
 export class InvestmentPolicyService {
@@ -61,12 +238,12 @@ export class InvestmentPolicyService {
         return {
           ...this.getDefaultEmptyPolicy(),
           ...existingPolicy,
-          investment_preferences: existingPolicy?.investment_preferences || [{}],
-          professional_information: existingPolicy?.professional_information || [{}],
-          family_structures: existingPolicy?.family_structures || [{}],
-          budgets: existingPolicy?.budgets || [{}],
-          patrimonial_situations: existingPolicy?.patrimonial_situations || [{}],
-          life_information: existingPolicy?.life_information || [{}],
+          investment_preferences: existingPolicy?.investment_preferences || {},
+          professional_information: existingPolicy?.professional_information || {},
+          family_structures: existingPolicy?.family_structures || {},
+          budgets: existingPolicy?.budgets || {},
+          patrimonial_situations: existingPolicy?.patrimonial_situations || {},
+          life_information: existingPolicy?.life_information || {},
           asset_allocations: assetAllocations,
         }
       }
@@ -100,7 +277,7 @@ export class InvestmentPolicyService {
     policyId: string,
     sectionName: string,
     sectionData: PolicySectionData
-  ): Promise<any> {
+  ): Promise<Record<string, unknown>> {
     if (!policyId) throw new Error('Policy ID is required')
 
     try {
@@ -172,7 +349,7 @@ export class InvestmentPolicyService {
   static async fetchSectionData(
     policyId: string,
     sectionName: string
-  ): Promise<any[]> {
+  ): Promise<Record<string, unknown>[]> {
     if (!policyId) return []
 
     try {
@@ -240,7 +417,7 @@ export class InvestmentPolicyService {
 
     const completedSections = sections.filter(section => {
       const data = policy[section as keyof InvestmentPolicyData]
-      return data && Array.isArray(data) && data.length > 0 && data[0] && Object.keys(data[0]).length > 1
+      return data && typeof data === 'object' && Object.keys(data).length > 1
     }).length
 
     const totalSections = sections.length
@@ -259,12 +436,12 @@ export class InvestmentPolicyService {
    */
   private static getDefaultEmptyPolicy(): InvestmentPolicyData {
     return {
-      investment_preferences: [{}],
-      professional_information: [{}],
-      family_structures: [{}],
-      patrimonial_situations: [{}],
-      life_information: [{}],
-      budgets: [{}],
+      investment_preferences: {},
+      professional_information: {},
+      family_structures: {},
+      patrimonial_situations: {},
+      life_information: {},
+      budgets: {},
       asset_allocations: {}
     }
   }
@@ -292,7 +469,7 @@ export class InvestmentPolicyService {
 
     requiredSections.forEach(section => {
       const data = policy[section.key as keyof InvestmentPolicyData]
-      if (!data || !Array.isArray(data) || data.length === 0 || !data[0] || Object.keys(data[0]).length <= 1) {
+      if (!data || typeof data !== 'object' || Object.keys(data).length <= 1) {
         missingSections.push(section.name)
       }
     })

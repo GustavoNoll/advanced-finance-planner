@@ -176,13 +176,13 @@ const InvestmentPolicy = ({
               investmentPlan={investmentPlan}
               policy={{
                 ...policy,
-                patrimonial_situations: policy?.patrimonial_situations?.[0] || {},
-                investment_preferences: policy?.investment_preferences?.[0] || {}
+                patrimonial_situations: policy?.patrimonial_situations || {},
+                investment_preferences: policy?.investment_preferences || {}
               }}
             />
             <InvestmentPreferencesSummaryCard
-              assetAllocations={policy?.asset_allocations || {}}
-              preferences={policy?.investment_preferences?.[0] || {}}
+              assetAllocations={policy?.asset_allocations}
+              preferences={policy?.investment_preferences}
             />
 
             <Accordion 
@@ -220,14 +220,14 @@ const InvestmentPolicy = ({
                       )}
                       {section.id === 'professional-information' && (
                         <ProfessionalInformationForm
-                          initialData={policy?.professional_information?.[0] || {}}
+                          initialData={policy?.professional_information || {}}
                           isEditing={isBrokerProfile}
                           policyId={policy?.id}
                         />
                       )}
                       {section.id === 'family-structure' && (
                         <FamilyStructureForm
-                          initialData={policy?.family_structures?.[0] || {}}
+                          initialData={policy?.family_structures || {}}
                           isEditing={isBrokerProfile}
                           policyId={policy?.id}
                           clientId={clientId}
@@ -235,7 +235,7 @@ const InvestmentPolicy = ({
                       )}
                       {section.id === 'budget' && (
                         <BudgetForm
-                          initialData={policy?.budgets?.[0] || {}}
+                          initialData={policy?.budgets || {}}
                           isEditing={isBrokerProfile}
                           policyId={policy?.id}
                           clientId={clientId}
@@ -243,7 +243,7 @@ const InvestmentPolicy = ({
                       )}
                       {section.id === 'patrimonial' && (
                         <PatrimonialForm
-                          initialData={policy?.patrimonial_situations?.[0] || {}}
+                          initialData={policy?.patrimonial_situations || {}}
                           isEditing={isBrokerProfile}
                           policyId={policy?.id}
                           clientId={clientId}
@@ -251,7 +251,7 @@ const InvestmentPolicy = ({
                       )}
                       {section.id === 'life' && (
                         <LifeForm
-                          initialData={policy?.life_information?.[0] || {}}
+                          initialData={policy?.life_information || {}}
                           isEditing={isBrokerProfile}
                           policyId={policy?.id}
                           clientId={clientId}
@@ -259,7 +259,7 @@ const InvestmentPolicy = ({
                       )}
                       {section.id === 'investment-preferences' && (
                         <InvestmentPreferencesForm
-                          initialData={policy?.investment_preferences?.[0] || {}}
+                          initialData={policy?.investment_preferences || {}}
                           assetAllocations={policy?.asset_allocations || {}}
                           isEditing={isBrokerProfile}
                           policyId={policy?.id}

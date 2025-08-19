@@ -28,7 +28,6 @@ export const ClientLoginForm: React.FC = () => {
         .select('email')
         .eq('id', clientId)
         .single();
-      console.log('profile', profile);
 
       if (profileError || !profile) {
         throw new Error('Client not found');
@@ -39,7 +38,6 @@ export const ClientLoginForm: React.FC = () => {
         email: profile.email,
         password,
       });
-      console.log('signInData', signInData);
 
       if (signInError) throw signInError;
 
@@ -47,7 +45,6 @@ export const ClientLoginForm: React.FC = () => {
       if (signInData.user?.id !== clientId) {
         throw new Error('Unauthorized access');
       }
-      console.log('signInData.user?.id', signInData.user?.id);
 
       toast({
         title: t('common.success'),

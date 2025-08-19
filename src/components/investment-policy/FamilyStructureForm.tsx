@@ -14,6 +14,7 @@ import { format, parse } from "date-fns";
 import { useTranslation } from 'react-i18next';
 import { useQueryClient } from '@tanstack/react-query';
 import { capitalizeFirstLetter } from '@/utils/string';
+import { FamilyStructure } from '@/services/investment-policy.service';
 
 const familyStructureSchema = z.object({
   marital_status: z.string().optional(),
@@ -29,7 +30,7 @@ const familyStructureSchema = z.object({
 type FamilyStructureFormValues = z.infer<typeof familyStructureSchema>;
 
 interface FamilyStructureFormProps {
-  initialData?: FamilyStructureFormValues;
+  initialData?: FamilyStructure;
   isEditing?: boolean;
   policyId?: string;
   clientId?: string;
@@ -161,8 +162,10 @@ export const FamilyStructureForm = ({
   const form = useForm<FamilyStructureFormValues>({
     resolver: zodResolver(familyStructureSchema),
     defaultValues: {
-      ...initialData,
+      marital_status: initialData?.marital_status || '',
+      spouse_name: initialData?.spouse_name || '',
       spouse_birth_date: parseDate(initialData?.spouse_birth_date),
+      has_children: initialData?.has_children || false,
       children: initialData?.children?.map(child => ({
         ...child,
         birth_date: parseDate(child.birth_date)
