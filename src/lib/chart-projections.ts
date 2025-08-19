@@ -527,10 +527,10 @@ export function generateProjectionData(
       if (isRetirementAge) {
         const withdrawal = currentMonthlyWithdrawal;
         
-        projectedBalance = (projectedBalance - withdrawal) * (1 + monthlyReturnRate);
-        plannedBalance = (plannedBalance - withdrawal) * (1 + monthlyReturnRate);
+        projectedBalance = (projectedBalance * (1 + monthlyReturnRate)) - withdrawal;
+        plannedBalance = (plannedBalance * (1 + monthlyReturnRate)) - withdrawal;
         if (context.oldPortfolioProfitability) {
-          oldPortfolioBalance = (oldPortfolioBalance! - withdrawal) * (1 + monthlyOldPortfolioReturnRate);
+          oldPortfolioBalance = (oldPortfolioBalance! * (1 + monthlyOldPortfolioReturnRate)) - withdrawal;
         }
         monthlyData = createRetirementMonthData(
           month,
