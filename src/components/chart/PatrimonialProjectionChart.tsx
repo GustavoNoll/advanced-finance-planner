@@ -68,7 +68,9 @@ const getDateFromMonthYear = (year: number, month: number): Date => {
 
 // Função para converter string de data ISO em objeto Date
 const parseISODate = (dateString: string): Date => {
-  return createDateWithoutTimezone(dateString)
+  // Extrair apenas a parte da data (YYYY-MM-DD) da string ISO
+  const datePart = dateString.split('T')[0]
+  return createDateWithoutTimezone(datePart)
 }
 
 // Mapeamento de ícones baseado no tipo
@@ -194,11 +196,11 @@ export default function PatrimonialProjectionChart({
   }, [filteredData, showNominalValues, showOldPortfolio])
 
   // Preparar dados de objetivos
-  const objectivePoints = useMemo(() => {
+  const objectivePoints = useMemo(() => {    
     return objectives
       .map((obj) => ({
-        date: parseISODate(obj.created_at),
-        value: showNominalValues ? obj.asset_value : obj.asset_value * 0.85,
+        date: parseISODate(obj.created_at!),
+        value: obj.asset_value,
         icon: obj.icon, 
         id: obj.id,
         installment_count: obj.installment_count,

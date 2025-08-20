@@ -3,6 +3,7 @@ import { calculateCompoundedRates, nper, yearlyReturnRateToMonthlyReturnRate, pm
 import { calculateAccumulatedInflation, calculatePlanAccumulatedInflation } from "./inflation-utils";
 import { processItem } from './financial-goals-processor';
 import { createDateWithoutTimezone, createDateFromYearMonth } from '@/utils/dateUtils';
+import { HistoricalDataInfo, MonthlyProjectionData } from "@/services/projection.service";
 
 /**
  * Constants for date calculations
@@ -291,7 +292,8 @@ const financialCalculations = {
     events: ProjectedEvent[],
     plannedFuturePresentValue: number,
     projectedFuturePresentValue: number,
-    realMonthlyInflation: number
+    realMonthlyInflation: number,
+    monthlyProjectionData: MonthlyProjectionData | null
   ): ProjectionResult => {
     const lastRecord = allFinancialRecords[0];
     const actualMonth = lastRecord?.record_month || 0;
@@ -345,8 +347,8 @@ const financialCalculations = {
     const effectiveRate = adjustContributionForInflation ? monthlyExpectedReturn : calculateCompoundedRates([monthlyExpectedReturn, realMonthlyInflation]);
     
     // Calculate adjusted present and future values
-    const balanceWithGoals = -(currentBalance + preRetirementGoals);
-    const initialWithGoals = -(investmentPlan.initial_amount + preRetirementGoals);
+    const balanceWithGoals = (currentBalance + preRetirementGoals);
+    const initialWithGoals = (investmentPlan.initial_amount + preRetirementGoals);
     const inflationInRetirementYear = (1 + realMonthlyInflation) ** monthsToRetirementSinceStart;
     const projectedPresentValue = projectedFuturePresentValue / inflationInRetirementYear;
     const goalProjectedPresentValue = investmentPlan.present_future_value * (adjustContributionForInflation ? 1 : inflationInRetirementYear);
@@ -358,7 +360,7 @@ const financialCalculations = {
     // Calculate projections
 
     // PROJECTIONS 
-    const balanceVPAdjusted = vp(monthlyExpectedReturn, monthsToRetirementSinceStart - monthsToRetirementSinceNow, contribution, balanceWithGoals);
+    const balanceVPAdjusted = vp(monthlyExpectedReturn, monthsToRetirementSinceStart - monthsToRetirementSinceNow, contribution, -balanceWithGoals);
     const projectedMonthsToRetirement = nper(
       effectiveRate,
       contribution,
@@ -369,7 +371,7 @@ const financialCalculations = {
     const projectedContribution = -pmt(
       effectiveRate,
       monthsToRetirementSinceNow,
-      balanceWithGoals,
+      -balanceWithGoals,
       adjustedGoalProjectedFutureValue
     );
 
@@ -386,19 +388,40 @@ const financialCalculations = {
     )
 
     // PLANNED DATA
-    const plannedMonthsToRetirement = nper(
-      effectiveRate,
-      contribution,
-      initialWithGoals,
-      adjustedGoalPlannedFutureValue
-    );
+    let plannedMonthsToRetirement = 0;
+    let plannedContribution = 0;
+    if (monthlyProjectionData) {
+      // se tiver registros financeiros, usar os dados da projeção
+      const plannedBalanceWithGoals = (monthlyProjectionData.planned_balance + preRetirementGoals)
+      const plannedVPBalance = vp(monthlyExpectedReturn, monthsToRetirementSinceStart - monthsToRetirementSinceNow, contribution, -plannedBalanceWithGoals)
+      plannedMonthsToRetirement = nper(
+        effectiveRate,
+        contribution,
+        plannedVPBalance,
+        adjustedGoalPlannedFutureValue
+      )
+      plannedContribution = -pmt(
+        effectiveRate,
+        monthsToRetirementSinceNow,
+        -plannedBalanceWithGoals,
+        adjustedGoalPlannedFutureValue
+      )
+    }else{
+      plannedMonthsToRetirement = nper(
+        effectiveRate,
+        contribution,
+        initialWithGoals,
+        adjustedGoalPlannedFutureValue
+      );
+  
+      plannedContribution = -pmt(
+        effectiveRate,
+        monthsToRetirementSinceStart,
+        initialWithGoals,
+        adjustedGoalPlannedFutureValue
+      );
+    }
 
-    const plannedContribution = -pmt(
-      effectiveRate,
-      monthsToRetirementSinceStart,
-      initialWithGoals,
-      adjustedGoalPlannedFutureValue
-    );
 
     const plannedMonthlyIncome = financialCalculations.projectedMonthlyIncome(
       investmentPlan.plan_type,
@@ -413,8 +436,8 @@ const financialCalculations = {
     )
     
     // Calculate dates and differences
-    const projectedRetirementDate = utils.addMonthsToDate(planStartDate, projectedMonthsToRetirement);
-    const plannedRetirementDate = utils.addMonthsToDate(planStartDate, plannedMonthsToRetirement);
+    const projectedRetirementDate = utils.addMonthsToDate(referenceDate, projectedMonthsToRetirement);
+    const plannedRetirementDate = utils.addMonthsToDate(referenceDate, plannedMonthsToRetirement);
     const monthsDifference = utils.calculateMonthsBetweenDates(projectedRetirementDate, plannedRetirementDate);
     return {
       projectedPresentValue,
@@ -453,7 +476,8 @@ export function processPlanProgressData(
   goals: Goal[],
   events: ProjectedEvent[],
   plannedFuturePresentValue: number,
-  projectedFuturePresentValue: number
+  projectedFuturePresentValue: number,
+  lastHistoricalDataInfo: HistoricalDataInfo
 ): PlanProgressData | null {
   if (!investmentPlan || !profile.birth_date) return null;
 
@@ -488,7 +512,8 @@ export function processPlanProgressData(
     events,
     plannedFuturePresentValue,
     projectedFuturePresentValue,
-    realMonthlyInflation
+    realMonthlyInflation,
+    lastHistoricalDataInfo.lastHistoricalMonth
   );
 
   // Calcular a idade projetada em anos e meses
