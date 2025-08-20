@@ -236,6 +236,7 @@ export const BrokerDashboard = () => {
 
     // New clients this month
     const newClientsThisMonth = users.filter(user => {
+      if (!user.financial_created_at) return false;
       const createdAt = createDateWithoutTimezone(user.financial_created_at || '');
       return createdAt >= firstDayOfMonth;
     }).length;
