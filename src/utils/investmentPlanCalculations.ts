@@ -79,16 +79,18 @@ export const calculateFutureValues = (data: FormData, birthDate: Date): Calculat
   
   // vars
   const planStartDate = createDateWithoutTimezone(planInitialDate);
-  const yearDiff = planStartDate.getFullYear() - birthDate.getFullYear();
-  const monthDiff = planStartDate.getMonth() - birthDate.getMonth();
-  const initialAge = yearDiff + (monthDiff / 12);
   
   let monthsToRetirement;
   if (planEndAccumulationDate) {
     monthsToRetirement = (planEndAccumulationDate.getFullYear() - planStartDate.getFullYear()) * 12 + 
                         (planEndAccumulationDate.getMonth() - planStartDate.getMonth());
   } else {
-    monthsToRetirement = parseInt(((finalAge - initialAge) * 12).toFixed(0));
+    // Calcula meses até a aposentadoria baseado na data de início do plano
+    const retirementDate = new Date(birthDate);
+    retirementDate.setFullYear(birthDate.getFullYear() + finalAge);
+    
+    monthsToRetirement = (retirementDate.getFullYear() - planStartDate.getFullYear()) * 12 + 
+                        (retirementDate.getMonth() - planStartDate.getMonth());
   }
   const endMoney = limitAge;
   const monthsToEndMoney = (endMoney - finalAge) * 12;
