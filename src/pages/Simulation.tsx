@@ -17,6 +17,7 @@ import { getCurrencySymbol } from "@/utils/currency";
 import { usePlanCalculations } from "@/hooks/usePlanCreation";
 import { FormData } from "@/utils/investmentPlanCalculations";
 import { Switch } from "@/components/ui/switch";
+import { Checkbox } from "@/components/ui/checkbox";
 import { generateChartProjections, generateProjectionData, ChartOptions } from '@/lib/chart-projections';
 
 interface SimulationFormData {
@@ -114,7 +115,6 @@ export const Simulation = () => {
 
   // Get calculations
   const { calculations } = usePlanCalculations(calculationFormData, birthDate);
-  console.log(calculations);
 
   // Generate simulation plan whenever form data changes
   useEffect(() => {
@@ -383,12 +383,11 @@ export const Simulation = () => {
 
                     {/* Adjust Contribution for Inflation */}
                     <div className="space-y-2">
-                      <Label>{t('investmentPlan.form.adjustContributionForInflation')}</Label>
                       <div className="flex items-center space-x-2">
-                        <Switch
+                        <Checkbox
                           id="adjustContributionForInflation"
                           checked={formData.adjustContributionForInflation}
-                          onCheckedChange={(checked) => handleFormChange('adjustContributionForInflation', checked)}
+                          onCheckedChange={(checked) => handleFormChange('adjustContributionForInflation', checked as boolean)}
                         />
                         <Label htmlFor="adjustContributionForInflation" className="text-sm text-muted-foreground">
                           {t('investmentPlan.form.adjustContributionForInflation')}
@@ -398,12 +397,11 @@ export const Simulation = () => {
 
                     {/* Adjust Income for Inflation */}
                     <div className="space-y-2">
-                      <Label>{t('investmentPlan.form.adjustIncomeForInflation')}</Label>
                       <div className="flex items-center space-x-2">
-                        <Switch
+                        <Checkbox
                           id="adjustIncomeForInflation"
                           checked={formData.adjustIncomeForInflation}
-                          onCheckedChange={(checked) => handleFormChange('adjustIncomeForInflation', checked)}
+                          onCheckedChange={(checked) => handleFormChange('adjustIncomeForInflation', checked as boolean)}
                         />
                         <Label htmlFor="adjustIncomeForInflation" className="text-sm text-muted-foreground">
                           {t('investmentPlan.form.adjustIncomeForInflation')}
@@ -414,12 +412,11 @@ export const Simulation = () => {
 
                     {/* Old Portfolio */}
                     <div className="space-y-2">
-                      <Label>{t('investmentPlan.form.hasOldPortfolio')}</Label>
                       <div className="flex items-center space-x-2">
-                        <Switch
+                        <Checkbox
                           id="hasOldPortfolio"
                           checked={formData.hasOldPortfolio}
-                          onCheckedChange={(checked) => handleFormChange('hasOldPortfolio', checked)}
+                          onCheckedChange={(checked) => handleFormChange('hasOldPortfolio', checked as boolean)}
                         />
                         <Label htmlFor="hasOldPortfolio" className="text-sm text-muted-foreground">
                           {t('investmentPlan.form.hasOldPortfolio')}

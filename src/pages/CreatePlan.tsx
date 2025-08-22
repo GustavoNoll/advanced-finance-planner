@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import { useNavigate, useSearchParams, Link } from "react-router-dom";
 import { useAuth } from "@/components/auth/AuthProvider";
 import { ptBR } from "@/locales/pt-BR";
@@ -394,19 +395,16 @@ export const CreatePlan = () => {
 
                 <div className="space-y-2">
                   <div className="flex items-center space-x-2 mb-2">
-                    <input
-                      type="checkbox"
+                    <Checkbox
                       id="hasOldPortfolio"
-                      name="hasOldPortfolio"
                       checked={formData.hasOldPortfolio}
-                      onChange={(e) => {
+                      onCheckedChange={(checked) => {
                         setFormData(prev => ({
                           ...prev,
-                          hasOldPortfolio: e.target.checked,
-                          oldPortfolioProfitability: e.target.checked ? prev.oldPortfolioProfitability : null
+                          hasOldPortfolio: checked as boolean,
+                          oldPortfolioProfitability: checked ? prev.oldPortfolioProfitability : null
                         }))
                       }}
-                      className="h-4 w-4 rounded border-input text-primary focus:ring-primary"
                     />
                     <label htmlFor="hasOldPortfolio" className="text-sm font-medium text-muted-foreground">
                       {t('investmentPlan.form.hasOldPortfolio')}
@@ -468,13 +466,15 @@ export const CreatePlan = () => {
                   </div>
 
                   <div className="flex items-center space-x-2">
-                    <input
-                      type="checkbox"
+                    <Checkbox
                       id="adjustContributionForInflation"
-                      name="adjust_contribution_for_inflation"
                       checked={formData.adjustContributionForInflation}
-                      onChange={handleChange}
-                      className="h-4 w-4 rounded border-input text-primary focus:ring-primary"
+                      onCheckedChange={(checked) => {
+                        setFormData(prev => ({
+                          ...prev,
+                          adjustContributionForInflation: checked as boolean
+                        }))
+                      }}
                     />
                     <label htmlFor="adjustContributionForInflation" className="text-sm font-medium text-muted-foreground">
                       {t('investmentPlan.form.adjustContributionForInflation')}
@@ -482,13 +482,15 @@ export const CreatePlan = () => {
                   </div>
                   
                   <div className="flex items-center space-x-2">
-                    <input
-                      type="checkbox"
+                    <Checkbox
                       id="adjust_income_for_inflation"
-                      name="adjust_income_for_inflation"
                       checked={formData.adjustIncomeForInflation}
-                      onChange={handleChange}
-                      className="h-4 w-4 rounded border-input text-primary focus:ring-primary"
+                      onCheckedChange={(checked) => {
+                        setFormData(prev => ({
+                          ...prev,
+                          adjustIncomeForInflation: checked as boolean
+                        }))
+                      }}
                     />
                     <label htmlFor="adjust_income_for_inflation" className="text-sm font-medium text-muted-foreground">
                       {t('investmentPlan.form.adjustIncomeForInflation')}

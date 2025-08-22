@@ -22,7 +22,7 @@ export function useProjectionData(
       allFinancialRecords,
       goals,
       events,
-      chartOptions
+      {}
     )
   }, [investmentPlan, clientProfile, allFinancialRecords, goals, events, chartOptions])
 
@@ -81,7 +81,7 @@ export function useProjectionData(
     }
 
     return ProjectionService.calculateRetirementBalanceDifference(
-      originalProjectionData,
+      projectionDataWithOptions,
       investmentPlan
     )
   }, [originalProjectionData, investmentPlan])

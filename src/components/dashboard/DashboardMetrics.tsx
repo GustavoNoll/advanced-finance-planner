@@ -4,9 +4,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { HoverCard, HoverCardContent, HoverCardTrigger } from "@/components/ui/hover-card"
 import { formatCurrency, CurrencyCode } from "@/utils/currency"
 import { useFinancialMetrics } from "@/hooks/useFinancialData"
-import { useProjectionData } from "@/hooks/useProjectionData"
-import { FinancialRecord, Profile, InvestmentPlan, Goal, ProjectedEvent } from "@/types/financial"
-import { ChartOptions } from "@/lib/chart-projections"
+import { InvestmentPlan } from "@/types/financial"
+import { ProjectionData } from "@/services/projection.service"
 
 type TimePeriod = 'all' | '6m' | '12m' | '24m'
 
@@ -18,10 +17,12 @@ interface DashboardMetricsProps {
   onSelectedPeriodChange: (period: TimePeriod) => void
   onContributionPeriodChange: (period: TimePeriod) => void
   t: (key: string) => string
-  allFinancialRecords: FinancialRecord[]
-  goalsAndEvents: { goals: Goal[]; events: ProjectedEvent[] }
-  clientProfile: Profile
-  chartOptions: ChartOptions
+  retirementBalanceData?: {
+    nominalDifference: number
+    percentageDifference: number
+    currentBalance: number
+    oldPortfolioBalance: number
+  }
 }
 
 export function DashboardMetrics({
@@ -32,26 +33,13 @@ export function DashboardMetrics({
   onSelectedPeriodChange,
   onContributionPeriodChange,
   t,
-  allFinancialRecords,
-  goalsAndEvents,
-  clientProfile,
-  chartOptions
+  retirementBalanceData
 }: DashboardMetricsProps) {
   const { totalReturns, totalContribution, processedRecords } = useFinancialMetrics(
     clientId,
     selectedPeriod,
     contributionPeriod,
     investmentPlan
-  )
-
-  // Hook para dados de projeção para calcular diferença da carteira antiga
-  const projectionDataHook = useProjectionData(
-    investmentPlan,
-    clientProfile,
-    allFinancialRecords,
-    goalsAndEvents.goals,
-    goalsAndEvents.events,
-    chartOptions
   )
 
   const portfolioValue = processedRecords.latestRecord?.ending_balance || 0
@@ -243,22 +231,22 @@ export function DashboardMetrics({
           <div className="space-y-3">
             <div className="space-y-1">
               <p className={`text-2xl font-bold drop-shadow-sm ${
-                projectionDataHook.retirementBalanceData.nominalDifference >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'
+                retirementBalanceData.nominalDifference >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'
               }`}>
-                {formatCurrency(projectionDataHook.retirementBalanceData.nominalDifference, investmentPlan?.currency as CurrencyCode)}
+                {formatCurrency(retirementBalanceData.nominalDifference, investmentPlan?.currency as CurrencyCode)}
               </p>
             </div>
             
             <div className={`flex items-center gap-2 ${
-              projectionDataHook.retirementBalanceData.percentageDifference >= 0 ? 'bg-gradient-to-r from-emerald-50 via-green-50 to-emerald-100/50 dark:from-emerald-900/30 dark:via-emerald-900/20 dark:to-emerald-900/10' : 'bg-gradient-to-r from-rose-50 via-red-50 to-rose-100/50 dark:from-rose-900/30 dark:via-rose-900/20 dark:to-rose-900/10'
+              retirementBalanceData.percentageDifference >= 0 ? 'bg-gradient-to-r from-emerald-50 via-green-50 to-emerald-100/50 dark:from-emerald-900/30 dark:via-emerald-900/20 dark:to-emerald-900/10' : 'bg-gradient-to-r from-rose-50 via-red-50 to-rose-100/50 dark:from-rose-900/30 dark:via-rose-900/20 dark:to-rose-900/10'
             } rounded-full px-3 py-1 w-fit shadow-sm backdrop-blur-sm border border-white/50 dark:border-gray-800`}>
               <LineChart className={`h-4 w-4 ${
-                projectionDataHook.retirementBalanceData.percentageDifference >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'
+                retirementBalanceData.percentageDifference >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'
               }`} />
               <p className={`text-sm font-medium ${
-                projectionDataHook.retirementBalanceData.percentageDifference >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'
+                retirementBalanceData.percentageDifference >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'
               }`}>
-                {projectionDataHook.retirementBalanceData.percentageDifference >= 0 ? '+' : ''}{projectionDataHook.retirementBalanceData.percentageDifference.toFixed(2)}%
+                {retirementBalanceData.percentageDifference >= 0 ? '+' : ''}{retirementBalanceData.percentageDifference.toFixed(2)}%
               </p>
             </div>
           </div>
