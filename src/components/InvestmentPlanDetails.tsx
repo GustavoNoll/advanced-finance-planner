@@ -1,4 +1,4 @@
-import { Briefcase, Calendar, Clock, DollarSign, Target, TrendingUp, User, Heart, CalendarCheck, PiggyBank, ArrowUpRight, Wallet, Building2, Coins, Scale, ChartLine, CalendarDays, UserCog, HeartPulse, WalletCards, Pencil } from "lucide-react";
+import { TrendingUp, Building2, Coins, Scale, ChartLine, CalendarDays, UserCog, HeartPulse, WalletCards, Pencil } from "lucide-react";
 import { InvestmentPlan, FinancialRecord } from "@/types/financial";
 import { format, isValid } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -6,6 +6,8 @@ import { useTranslation } from "react-i18next";
 import { formatCurrency } from '@/utils/currency';
 import { Button } from './ui/button';
 import { createDateWithoutTimezone, createDateFromYearMonth } from '@/utils/dateUtils';
+import { YearlyProjectionData } from "@/lib/chart-projections";
+import { ProjectionService } from "@/services/projection.service";
 
 interface InvestmentPlanDetailsProps {
   investmentPlan: InvestmentPlan | null;
@@ -14,6 +16,7 @@ interface InvestmentPlanDetailsProps {
   onEditClick: () => void;
   isBroker?: boolean;
   financialRecords?: FinancialRecord[];
+  projectionData?: YearlyProjectionData[];
 }
 
 interface PlanMetricProps {
@@ -49,7 +52,7 @@ function PlanMetric({ icon, label, value, color, duration }: PlanMetricProps) {
   );
 }
 
-export function InvestmentPlanDetails({ investmentPlan, birthDate, onPlanUpdated, onEditClick, isBroker = false, financialRecords = [] }: InvestmentPlanDetailsProps) {
+export function InvestmentPlanDetails({ investmentPlan, birthDate, onPlanUpdated, onEditClick, isBroker = false, financialRecords = [], projectionData }: InvestmentPlanDetailsProps) {
   const { t } = useTranslation();
   
   if (!investmentPlan || !birthDate) {
@@ -63,6 +66,10 @@ export function InvestmentPlanDetails({ investmentPlan, birthDate, onPlanUpdated
     }
     return createDateWithoutTimezone(dateString);
   };
+
+  const retirementDataInfo = ProjectionService.findFirstRetirementMonth(projectionData);
+  const retirementMonth = retirementDataInfo?.retirementMonth;
+  const firstRetirementWithdrawal = retirementMonth?.withdrawal;
 
   const calculateDate = (age: number) => {
     const birthDateObj = createDateWithoutTimezone(birthDate);
@@ -200,7 +207,7 @@ export function InvestmentPlanDetails({ investmentPlan, birthDate, onPlanUpdated
       icon: <Scale className="h-4 w-4 text-indigo-600" />,
       label: t('dashboard.investmentPlan.adjustedWithdrawal'),
       value: formatCurrency(
-        investmentPlan.inflation_adjusted_income,
+        firstRetirementWithdrawal || investmentPlan.inflation_adjusted_income,
         investmentPlan.currency
       ),
       color: "text-indigo-600"

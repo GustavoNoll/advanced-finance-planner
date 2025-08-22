@@ -205,6 +205,7 @@ const Finances = ({
               onEditClick={() => setIsEditModalOpen(true)}
               isBroker={brokerProfile !== undefined}
               financialRecords={allFinancialRecords}
+              projectionData={projectionData}
             />
           </DashboardCard>
         </div>

@@ -49,6 +49,11 @@ export interface HistoricalDataInfo {
   lastHistoricalMonth: MonthlyProjectionData | null
 }
 
+export interface RetirementDataInfo {
+  retirementYear: YearlyProjectionData | null
+  retirementMonth: MonthlyProjectionData | null
+}
+
 export class ProjectionService {
   /**
    * Encontra o último ano e mês com dados históricos
@@ -90,12 +95,20 @@ export class ProjectionService {
       .reverse()
       .find((month: MonthlyProjectionData) => month.isHistorical)
     
-    // Encontra o último mês de projeção (último mês do último ano)
-    const lastProjectionMonth = lastHistoricalYear.months[lastHistoricalYear.months.length - 1]
-
     return {
       lastHistoricalYear,
       lastHistoricalMonth,
+    }
+  } 
+
+  static findFirstRetirementMonth(projectionData: YearlyProjectionData[]): RetirementDataInfo | null {
+    // Encontra primeiro mês de aposentadoria
+    const retirementYear = projectionData.find((year: YearlyProjectionData) => year.isRetirementTransitionYear)
+    const retirementMonth = retirementYear?.months?.find((month: MonthlyProjectionData) => month.retirement)
+
+    return {
+      retirementYear,
+      retirementMonth
     }
   }
 
@@ -195,8 +208,8 @@ export class ProjectionService {
     try {
       // Encontra o mês de aposentadoria e obtém os dados do mês anterior
       const retirementDate = createDateWithoutTimezone(investmentPlan.plan_end_accumulation_date)
-      const retirementYear = projectionData.find((year: any) => year.year === retirementDate.getFullYear())
-      const retirementMonthIndex = retirementYear?.months?.findIndex((month: any) => month.month === retirementDate.getMonth() + 1)
+      const retirementYear = projectionData.find((year: YearlyProjectionData) => year.year === retirementDate.getFullYear())
+      const retirementMonthIndex = retirementYear?.months?.findIndex((month: MonthlyProjectionData) => month.month === retirementDate.getMonth() + 1)
       
       // Obtém informações sobre dados históricos
       const lastHistoricalDataInfo = this.findLastHistoricalData(projectionData)
@@ -269,7 +282,7 @@ export class ProjectionService {
     try {
       // Encontra os dados do ano de aposentadoria
       const retirementDate = createDateWithoutTimezone(investmentPlan.plan_end_accumulation_date)
-      const retirementYear = projectionData.find((year: any) => year.year === retirementDate.getFullYear())
+      const retirementYear = projectionData.find((year: YearlyProjectionData) => year.year === retirementDate.getFullYear())
       
       if (!retirementYear) {
         return {
@@ -281,7 +294,7 @@ export class ProjectionService {
       }
 
       // Obtém o mês antes da aposentadoria (último mês de acumulação)
-      const retirementMonthIndex = retirementYear.months?.findIndex((month: any) => month.month === retirementDate.getMonth() + 1)
+      const retirementMonthIndex = retirementYear.months?.findIndex((month: MonthlyProjectionData) => month.month === retirementDate.getMonth() + 1)
       const monthBeforeRetirement = retirementYear.months?.[retirementMonthIndex !== undefined && retirementMonthIndex > 0 ? retirementMonthIndex - 1 : 0]
 
       if (!monthBeforeRetirement) {
