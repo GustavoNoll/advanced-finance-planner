@@ -8,6 +8,7 @@ import { Button } from './ui/button';
 import { createDateWithoutTimezone, createDateFromYearMonth } from '@/utils/dateUtils';
 import { ChartOptions, YearlyProjectionData } from "@/lib/chart-projections";
 import { ProjectionService } from "@/services/projection.service";
+import { utils } from "@/lib/plan-progress";
 
 interface InvestmentPlanDetailsProps {
   investmentPlan: InvestmentPlan | null;
@@ -103,9 +104,7 @@ export function InvestmentPlanDetails(
         return 0;
       }
 
-      const months = (planEndDate.getFullYear() - planStartDate.getFullYear()) * 12 + 
-                    (planEndDate.getMonth() - planStartDate.getMonth());
-      return months + 1;
+      return utils.calculateMonthsBetweenDates(planStartDate, planEndDate);
     }
 
     // Se há registros, calcula do último registro até o fim do plano
@@ -126,11 +125,7 @@ export function InvestmentPlanDetails(
     // Cria uma data para o último registro (último dia do mês)
     const lastRecordDate = createDateFromYearMonth(latestRecord.record_year, latestRecord.record_month);
     
-    const months = (planEndDate.getFullYear() - lastRecordDate.getFullYear()) * 12 + 
-                  (planEndDate.getMonth() - lastRecordDate.getMonth());
-    
-    // Retorna apenas os meses restantes (não inclui o mês atual se for o mesmo)
-    return Math.max(0, months);
+    return utils.calculateMonthsBetweenDates(lastRecordDate, planEndDate);
   };
 
   const formatDate = (date: Date | null) => {
