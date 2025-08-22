@@ -2,6 +2,7 @@ import { useEffect } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
+import { Checkbox } from "@/components/ui/checkbox"
 import { useNavigate, useParams } from "react-router-dom"
 import { useToast } from "@/components/ui/use-toast"
 import { ArrowLeft } from "lucide-react"
@@ -9,7 +10,6 @@ import { Spinner } from "@/components/ui/spinner"
 import { useTranslation } from "react-i18next"
 import CurrencyInput from 'react-currency-input-field'
 import { RISK_PROFILES } from '@/constants/riskProfiles'
-import { isCalculationReady } from '@/utils/investmentPlanCalculations'
 
 // Custom hooks
 import { useInvestmentPlanState } from '@/features/investment-plans/hooks/useInvestmentPlanState'
@@ -351,18 +351,15 @@ export const EditPlan = () => {
 
                   <div className="space-y-2">
                     <div className="flex items-center space-x-2 mb-2">
-                      <input
-                        type="checkbox"
+                      <Checkbox
                         id="hasOldPortfolio"
-                        name="hasOldPortfolio"
                         checked={formData.hasOldPortfolio}
-                        onChange={(e) => {
+                        onCheckedChange={(checked) => {
                           handleFormDataChange({
-                            hasOldPortfolio: e.target.checked,
-                            oldPortfolioProfitability: e.target.checked ? formData.oldPortfolioProfitability : null
+                            hasOldPortfolio: checked as boolean,
+                            oldPortfolioProfitability: checked ? formData.oldPortfolioProfitability : null
                           })
                         }}
-                        className="h-4 w-4 rounded border-input text-primary focus:ring-primary"
                       />
                       <label htmlFor="hasOldPortfolio" className="text-sm font-medium text-muted-foreground">
                         {t('investmentPlan.form.hasOldPortfolio')}
@@ -468,13 +465,12 @@ export const EditPlan = () => {
                     </div>
 
                     <div className="flex items-center space-x-2">
-                      <input
-                        type="checkbox"
+                      <Checkbox
                         id="adjust_contribution_for_inflation"
-                        name="adjust_contribution_for_inflation"
                         checked={formData.adjustContributionForInflation}
-                        onChange={handleChange}
-                        className="h-4 w-4 rounded border-input text-primary focus:ring-primary"
+                        onCheckedChange={(checked) => {
+                          handleFormDataChange({ adjustContributionForInflation: checked as boolean })
+                        }}
                       />
                       <label htmlFor="adjust_contribution_for_inflation" className="text-sm font-medium text-muted-foreground">
                         {t('investmentPlan.form.adjustContributionForInflation')}
@@ -482,13 +478,12 @@ export const EditPlan = () => {
                     </div>
 
                     <div className="flex items-center space-x-2">
-                      <input
-                        type="checkbox"
+                      <Checkbox
                         id="adjust_income_for_inflation"
-                        name="adjust_income_for_inflation"
                         checked={formData.adjustIncomeForInflation}
-                        onChange={handleChange}
-                        className="h-4 w-4 rounded border-input text-primary focus:ring-primary"
+                        onCheckedChange={(checked) => {
+                          handleFormDataChange({ adjustIncomeForInflation: checked as boolean })
+                        }}
                       />
                       <label htmlFor="adjust_income_for_inflation" className="text-sm font-medium text-muted-foreground">
                         {t('investmentPlan.form.adjustIncomeForInflation')}
