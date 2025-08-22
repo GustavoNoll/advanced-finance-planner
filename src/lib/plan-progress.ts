@@ -293,7 +293,8 @@ const financialCalculations = {
     plannedFuturePresentValue: number,
     projectedFuturePresentValue: number,
     realMonthlyInflation: number,
-    monthlyProjectionData: MonthlyProjectionData | null
+    monthlyProjectionData: MonthlyProjectionData | null,
+    nextMonthAfterHistorical: MonthlyProjectionData | null
   ): ProjectionResult => {
     const lastRecord = allFinancialRecords[0];
     const actualMonth = lastRecord?.record_month || 0;
@@ -338,7 +339,7 @@ const financialCalculations = {
     
     // Get plan parameters
     const adjustContributionForInflation = investmentPlan.adjust_contribution_for_inflation;
-    const contribution = -investmentPlan.monthly_deposit;
+    const contribution = nextMonthAfterHistorical ? nextMonthAfterHistorical.contribution : investmentPlan.monthly_deposit;
     
     const limitAgeDate = utils.createDateAtAge(birthDate, investmentPlan.limit_age || 100);
     const monthsRetired = utils.calculateMonthsBetweenDates(planEndDate, limitAgeDate);
@@ -360,13 +361,17 @@ const financialCalculations = {
     // Calculate projections
 
     // PROJECTIONS 
-    const balanceVPAdjusted = vp(monthlyExpectedReturn, monthsToRetirementSinceStart - monthsToRetirementSinceNow, contribution, -balanceWithGoals);
+    console.log('balanceVPAdjustedParams', monthlyExpectedReturn, monthsToRetirementSinceStart - monthsToRetirementSinceNow, -contribution, -balanceWithGoals)
+    const balanceVPAdjusted = vp(monthlyExpectedReturn, monthsToRetirementSinceStart - monthsToRetirementSinceNow, -contribution, -balanceWithGoals);
+    console.log('balanceVPAdjusted', balanceVPAdjusted)
+    console.log('projectedMonthsToRetirement', effectiveRate, -contribution, balanceVPAdjusted, adjustedGoalProjectedFutureValue)
     const projectedMonthsToRetirement = nper(
       effectiveRate,
-      contribution,
-      balanceVPAdjusted,
+      -contribution,
+      -balanceWithGoals,
       adjustedGoalProjectedFutureValue
     );
+    console.log('projectedMonthsToRetirement', projectedMonthsToRetirement)
 
     const projectedContribution = -pmt(
       effectiveRate,
@@ -393,13 +398,17 @@ const financialCalculations = {
     if (monthlyProjectionData) {
       // se tiver registros financeiros, usar os dados da projeção
       const plannedBalanceWithGoals = (monthlyProjectionData.planned_balance + preRetirementGoals)
-      const plannedVPBalance = vp(monthlyExpectedReturn, monthsToRetirementSinceStart - monthsToRetirementSinceNow, contribution, -plannedBalanceWithGoals)
+      console.log('plannedVPBalanceParams', monthlyExpectedReturn, monthsToRetirementSinceStart - monthsToRetirementSinceNow, -contribution, -plannedBalanceWithGoals)
+      const plannedVPBalance = vp(monthlyExpectedReturn, monthsToRetirementSinceStart - monthsToRetirementSinceNow, -contribution, -plannedBalanceWithGoals)
+      console.log('plannedVPBalance', plannedVPBalance)
+      console.log('plannedMonthsToRetirementParams', effectiveRate, -contribution, plannedVPBalance, adjustedGoalPlannedFutureValue)
       plannedMonthsToRetirement = nper(
         effectiveRate,
-        contribution,
-        plannedVPBalance,
+        -contribution,
+        -plannedBalanceWithGoals,
         adjustedGoalPlannedFutureValue
-      )
+      );
+      console.log('plannedMonthsToRetirement', plannedMonthsToRetirement)
       plannedContribution = -pmt(
         effectiveRate,
         monthsToRetirementSinceNow,
@@ -409,7 +418,7 @@ const financialCalculations = {
     }else{
       plannedMonthsToRetirement = nper(
         effectiveRate,
-        contribution,
+        -contribution,
         initialWithGoals,
         adjustedGoalPlannedFutureValue
       );
@@ -513,7 +522,8 @@ export function processPlanProgressData(
     plannedFuturePresentValue,
     projectedFuturePresentValue,
     realMonthlyInflation,
-    lastHistoricalDataInfo.lastHistoricalMonth
+    lastHistoricalDataInfo.lastHistoricalMonth,
+    lastHistoricalDataInfo.nextMonthAfterHistorical
   );
 
   // Calcular a idade projetada em anos e meses

@@ -237,6 +237,7 @@ const Finances = ({
         <EditPlanModal
           investmentPlan={investmentPlan}
           birthDate={clientProfile.birth_date}
+          financialRecords={allFinancialRecords}
           onClose={() => setIsEditModalOpen(false)}
           onSuccess={() => {
             setIsEditModalOpen(false);
