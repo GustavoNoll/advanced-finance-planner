@@ -39,6 +39,7 @@ export interface ProjectionData {
 export interface HistoricalDataInfo {
   lastHistoricalYear: YearlyProjectionData | null
   lastHistoricalMonth: MonthlyProjectionData | null
+  nextMonthAfterHistorical: MonthlyProjectionData | null
 }
 
 export interface RetirementDataInfo {
@@ -64,7 +65,8 @@ export class ProjectionService {
     if (!projectionData || projectionData.length === 0) {
       return {
         lastHistoricalYear: null,
-        lastHistoricalMonth: null
+        lastHistoricalMonth: null,
+        nextMonthAfterHistorical: null
       }
     }
 
@@ -77,7 +79,8 @@ export class ProjectionService {
     if (!lastHistoricalYear || !lastHistoricalYear.months) {
       return {
         lastHistoricalYear: null,
-        lastHistoricalMonth: null
+        lastHistoricalMonth: null,
+        nextMonthAfterHistorical: null
       }
     }
 
@@ -87,9 +90,38 @@ export class ProjectionService {
       .reverse()
       .find((month: MonthlyProjectionData) => month.isHistorical)
     
+    if (!lastHistoricalMonth) {
+      return {
+        lastHistoricalYear,
+        lastHistoricalMonth: null,
+        nextMonthAfterHistorical: null
+      }
+    }
+
+    // Encontra o próximo mês após o último histórico
+    let nextMonthAfterHistorical: MonthlyProjectionData | null = null
+    
+    // Primeiro, tenta encontrar no mesmo ano
+    const currentYearIndex = projectionData.findIndex(year => year.year === lastHistoricalYear.year)
+    const currentMonthIndex = lastHistoricalYear.months.findIndex(month => 
+      month.month === lastHistoricalMonth.month && month.year === lastHistoricalMonth.year
+    )
+    
+    if (currentMonthIndex < lastHistoricalYear.months.length - 1) {
+      // Próximo mês está no mesmo ano
+      nextMonthAfterHistorical = lastHistoricalYear.months[currentMonthIndex + 1]
+    } else if (currentYearIndex < projectionData.length - 1) {
+      // Próximo mês está no próximo ano
+      const nextYear = projectionData[currentYearIndex + 1]
+      if (nextYear.months && nextYear.months.length > 0) {
+        nextMonthAfterHistorical = nextYear.months[0]
+      }
+    }
+    
     return {
       lastHistoricalYear,
       lastHistoricalMonth,
+      nextMonthAfterHistorical
     }
   } 
 
