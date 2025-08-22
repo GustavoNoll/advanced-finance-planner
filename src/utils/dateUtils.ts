@@ -14,8 +14,19 @@ export function createDateWithoutTimezone(dateInput: string | Date | { year: num
   
   if (typeof dateInput === 'string') {
     // Parse date string and create date without timezone
-    const [year, month, day] = dateInput.split('-').map(Number);
-    return new Date(year, month - 1, day);
+    const parts = dateInput.split('-').map(Number);
+    
+    if (parts.length === 2) {
+      // Handle "YYYY-MM" format - treat as first day of month
+      const [year, month] = parts;
+      return new Date(year, month - 1, 1);
+    } else if (parts.length === 3) {
+      // Handle "YYYY-MM-DD" format
+      const [year, month, day] = parts;
+      return new Date(year, month - 1, day);
+    } else {
+      throw new Error(`Invalid date string format: ${dateInput}. Expected "YYYY-MM" or "YYYY-MM-DD"`);
+    }
   }
   
   if (dateInput instanceof Date) {

@@ -52,13 +52,18 @@ export interface YearlyProjectionData {
 
 export interface ChartOptions {
   changeMonthlyDeposit?: {
+    enabled?: boolean;
     value: number;
-    date: string; // formato: 'YYYY-MM-DD'
+    date: string; // formato: 'YYYY-MM' ou 'YYYY-MM-DD'
   };
-  changeMontlhyWithdraw?: {
+  changeMonthlyWithdraw?: {
+    enabled?: boolean;
     value: number;
-    date: string; // formato: 'YYYY-MM-DD'
+    date: string; // formato: 'YYYY-MM' ou 'YYYY-MM-DD'
   };
+  showRealValues?: boolean;
+  showNegativeValues?: boolean;
+  showOldPortfolio?: boolean;
 }
 
 interface ProjectionContext {
@@ -147,11 +152,12 @@ function createProjectionContext(
   );
 
   // Parse chart options dates
+
   const changeDepositDate = chartOptions?.changeMonthlyDeposit?.date 
     ? createDateWithoutTimezone(chartOptions.changeMonthlyDeposit.date) 
     : null;
-  const changeWithdrawDate = chartOptions?.changeMontlhyWithdraw?.date 
-    ? createDateWithoutTimezone(chartOptions.changeMontlhyWithdraw.date) 
+  const changeWithdrawDate = chartOptions?.changeMonthlyWithdraw?.date 
+    ? createDateWithoutTimezone(chartOptions.changeMonthlyWithdraw.date) 
     : null;
 
   return {
@@ -187,12 +193,25 @@ function calculateMonthlyRates(
   ipcaRatesMap: Map<string, number>,
   defaultMonthlyInflationRate: number,
   monthlyExpectedReturnRate: number,
-  monthlyOldPortfolioExpectedReturnRate: number
+  monthlyOldPortfolioExpectedReturnRate: number,
+  showRealValues: boolean
 ): { monthlyInflationRate: number; monthlyReturnRate: number; monthlyOldPortfolioReturnRate: number } {
   const ipcaKey = `${year}-${month}`;
-  const monthlyInflationRate = ipcaRatesMap.has(ipcaKey) 
-    ? ipcaRatesMap.get(ipcaKey)! 
-    : defaultMonthlyInflationRate;
+  if (ipcaRatesMap.has(ipcaKey)) {
+    const monthlyInflationRate = ipcaRatesMap.get(ipcaKey)!;
+    const monthlyReturnRate = calculateCompoundedRates([
+      monthlyExpectedReturnRate, 
+      monthlyInflationRate
+    ]);
+    const monthlyOldPortfolioReturnRate = calculateCompoundedRates([
+      monthlyOldPortfolioExpectedReturnRate, 
+      monthlyInflationRate
+    ]);
+
+    return { monthlyInflationRate, monthlyReturnRate, monthlyOldPortfolioReturnRate };
+  }
+
+  const monthlyInflationRate = showRealValues ? 0 : defaultMonthlyInflationRate;
 
   const monthlyReturnRate = calculateCompoundedRates([
     monthlyExpectedReturnRate, 
@@ -411,7 +430,7 @@ export function generateProjectionData(
     if (context.changeWithdrawDate && 
         context.changeWithdrawDate.getFullYear() === year && 
         context.changeWithdrawDate.getMonth() + 1 === month) {
-      currentMonthlyWithdrawal = chartOptions!.changeMontlhyWithdraw!.value;
+      currentMonthlyWithdrawal = chartOptions!.changeMonthlyWithdraw!.value;
     }
 
     const isRetirementAge = year > context.endDate.getFullYear() ||
@@ -425,7 +444,8 @@ export function generateProjectionData(
         context.ipcaRatesMap, 
         context.defaultMonthlyInflationRate,
         context.monthlyExpectedReturnRate,
-        context.monthlyOldPortfolioExpectedReturnRate
+        context.monthlyOldPortfolioExpectedReturnRate,
+        chartOptions?.showRealValues || false
       );
     
     accumulatedInflation *= (1 + monthlyInflationRate);

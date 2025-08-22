@@ -2,8 +2,8 @@ import React, { useState, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import { Download, ChevronDown, ChevronRight } from "lucide-react";
-import { generateProjectionData, YearlyProjectionData } from '@/lib/chart-projections';
-import { FinancialRecord, InvestmentPlan, Goal, ProjectedEvent, Profile } from '@/types/financial';
+import { generateProjectionData, YearlyProjectionData, ChartOptions } from '@/lib/chart-projections';
+import { FinancialRecord, InvestmentPlan, Goal, ProjectedEvent, Profile, ChartDataPoint } from '@/types/financial';
 import { formatCurrency, CurrencyCode } from "@/utils/currency";
 import { toast } from "@/components/ui/use-toast";
 
@@ -17,6 +17,8 @@ interface FutureProjectionTabProps {
   showGoalsEvents?: boolean;
   showRealEvolution?: boolean;
   isSimulation?: boolean;
+  rawChartData?: ChartDataPoint[];
+  chartOptions?: ChartOptions;
 }
 
 export function FutureProjectionTab({ 
@@ -28,7 +30,9 @@ export function FutureProjectionTab({
   projectionData,
   showGoalsEvents = true,
   showRealEvolution = true,
-  isSimulation = false
+  isSimulation = false,
+  rawChartData,
+  chartOptions
 }: FutureProjectionTabProps) {
   const { t } = useTranslation();
   const [expandedYears, setExpandedYears] = useState<number[]>([]);
@@ -111,12 +115,33 @@ export function FutureProjectionTab({
   };
 
   const dataToShow = useMemo(() => {
-    const data = projectionData || generateProjectionData(
+    // If projectionData is provided, use it
+    if (projectionData) {
+      const data = projectionData;
+
+      // In simulation mode, filter out historical data and simplify the structure
+      if (isSimulation) {
+        return data.map(yearRow => ({
+          ...yearRow,
+          hasHistoricalData: false, // Hide historical indicators in simulation
+          months: yearRow.months?.map(month => ({
+            ...month,
+            isHistorical: false // Hide historical indicators in simulation
+          }))
+        }));
+      }
+
+      return data;
+    }
+
+    // Otherwise, generate projection data
+    const data = generateProjectionData(
       investmentPlan,
       profile,
       allFinancialRecords,
       goals,
-      events
+      events,
+      chartOptions
     );
 
     // In simulation mode, filter out historical data and simplify the structure
@@ -132,7 +157,7 @@ export function FutureProjectionTab({
     }
 
     return data;
-  }, [projectionData, investmentPlan, profile, allFinancialRecords, goals, events, isSimulation]);
+  }, [projectionData, investmentPlan, profile, allFinancialRecords, goals, events, isSimulation, chartOptions]);
 
   return (
     <div className="space-y-4">

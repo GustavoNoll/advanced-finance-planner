@@ -6,6 +6,7 @@ import { formatCurrency, CurrencyCode } from "@/utils/currency"
 import { useFinancialMetrics } from "@/hooks/useFinancialData"
 import { useProjectionData } from "@/hooks/useProjectionData"
 import { FinancialRecord, Profile, InvestmentPlan, Goal, ProjectedEvent } from "@/types/financial"
+import { ChartOptions } from "@/lib/chart-projections"
 
 type TimePeriod = 'all' | '6m' | '12m' | '24m'
 
@@ -20,6 +21,7 @@ interface DashboardMetricsProps {
   allFinancialRecords: FinancialRecord[]
   goalsAndEvents: { goals: Goal[]; events: ProjectedEvent[] }
   clientProfile: Profile
+  chartOptions: ChartOptions
 }
 
 export function DashboardMetrics({
@@ -32,7 +34,8 @@ export function DashboardMetrics({
   t,
   allFinancialRecords,
   goalsAndEvents,
-  clientProfile
+  clientProfile,
+  chartOptions
 }: DashboardMetricsProps) {
   const { totalReturns, totalContribution, processedRecords } = useFinancialMetrics(
     clientId,
@@ -48,11 +51,7 @@ export function DashboardMetrics({
     allFinancialRecords,
     goalsAndEvents.goals,
     goalsAndEvents.events,
-    {
-      showRealValues: false,
-      showNegativeValues: false,
-      showOldPortfolio: true
-    }
+    chartOptions
   )
 
   const portfolioValue = processedRecords.latestRecord?.ending_balance || 0

@@ -20,6 +20,7 @@ import { DashboardMetrics } from "@/components/dashboard/DashboardMetrics";
 import { useFinancialRecords, useGoalsAndEvents } from "@/hooks/useFinancialData";
 import { useProjectionData } from "@/hooks/useProjectionData";
 import { PlanProgressData } from "@/lib/plan-progress";
+import { ChartOptions } from "@/lib/chart-projections";
 
 type TimePeriod = 'all' | '6m' | '12m' | '24m';
 
@@ -64,19 +65,20 @@ const Finances = ({
   });
 
   // Hook para dados de projeção
+  const chartOptions: ChartOptions = {
+    showRealValues: showRealValues || false,
+    showNegativeValues: showNegativeValues || false,
+    showOldPortfolio: showOldPortfolio || false,
+    ...chartOptionsHook.chartOptions
+  }
+
   const projectionDataHook = useProjectionData(
     investmentPlan,
     clientProfile,
     allFinancialRecords,
     goalsAndEvents.goals,
     goalsAndEvents.events,
-    {
-      showRealValues,
-      showNegativeValues,
-      showOldPortfolio,
-      changeMonthlyDeposit: chartOptionsHook.changeMonthlyDeposit?.value || 0,
-      changeMonthlyWithdraw: chartOptionsHook.changeMonthlyWithdraw?.value || 0
-    }
+    chartOptions
   );
 
   // Dados finais de projeção
@@ -145,6 +147,7 @@ const Finances = ({
           allFinancialRecords={allFinancialRecords}
           goalsAndEvents={goalsAndEvents}
           clientProfile={clientProfile}
+          chartOptions={chartOptions}
         />
 
         {/* Gráfico de Projeção */}
@@ -205,6 +208,8 @@ const Finances = ({
               onEditClick={() => setIsEditModalOpen(true)}
               isBroker={brokerProfile !== undefined}
               financialRecords={allFinancialRecords}
+              projectionData={projectionData}
+              chartOptions={chartOptions}
             />
           </DashboardCard>
         </div>

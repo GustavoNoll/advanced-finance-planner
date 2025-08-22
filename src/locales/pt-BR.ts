@@ -108,6 +108,8 @@ export const ptBR = {
       title: "Criar Plano de Investimento",
       calculations: {
         title: "Valores Calculados",
+        futureValue: "Valor Futuro",
+        presentFutureValue: "Valor Presente Futuro",
         inflationAdjustedIncome: "Renda Ajustada pela Inflação",
         requiredFutureValue: "Valor Futuro",
         monthlyRealReturn: "Retorno Mensal Real",
