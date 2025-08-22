@@ -29,16 +29,6 @@ interface ProjectedAgeResult {
   monthsDifference: number;
 }
 
-interface ComparisonRowProps {
-  title: string;
-  planned: number;
-  projected: number;
-  isCurrency?: boolean;
-  isHigherBetter?: boolean;
-  t: (key: string) => string;
-  currency: string;
-}
-
 export const SavingsGoal = ({ allFinancialRecords, investmentPlan, profile, planProgressData }: SavingsGoalProps) => {
   const { t } = useTranslation();
 
@@ -57,7 +47,6 @@ export const SavingsGoal = ({ allFinancialRecords, investmentPlan, profile, plan
   const presentFutureValue = investmentPlan?.present_future_value ?? 0;
   const investmentGoal = investmentPlan?.future_value ?? 0;
   const returnRate = (investmentPlan?.inflation ?? 0) + (investmentPlan?.expected_return ?? 0);
-  const finalAge = investmentPlan?.final_age ?? 0;
   const birthDate = profile?.birth_date;
 
   const calculateProjectedAge = (): ProjectedAgeResult | 'ageNotAvailable' | 'metaNotAchieved' => {

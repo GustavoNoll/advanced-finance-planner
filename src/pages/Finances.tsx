@@ -81,10 +81,11 @@ const Finances = ({
     chartOptions
   );
 
-  // Dados finais de projeção
-  const projectionData = projectionDataHook.hasActiveChartOptions 
-    ? projectionDataHook.projectionDataWithOptions 
-    : projectionDataHook.originalProjectionData;
+  // Dados de projeção sem opções avançadas: Usado para componentes que não devem varias com as opções do gráfico
+  const projectionDataWithoutOptions = projectionDataHook.originalProjectionData
+
+  // Dados de projeção com opções avançadas: Usado para componentes que devem variar com as opções do gráfico
+  const projectionDataWithOptions = projectionDataHook.projectionDataWithOptions
 
   // Sincronização IPCA
   const { syncIPCA, isSyncing } = useIPCASync(clientId, allFinancialRecords, investmentPlan);
@@ -144,21 +145,19 @@ const Finances = ({
           onSelectedPeriodChange={setSelectedPeriod}
           onContributionPeriodChange={setContributionPeriod}
           t={t}
-          allFinancialRecords={allFinancialRecords}
-          goalsAndEvents={goalsAndEvents}
-          clientProfile={clientProfile}
-          chartOptions={chartOptions}
+          retirementBalanceData={projectionDataHook.retirementBalanceData || undefined}
         />
 
         {/* Gráfico de Projeção */}
         <div className="transform transition-all duration-300 hover:scale-[1.01] hover:shadow-2xl bg-gradient-to-br from-white/95 via-slate-50/90 to-blue-50/80 dark:from-gray-900/90 dark:via-gray-900/80 dark:to-slate-800/70 backdrop-blur-sm rounded-xl shadow-lg p-6 border border-gray-100/50 dark:border-gray-800 hover:border-blue-100/50 dark:hover:border-gray-700">
-          {projectionData ? (
+          {/* Gráfico de Projeção com Opções, varia conforme as opções do gráfico */}
+          {projectionDataWithOptions ? (
             <ExpenseChart 
               profile={clientProfile}
               investmentPlan={investmentPlan}
               clientId={clientId}
               allFinancialRecords={allFinancialRecords}
-              projectionData={projectionData}
+              projectionData={projectionDataWithOptions}
               onProjectionDataChange={handleProjectionDataChange}
               showRealValues={showRealValues}
               showNegativeValues={showNegativeValues}
@@ -208,7 +207,7 @@ const Finances = ({
               onEditClick={() => setIsEditModalOpen(true)}
               isBroker={brokerProfile !== undefined}
               financialRecords={allFinancialRecords}
-              projectionData={projectionData}
+              projectionData={projectionDataWithoutOptions}
               chartOptions={chartOptions}
             />
           </DashboardCard>
@@ -216,14 +215,14 @@ const Finances = ({
 
         {/* Visualização Mensal */}
         <section className="transform transition-all duration-300 hover:scale-[1.01] hover:shadow-2xl bg-gradient-to-br from-white/95 via-slate-50/90 to-blue-50/80 dark:from-gray-900/90 dark:via-gray-900/80 dark:to-slate-800/70 backdrop-blur-sm rounded-xl shadow-lg border border-gray-100/50 dark:border-gray-800 hover:border-blue-100/50 dark:hover:border-gray-700">
-          {projectionData ? (
+          {projectionDataWithOptions ? (
             <MonthlyView 
               userId={clientId} 
               initialRecords={processedRecords.financialRecords} 
               allFinancialRecords={allFinancialRecords}
               investmentPlan={investmentPlan}
               profile={clientProfile}
-              projectionData={projectionData}
+              projectionData={projectionDataWithOptions}
             />
           ) : (
             <div className="flex items-center justify-center h-[300px]">

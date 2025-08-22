@@ -26,7 +26,7 @@ export interface MonthlyProjectionData {
 }
 
 export interface ProjectionData {
-  projectionData: YearlyProjectionData[]
+  projectionData: YearlyProjectionData[] | null
   planProgressData: PlanProgressData
   retirementBalanceData: {
     nominalDifference: number
