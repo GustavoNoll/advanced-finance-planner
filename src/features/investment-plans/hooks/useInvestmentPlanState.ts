@@ -8,6 +8,7 @@ export function useInvestmentPlanState() {
   const [loading, setLoading] = useState(false)
   const [isLoadingData, setIsLoadingData] = useState(false)
   const [birthDate, setBirthDate] = useState<Date | null>(null)
+  const [hasFinancialRecords, setHasFinancialRecords] = useState(false)
   const [formData, setFormData] = useState<FormData>({
     initialAmount: "",
     plan_initial_date: createDateWithoutTimezone(new Date()).toISOString().split('T')[0],
@@ -54,6 +55,7 @@ export function useInvestmentPlanState() {
     updateSource,
     calculations,
     isCalculationReady: isCalculationReadyState,
+    hasFinancialRecords,
     
     // Setters
     setLoading,
@@ -63,5 +65,6 @@ export function useInvestmentPlanState() {
     setExpandedRow,
     setIsSyncing,
     setUpdateSource,
+    setHasFinancialRecords,
   }
 }

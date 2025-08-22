@@ -4,31 +4,36 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/components/ui/use-toast";
 import { supabase } from "@/lib/supabase";
-import { X } from "lucide-react";
+import { X, Lock } from "lucide-react";
 import { 
   calculateFutureValues, 
   isCalculationReady, 
-  type FormData as InvestmentFormData,
+  type FormData,
   type Calculations as InvestmentCalculations
 } from '@/utils/investmentPlanCalculations';
 import { useTranslation } from "react-i18next";
 import CurrencyInput from 'react-currency-input-field';
 import { CurrencyCode, getCurrencySymbol } from "@/utils/currency";
-import { InvestmentPlan } from "@/types/financial";
+import { InvestmentPlan, FinancialRecord } from "@/types/financial";
 import { calculateAge, calculateEndDate, calculateFinalAge } from '@/utils/dateUtils';
-import { handleAgeDateSync, handleFormChange, type FormData, type Currency } from '@/utils/formUtils';
+import { handleAgeDateSync, handleFormChange, type Currency } from '@/utils/formUtils';
 import { RISK_PROFILES } from '@/constants/riskProfiles';
 
 interface EditPlanModalProps {
   investmentPlan: InvestmentPlan;
   birthDate: string;
+  financialRecords?: FinancialRecord[];
   onClose: () => void;
   onSuccess: () => void;
 }
 
-export function EditPlanModal({ investmentPlan, birthDate, onClose, onSuccess }: EditPlanModalProps) {
+export function EditPlanModal({ investmentPlan, birthDate, financialRecords = [], onClose, onSuccess }: EditPlanModalProps) {
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
+  
+  // Verificar se existem registros financeiros para bloquear a edição do valor inicial
+  const hasFinancialRecords = financialRecords.length > 0;
+  
   const [formData, setFormData] = useState<FormData>({
     initialAmount: investmentPlan.initial_amount.toString(),
     plan_initial_date: new Date(investmentPlan.plan_initial_date).toISOString().split('T')[0],
@@ -56,6 +61,8 @@ export function EditPlanModal({ investmentPlan, birthDate, onClose, onSuccess }:
     limitAge: investmentPlan.limit_age?.toString() || "85",
     legacyAmount: investmentPlan.legacy_amount?.toString() || "1000000",
     currency: investmentPlan.currency || "BRL",
+    oldPortfolioProfitability: investmentPlan.old_portfolio_profitability?.toString() || null,
+    hasOldPortfolio: investmentPlan.old_portfolio_profitability !== null,
   });
 
   const [calculations, setCalculations] = useState<InvestmentCalculations | null>(null);
@@ -206,8 +213,11 @@ export function EditPlanModal({ investmentPlan, birthDate, onClose, onSuccess }:
                 </div>
 
                 <div className="space-y-2">
-                  <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                  <label className="text-sm font-medium text-gray-700 dark:text-gray-300 flex items-center gap-2">
                     {t('investmentPlan.form.initialAmount')}
+                    {hasFinancialRecords && (
+                      <Lock className="h-3 w-3 text-muted-foreground" />
+                    )}
                   </label>
                   <CurrencyInput
                     name="initialAmount"
@@ -225,7 +235,14 @@ export function EditPlanModal({ investmentPlan, birthDate, onClose, onSuccess }:
                     groupSeparator="."
                     className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
                     required
+                    disabled={hasFinancialRecords}
                   />
+                  {hasFinancialRecords && (
+                    <p className="text-xs text-muted-foreground flex items-center gap-1">
+                      <Lock className="h-3 w-3" />
+                      {t('investmentPlan.form.initialAmountLockedMessage')}
+                    </p>
+                  )}
                 </div>
 
                 <div className="space-y-2">

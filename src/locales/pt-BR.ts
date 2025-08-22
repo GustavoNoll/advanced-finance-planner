@@ -66,6 +66,7 @@ export const ptBR = {
       years: "anos",
       planEndAccumulationDate: "Data de Encerramento do Plano",
       initialAmount: "Valor Inicial",
+      initialAmountLockedMessage: "O valor inicial não pode ser alterado quando já existem registros financeiros para este cliente. Isso garante a integridade dos dados históricos.",
       planInitialDate: "Data de Início do Plano",
       initialAge: "Idade Inicial",
       finalAge: "Idade Final",

@@ -88,7 +88,22 @@ export function useInvestmentPlanOperations({
         return null
       }
 
-      return { plan: data, profile }
+      // Buscar registros financeiros para verificar se o valor inicial pode ser editado
+      const { data: financialRecords, error: financialRecordsError } = await supabase
+        .from('user_financial_records')
+        .select('id')
+        .eq('user_id', data.user_id)
+        .limit(1)
+
+      if (financialRecordsError) {
+        console.warn('Warning: Could not fetch financial records for validation:', financialRecordsError)
+      }
+
+      return { 
+        plan: data, 
+        profile,
+        hasFinancialRecords: (financialRecords || []).length > 0
+      }
     } catch (error) {
       console.error('Error fetching plan:', error)
       toast({

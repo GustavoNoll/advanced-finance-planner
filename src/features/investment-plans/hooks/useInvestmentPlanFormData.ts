@@ -2,20 +2,24 @@ import { useCallback } from 'react'
 import { RISK_PROFILES } from '@/constants/riskProfiles'
 import type { FormData } from '@/utils/investmentPlanCalculations'
 import { createDateWithoutTimezone } from '@/utils/dateUtils'
+import { InvestmentPlan, Profile } from '@/types/financial'
 
 interface UseInvestmentPlanFormDataProps {
   setFormData: React.Dispatch<React.SetStateAction<FormData>>
   setBirthDate: (date: Date | null) => void
+  setHasFinancialRecords: (hasRecords: boolean) => void
 }
 
 export function useInvestmentPlanFormData({
   setFormData,
-  setBirthDate
+  setBirthDate,
+  setHasFinancialRecords
 }: UseInvestmentPlanFormDataProps) {
 
   // Process fetched plan data
-  const processPlanData = useCallback((planData: any, profileData: any) => {
+  const processPlanData = useCallback((planData: InvestmentPlan, profileData: Profile, hasFinancialRecords: boolean = false) => {
     setBirthDate(profileData.birth_date ? createDateWithoutTimezone(profileData.birth_date) : null)
+    setHasFinancialRecords(hasFinancialRecords)
 
     // Adjust the date to show the correct date when editing
     const planDate = createDateWithoutTimezone(planData.plan_initial_date)
@@ -23,7 +27,7 @@ export function useInvestmentPlanFormData({
 
     // Find the matching risk profile for the plan's currency
     const profiles = RISK_PROFILES[planData.currency || "BRL"]
-    const matchingProfile = profiles.find(p => parseFloat(p.return) === parseFloat(planData.expected_return))
+    const matchingProfile = profiles.find(p => parseFloat(p.return) === parseFloat(planData.expected_return.toString()))
     const defaultProfile = profiles[1] // Use moderate as default
 
     setFormData({
@@ -44,10 +48,10 @@ export function useInvestmentPlanFormData({
       oldPortfolioProfitability: planData.old_portfolio_profitability?.toString() || null,
       hasOldPortfolio: planData.old_portfolio_profitability !== null,
     })
-  }, [setFormData, setBirthDate])
+  }, [setFormData, setBirthDate, setHasFinancialRecords])
 
   // Process client profile data
-  const processClientProfileData = useCallback((profileData: any) => {
+  const processClientProfileData = useCallback((profileData: Profile) => {
     setBirthDate(profileData.birth_date ? createDateWithoutTimezone(profileData.birth_date) : null)
   }, [setBirthDate])
 
