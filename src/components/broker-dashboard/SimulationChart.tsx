@@ -1,16 +1,11 @@
 import { useTranslation } from "react-i18next";
 import { ChartDataPoint, FinancialRecord, MonthNumber, InvestmentPlan, Profile } from '@/types/financial';
-import { generateChartProjections, YearlyProjectionData } from '@/lib/chart-projections';
+import { ChartOptions, generateChartProjections, YearlyProjectionData } from '@/lib/chart-projections';
 import { useState, useEffect } from "react";
 import { calculateCompoundedRates, yearlyReturnRateToMonthlyReturnRate } from '@/lib/financial-math';
 import { calculateInflationAdjustedValue, getInvestmentPlanBaseDate } from '@/lib/inflation-utils';
-import { TrendingUp, Settings } from "lucide-react";
-import PatrimonialProjectionChart from "@/components/chart/PatrimonialProjectionChart"
-import { Button } from "@/components/ui/button";
-import { Switch } from "@/components/ui/switch";
-import { Label } from "@/components/ui/label";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Separator } from "@/components/ui/separator";
+import { TrendingUp } from "lucide-react";
+import PatrimonialProjectionChart from "@/components/chart/PatrimonialProjectionChart";
 import { createDateWithoutTimezone, createDateFromYearMonth } from '@/utils/dateUtils';
 
 interface SimulationFormData {
@@ -37,6 +32,8 @@ interface SimulationChartProps {
   profile: Profile;
   formData: SimulationFormData;
   onFormDataChange: (field: keyof SimulationFormData, value: string | boolean) => void;
+  rawChartData: ChartDataPoint[];
+  chartOptions: ChartOptions;
 }
 
 // Update the zoom level type to include custom
@@ -52,18 +49,21 @@ type ZoomLevel = '1y' | '5y' | '10y' | 'all' | 'custom';
 function getRawChartData({
   profile,
   investmentPlan,
-  allFinancialRecords
+  allFinancialRecords,
+  chartOptions
 }: {
   profile: Profile
   investmentPlan: InvestmentPlan
   allFinancialRecords: FinancialRecord[]
+  chartOptions: ChartOptions
 }): ChartDataPoint[] {
   return generateChartProjections(
     profile,
     investmentPlan,
     allFinancialRecords,
     [], // No goals for simulation
-    []  // No events for simulation
+    [],  // No events for simulation
+    chartOptions
   )
 }
 
@@ -80,65 +80,17 @@ function getRawChartData({
  */
 function adjustChartData({
   data,
-  showRealValues,
-  showNegativeValues,
-  baseYear,
-  baseMonth,
-  investmentPlan,
-  allFinancialRecords
+  chartOptions
 }: {
   data: ChartDataPoint[]
-  showRealValues: boolean
-  showNegativeValues: boolean
-  baseYear: number
-  baseMonth: number
-  investmentPlan: InvestmentPlan
-  allFinancialRecords: FinancialRecord[]
+  chartOptions: ChartOptions
 }): ChartDataPoint[] {
-  const monthlyInflation = yearlyReturnRateToMonthlyReturnRate(investmentPlan.inflation/100);
   return data.map(point => {
-    if (!showRealValues) {
-      return {
-        ...point,
-        actualValue: showNegativeValues ? point.actualValue : Math.max(0, point.actualValue),
-        projectedValue: showNegativeValues ? point.projectedValue : Math.max(0, point.projectedValue),
-        oldPortfolioValue: point.oldPortfolioValue ? (showNegativeValues ? point.oldPortfolioValue : Math.max(0, point.oldPortfolioValue)) : null,
-      }
-    }
-    const adjustedActualValue = point.realDataPoint
-      ? point.actualValue
-      : calculateInflationAdjustedValue(
-          point.actualValue,
-          baseYear,
-          baseMonth,
-          point.year,
-          point.month,
-          monthlyInflation,
-          allFinancialRecords
-        );
-    const adjustedProjectedValue = calculateInflationAdjustedValue(
-      point.projectedValue,
-      baseYear,
-      baseMonth,
-      point.year,
-      point.month,
-      monthlyInflation,
-      allFinancialRecords
-    );
-    const adjustedOldPortfolioValue = calculateInflationAdjustedValue(
-      point.oldPortfolioValue,
-      baseYear,
-      baseMonth,
-      point.year,
-      point.month,
-      monthlyInflation,
-      allFinancialRecords
-    );
     return {
       ...point,
-      actualValue: showNegativeValues ? adjustedActualValue : Math.max(0, adjustedActualValue),
-      projectedValue: showNegativeValues ? adjustedProjectedValue : Math.max(0, adjustedProjectedValue),
-      oldPortfolioValue: point.oldPortfolioValue ? (showNegativeValues ? adjustedOldPortfolioValue : Math.max(0, adjustedOldPortfolioValue)) : null,
+      actualValue: chartOptions.showNegativeValues ? point.actualValue : Math.max(0, point.actualValue),
+      projectedValue: chartOptions.showNegativeValues ? point.projectedValue : Math.max(0, point.projectedValue),
+      oldPortfolioValue: point.oldPortfolioValue ? (chartOptions.showNegativeValues ? point.oldPortfolioValue : Math.max(0, point.oldPortfolioValue)) : null,
     }
   })
 }
@@ -266,15 +218,16 @@ export const SimulationChart = ({
   clientId, 
   allFinancialRecords,
   formData,
-  onFormDataChange
+  onFormDataChange,
+  rawChartData,
+  chartOptions: externalChartOptions
 }: SimulationChartProps) => {
   const { t } = useTranslation();
   const [zoomLevel, setZoomLevel] = useState<ZoomLevel>('all');
   const [customRange, setCustomRange] = useState<{ past: number, future: number }>({ past: 1, future: 1 });
-  const [showAdvancedOptions, setShowAdvancedOptions] = useState(false);
-  const [showRealValues, setShowRealValues] = useState(false);
-  const [showNegativeValues, setShowNegativeValues] = useState(false);
-  const [showOldPortfolio, setShowOldPortfolio] = useState(false);
+  const [showRealValues, setShowRealValues] = useState(externalChartOptions.showRealValues || false);
+  const [showNegativeValues, setShowNegativeValues] = useState(externalChartOptions.showNegativeValues || false);
+  const [showOldPortfolio, setShowOldPortfolio] = useState(externalChartOptions.showOldPortfolio || false);
 
   // Auto-activate showOldPortfolio when hasOldPortfolio is enabled
   useEffect(() => {
@@ -282,6 +235,13 @@ export const SimulationChart = ({
       setShowOldPortfolio(true);
     }
   }, [formData.hasOldPortfolio, showOldPortfolio]);
+
+  // Sync local state with external chart options
+  useEffect(() => {
+    setShowRealValues(externalChartOptions.showRealValues || false);
+    setShowNegativeValues(externalChartOptions.showNegativeValues || false);
+    setShowOldPortfolio(externalChartOptions.showOldPortfolio || false);
+  }, [externalChartOptions]);
 
   if (!profile || !investmentPlan || !clientId || !allFinancialRecords) {
     return (
@@ -301,25 +261,18 @@ export const SimulationChart = ({
   };
 
   // --- PREPARAÇÃO DOS DADOS DO GRÁFICO ---
-  // 1. Obtenha os dados brutos
-  const rawChartData = getRawChartData({
-    profile,
-    investmentPlan,
-    allFinancialRecords
-  })
+  // 1. Use os dados brutos fornecidos
+  const rawChartDataToUse = rawChartData;
 
   // 2. Ajuste para inflação/negativos
-  const { baseYear, baseMonth } = getInvestmentPlanBaseDate(investmentPlan);
-  
   const adjustedChartData = adjustChartData({
-    data: rawChartData,
-    showRealValues,
-    showNegativeValues,
-    baseYear,
-    baseMonth,
-    investmentPlan,
-    allFinancialRecords
-  })
+    data: rawChartDataToUse,
+    chartOptions: {
+      showRealValues,
+      showNegativeValues,
+      showOldPortfolio
+    }
+  });
 
   // 3. Aplique o zoom
   const chartData = getZoomedChartData({
@@ -329,23 +282,11 @@ export const SimulationChart = ({
   }).map(point => ({
     ...point,
     xAxisLabel: formatXAxisLabel(point)
-  }))
+  }));
 
   return (
     <div className="space-y-4">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-4">
-        <div className="flex items-center gap-2">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => setShowAdvancedOptions(!showAdvancedOptions)}
-            className="flex items-center gap-2"
-          >
-            <Settings className="h-4 w-4" />
-            {t('expenseChart.advancedOptions')}
-          </Button>
-        </div>
-
         <div className="flex flex-wrap items-center gap-4">
           <div className="inline-flex items-center rounded-md border border-gray-200 dark:border-gray-700 p-1 bg-gray-50 dark:bg-gray-900/80">
             <button
@@ -441,88 +382,6 @@ export const SimulationChart = ({
           </div>
         </div>
       </div>
-
-      {/* Advanced Options */}
-      {showAdvancedOptions && (
-        <div className="space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-lg">{t('expenseChart.chartOptions')}</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                <div className="flex items-center space-x-2">
-                  <Switch
-                    id="showRealValues"
-                    checked={showRealValues}
-                    onCheckedChange={setShowRealValues}
-                  />
-                  <Label htmlFor="showRealValues">{t('expenseChart.showRealValues')}</Label>
-                </div>
-                
-                <div className="flex items-center space-x-2">
-                  <Switch
-                    id="showNegativeValues"
-                    checked={showNegativeValues}
-                    onCheckedChange={setShowNegativeValues}
-                  />
-                  <Label htmlFor="showNegativeValues">{t('expenseChart.showNegativeValues')}</Label>
-                </div>
-                
-                <div className="flex items-center space-x-2">
-                  <Switch
-                    id="showOldPortfolio"
-                    checked={showOldPortfolio}
-                    onCheckedChange={(checked) => {
-                      setShowOldPortfolio(checked);
-                      // Se estiver ativando e não tem carteira anterior configurada, ativa automaticamente
-                      if (checked && !formData.hasOldPortfolio) {
-                        onFormDataChange('hasOldPortfolio', true);
-                        onFormDataChange('oldPortfolioProfitability', '3'); // Valor padrão
-                      }
-                    }}
-                    disabled={!formData.hasOldPortfolio}
-                  />
-                  <Label htmlFor="showOldPortfolio" className={!formData.hasOldPortfolio ? "text-muted-foreground" : ""}>
-                    {t('expenseChart.showOldPortfolio')}
-                  </Label>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-lg">{t('investmentPlan.form.advancedSettings')}</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                <div className="flex items-center space-x-2">
-                  <Switch
-                    id="adjustContributionForInflation"
-                    checked={formData.adjustContributionForInflation}
-                    onCheckedChange={(checked) => onFormDataChange('adjustContributionForInflation', checked)}
-                  />
-                  <Label htmlFor="adjustContributionForInflation">
-                    {t('investmentPlan.form.adjustContributionForInflation')}
-                  </Label>
-                </div>
-                
-                <div className="flex items-center space-x-2">
-                  <Switch
-                    id="adjustIncomeForInflation"
-                    checked={formData.adjustIncomeForInflation}
-                    onCheckedChange={(checked) => onFormDataChange('adjustIncomeForInflation', checked)}
-                  />
-                  <Label htmlFor="adjustIncomeForInflation">
-                    {t('investmentPlan.form.adjustIncomeForInflation')}
-                  </Label>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-      )}
 
       <div className="mt-8">
         <PatrimonialProjectionChart

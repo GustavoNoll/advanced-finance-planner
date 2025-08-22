@@ -1,8 +1,8 @@
 import { useMemo } from 'react'
-import { ProjectionService, ProjectionData, ChartOptions } from '@/services/projection.service'
+import { ProjectionService, ProjectionData } from '@/services/projection.service'
 import { Profile, InvestmentPlan, ProjectedEvent, Goal } from '@/types/financial'
 import { FinancialRecord } from '@/types/financial'
-import { generateProjectionData } from '@/lib/chart-projections'
+import { ChartOptions, generateProjectionData } from '@/lib/chart-projections'
 
 export function useProjectionData(
   investmentPlan: InvestmentPlan | null,
@@ -21,9 +21,10 @@ export function useProjectionData(
       clientProfile,
       allFinancialRecords,
       goals,
-      events
+      events,
+      chartOptions
     )
-  }, [investmentPlan, clientProfile, allFinancialRecords, goals, events])
+  }, [investmentPlan, clientProfile, allFinancialRecords, goals, events, chartOptions])
 
   // Dados de projeção com opções avançadas
   const projectionDataWithOptions = useMemo(() => {

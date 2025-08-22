@@ -128,65 +128,17 @@ function getRawChartData({
  */
 function adjustChartData({
   data,
-  showRealValues,
   showNegativeValues,
-  baseYear,
-  baseMonth,
-  investmentPlan,
-  allFinancialRecords
 }: {
   data: ChartDataPoint[]
-  showRealValues: boolean
   showNegativeValues: boolean
-  baseYear: number
-  baseMonth: number
-  investmentPlan: InvestmentPlan
-  allFinancialRecords: FinancialRecord[]
 }): ChartDataPoint[] {
-  const monthlyInflation = yearlyReturnRateToMonthlyReturnRate(investmentPlan.inflation/100);
   return data.map(point => {
-    if (!showRealValues) {
-      return {
-        ...point,
-        actualValue: showNegativeValues ? point.actualValue : Math.max(0, point.actualValue),
-        projectedValue: showNegativeValues ? point.projectedValue : Math.max(0, point.projectedValue),
-        oldPortfolioValue: point.oldPortfolioValue ? (showNegativeValues ? point.oldPortfolioValue : Math.max(0, point.oldPortfolioValue)) : null,
-      }
-    }
-    const adjustedActualValue = point.realDataPoint
-      ? point.actualValue
-      : calculateInflationAdjustedValue(
-          point.actualValue,
-          baseYear,
-          baseMonth,
-          point.year,
-          point.month,
-          monthlyInflation,
-          allFinancialRecords
-        );
-    const adjustedProjectedValue = calculateInflationAdjustedValue(
-      point.projectedValue,
-      baseYear,
-      baseMonth,
-      point.year,
-      point.month,
-      monthlyInflation,
-      allFinancialRecords
-    );
-    const adjustedOldPortfolioValue = calculateInflationAdjustedValue(
-      point.oldPortfolioValue,
-      baseYear,
-      baseMonth,
-      point.year,
-      point.month,
-      monthlyInflation,
-      allFinancialRecords
-    );
     return {
       ...point,
-      actualValue: showNegativeValues ? adjustedActualValue : Math.max(0, adjustedActualValue),
-      projectedValue: showNegativeValues ? adjustedProjectedValue : Math.max(0, adjustedProjectedValue),
-      oldPortfolioValue: point.oldPortfolioValue ? (showNegativeValues ? adjustedOldPortfolioValue : Math.max(0, adjustedOldPortfolioValue)) : null,
+      actualValue: showNegativeValues ? point.actualValue : Math.max(0, point.actualValue),
+      projectedValue: showNegativeValues ? point.projectedValue : Math.max(0, point.projectedValue),
+      oldPortfolioValue: point.oldPortfolioValue ? (showNegativeValues ? point.oldPortfolioValue : Math.max(0, point.oldPortfolioValue)) : null,
     }
   })
 }
@@ -596,17 +548,9 @@ export const ExpenseChart = ({
     events
   })
 
-  // 2. Ajuste para inflação/negativos
-  const { baseYear, baseMonth } = getInvestmentPlanBaseDate(investmentPlan);
-  
   const adjustedChartData = adjustChartData({
     data: rawChartData,
-    showRealValues,
     showNegativeValues,
-    baseYear,
-    baseMonth,
-    investmentPlan,
-    allFinancialRecords
   })
 
   // 3. Aplique o zoom

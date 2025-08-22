@@ -2,7 +2,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { DashboardCard } from "./DashboardCard";
 import { useTranslation } from "react-i18next";
 import { BarChart } from "lucide-react";
-import { generateProjectionData, YearlyProjectionData } from '@/lib/chart-projections';
+import { YearlyProjectionData } from '@/lib/chart-projections';
 import { FinancialRecord, InvestmentPlan, Goal, ProjectedEvent, Profile } from '@/types/financial';
 import { ReturnChartTab, TableTab, FutureProjectionTab } from "./monthly-view";
 

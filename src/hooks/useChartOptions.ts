@@ -39,17 +39,12 @@ export const useChartOptions = ({
       }
     }),
     ...(changeMonthlyWithdraw.enabled && changeMonthlyWithdraw.date && {
-      changeMontlhyWithdraw: {
+      changeMonthlyWithdraw: {
         value: changeMonthlyWithdraw.value,
         date: changeMonthlyWithdraw.date
       }
     })
   }), [changeMonthlyDeposit, changeMonthlyWithdraw]);
-
-  // Check if there are active chart options
-  const hasActiveChartOptions = useMemo(() => 
-    chartOptions.changeMonthlyDeposit || chartOptions.changeMontlhyWithdraw
-  , [chartOptions]);
 
   // Generate projection data with chart options
   const projectionDataWithOptions = useMemo(() => {
@@ -61,9 +56,9 @@ export const useChartOptions = ({
       allFinancialRecords,
       goals,
       events,
-      hasActiveChartOptions ? chartOptions : undefined
+      chartOptions
     );
-  }, [investmentPlan, clientProfile, allFinancialRecords, goals, events, chartOptions, hasActiveChartOptions]);
+  }, [investmentPlan, clientProfile, allFinancialRecords, goals, events, chartOptions]);
 
   return {
     // States
@@ -74,7 +69,6 @@ export const useChartOptions = ({
     
     // Computed values
     chartOptions,
-    hasActiveChartOptions,
     projectionDataWithOptions
   };
 }; 

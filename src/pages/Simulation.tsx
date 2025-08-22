@@ -17,6 +17,7 @@ import { getCurrencySymbol } from "@/utils/currency";
 import { usePlanCalculations } from "@/hooks/usePlanCreation";
 import { FormData } from "@/utils/investmentPlanCalculations";
 import { Switch } from "@/components/ui/switch";
+import { generateChartProjections, generateProjectionData, ChartOptions } from '@/lib/chart-projections';
 
 interface SimulationFormData {
   initialAmount: string;
@@ -57,7 +58,7 @@ export const Simulation = () => {
     monthlyDeposit: "7000",
     desiredIncome: "7000",
     expectedReturn: RISK_PROFILES.BRL[1].return,
-    inflation: "6.0",
+    inflation: "6",
     planType: "3",
     planInitialDate: new Date().toISOString().split('T')[0],
     birthDate: new Date(new Date().getFullYear() - 35, 0, 1).toISOString().split('T')[0],
@@ -71,6 +72,18 @@ export const Simulation = () => {
 
   const [simulationPlan, setSimulationPlan] = useState<InvestmentPlan | null>(null);
   const [expandedRow, setExpandedRow] = useState<string | null>(null);
+
+  // Chart options state
+  const [showRealValues, setShowRealValues] = useState(false);
+  const [showNegativeValues, setShowNegativeValues] = useState(false);
+  const [showOldPortfolio, setShowOldPortfolio] = useState(false);
+
+  // Auto-activate showOldPortfolio when hasOldPortfolio is enabled
+  useEffect(() => {
+    if (formData.hasOldPortfolio && !showOldPortfolio) {
+      setShowOldPortfolio(true);
+    }
+  }, [formData.hasOldPortfolio, showOldPortfolio]);
 
   // Convert formData to FormData for calculations
   const calculationFormData: FormData = {
@@ -101,6 +114,7 @@ export const Simulation = () => {
 
   // Get calculations
   const { calculations } = usePlanCalculations(calculationFormData, birthDate);
+  console.log(calculations);
 
   // Generate simulation plan whenever form data changes
   useEffect(() => {
@@ -139,6 +153,47 @@ export const Simulation = () => {
 
     setSimulationPlan(simulationInvestmentPlan);
   }, [formData]);
+
+  // Generate chart options
+  const chartOptions: ChartOptions = useMemo(() => ({
+    showRealValues,
+    showNegativeValues,
+    showOldPortfolio
+  }), [showRealValues, showNegativeValues, showOldPortfolio]);
+
+  // Generate raw chart data and projection data
+  const { rawChartData, projectionData } = useMemo(() => {
+    if (!simulationPlan || !birthDate) {
+      return { rawChartData: [], projectionData: [] };
+    }
+
+    const profile = { ...mockProfile, birth_date: birthDate.toISOString().split('T')[0] };
+    
+    // Generate chart data for the chart component
+    const chartData = generateChartProjections(
+      profile,
+      simulationPlan,
+      [], // No financial records in simulation
+      [], // No goals in simulation
+      [], // No events in simulation
+      chartOptions
+    );
+
+    // Generate projection data for the table component
+    const tableData = generateProjectionData(
+      simulationPlan,
+      profile,
+      [], // No financial records in simulation
+      [], // No goals in simulation
+      [], // No events in simulation
+      chartOptions
+    );
+
+    return {
+      rawChartData: chartData,
+      projectionData: tableData
+    };
+  }, [simulationPlan, birthDate, chartOptions]);
 
   const handleFormChange = (field: keyof SimulationFormData, value: string | boolean) => {
     setFormData(prev => ({
@@ -187,6 +242,7 @@ export const Simulation = () => {
                 </CardHeader>
                 <CardContent>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    {/* Plan Initial Date */}
                     <div className="space-y-2">
                       <Label>{t('investmentPlan.form.planInitialDate')}</Label>
                       <Input
@@ -197,6 +253,7 @@ export const Simulation = () => {
                       />
                     </div>
 
+                    {/* Initial Amount */}
                     <div className="space-y-2">
                       <Label>{t('investmentPlan.form.initialAmount')}</Label>
                       <CurrencyInput
@@ -211,6 +268,7 @@ export const Simulation = () => {
                       />
                     </div>
 
+                    {/* Monthly Deposit */}
                     <div className="space-y-2">
                       <Label>{t('investmentPlan.form.monthlyDeposit')}</Label>
                       <CurrencyInput
@@ -225,6 +283,7 @@ export const Simulation = () => {
                       />
                     </div>
 
+                    {/* Desired Income */}
                     <div className="space-y-2">
                       <Label>{t('investmentPlan.form.desiredIncome')}</Label>
                       <CurrencyInput
@@ -239,6 +298,7 @@ export const Simulation = () => {
                       />
                     </div>
 
+                    {/* Birth Date */}
                     <div className="space-y-2">
                       <Label>{t('investmentPlan.form.birthDate')}</Label>
                       <Input
@@ -285,12 +345,13 @@ export const Simulation = () => {
                         type="number"
                         value={formData.inflation}
                         onChange={(e) => handleFormChange('inflation', e.target.value)}
-                        placeholder="6.0"
-                        step="0.1"
+                        placeholder="6"
+                        step="1"
                         className="h-10"
                       />
                     </div>
 
+                    {/* Plan Type */}
                     <div className="space-y-2">
                       <Label>{t('investmentPlan.form.planType')}</Label>
                       <Select value={formData.planType} onValueChange={(value) => handleFormChange('planType', value)}>
@@ -305,6 +366,7 @@ export const Simulation = () => {
                       </Select>
                     </div>
 
+                    {/* Currency */}
                     <div className="space-y-2">
                       <Label>{t('investmentPlan.form.currency')}</Label>
                       <Select value={formData.currency} onValueChange={(value) => handleFormChange('currency', value)}>
@@ -319,43 +381,69 @@ export const Simulation = () => {
                       </Select>
                     </div>
 
-                    {/* Old Portfolio Section */}
+                    {/* Adjust Contribution for Inflation */}
                     <div className="space-y-2">
+                      <Label>{t('investmentPlan.form.adjustContributionForInflation')}</Label>
+                      <div className="flex items-center space-x-2">
+                        <Switch
+                          id="adjustContributionForInflation"
+                          checked={formData.adjustContributionForInflation}
+                          onCheckedChange={(checked) => handleFormChange('adjustContributionForInflation', checked)}
+                        />
+                        <Label htmlFor="adjustContributionForInflation" className="text-sm text-muted-foreground">
+                          {t('investmentPlan.form.adjustContributionForInflation')}
+                        </Label>
+                      </div>
+                    </div>
+
+                    {/* Adjust Income for Inflation */}
+                    <div className="space-y-2">
+                      <Label>{t('investmentPlan.form.adjustIncomeForInflation')}</Label>
+                      <div className="flex items-center space-x-2">
+                        <Switch
+                          id="adjustIncomeForInflation"
+                          checked={formData.adjustIncomeForInflation}
+                          onCheckedChange={(checked) => handleFormChange('adjustIncomeForInflation', checked)}
+                        />
+                        <Label htmlFor="adjustIncomeForInflation" className="text-sm text-muted-foreground">
+                          {t('investmentPlan.form.adjustIncomeForInflation')}
+                        </Label>
+                      </div>
+                    </div>
+
+
+                    {/* Old Portfolio */}
+                    <div className="space-y-2">
+                      <Label>{t('investmentPlan.form.hasOldPortfolio')}</Label>
                       <div className="flex items-center space-x-2">
                         <Switch
                           id="hasOldPortfolio"
                           checked={formData.hasOldPortfolio}
-                          onCheckedChange={(checked) => {
-                            handleFormChange('hasOldPortfolio', checked);
-                          }}
+                          onCheckedChange={(checked) => handleFormChange('hasOldPortfolio', checked)}
                         />
-                        <Label htmlFor="hasOldPortfolio">{t('investmentPlan.form.hasOldPortfolio')}</Label>
+                        <Label htmlFor="hasOldPortfolio" className="text-sm text-muted-foreground">
+                          {t('investmentPlan.form.hasOldPortfolio')}
+                        </Label>
                       </div>
-                      {formData.hasOldPortfolio && (
-                        <div className="mt-2">
-                          <Label>{t('investmentPlan.form.oldPortfolioProfitability')}</Label>
-                          <Select value={formData.oldPortfolioProfitability} onValueChange={(value) => handleFormChange('oldPortfolioProfitability', value)}>
-                            <SelectTrigger>
-                              <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="0">{formData.currency === 'BRL' ? 'IPCA' : 'CPI'} + 0%</SelectItem>
-                              <SelectItem value="1">{formData.currency === 'BRL' ? 'IPCA' : 'CPI'} + 1%</SelectItem>
-                              <SelectItem value="2">{formData.currency === 'BRL' ? 'IPCA' : 'CPI'} + 2%</SelectItem>
-                              <SelectItem value="3">{formData.currency === 'BRL' ? 'IPCA' : 'CPI'} + 3%</SelectItem>
-                              <SelectItem value="4">{formData.currency === 'BRL' ? 'IPCA' : 'CPI'} + 4%</SelectItem>
-                              <SelectItem value="5">{formData.currency === 'BRL' ? 'IPCA' : 'CPI'} + 5%</SelectItem>
-                              <SelectItem value="6">{formData.currency === 'BRL' ? 'IPCA' : 'CPI'} + 6%</SelectItem>
-                              <SelectItem value="7">{formData.currency === 'BRL' ? 'IPCA' : 'CPI'} + 7%</SelectItem>
-                              <SelectItem value="8">{formData.currency === 'BRL' ? 'IPCA' : 'CPI'} + 8%</SelectItem>
-                            </SelectContent>
-                          </Select>
-                        </div>
-                      )}
                     </div>
+
+                    {formData.hasOldPortfolio && (
+                      <div className="space-y-2">
+                        <Label>{t('investmentPlan.form.oldPortfolioProfitability')} (%)</Label>
+                        <Input
+                          type="number"
+                          value={formData.oldPortfolioProfitability}
+                          onChange={(e) => handleFormChange('oldPortfolioProfitability', e.target.value)}
+                          className="h-10"
+                          step="0.1"
+                          min="0"
+                          max="100"
+                        />
+                      </div>
+                    )}
                   </div>
 
-
+                  
                 </CardContent>
               </Card>
             </div>
@@ -363,73 +451,72 @@ export const Simulation = () => {
             {/* Right Column - Calculations */}
             <div className="space-y-6">
               {/* Calculations Section */}
-              <div className="p-4 bg-muted rounded-lg border border-border">
-                <h3 className="text-lg font-semibold mb-4 text-foreground">
-                  {t('investmentPlan.create.calculations.title')}
-                </h3>
-                {calculations ? (
-                  <div className="space-y-4">
-                    <div className="flex justify-between p-3 bg-card rounded-lg border border-border">
-                      <div className="flex items-center gap-2">
-                        <span className="text-sm text-muted-foreground">{t('investmentPlan.create.calculations.inflationAdjustedIncome')}:</span>
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-lg flex items-center gap-2">
+                    <Calculator className="h-5 w-5 text-blue-500" />
+                    {t('investmentPlan.create.calculations.title')}
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  {calculations ? (
+                    <div className="space-y-4">
+                      <div className="flex justify-between p-3 bg-card rounded-lg border border-border">
+                        <div className="flex items-center gap-2">
+                          <span className="text-sm text-muted-foreground">{t('investmentPlan.create.calculations.futureValue')}:</span>
+                        </div>
+                        <span className="font-medium">{formatCurrency(calculations.futureValue, formData.currency as CurrencyCode)}</span>
                       </div>
-                      <span className="font-medium">{formatCurrency(calculations.inflationAdjustedIncome, formData.currency as CurrencyCode)}/mês</span>
-                    </div>
-                    
-                    <div className="flex justify-between p-3 bg-card rounded-lg border border-border">
-                      <div className="flex items-center gap-2">
-                        <span className="text-sm text-muted-foreground">{t('investmentPlan.create.calculations.requiredFutureValue')}:</span>
-                      </div>
-                      <span className="font-medium">
-                        {formatCurrency(calculations.futureValue, formData.currency as CurrencyCode)}
-                      </span>
-                    </div>
 
-                    <div className="bg-card rounded-lg border border-border overflow-hidden">
-                      <div 
-                        className="flex justify-between p-3 cursor-pointer hover:bg-accent"
-                        onClick={() => setExpandedRow(expandedRow === 'return' ? null : 'return')}
-                      >
+                      <div className="flex justify-between p-3 bg-card rounded-lg border border-border">
+                        <div className="flex items-center gap-2">
+                          <span className="text-sm text-muted-foreground">{t('investmentPlan.create.calculations.presentFutureValue')}:</span>
+                        </div>
+                        <span className="font-medium">{formatCurrency(calculations.presentFutureValue, formData.currency as CurrencyCode)}</span>
+                      </div>
+
+                      <div className="flex justify-between p-3 bg-card rounded-lg border border-border">
+                        <div className="flex items-center gap-2">
+                          <span className="text-sm text-muted-foreground">{t('investmentPlan.create.calculations.inflationAdjustedIncome')}:</span>
+                        </div>
+                        <span className="font-medium">{formatCurrency(calculations.inflationAdjustedIncome, formData.currency as CurrencyCode)}</span>
+                      </div>
+
+                      <div className="flex justify-between p-3 bg-card rounded-lg border border-border">
+                        <div className="flex items-center gap-2">
+                          <span className="text-sm text-muted-foreground">{t('investmentPlan.create.calculations.requiredMonthlyDeposit')}:</span>
+                        </div>
+                        <span className="font-medium">{formatCurrency(calculations.requiredMonthlyDeposit, formData.currency as CurrencyCode)}</span>
+                      </div>
+
+                      <div className="flex justify-between p-3 bg-card rounded-lg border border-border">
                         <div className="flex items-center gap-2">
                           <span className="text-sm text-muted-foreground">{t('investmentPlan.create.calculations.totalMonthlyReturn')}:</span>
                         </div>
                         <span className="font-medium">{formatCurrency(calculations.totalMonthlyReturn, formData.currency as CurrencyCode)}</span>
                       </div>
-                      {expandedRow === 'return' && (
-                        <div className="px-3 pb-3 space-y-2 border-t border-border">
-                          <div className="flex justify-between pt-3">
-                            <div className="flex items-center gap-2">
-                              <span className="text-sm text-muted-foreground">{t('investmentPlan.create.calculations.monthlyRealReturn')}:</span>
-                            </div>
-                            <span className="font-medium">{formatCurrency(calculations.realReturn, formData.currency as CurrencyCode)}</span>
-                          </div>
-                          <div className="flex justify-between">
-                            <div className="flex items-center gap-2">
-                              <span className="text-sm text-muted-foreground">{t('investmentPlan.create.calculations.monthlyInflationReturn')}:</span>
-                            </div>
-                            <span className="font-medium">{formatCurrency(calculations.inflationReturn, formData.currency as CurrencyCode)}</span>
-                          </div>
+
+                      <div className="flex justify-between p-3 bg-card rounded-lg border border-border">
+                        <div className="flex items-center gap-2">
+                          <span className="text-sm text-muted-foreground">{t('investmentPlan.create.calculations.monthlyRealReturn')}:</span>
                         </div>
-                      )}
-                    </div>
-
-                    <div className="flex justify-between p-3 bg-card rounded-lg border border-border">
-                      <div className="flex items-center gap-2">
-                        <span className="text-sm text-muted-foreground">{t('investmentPlan.create.calculations.requiredMonthlyDeposit')}:</span>
+                        <span className="font-medium">{formatCurrency(calculations.realReturn, formData.currency as CurrencyCode)}</span>
                       </div>
-                      <span className="font-medium">
-                        {formatCurrency(calculations.requiredMonthlyDeposit, formData.currency as CurrencyCode)}
-                      </span>
+
+                      <div className="flex justify-between p-3 bg-card rounded-lg border border-border">
+                        <div className="flex items-center gap-2">
+                          <span className="text-sm text-muted-foreground">{t('investmentPlan.create.calculations.monthlyInflationReturn')}:</span>
+                        </div>
+                        <span className="font-medium">{formatCurrency(calculations.inflationReturn, formData.currency as CurrencyCode)}</span>
+                      </div>
                     </div>
-                  </div>
-                ) : (
-                  <div className="text-center text-muted-foreground">
-                    {t('investmentPlan.create.calculations.fillRequired')}
-                  </div>
-                )}
-              </div>
-
-
+                  ) : (
+                    <div className="text-center text-muted-foreground">
+                      {t('investmentPlan.create.calculations.fillRequired')}
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
 
               {/* Simulation Notice */}
               <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
@@ -452,6 +539,58 @@ export const Simulation = () => {
             </div>
           </div>
 
+          {/* Opções Avançadas de Visualização */}
+          {simulationPlan && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-lg flex items-center gap-2">
+                  <Settings className="h-5 w-5 text-blue-500" />
+                  {t('expenseChart.advancedOptions')}
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                  <div className="flex items-center space-x-2">
+                    <Switch
+                      id="showRealValues"
+                      checked={showRealValues}
+                      onCheckedChange={setShowRealValues}
+                    />
+                    <Label htmlFor="showRealValues">{t('expenseChart.showRealValues')}</Label>
+                  </div>
+                  
+                  <div className="flex items-center space-x-2">
+                    <Switch
+                      id="showNegativeValues"
+                      checked={showNegativeValues}
+                      onCheckedChange={setShowNegativeValues}
+                    />
+                    <Label htmlFor="showNegativeValues">{t('expenseChart.showNegativeValues')}</Label>
+                  </div>
+                  
+                  <div className="flex items-center space-x-2">
+                    <Switch
+                      id="showOldPortfolio"
+                      checked={showOldPortfolio}
+                      onCheckedChange={(checked) => {
+                        setShowOldPortfolio(checked);
+                        // Se estiver ativando e não tem carteira anterior configurada, ativa automaticamente
+                        if (checked && !formData.hasOldPortfolio) {
+                          handleFormChange('hasOldPortfolio', true);
+                          handleFormChange('oldPortfolioProfitability', '3'); // Valor padrão
+                        }
+                      }}
+                      disabled={!formData.hasOldPortfolio}
+                    />
+                    <Label htmlFor="showOldPortfolio" className={!formData.hasOldPortfolio ? "text-muted-foreground" : ""}>
+                      {t('expenseChart.showOldPortfolio')}
+                    </Label>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
           {/* Chart Section - Full Width Below */}
           {simulationPlan && (
             <Card>
@@ -469,6 +608,8 @@ export const Simulation = () => {
                   allFinancialRecords={[]}
                   formData={formData}
                   onFormDataChange={handleFormChange}
+                  rawChartData={rawChartData}
+                  chartOptions={chartOptions}
                 />
               </CardContent>
             </Card>
@@ -491,6 +632,8 @@ export const Simulation = () => {
                   showGoalsEvents={false}
                   showRealEvolution={false}
                   isSimulation={true}
+                  projectionData={projectionData}
+                  chartOptions={chartOptions}
                 />
               </CardContent>
             </Card>

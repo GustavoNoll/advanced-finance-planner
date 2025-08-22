@@ -3,7 +3,7 @@ import { processPlanProgressData, PlanProgressData } from '@/lib/plan-progress'
 import { FinancialRecord, ProjectedEvent, Goal } from '@/types/financial'
 import { Profile, InvestmentPlan } from '@/types/financial'
 import { createDateWithoutTimezone } from '@/utils/dateUtils'
-
+import { ChartOptions } from '@/lib/chart-projections'
 // Interface local para dados mensais de projeção
 export interface MonthlyProjectionData {
   month: number
@@ -34,14 +34,6 @@ export interface ProjectionData {
     currentBalance: number
     oldPortfolioBalance: number
   }
-}
-
-export interface ChartOptions {
-  showRealValues: boolean
-  showNegativeValues: boolean
-  showOldPortfolio: boolean
-  changeMonthlyDeposit?: number
-  changeMonthlyWithdraw?: number
 }
 
 export interface HistoricalDataInfo {
@@ -158,7 +150,8 @@ export class ProjectionService {
       clientProfile,
       allFinancialRecords,
       goals,
-      events
+      events,
+      chartOptions
     )
   }
 
