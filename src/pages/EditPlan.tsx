@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button"
 import { Checkbox } from "@/components/ui/checkbox"
 import { useNavigate, useParams } from "react-router-dom"
 import { useToast } from "@/components/ui/use-toast"
-import { ArrowLeft } from "lucide-react"
+import { ArrowLeft, Lock } from "lucide-react"
 import { Spinner } from "@/components/ui/spinner"
 import { useTranslation } from "react-i18next"
 import CurrencyInput from 'react-currency-input-field'
@@ -35,6 +35,7 @@ export const EditPlan = () => {
     updateSource,
     calculations,
     isCalculationReady: isCalculationReadyState,
+    hasFinancialRecords,
     setLoading,
     setIsLoadingData,
     setBirthDate,
@@ -42,6 +43,7 @@ export const EditPlan = () => {
     setExpandedRow,
     setIsSyncing,
     setUpdateSource,
+    setHasFinancialRecords,
   } = useInvestmentPlanState()
 
   // Form handlers
@@ -77,6 +79,7 @@ export const EditPlan = () => {
   } = useInvestmentPlanFormData({
     setFormData,
     setBirthDate,
+    setHasFinancialRecords,
   })
 
   // UI utilities
@@ -99,7 +102,16 @@ export const EditPlan = () => {
 
       const result = await fetchPlan(id)
       if (result) {
-        processPlanData(result.plan, result.profile)
+        // Criar um objeto Profile com as propriedades necessárias
+        const profileData = {
+          id: result.profile.broker_id || '',
+          user_id: result.profile.broker_id || '',
+          name: '',
+          birth_date: result.profile.birth_date,
+          broker_id: result.profile.broker_id,
+          is_broker: result.profile.is_broker
+        }
+        processPlanData(result.plan, profileData, result.hasFinancialRecords)
       }
     }
 
@@ -183,8 +195,11 @@ export const EditPlan = () => {
                   </div>
 
                   <div className="space-y-2">
-                    <label className="text-sm font-medium text-muted-foreground">
+                    <label className="text-sm font-medium text-muted-foreground flex items-center gap-2">
                       {t('investmentPlan.form.initialAmount')}
+                      {hasFinancialRecords && (
+                        <Lock className="h-3 w-3 text-muted-foreground" />
+                      )}
                     </label>
                     <CurrencyInput
                       name="initialAmount"
@@ -199,7 +214,14 @@ export const EditPlan = () => {
                       groupSeparator="."
                       className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
                       required
+                      disabled={hasFinancialRecords}
                     />
+                    {hasFinancialRecords && (
+                      <p className="text-xs text-muted-foreground flex items-center gap-1">
+                        <Lock className="h-3 w-3" />
+                        {t('investmentPlan.form.initialAmountLockedMessage')}
+                      </p>
+                    )}
                   </div>
 
                   <div className="space-y-2">
