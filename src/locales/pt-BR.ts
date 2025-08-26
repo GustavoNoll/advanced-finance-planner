@@ -879,6 +879,8 @@ export const ptBR = {
       contribution: "Contribuição",
       other: "Outro",
       house: "Casa",
+      accident: "Acidente",
+      renovation: "Renovação",
       car: "Carro",
       travel: "Viagem",
       family: "Família",
