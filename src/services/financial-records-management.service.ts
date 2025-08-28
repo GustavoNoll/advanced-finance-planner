@@ -13,7 +13,7 @@ export interface CSVRecord {
   Retorno: string
   RetornoPercentual: string
   RentabilidadeMeta: string
-  Eventos: string
+  Eventos: string // Pode ser número (positivo ou negativo) ou vazio
 }
 
 export interface CSVRecordValidation {
@@ -305,15 +305,19 @@ export class FinancialRecordsManagementService {
         })
 
       if (validRecords.length > 0) {
-        const { error } = await supabase
+        const { data: insertedRecords, error } = await supabase
           .from('user_financial_records')
           .insert(validRecords)
+          .select()
 
         if (error) {
           throw error
         }
 
         result.success = validRecords.length
+
+        // Processar eventos do CSV e criar links
+        await this.processCSVEvents(insertedRecords, records, userId)
       }
 
       return result
@@ -480,6 +484,81 @@ export class FinancialRecordsManagementService {
     } catch (error) {
       console.error('Error in fetchLinksByFinancialRecordId:', error)
       return { data: [], error }
+    }
+  }
+
+  /**
+   * Processa eventos do CSV e cria eventos e links automaticamente
+   */
+  private static async processCSVEvents(
+    insertedRecords: FinancialRecord[],
+    csvRecords: CSVRecord[],
+    userId: string
+  ): Promise<void> {
+    try {
+
+      for (let i = 0; i < insertedRecords.length; i++) {
+        const record = insertedRecords[i]
+        const csvRecord = csvRecords[i]
+        
+        // Verificar se há eventos no CSV (deve ser um número válido e diferente de zero)
+        const eventValue = parseFloat(csvRecord.Eventos)
+        if (csvRecord.Eventos && csvRecord.Eventos.trim() !== '' && !isNaN(eventValue) && eventValue !== 0) {
+          
+          // Criar nome do evento baseado na data
+          const eventName = `Importado via CSV - ${csvRecord.Data}`
+          
+          // Criar o evento
+          const { data: createdEvent, error: eventError } = await supabase
+            .from('events')
+            .insert([{
+              profile_id: userId,
+              name: eventName,
+              icon: 'other',
+              asset_value: 0, // Valor será calculado baseado no registro
+              month: record.record_month,
+              year: record.record_year,
+              payment_mode: 'none',
+              installment_count: null,
+              installment_interval: 1,
+              status: 'pending'
+            }])
+            .select()
+            .single()
+
+          if (eventError) {
+            console.error('Erro ao criar evento:', eventError)
+            continue
+          }
+
+          // Atualizar o evento com o valor do CSV
+          const { error: updateError } = await supabase
+            .from('events')
+            .update({ asset_value: eventValue })
+            .eq('id', createdEvent.id)
+
+          if (updateError) {
+            console.error('Erro ao atualizar valor do evento:', updateError)
+          }
+
+          // Criar o link entre o evento e o registro financeiro
+          const { error: linkError } = await supabase
+            .from('financial_record_links')
+            .insert([{
+              financial_record_id: record.id,
+              item_id: createdEvent.id,
+              item_type: 'event',
+              allocated_amount: eventValue,
+              is_completing: true // Marcar como completo pois é um evento histórico
+            }])
+
+          if (linkError) {
+            console.error('Erro ao criar link do evento:', linkError)
+          }
+        }
+      }
+    } catch (error) {
+      console.error('Erro ao processar eventos do CSV:', error)
     }
   }
 }

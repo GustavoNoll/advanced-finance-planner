@@ -42,7 +42,6 @@ export function useFinancialRecords(userId: string, initialRecords: FinancialRec
         baseRecords.map(async (record) => {
           try {
             const { data: links } = await FinancialRecordsManagementService.fetchLinksByFinancialRecordId(record.id)
-            console.log(links)
             return {
               ...record,
               links: links || []

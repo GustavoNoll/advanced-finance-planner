@@ -8,21 +8,18 @@ import { ReturnChartTab, TableTab, FutureProjectionTab } from "./monthly-view";
 
 export const MonthlyView = ({ 
   userId, 
-  initialRecords, 
   allFinancialRecords,
   investmentPlan, 
   profile,
   projectionData
 }: {
   userId: string;
-  initialRecords: FinancialRecord[];
   allFinancialRecords: FinancialRecord[];
   investmentPlan: InvestmentPlan;
   profile: Profile;
   projectionData?: YearlyProjectionData[];
 }) => {
   const { t } = useTranslation();
-
   return (
     <DashboardCard 
       title={t('monthlyView.title')}

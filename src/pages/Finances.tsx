@@ -75,6 +75,7 @@ const Finances = ({
     ...chartOptionsHook.chartOptions
   }
 
+  // Hook para dados de projeção - deve ser chamado antes de qualquer return
   const projectionDataHook = useProjectionData(
     investmentPlan,
     clientProfile,
@@ -113,7 +114,7 @@ const Finances = ({
   }, [queryClient, clientId]);
 
   // Loading state
-  if (!investmentPlan || !clientProfile || !allFinancialRecords || isGoalsLoading) {
+  if (!investmentPlan || !clientProfile || isFinancialRecordsLoading || isGoalsLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <Spinner size="lg" />
@@ -221,7 +222,6 @@ const Finances = ({
           {projectionDataWithOptions ? (
             <MonthlyView 
               userId={clientId} 
-              initialRecords={allFinancialRecords} 
               allFinancialRecords={allFinancialRecords}
               investmentPlan={investmentPlan}
               profile={clientProfile}

@@ -162,8 +162,7 @@ function createProjectionContext(
 
   const pendingGoals = goals?.filter(goal => goal.status === 'pending');
   const pendingEvents = events?.filter(event => event.status === 'pending');
-  console.log('pendingGoals', pendingGoals);
-  console.log('pendingEvents', pendingEvents);
+
   return {
     investmentPlan,
     profile,

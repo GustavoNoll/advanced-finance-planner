@@ -110,26 +110,3 @@ export function useProjectionData(
   }
 }
 
-export function useAllProjectionMetrics(
-  investmentPlan: InvestmentPlan | null,
-  clientProfile: Profile | null,
-  allFinancialRecords: FinancialRecord[],
-  goals: Goal[],
-  events: ProjectedEvent[],
-  chartOptions: ChartOptions
-): ProjectionData | null {
-  return useMemo(() => {
-    if (!investmentPlan || !clientProfile || !allFinancialRecords || !goals || !events) {
-      return null
-    }
-
-    return ProjectionService.calculateAllProjectionMetrics(
-      investmentPlan,
-      clientProfile,
-      allFinancialRecords,
-      goals,
-      events,
-      chartOptions
-    )
-  }, [investmentPlan, clientProfile, allFinancialRecords, goals, events, chartOptions])
-}
