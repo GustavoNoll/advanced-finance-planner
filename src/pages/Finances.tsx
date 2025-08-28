@@ -56,7 +56,7 @@ const Finances = ({
   const { records: allFinancialRecords, stats, isLoading: isFinancialRecordsLoading } = useFinancialRecordsWithLinks(clientId);
 
   
-  const { goalsAndEvents, counters, isLoading: isGoalsLoading } = useGoalsAndEvents(clientId);
+  const { goalsAndEvents, isLoading: isGoalsLoading, goalsByStatus, eventsByStatus } = useGoalsAndEvents(clientId);
 
   // Hook para opções de gráfico
   const chartOptionsHook = useChartOptions({
@@ -129,7 +129,8 @@ const Finances = ({
         clientId={clientId}
         investmentPlanId={investmentPlan.id}
         currency={investmentPlan.currency}
-        counters={counters}
+        goalsByStatus={goalsByStatus}
+        eventsByStatus={eventsByStatus}
         t={t}
       />
 

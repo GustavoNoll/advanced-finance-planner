@@ -2,7 +2,7 @@ import { useQuery } from '@tanstack/react-query'
 import { FinancialRecordsService, ProcessedFinancialRecords } from '@/services/financial-records.service'
 import { GoalsEventsService } from '@/services/goals-events.service'
 import { useMemo } from 'react'
-import { InvestmentPlan } from '@/types/financial'
+import { InvestmentPlan, Goal, ProjectedEvent } from '@/types/financial'
 
 export function useFinancialRecords(clientId: string) {
   const { data: allFinancialRecords, isLoading: isFinancialRecordsLoading, error: financialRecordsError } = useQuery({
@@ -30,17 +30,31 @@ export function useGoalsAndEvents(clientId: string) {
     enabled: !!clientId
   })
 
-  const { data: counters, isLoading: isCountersLoading, error: countersError } = useQuery({
-    queryKey: ['counters', clientId],
-    queryFn: () => GoalsEventsService.fetchCounters(clientId),
-    enabled: !!clientId,
-  })
+  // Separação por status
+  const goalsByStatus = useMemo(() => {
+    if (!goalsAndEvents?.goals) return { pending: [], completed: [] }
+    
+    return {
+      pending: goalsAndEvents.goals.filter((goal: Goal) => goal.status === 'pending'),
+      completed: goalsAndEvents.goals.filter((goal: Goal) => goal.status === 'completed')
+    }
+  }, [goalsAndEvents?.goals])
+
+  const eventsByStatus = useMemo(() => {
+    if (!goalsAndEvents?.events) return { pending: [], completed: [] }
+    
+    return {
+      pending: goalsAndEvents.events.filter((event: ProjectedEvent) => event.status === 'pending'),
+      completed: goalsAndEvents.events.filter((event: ProjectedEvent) => event.status === 'completed')
+    }
+  }, [goalsAndEvents?.events])
 
   return {
     goalsAndEvents: goalsAndEvents || { goals: [], events: [] },
-    counters: counters || { goals: 0, events: 0 },
-    isLoading: isGoalsLoading || isCountersLoading,
-    error: goalsError || countersError
+    goalsByStatus,
+    eventsByStatus,
+    isLoading: isGoalsLoading,
+    error: goalsError
   }
 }
 
