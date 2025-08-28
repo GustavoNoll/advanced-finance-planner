@@ -37,13 +37,13 @@ const createSchema = (type: 'goal' | 'event') => {
   if (type === 'goal') {
     return z.object({
       ...baseFields,
-      icon: z.enum(['house', 'car', 'travel', 'family', 'electronic', 'education', 'hobby', 'professional', 'health', 'other']),
+      icon: z.enum(Object.keys(goalIcons) as [keyof typeof goalIcons, ...Array<keyof typeof goalIcons>]),
       type: z.literal('goal'),
     });
   } else if (type === 'event') {
     return z.object({
       ...baseFields,
-      icon: z.enum(['goal', 'contribution', 'other']),
+      icon: z.enum(Object.keys(eventIcons) as [keyof typeof eventIcons, ...Array<keyof typeof eventIcons>]),
       type: z.literal('event'),
     });
   }
@@ -113,7 +113,7 @@ export const FinancialItemForm = ({
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
+      <div className="space-y-4">
         {hasErrors && (
           <Alert variant="destructive" className="py-2">
             <AlertDescription>
@@ -210,7 +210,10 @@ export const FinancialItemForm = ({
                 )}>
                   {t('common.month')} *
                 </FormLabel>
-                <Select onValueChange={field.onChange} defaultValue={field.value}>
+                <Select 
+                  onValueChange={field.onChange} 
+                  defaultValue={field.value}
+                >
                   <FormControl>
                     <SelectTrigger className={cn(
                       "h-9",
@@ -243,7 +246,10 @@ export const FinancialItemForm = ({
                 )}>
                   {t('common.year')} *
                 </FormLabel>
-                <Select onValueChange={field.onChange} defaultValue={field.value}>
+                <Select 
+                  onValueChange={field.onChange} 
+                  defaultValue={field.value}
+                >
                   <FormControl>
                     <SelectTrigger className={cn(
                       "h-9",
@@ -422,7 +428,8 @@ export const FinancialItemForm = ({
               {t('common.cancel')}
             </Button>
             <Button 
-              type="submit" 
+              type="button"
+              onClick={form.handleSubmit(handleSubmit)}
               disabled={isSubmitting || hasErrors}
               className={cn(
                 "h-9",
@@ -433,7 +440,7 @@ export const FinancialItemForm = ({
             </Button>
           </div>
         </div>
-      </form>
+      </div>
     </Form>
   );
 };

@@ -12,7 +12,6 @@ interface ItemsListProps {
   showCompleted: boolean
   onToggleShowCompleted: () => void
   onDelete: (itemId: string) => void
-  onToggleStatus: (itemId: string, status: 'pending' | 'completed') => void
   onEdit: (item: Goal | ProjectedEvent) => void
   t: (key: string) => string
 }
@@ -25,11 +24,10 @@ export function ItemsList({
   showCompleted,
   onToggleShowCompleted,
   onDelete,
-  onToggleStatus,
   onEdit,
   t
 }: ItemsListProps) {
-  const renderItem = (item: Goal | ProjectedEvent) => {
+  const renderItem = (item: Goal | ProjectedEvent, isCompleted: boolean = false) => {
     if (type === 'goal') {
       const goal = item as Goal
       return (
@@ -37,15 +35,17 @@ export function ItemsList({
           key={goal.id}
           goal={goal}
           currency={currency}
+          isCompleted={isCompleted}
           onDelete={() => {
             if (window.confirm(t("common.confirmDelete"))) {
               onDelete(goal.id)
             }
           }}
-          onToggleStatus={() => {
-            onToggleStatus(goal.id, goal.status === 'pending' ? 'completed' : 'pending')
+          onEdit={() => {
+            if (!isCompleted) {
+              onEdit(goal)
+            }
           }}
-          onEdit={() => onEdit(goal)}
         />
       )
     } else {
@@ -55,15 +55,17 @@ export function ItemsList({
           key={event.id}
           event={event}
           currency={currency}
+          isCompleted={isCompleted}
           onDelete={() => {
             if (window.confirm(t("common.confirmDelete"))) {
               onDelete(event.id)
             }
           }}
-          onToggleStatus={() => {
-            onToggleStatus(event.id, event.status === 'pending' ? 'completed' : 'pending')
+          onEdit={() => {
+            if (!isCompleted) {
+              onEdit(event)
+            }
           }}
-          onEdit={() => onEdit(event)}
         />
       )
     }
@@ -72,17 +74,17 @@ export function ItemsList({
   return (
     <div className="space-y-6">
       <div className="space-y-4">
-        <h2 className="text-lg font-medium">
+        <h2 className="text-lg font-medium text-gray-900 dark:text-white">
           {type === 'goal' ? t("financialGoals.projected") : t("events.projected")}
         </h2>
-        {projectedItems.map(renderItem)}
+        {projectedItems.map(item => renderItem(item, false))}
       </div>
 
       <div>
         <Button
           variant="ghost"
           onClick={onToggleShowCompleted}
-          className="w-full justify-start text-muted-foreground"
+          className="w-full justify-start text-muted-foreground hover:text-gray-900 dark:hover:text-white"
         >
           {showCompleted 
             ? (type === 'goal' ? t("financialGoals.hideCompleted") : t("events.hideCompleted"))
@@ -92,7 +94,7 @@ export function ItemsList({
         
         {showCompleted && completedItems.length > 0 && (
           <div className="mt-4 space-y-4">
-            {completedItems.map(renderItem)}
+            {completedItems.map(item => renderItem(item, true))}
           </div>
         )}
       </div>

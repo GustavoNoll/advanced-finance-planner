@@ -1,7 +1,8 @@
+import { eventIcons } from "@/constants/events";
 import { Calendar, Target, Banknote } from "lucide-react";
 
 interface ChartPointProps {
-  type: 'goal' | 'contribution' | 'other';
+  type: keyof typeof eventIcons;
   value: number;
 }
 

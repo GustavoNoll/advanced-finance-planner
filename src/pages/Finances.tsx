@@ -17,7 +17,8 @@ import { DashboardCard } from "@/components/DashboardCard";
 import { DashboardNavigation } from "@/components/dashboard/DashboardNavigation";
 import { DashboardHighlights } from "@/components/dashboard/DashboardHighlights";
 import { DashboardMetrics } from "@/components/dashboard/DashboardMetrics";
-import { useFinancialRecords, useGoalsAndEvents } from "@/hooks/useFinancialData";
+import { useFinancialRecords as useFinancialRecordsWithLinks } from "@/hooks/useFinancialRecordsManagement";
+import { useGoalsAndEvents } from "@/hooks/useFinancialData";
 import { useProjectionData } from "@/hooks/useProjectionData";
 import { PlanProgressData } from "@/lib/plan-progress";
 import { ChartOptions } from "@/lib/chart-projections";
@@ -52,7 +53,9 @@ const Finances = ({
   const queryClient = useQueryClient();
 
   // Hooks para dados financeiros
-  const { allFinancialRecords, processedRecords, isLoading: isFinancialRecordsLoading } = useFinancialRecords(clientId);
+  const { records: allFinancialRecords, stats, isLoading: isFinancialRecordsLoading } = useFinancialRecordsWithLinks(clientId);
+
+  
   const { goalsAndEvents, counters, isLoading: isGoalsLoading } = useGoalsAndEvents(clientId);
 
   // Hook para opções de gráfico
@@ -72,6 +75,7 @@ const Finances = ({
     ...chartOptionsHook.chartOptions
   }
 
+  // Hook para dados de projeção - deve ser chamado antes de qualquer return
   const projectionDataHook = useProjectionData(
     investmentPlan,
     clientProfile,
@@ -110,7 +114,7 @@ const Finances = ({
   }, [queryClient, clientId]);
 
   // Loading state
-  if (!investmentPlan || !clientProfile || !allFinancialRecords || isGoalsLoading) {
+  if (!investmentPlan || !clientProfile || isFinancialRecordsLoading || isGoalsLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <Spinner size="lg" />
@@ -218,7 +222,6 @@ const Finances = ({
           {projectionDataWithOptions ? (
             <MonthlyView 
               userId={clientId} 
-              initialRecords={processedRecords.financialRecords} 
               allFinancialRecords={allFinancialRecords}
               investmentPlan={investmentPlan}
               profile={clientProfile}

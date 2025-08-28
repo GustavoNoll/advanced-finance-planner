@@ -1,3 +1,6 @@
 export { FinancialRecordsHeader } from './FinancialRecordsHeader'
 export { ActionButtons } from './ActionButtons'
 export { RecordsList } from './RecordsList'
+export { default as SelectExistingItems } from './SelectExistingItems'
+export { default as SelectedItemCard } from './SelectedItemCard'
+export { default as LinkedItemsDisplay } from './LinkedItemsDisplay'

@@ -1,7 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useToast } from '@/components/ui/use-toast'
 import { FinancialRecordsManagementService, CSVRecord, ImportResult, SyncResult } from '@/services/financial-records-management.service'
-import { FinancialRecord, InvestmentPlan } from '@/types/financial'
+import { FinancialRecord, FinancialRecordLink, InvestmentPlan } from '@/types/financial'
 import { useMemo } from 'react'
 
 export interface FinancialRecordsStats {
@@ -14,18 +14,54 @@ export interface FinancialRecordsStats {
   totalGrowth: number
 }
 
+/**
+ * Hook para buscar registros financeiros com links incluídos e já ordenados
+ * Cada FinancialRecord agora inclui um array de links (FinancialRecordLink[])
+ * Os registros são retornados ordenados por data (mais recente primeiro)
+ * 
+ * @example
+ * const { records, stats, isLoading, error } = useFinancialRecords(userId)
+ * 
+ * // Acessar links de um registro específico
+ * const firstRecord = records[0] // Registro mais recente
+ * if (firstRecord.links && firstRecord.links.length > 0) {
+ *   console.log('Links do registro:', firstRecord.links)
+ *   console.log('Primeiro link:', firstRecord.links[0])
+ *   console.log('Tipo do item:', firstRecord.links[0].item_type)
+ *   console.log('Valor alocado:', firstRecord.links[0].allocated_amount)
+ * }
+ */
 export function useFinancialRecords(userId: string, initialRecords: FinancialRecord[] = []) {
   const { data: records, isLoading, error } = useQuery({
     queryKey: ['financialRecords', userId],
-    queryFn: () => FinancialRecordsManagementService.fetchRecordsByUserId(userId),
+    queryFn: async () => {
+      const baseRecords = await FinancialRecordsManagementService.fetchRecordsByUserId(userId)
+      
+      // Buscar links para cada registro e incluí-los diretamente
+      const recordsWithLinks = await Promise.all(
+        baseRecords.map(async (record) => {
+          try {
+            const { data: links } = await FinancialRecordsManagementService.fetchLinksByFinancialRecordId(record.id)
+            return {
+              ...record,
+              links: links || []
+            }
+          } catch (error) {
+            console.error(`Erro ao buscar links para registro ${record.id}:`, error)
+            return {
+              ...record,
+              links: []
+            }
+          }
+        })
+      )
+      
+      // Retornar já ordenado por data (mais recente primeiro)
+      return FinancialRecordsManagementService.sortRecords(recordsWithLinks)
+    },
     enabled: !!userId,
-    initialData: initialRecords.length > 0 ? initialRecords : undefined,
     staleTime: 0,
   })
-
-  const sortedRecords = useMemo(() => {
-    return FinancialRecordsManagementService.sortRecords(records || [])
-  }, [records])
 
   const stats = useMemo(() => {
     return FinancialRecordsManagementService.calculateRecordsStats(records || [])
@@ -33,7 +69,6 @@ export function useFinancialRecords(userId: string, initialRecords: FinancialRec
 
   return {
     records: records || [],
-    sortedRecords,
     stats,
     isLoading,
     error
@@ -102,11 +137,11 @@ export function useFinancialRecordsMutations(userId: string) {
 
   const deleteRecord = useMutation({
     mutationFn: (recordId: string) => FinancialRecordsManagementService.deleteRecord(recordId),
-    onSuccess: (deletedId) => {
+    onSuccess: (_, variables) => {
       // Atualizar cache local
       queryClient.setQueryData(['financialRecords', userId], (oldData: FinancialRecord[] | undefined) => {
         if (!oldData) return []
-        return FinancialRecordsManagementService.sortRecords(oldData.filter(record => record.id !== deletedId))
+        return FinancialRecordsManagementService.sortRecords(oldData.filter(record => record.id !== variables))
       })
       
       toast({

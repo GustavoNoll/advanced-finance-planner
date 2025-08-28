@@ -39,7 +39,7 @@ const FinancialRecords = () => {
   const [isValidating, setIsValidating] = useState<boolean>(true);
 
   // Hooks para dados
-  const { records, sortedRecords, stats, isLoading: recordsLoading } = useFinancialRecords(clientId || '', initialRecords);
+  const { records, isLoading: recordsLoading } = useFinancialRecords(clientId || '', initialRecords);
   const { investmentPlan, isLoading: planLoading } = useInvestmentPlan(clientId || '');
   const { 
     createRecord, 
@@ -188,7 +188,7 @@ const FinancialRecords = () => {
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <RecordsList
-          records={sortedRecords}
+          records={records}
           investmentPlan={investmentPlan}
           isBroker={brokerProfile?.is_broker || false}
           editingRecordId={editingRecordId}
