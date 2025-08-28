@@ -160,12 +160,16 @@ function createProjectionContext(
     ? createDateWithoutTimezone(chartOptions.changeMonthlyWithdraw.date) 
     : null;
 
+  const pendingGoals = goals?.filter(goal => goal.status === 'pending');
+  const pendingEvents = events?.filter(event => event.status === 'pending');
+  console.log('pendingGoals', pendingGoals);
+  console.log('pendingEvents', pendingEvents);
   return {
     investmentPlan,
     profile,
     initialRecords,
-    goals,
-    events,
+    goals: pendingGoals,
+    events: pendingEvents,
     chartOptions,
     birthDate,
     birthYear,
@@ -251,8 +255,8 @@ function createHistoricalMonthData(
     isHistorical: true,
     balance: historicalRecord.ending_balance,
     planned_balance: plannedBalance,
-    goalsEventsImpact: historicalRecord.events_balance || 0,
     retirement: isRetirementAge,
+    goalsEventsImpact: historicalRecord.links?.reduce((acc, link) => acc + link.allocated_amount, 0) || 0,
     difference_from_planned_balance: historicalRecord.ending_balance - plannedBalance,
     projected_lifetime_withdrawal: historicalRecord.ending_balance / (expectedReturn / 100),
     planned_lifetime_withdrawal: plannedBalance / (expectedReturn / 100),
@@ -387,8 +391,8 @@ export function generateProjectionData(
   if (!context) return [];
 
   const projectionData: YearlyProjectionData[] = [];
-  const goalsForChart = processGoals(goals);
-  const eventsForChart = processEvents(events);
+  const goalsForChart = processGoals(context.goals);
+  const eventsForChart = processEvents(context.events);
 
   let oldPortfolioBalance = context.oldPortfolioProfitability ? investmentPlan.initial_amount : null;
   let projectedBalance = initialRecords[0]?.ending_balance || investmentPlan.initial_amount;

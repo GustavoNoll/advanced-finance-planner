@@ -1,3 +1,17 @@
+import { eventIcons } from "@/constants/events";
+import { goalIcons } from "@/constants/goals";
+
+export interface FinancialRecordLink {
+  id: string;
+  financial_record_id: string;
+  item_id: string;
+  item_type: 'goal' | 'event';
+  allocated_amount: number;
+  is_completing: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
 export interface FinancialRecord {
   id: string;
   user_id: string;
@@ -10,10 +24,11 @@ export interface FinancialRecord {
   ending_balance: number;
   target_rentability?: number;
   growth_percentage?: number;
-  events_balance: number | null;
+
   created_at?: string;
   updated_at?: string;
   selected_items?: SelectedGoalsEvents;
+  links?: FinancialRecordLink[];
 }
 
 export interface ChartDataPoint {
@@ -85,7 +100,7 @@ export interface Goal {
   id: string;
   type?: 'goal'
   profile_id: string;
-  icon: 'house' | 'car' | 'travel' | 'family' | 'electronic' | 'education' | 'hobby' | 'professional' | 'health' | 'other';
+  icon: keyof typeof goalIcons;
   asset_value: number;
   month: MonthNumber;
   year: number;
@@ -112,7 +127,7 @@ export interface ProjectedEvent {
   payment_mode: 'none' | 'installment' | 'repeat';
   installment_count?: number;
   installment_interval?: number;
-  icon: 'goal' | 'contribution' | 'other';
+  icon: keyof typeof eventIcons;
   status: 'pending' | 'completed';
   month: MonthNumber;
   year: number;

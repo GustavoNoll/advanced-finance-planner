@@ -21,9 +21,15 @@ const Events = () => {
   const [showCompleted, setShowCompleted] = useState(false);
   const [editingEvent, setEditingEvent] = useState<ProjectedEvent | null>(null);
 
-  // Hooks para dados e mutações
+  // Função para fechar o formulário e limpar o estado de edição
+  const closeForm = () => {
+    setShowAddForm(false);
+    setEditingEvent(null);
+  };
+
+  // Hooks para dados e mutações com callback de sucesso
   const { projectedEvents, completedEvents, isLoading } = useEvents(userId || '');
-  const { createEvent, updateEvent, deleteEvent, toggleEventStatus } = useEventMutations(userId || '');
+  const { createEvent, updateEvent, deleteEvent } = useEventMutations(userId || '', closeForm);
 
   // Handlers
   const handleSubmit = (values: FinancialItemFormValues) => {
@@ -35,16 +41,11 @@ const Events = () => {
   };
 
   const handleCancel = () => {
-    setShowAddForm(false);
-    setEditingEvent(null);
+    closeForm();
   };
 
   const handleDelete = (eventId: string) => {
     deleteEvent.mutate(eventId);
-  };
-
-  const handleToggleStatus = (eventId: string, status: 'pending' | 'completed') => {
-    toggleEventStatus.mutate({ eventId, status });
   };
 
   const handleEdit = (event: ProjectedEvent) => {
@@ -95,7 +96,6 @@ const Events = () => {
           showCompleted={showCompleted}
           onToggleShowCompleted={() => setShowCompleted(!showCompleted)}
           onDelete={handleDelete}
-          onToggleStatus={handleToggleStatus}
           onEdit={handleEdit}
           t={t}
         />

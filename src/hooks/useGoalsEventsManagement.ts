@@ -82,7 +82,7 @@ export function useEvents(userId: string) {
   }
 }
 
-export function useGoalMutations(userId: string) {
+export function useGoalMutations(userId: string, onSuccessCallback?: () => void) {
   const queryClient = useQueryClient()
   const { toast } = useToast()
 
@@ -96,6 +96,8 @@ export function useGoalMutations(userId: string) {
       toast({
         title: 'Meta criada com sucesso',
       })
+      // Executar callback de sucesso se fornecido
+      onSuccessCallback?.()
     },
     onError: (error) => {
       console.error('Error creating goal:', error)
@@ -116,6 +118,8 @@ export function useGoalMutations(userId: string) {
       toast({
         title: 'Meta atualizada com sucesso',
       })
+      // Executar callback de sucesso se fornecido
+      onSuccessCallback?.()
     },
     onError: (error) => {
       console.error('Error updating goal:', error)
@@ -172,7 +176,7 @@ export function useGoalMutations(userId: string) {
   }
 }
 
-export function useEventMutations(userId: string) {
+export function useEventMutations(userId: string, onSuccessCallback?: () => void) {
   const queryClient = useQueryClient()
   const { toast } = useToast()
 
@@ -186,6 +190,8 @@ export function useEventMutations(userId: string) {
       toast({
         title: 'Evento criado com sucesso',
       })
+      // Executar callback de sucesso se fornecido
+      onSuccessCallback?.()
     },
     onError: (error) => {
       console.error('Error creating event:', error)
@@ -206,6 +212,8 @@ export function useEventMutations(userId: string) {
       toast({
         title: 'Evento atualizado com sucesso',
       })
+      // Executar callback de sucesso se fornecido
+      onSuccessCallback?.()
     },
     onError: (error) => {
       console.error('Error updating event:', error)

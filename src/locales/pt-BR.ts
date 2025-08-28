@@ -430,7 +430,6 @@ export const ptBR = {
     no: "Não",
     yes: "Sim",
     notAvailable: "N/A",
-    loading: "Carregando...",
     back: "Voltar",
     cancel: "Cancelar",
     save: "Salvar",
@@ -459,7 +458,22 @@ export const ptBR = {
       light: 'Claro',
       dark: 'Escuro',
       toggle: 'Alternar tema'
-    }
+    },
+    search: 'Buscar',
+    noItemsFound: 'Nenhum item encontrado',
+    complete: 'Finalizar',
+    itemWillBeCompleted: 'Este item será marcado como concluído',
+    allowNegativeValues: 'Use valores negativos para despesas/saídas',
+    linkedItems: 'Itens Vinculados',
+    completed: 'Concluído',
+    remove: 'Remover',
+    noLinkedItems: 'Nenhum item vinculado encontrado',
+    goal: 'Objetivo',
+    event: 'Evento',
+    tryAgain: 'Tentar novamente',
+    toggleStatus: 'Alternar status',
+    loading: 'Carregando',
+    partial: 'Parcial'
   },
   createClient: {
     title: "Criar Novo Cliente",
@@ -789,6 +803,7 @@ export const ptBR = {
   },
   financialGoals: {
     title: "Objetivos Financeiros",
+    title_single: "Objetivo Financeiro",
     addNew: "Novo Objetivo",
     newGoal: "Novo Objetivo Financeiro",
     editGoal: "Editar Objetivo Financeiro",
@@ -836,6 +851,7 @@ export const ptBR = {
   },
   events: {
     title: "Eventos Financeiros",
+    title_single: "Evento Financeiro",
     addNew: "Novo Evento",
     newEvent: "Novo Evento Financeiro",
     editEvent: "Editar Evento",

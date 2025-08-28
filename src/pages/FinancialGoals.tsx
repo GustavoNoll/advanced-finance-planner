@@ -21,9 +21,15 @@ const FinancialGoals = () => {
   const [showCompleted, setShowCompleted] = useState(false);
   const [editingGoal, setEditingGoal] = useState<Goal | null>(null);
 
-  // Hooks para dados e mutações
+  // Função para fechar o formulário e limpar o estado de edição
+  const closeForm = () => {
+    setShowAddForm(false);
+    setEditingGoal(null);
+  };
+
+  // Hooks para dados e mutações com callback de sucesso
   const { projectedGoals, completedGoals, isLoading } = useGoals(userId || '');
-  const { createGoal, updateGoal, deleteGoal, toggleGoalStatus } = useGoalMutations(userId || '');
+  const { createGoal, updateGoal, deleteGoal } = useGoalMutations(userId || '', closeForm);
 
   // Handlers
   const handleSubmit = (values: FinancialItemFormValues) => {
@@ -35,16 +41,11 @@ const FinancialGoals = () => {
   };
 
   const handleCancel = () => {
-    setShowAddForm(false);
-    setEditingGoal(null);
+    closeForm();
   };
 
   const handleDelete = (goalId: string) => {
     deleteGoal.mutate(goalId);
-  };
-
-  const handleToggleStatus = (goalId: string, status: 'pending' | 'completed') => {
-    toggleGoalStatus.mutate({ goalId, status });
   };
 
   const handleEdit = (goal: Goal) => {
@@ -95,7 +96,6 @@ const FinancialGoals = () => {
           showCompleted={showCompleted}
           onToggleShowCompleted={() => setShowCompleted(!showCompleted)}
           onDelete={handleDelete}
-          onToggleStatus={handleToggleStatus}
           onEdit={handleEdit}
           t={t}
         />

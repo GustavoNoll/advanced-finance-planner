@@ -268,7 +268,7 @@ export class FinancialRecordsManagementService {
             target_rentability: parseFloat(record.RentabilidadeMeta.replace('%', '').replace(/\./g, '').replace(',', '.')),
             growth_percentage: null,
             monthly_return: parseCurrencyValue(record.Retorno, investmentPlan?.currency as CurrencyCode),
-            events_balance: record.Eventos ? parseCurrencyValue(record.Eventos, investmentPlan?.currency as CurrencyCode) : null,
+    
           }
           formattedRecord.growth_percentage = ((formattedRecord.ending_balance - formattedRecord.starting_balance) / formattedRecord.starting_balance) * 100
 
@@ -458,6 +458,28 @@ export class FinancialRecordsManagementService {
       totalMonthlyReturn,
       averageMonthlyReturnRate,
       totalGrowth: totalEndingBalance - totalStartingBalance
+    }
+  }
+
+  /**
+   * Busca os links de um registro financeiro específico
+   */
+  static async fetchLinksByFinancialRecordId(financialRecordId: string) {
+    try {
+      const { data, error } = await supabase
+        .from('financial_record_links')
+        .select('*')
+        .eq('financial_record_id', financialRecordId)
+
+      if (error) {
+        console.error('Error fetching financial record links:', error)
+        throw error
+      }
+
+      return { data: data || [], error: null }
+    } catch (error) {
+      console.error('Error in fetchLinksByFinancialRecordId:', error)
+      return { data: [], error }
     }
   }
 }

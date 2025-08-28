@@ -20,6 +20,8 @@ import { useTranslation } from 'react-i18next'
 import { CurrencyCode } from "@/utils/currency"
 import { InvestmentPlan } from "@/types/financial"
 import { createDateWithoutTimezone, createDateFromYearMonth } from '@/utils/dateUtils'
+import { eventIcons } from "@/constants/events"
+import { goalIcons } from "@/constants/goals"
 
 // Tipos para os dados
 type MonthlyData = {
@@ -74,22 +76,10 @@ const parseISODate = (dateString: string): Date => {
 }
 
 // Mapeamento de ícones baseado no tipo
-const getIconComponent = (iconType: string) => {
-  const iconMap = {
-    car: Car,
-    education: GraduationCap,
-    health: Heart,
-    house: Home,
-    travel: Plane,
-    family: Users,
-    electronic: Monitor,
-    hobby: Gamepad,
-    professional: Briefcase,
-    goal: Target,
-    contribution: PiggyBank,
-    other: Target,
-  }
-  return iconMap[iconType as keyof typeof iconMap] || iconMap.other
+const getIconComponent = (iconType: string, type: 'goal' | 'event') => {
+  const Icon = type === 'goal' ? goalIcons[iconType as keyof typeof goalIcons] : eventIcons[iconType as keyof typeof eventIcons] || eventIcons.other;
+
+  return Icon;
 }
 
 // Bisector para encontrar o ponto mais próximo
@@ -265,7 +255,7 @@ export default function PatrimonialProjectionChart({
     actualValue?: number
     projectedValue?: number
     oldPortfolioValue?: number
-    objectives?: { value: number; icon: string; id: string }[]
+    objectives?: { value: number; icon: string; id: string, type: 'goal' | 'event' }[]
   }>()
 
   const handleTooltip = useCallback(
@@ -558,7 +548,7 @@ export default function PatrimonialProjectionChart({
           {/* Objetivos agrupados como pontos destacados */}
           {groupObjectivesByProximity(objectivePoints, dateScale, 24).map((group, i) => {
             const first = group.objectives[0]
-            const IconComponent = group.objectives.length >= 2 ? Layers : getIconComponent(first.icon)
+            const IconComponent = group.objectives.length >= 2 ? Layers : getIconComponent(first.icon, first.type)
             const x = group.x
 
             // Antes do JSX, defina:
@@ -748,8 +738,8 @@ export default function PatrimonialProjectionChart({
             <>
               <div className="text-gray-800 dark:text-gray-200 font-semibold mt-2 mb-1">{t('financialGoals.title')} / {t('events.title')}:</div>
               {tooltipData.objectives.map((obj, idx) => {
-                const IconComponent = getIconComponent(obj.icon)
-                const isEvent = obj.icon === 'goal' || obj.icon === 'contribution' || obj.icon === 'event'
+                const IconComponent = getIconComponent(obj.icon, obj.type)
+                const isEvent = obj.type === 'event'
                 const isObjective = !isEvent
                 const value = obj.value
                 let color = 'text-red-600'
@@ -832,12 +822,12 @@ export default function PatrimonialProjectionChart({
             if (e.key === 'Escape') setShowSelectObjectiveModal(false)
           }}
         >
-          <div className="bg-white rounded-lg shadow-lg p-6 min-w-[300px] max-h-[80vh] overflow-y-auto">
-            <div className="font-bold mb-2">{t('financialGoals.title')} / {t('events.title')}:</div>
+          <div className="bg-white dark:bg-gray-900 rounded-lg shadow-lg p-6 min-w-[300px] max-h-[80vh] overflow-y-auto">
+            <div className="font-bold mb-2 text-gray-900 dark:text-gray-100">{t('financialGoals.title')} / {t('events.title')}:</div>
             <ul className="space-y-2">
               {selectedGroupObjectives.map(obj => {
-                const IconComponent = getIconComponent(obj.icon)
-                const isEvent = obj.icon === 'goal' || obj.icon === 'contribution' || obj.icon === 'event'
+                const IconComponent = getIconComponent(obj.icon, obj.type)
+                const isEvent = obj.type === 'event'
                 const isObjective = !isEvent
                 const value = obj.value
                 let color = 'text-red-600'
@@ -855,20 +845,20 @@ export default function PatrimonialProjectionChart({
                 if (paymentMode === 'repeat') paymentModeLabel = t('financialGoals.form.repeatMode')
                 if (paymentMode === 'none') paymentModeLabel = t('financialGoals.form.noPaymentMode')
                 let iconLabel = ''
-                if (isObjective) iconLabel = t(`financialGoals.icons.${obj.icon}`) || obj.icon
-                else iconLabel = t(`events.icons.${obj.icon}`) || obj.icon
+                if (isObjective) iconLabel = obj.type === 'goal' ? t(`financialGoals.icons.${obj.icon}`) : t(`events.icons.${obj.icon}`)
+                else iconLabel = obj.type === 'goal' ? t(`financialGoals.icons.${obj.icon}`) : t(`events.icons.${obj.icon}`)
                 const date = objCast.date ? formatDate(objCast.date) : ''
                 return (
-                  <li key={obj.id}>
+                  <li key={obj.id} className="dark:bg-gray-900 dark:border-gray-700">
                     <button
-                      className="w-full text-left p-0 bg-transparent border-none outline-none"
+                      className="w-full text-left p-0 bg-transparent border-none outline-none dark:bg-gray-900 dark:border-gray-700 dark:hover:bg-blue-900"
                       onClick={() => {
                         handleEditItem(obj)
                         setShowSelectObjectiveModal(false)
                       }}
                     >
-                      <div className="mb-2 p-2 rounded border border-gray-100 bg-gray-50 hover:bg-blue-50 cursor-pointer">
-                        <div className="flex items-center gap-2 mb-1">
+                      <div className="mb-2 p-2 rounded border border-gray-100 bg-gray-50 hover:bg-blue-50 cursor-pointer dark:bg-gray-900 dark:border-gray-700 dark:hover:bg-blue-900 dark:text-gray-100">
+                        <div className="flex items-center gap-2 mb-1 text-gray-900 dark:text-gray-100">
                           <span style={{ fontSize: 16, color: color === 'text-green-600' ? '#16a34a' : '#dc2626', display: 'flex', alignItems: 'center' }}>
                             <IconComponent size={16} color={color === 'text-green-600' ? '#16a34a' : '#dc2626'} style={{ marginRight: 4 }} />
                             {iconLabel}

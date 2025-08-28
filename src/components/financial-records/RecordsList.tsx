@@ -4,6 +4,8 @@ import { Pencil, Trash2 } from "lucide-react"
 import { FinancialRecord, InvestmentPlan } from "@/types/financial"
 import { CurrencyCode, formatCurrency } from "@/utils/currency"
 import { AddRecordForm } from "@/components/financial-records/AddRecordForm"
+import LinkedItemsDisplay from "./LinkedItemsDisplay"
+import { useState } from "react"
 
 interface RecordsListProps {
   records: FinancialRecord[]
@@ -26,6 +28,8 @@ export function RecordsList({
   clientId,
   t
 }: RecordsListProps) {
+  // Estado para forçar refresh dos links
+  const [refreshKey, setRefreshKey] = useState(0);
   const formatMonth = (month: number) => {
     return t(`monthlyView.table.months.${new Date(2000, month - 1).toLocaleString('en-US', { month: 'long' }).toLowerCase()}`)
   }
@@ -83,11 +87,6 @@ export function RecordsList({
             <div>
               <p className="text-sm text-muted-foreground">{t('financialRecords.endingBalance')}</p>
               <p className="font-semibold">{formatCurrency(record.ending_balance, investmentPlan?.currency as CurrencyCode)}</p>
-              {record.events_balance != null && record.events_balance !== 0 && (
-                <p className="text-xs text-muted-foreground mt-0.5">
-                  Eventos: {formatCurrency(record.events_balance, investmentPlan?.currency as CurrencyCode)}
-                </p>
-              )}
             </div>
             <div>
               <p className="text-sm text-muted-foreground">{t('financialRecords.growth')}</p>
@@ -110,7 +109,7 @@ export function RecordsList({
                 <Button
                   variant="ghost"
                   size="icon"
-                  onClick={() => onEdit(record.id)}
+                  onClick={() => onEdit(Number(record.id))}
                   className="text-blue-600 hover:text-blue-700 hover:bg-blue-50 dark:hover:bg-blue-900/30"
                 >
                   <Pencil className="h-4 w-4" />
@@ -127,12 +126,23 @@ export function RecordsList({
             )}
           </div>
           
-          {editingRecordId === record.id && (
+          <LinkedItemsDisplay 
+            financialRecordId={Number(record.id)}
+            currency={investmentPlan?.currency || 'BRL'}
+            refreshKey={refreshKey}
+          />
+          
+          {editingRecordId === Number(record.id) && (
             <AddRecordForm  
               clientId={clientId}
               onSuccess={() => onEdit(0)}
               editingRecord={record}
               investmentPlan={investmentPlan as InvestmentPlan}
+              onLinksUpdated={() => {
+                // Incrementar a chave de refresh para forçar atualização dos links
+                console.log('Links atualizados, incrementando chave de refresh');
+                setRefreshKey(prev => prev + 1);
+              }}
             />
           )}
         </Card>

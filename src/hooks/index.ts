@@ -6,6 +6,7 @@ export { useInvestmentPolicy, usePolicySectionData, useInvestmentPolicyMutations
 export { useFinancialRecords as useFinancialRecordsManagement, useInvestmentPlan as useInvestmentPlanForRecords, useFinancialRecordsMutations } from './useFinancialRecordsManagement'
 export { useCurrentUserProfile, useClientMutations, useClientsByBroker, useClientById, useBrokerAccess } from './useClientManagement'
 export { useExistingPlan, useProfileData, usePlanCreation, usePlanCalculations, useAgeOptions } from './usePlanCreation'
+export { useLinkedItems } from './useLinkedItems'
 
 export type { GoalsStats, EventsStats } from './useGoalsEventsManagement'
 export type { InvestmentPlanStats } from './useInvestmentPlan'
