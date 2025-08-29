@@ -463,10 +463,25 @@ export const ptBR = {
     noItemsFound: 'Nenhum item encontrado',
     complete: 'Finalizar',
     itemWillBeCompleted: 'Este item será marcado como concluído',
+    completeExplanation: {
+      title: 'O que significa "Finalizar"?',
+      description: 'Ao marcar como "Finalizar", o sistema irá:',
+      steps: [
+        'Somar todos os valores vinculados entre este item e os registros financeiros',
+        'Marcar o item como concluído com o valor total acumulado',
+        'Considerar a data do último registro vinculado como data de conclusão'
+      ],
+      note: 'Se não finalizar, o item permanece pendente e continua sendo considerado nas projeções financeiras nas datas planejadas.',
+      pendingStatus: 'Status: Pendente',
+      completedStatus: 'Status: Concluído',
+      pendingDescription: 'O item continuará sendo considerado nas projeções financeiras nas datas planejadas.',
+      completedDescription: 'O item não será mais considerado nas projeções financeiras futuras.'
+    },
     allowNegativeValues: 'Use valores negativos para despesas/saídas',
     linkedItems: 'Itens Vinculados',
     completed: 'Concluído',
     remove: 'Remover',
+    deselect: 'Desselecionar',
     noLinkedItems: 'Nenhum item vinculado encontrado',
     goal: 'Objetivo',
     event: 'Evento',
