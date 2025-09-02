@@ -246,6 +246,13 @@ function createHistoricalMonthData(
   const contribution = historicalRecord.monthly_contribution > 0 ? historicalRecord.monthly_contribution : 0;
   const withdrawal = historicalRecord.monthly_contribution < 0 ? Math.abs(historicalRecord.monthly_contribution) : 0;
 
+  // Calcular impacto dos goals/events considerando financial_links
+  const goalsEventsImpact = historicalRecord.links?.reduce((acc, link) => {
+    // Para goals (gastos), os links são negativos
+    // Para events, os links podem ser positivos ou negativos
+    return acc + link.allocated_amount;
+  }, 0) || 0;
+
   return {
     month: month as MonthNumber,
     year,
@@ -255,7 +262,7 @@ function createHistoricalMonthData(
     balance: historicalRecord.ending_balance,
     planned_balance: plannedBalance,
     retirement: isRetirementAge,
-    goalsEventsImpact: historicalRecord.links?.reduce((acc, link) => acc + link.allocated_amount, 0) || 0,
+    goalsEventsImpact,
     difference_from_planned_balance: historicalRecord.ending_balance - plannedBalance,
     projected_lifetime_withdrawal: historicalRecord.ending_balance / (expectedReturn / 100),
     planned_lifetime_withdrawal: plannedBalance / (expectedReturn / 100),
@@ -741,24 +748,30 @@ export function handleMonthlyGoalsAndEvents(
 ): number {
   let updatedBalance = balance;
   
-  // Handle goals
+  // Handle goals (gastos - reduzem o saldo)
   const currentGoals = goals?.filter(goal => 
     goal.year === year && goal.month === (month + 1)
   );
 
   if (currentGoals?.length) {
-    const totalGoalWithdrawal = currentGoals.reduce((sum, goal) => sum + goal.amount, 0);
-    updatedBalance -= totalGoalWithdrawal * accumulatedInflation;
+    const totalGoalWithdrawal = currentGoals.reduce((sum, goal) => {
+      const adjustedAmount = goal.amount * accumulatedInflation;
+      return sum + adjustedAmount;
+    }, 0);
+    updatedBalance -= totalGoalWithdrawal;
   }
 
-  // Handle events
+  // Handle events (podem ser receitas ou despesas)
   const currentEvents = events?.filter(event => 
     event.year === year && event.month === (month + 1)
   );
 
   if (currentEvents?.length) {
-    const totalEventWithdrawal = currentEvents.reduce((sum, event) => sum + event.amount, 0);
-    updatedBalance += totalEventWithdrawal * accumulatedInflation;
+    const totalEventImpact = currentEvents.reduce((sum, event) => {
+      const adjustedAmount = event.amount * accumulatedInflation;
+      return sum + adjustedAmount;
+    }, 0);
+    updatedBalance += totalEventImpact;
   }
 
   return updatedBalance;

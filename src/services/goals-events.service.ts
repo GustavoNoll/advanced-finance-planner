@@ -1,9 +1,10 @@
 import { supabase } from '@/lib/supabase'
 import { createDateWithoutTimezone } from '@/utils/dateUtils'
+import { Goal, ProjectedEvent } from '@/types/financial'
 
 export interface GoalsAndEvents {
-  goals: any[]
-  events: any[]
+  goals: Goal[]
+  events: ProjectedEvent[]
 }
 
 export interface Counters {
@@ -75,16 +76,64 @@ export class GoalsEventsService {
       throw new Error('Failed to fetch events')
     }
 
+    // Buscar links financeiros para todas as metas e eventos
+    const goalIds = (goalsResponse.data || []).map(goal => goal.id)
+    const eventIds = (eventsResponse.data || []).map(event => event.id)
+
+    const [goalLinksResponse, eventLinksResponse] = await Promise.all([
+      supabase
+        .from('financial_record_links')
+        .select('*')
+        .in('item_id', goalIds)
+        .eq('item_type', 'goal'),
+      supabase
+        .from('financial_record_links')
+        .select('*')
+        .in('item_id', eventIds)
+        .eq('item_type', 'event')
+    ])
+
+    if (goalLinksResponse.error) {
+      console.error('Error fetching goal links:', goalLinksResponse.error)
+    }
+
+    if (eventLinksResponse.error) {
+      console.error('Error fetching event links:', eventLinksResponse.error)
+    }
+
+    const goalLinks = goalLinksResponse.data || []
+    const eventLinks = eventLinksResponse.data || []
+
+    // Combinar metas com seus links financeiros
+    const goalsWithLinks = (goalsResponse.data || []).map(goal => {
+      const links = goalLinks.filter(link => link.item_id === goal.id)
+      
+      return {
+        ...goal,
+        financial_links: links
+      }
+    })
+
+    // Combinar eventos com seus links financeiros
+    const eventsWithLinks = (eventsResponse.data || []).map(event => {
+      const links = eventLinks.filter(link => link.item_id === event.id)
+      
+      return {
+        ...event,
+        financial_links: links
+      }
+    })
+
     return {
-      goals: goalsResponse.data || [],
-      events: eventsResponse.data || []
+      goals: goalsWithLinks,
+      events: eventsWithLinks
     }
   }
 
   /**
    * Busca apenas metas de um usuário
    */
-  static async fetchGoals(userId: string): Promise<any[]> {
+  static async fetchGoals(userId: string): Promise<Goal[]> {
     if (!userId) return []
 
     const { data, error } = await supabase
@@ -97,13 +146,36 @@ export class GoalsEventsService {
       throw new Error('Failed to fetch goals')
     }
 
-    return data || []
+    if (!data || data.length === 0) return []
+
+    const goalIds = data.map(goal => goal.id)
+    
+    const { data: links, error: linksError } = await supabase
+      .from('financial_record_links')
+      .select('*')
+      .in('item_id', goalIds)
+      .eq('item_type', 'goal')
+
+    if (linksError) {
+      console.error('Error fetching goal links:', linksError)
+    }
+
+    const goalLinks = links || []
+
+    return data.map(goal => {
+      const links = goalLinks.filter(link => link.item_id === goal.id)
+      
+      return {
+        ...goal,
+        financial_links: links
+      }
+    })
   }
 
   /**
    * Busca apenas eventos de um usuário
    */
-  static async fetchEvents(userId: string): Promise<any[]> {
+  static async fetchEvents(userId: string): Promise<ProjectedEvent[]> {
     if (!userId) return []
 
     const { data, error } = await supabase
@@ -116,46 +188,29 @@ export class GoalsEventsService {
       throw new Error('Failed to fetch events')
     }
 
-    return data || []
-  }
+    if (!data || data.length === 0) return []
 
-  /**
-   * Filtra metas por período
-   */
-  static filterGoalsByPeriod(goals: any[], period: 'all' | '6m' | '12m' | '24m'): any[] {
-    if (period === 'all') return goals
+    const eventIds = data.map(event => event.id)
+    
+    const { data: links, error: linksError } = await supabase
+      .from('financial_record_links')
+      .select('*')
+      .in('item_id', eventIds)
+      .eq('item_type', 'event')
 
-    const currentDate = createDateWithoutTimezone(new Date())
-    const months = parseInt(period)
-    const cutoffDate = createDateWithoutTimezone(new Date(
-      currentDate.getFullYear(),
-      currentDate.getMonth() - months,
-      1
-    ))
+    if (linksError) {
+      console.error('Error fetching event links:', linksError)
+    }
 
-    return goals.filter(goal => {
-      const goalDate = createDateWithoutTimezone(new Date(goal.year, goal.month - 1, 1))
-      return goalDate >= cutoffDate
-    })
-  }
+    const eventLinks = links || []
 
-  /**
-   * Filtra eventos por período
-   */
-  static filterEventsByPeriod(events: any[], period: 'all' | '6m' | '12m' | '24m'): any[] {
-    if (period === 'all') return events
-
-    const currentDate = createDateWithoutTimezone(new Date())
-    const months = parseInt(period)
-    const cutoffDate = createDateWithoutTimezone(new Date(
-      currentDate.getFullYear(),
-      currentDate.getMonth() - months,
-      1
-    ))
-
-    return events.filter(event => {
-      const eventDate = createDateWithoutTimezone(new Date(event.year, event.month - 1, 1))
-      return eventDate >= cutoffDate
+    return data.map(event => {
+      const links = eventLinks.filter(link => link.item_id === event.id)
+      
+      return {
+        ...event,
+        financial_links: links
+      }
     })
   }
 }

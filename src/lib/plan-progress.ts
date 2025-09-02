@@ -1,6 +1,5 @@
 import { FinancialRecord, InvestmentPlan, Goal, ProjectedEvent } from "@/types/financial";
-import { calculateCompoundedRates, nper, yearlyReturnRateToMonthlyReturnRate, pmt, calculateFutureValue, vp } from "@/lib/financial-math";
-import { calculateAccumulatedInflation, calculatePlanAccumulatedInflation } from "./inflation-utils";
+import { calculateCompoundedRates, nper, yearlyReturnRateToMonthlyReturnRate, pmt, vp } from "@/lib/financial-math";
 import { processItem } from './financial-goals-processor';
 import { createDateWithoutTimezone, createDateFromYearMonth } from '@/utils/dateUtils';
 import { HistoricalDataInfo, MonthlyProjectionData } from "@/services/projection.service";
