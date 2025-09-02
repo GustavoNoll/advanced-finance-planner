@@ -471,7 +471,7 @@ export const ptBR = {
         'Marcar o item como concluído com o valor total acumulado',
         'Considerar a data do último registro vinculado como data de conclusão'
       ],
-      note: 'Se não finalizar, o item permanece pendente e continua sendo considerado nas projeções financeiras nas datas planejadas.',
+      note: 'Se não finalizar, o item permanece pendente e continua sendo considerado nas projeções financeiras nas datas planejadas, com os valores já vinculados aos registros financeiros sendo automaticamente descontados do valor total, mostrando apenas o valor restante que ainda precisa ser pago ou realizado.',
       pendingStatus: 'Status: Pendente',
       completedStatus: 'Status: Concluído',
       pendingDescription: 'O item continuará sendo considerado nas projeções financeiras nas datas planejadas.',

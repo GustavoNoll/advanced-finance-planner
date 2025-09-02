@@ -112,6 +112,7 @@ export interface Goal {
   created_at?: string;
   updated_at?: string;
   description?: string;
+  financial_links?: FinancialRecordLink[];
 }
 
 export type CreateGoal = Omit<Goal, 'id' | 'created_at' | 'updated_at'>;
@@ -133,6 +134,7 @@ export interface ProjectedEvent {
   year: number;
   created_at?: string;
   updated_at?: string;
+  financial_links?: FinancialRecordLink[];
 }
 
 export interface SelectedGoalsEvents {

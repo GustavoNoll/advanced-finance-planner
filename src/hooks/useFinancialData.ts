@@ -49,10 +49,82 @@ export function useGoalsAndEvents(clientId: string) {
     }
   }, [goalsAndEvents?.events])
 
+  // Metas com progresso de alocação
+  const goalsWithProgress = useMemo(() => {
+    if (!goalsAndEvents?.goals) return []
+    
+    return goalsAndEvents.goals.map(goal => {
+      const totalAllocated = goal.financial_links?.reduce((sum, link) => sum + Number(link.allocated_amount), 0) || 0
+      const progressPercentage = goal.asset_value > 0 ? (totalAllocated / goal.asset_value) * 100 : 0
+      
+      return {
+        ...goal,
+        progressPercentage,
+        isFullyAllocated: totalAllocated >= goal.asset_value,
+        isPartiallyAllocated: totalAllocated > 0 && totalAllocated < goal.asset_value,
+        total_allocated: totalAllocated,
+        remaining_amount: goal.asset_value - totalAllocated
+      }
+    })
+  }, [goalsAndEvents?.goals])
+
+  // Eventos com progresso de alocação
+  const eventsWithProgress = useMemo(() => {
+    if (!goalsAndEvents?.events) return []
+    
+    return goalsAndEvents.events.map(event => {
+      const totalAllocated = event.financial_links?.reduce((sum, link) => sum + Number(link.allocated_amount), 0) || 0
+      const progressPercentage = event.asset_value > 0 ? (totalAllocated / event.asset_value) * 100 : 0
+      
+      return {
+        ...event,
+        progressPercentage,
+        isFullyAllocated: totalAllocated >= event.asset_value,
+        isPartiallyAllocated: totalAllocated > 0 && totalAllocated < event.asset_value,
+        total_allocated: totalAllocated,
+        remaining_amount: event.asset_value - totalAllocated
+      }
+    })
+  }, [goalsAndEvents?.events])
+
+  // Resumo de alocação
+  const allocationSummary = useMemo(() => {
+    if (!goalsAndEvents) return null
+    
+    const totalGoalsValue = goalsAndEvents.goals.reduce((sum, goal) => sum + goal.asset_value, 0)
+    const totalEventsValue = goalsAndEvents.events.reduce((sum, event) => sum + event.asset_value, 0)
+    
+    const totalGoalsAllocated = goalsAndEvents.goals.reduce((sum, goal) => {
+      const allocated = goal.financial_links?.reduce((linkSum, link) => linkSum + Number(link.allocated_amount), 0) || 0
+      return sum + allocated
+    }, 0)
+    
+    const totalEventsAllocated = goalsAndEvents.events.reduce((sum, event) => {
+      const allocated = event.financial_links?.reduce((linkSum, link) => linkSum + Number(link.allocated_amount), 0) || 0
+      return sum + allocated
+    }, 0)
+    
+    return {
+      totalGoalsValue,
+      totalEventsValue,
+      totalGoalsAllocated,
+      totalEventsAllocated,
+      totalValue: totalGoalsValue + totalEventsValue,
+      totalAllocated: totalGoalsAllocated + totalEventsAllocated,
+      goalsProgress: totalGoalsValue > 0 ? (totalGoalsAllocated / totalGoalsValue) * 100 : 0,
+      eventsProgress: totalEventsValue > 0 ? (totalEventsAllocated / totalEventsValue) * 100 : 0,
+      overallProgress: (totalGoalsValue + totalEventsValue) > 0 ? 
+        ((totalGoalsAllocated + totalEventsAllocated) / (totalGoalsValue + totalEventsValue)) * 100 : 0
+    }
+  }, [goalsAndEvents])
+
   return {
     goalsAndEvents: goalsAndEvents || { goals: [], events: [] },
     goalsByStatus,
     eventsByStatus,
+    goalsWithProgress,
+    eventsWithProgress,
+    allocationSummary,
     isLoading: isGoalsLoading,
     error: goalsError
   }
@@ -93,7 +165,7 @@ export function useFinancialMetrics(
 export function useFinancialHighlights(
   clientId: string,
   investmentPlan: InvestmentPlan,
-  t: (key: string, params?: any) => string
+  t: (key: string, params?: Record<string, string | number>) => string
 ) {
   const { allFinancialRecords } = useFinancialRecords(clientId)
 
