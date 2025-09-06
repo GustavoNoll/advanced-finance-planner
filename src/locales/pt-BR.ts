@@ -11,6 +11,7 @@ export const ptBR = {
   investmentPlan: {
     edit: {
       title: "Editar Plano de Investimento",
+      lifePlanTitle: "Editar Plano de Vida",
       success: "Plano de investimento atualizado com sucesso",
       successWithMicroPlans: "Plano de investimento e micro planos atualizados com sucesso",
       investmentPlan: "Plano de Investimento",
@@ -19,6 +20,9 @@ export const ptBR = {
       microPlanError: "Erro ao atualizar micro plano",
       noActiveMicroPlan: "Nenhum micro plano ativo encontrado",
       saveMicroPlan: "Salvar Micro Plano",
+      lifePlanInfo: {
+        title: "Informações do Plano de Vida"
+      }
     },
     messages: {
       notFound: {
@@ -43,6 +47,9 @@ export const ptBR = {
       noPlansDescription: "Crie micro planos para gerenciar diferentes estratégias de investimento ao longo do tempo.",
       confirmDelete: "Tem certeza que deseja excluir este micro plano?",
       cannotDeleteBase: "Não é possível excluir o micro plano base",
+      timeline: {
+        title: "Timeline dos Micro Planos"
+      },
       form: {
         effectiveDate: "Data de Vigência",
         monthlyDeposit: "Depósito Mensal",
@@ -57,13 +64,18 @@ export const ptBR = {
       }
     },
     details: {
-      title: "Detalhes do Plano de Investimento",
+      title: "Parâmetros do Plano de Investimento",
       clientInfo: {
         title: "Informações do Cliente",
         name: "Nome",
         initialAge: "Idade Inicial",
         finalAge: "Idade Final",
         years: "anos"
+      },
+      currency: {
+        title: "Moeda e Status",
+        currency: "Moeda",
+        createdAt: "Criado em"
       },
       planOverview: {
         title: "Visão Geral do Plano",
@@ -77,8 +89,8 @@ export const ptBR = {
         title: "Objetivos Financeiros",
         desiredMonthlyIncome: "Renda Mensal Desejada",
         inflationAdjustedIncome: "Renda Ajustada pela Inflação",
-        futureValue: "Meta Valor Futuro",
-        presentFutureValue: "Meta Valor Real"
+        futureValue: "Valor Futuro Necessário",
+        presentFutureValue: "Valor Presente da Meta"
       },
       investmentParams: {
         title: "Parâmetros do Investimento",
@@ -95,6 +107,15 @@ export const ptBR = {
         adjustIncomeForInflation: "Ajuste do Resgate pela Inflação",
         enabled: "Ativado",
         disabled: "Desativado"
+      },
+      calculations: {
+        title: "Cálculos Baseados no Micro Plano Ativo",
+        expectedReturn: "Retorno Esperado",
+        inflation: "Inflação",
+        returnRate: "Taxa de Retorno Real",
+        realReturn: "Retorno Real Mensal",
+        inflationReturn: "Retorno da Inflação Mensal",
+        totalMonthlyReturn: "Retorno Total Mensal"
       }
     },
     form: {
@@ -240,6 +261,7 @@ export const ptBR = {
       investmentPlan: "Plano de Investimento",
       clientProfile: "Informações do Cliente",
       editPlan: "Editar Plano",
+      editLifePlan: "Editar Plano de Vida",
       financialGoals: "Objetivos Financeiros",
       events: 'Eventos',
     },

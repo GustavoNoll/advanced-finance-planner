@@ -492,7 +492,6 @@ export function generateProjectionData(
   
     // Verificar se é o momento de mudar para um novo micro plano ativo
     if (isTimeForChangeActivePlan(context.microPlans, currentDate, previousDate)) {
-      console.log('🔍 DEBUG isTimeForChangeActivePlan:', currentDate);
       const activeMicroPlanForDate = getActiveMicroPlanForDate(context.microPlans, currentDate);
       if (activeMicroPlanForDate) {
         currentMonthlyDeposit = activeMicroPlanForDate.monthly_deposit;

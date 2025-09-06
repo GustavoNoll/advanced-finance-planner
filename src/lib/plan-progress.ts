@@ -351,7 +351,7 @@ const financialCalculations = {
     const effectiveMonthlyRate = shouldAdjustContributionForInflation ? monthlyExpectedReturnRate : calculateCompoundedRates([monthlyExpectedReturnRate, monthlyInflationRate]);
     
     // Calculate adjusted present and future values
-    const currentBalanceWithGoals = (lastFinancialRecord?.ending_balance + preRetirementGoalsTotal) || 0;
+    const currentBalanceWithGoals = ((lastFinancialRecord?.ending_balance || investmentPlan.initial_amount) + preRetirementGoalsTotal) || 0;
     const initialAmountWithGoals = (investmentPlan.initial_amount + preRetirementGoalsTotal);
     const inflationFactorAtRetirement = (1 + monthlyInflationRate) ** remainingMonthsToRetirement;
     const projectedPresentValue = projectedFuturePresentValue / inflationFactorAtRetirement;

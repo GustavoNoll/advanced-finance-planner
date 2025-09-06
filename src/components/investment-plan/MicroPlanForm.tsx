@@ -59,17 +59,6 @@ export function MicroPlanForm({
       const planYear = planDate.getFullYear()
       const planMonth = planDate.getMonth() + 1
       
-      console.log('🔍 DEBUG isDateAlreadyUsed check:', {
-        checkingYear: year,
-        checkingMonth: month,
-        planId: plan.id,
-        planEffectiveDate: plan.effective_date,
-        planYear,
-        planMonth,
-        isCurrentPlan: initialData?.id === plan.id,
-        matches: planYear === year && planMonth === month
-      })
-      
       // Se estamos editando, não considerar o próprio plano
       if (initialData && plan.id === initialData.id) {
         return false
@@ -78,7 +67,6 @@ export function MicroPlanForm({
       return planYear === year && planMonth === month
     })
     
-    console.log('🔍 DEBUG isDateAlreadyUsed result:', result)
     return result
   }
 
@@ -118,7 +106,6 @@ export function MicroPlanForm({
   }
 
   const handleDateChange = (value: string) => {
-    console.log('🔍 DEBUG handleDateChange called with:', value)
     
     setEffectiveDateInput(value)
     
@@ -130,20 +117,8 @@ export function MicroPlanForm({
         const year = date.getFullYear()
         const month = date.getMonth() + 1
         
-        console.log('🔍 DEBUG Date validation:', {
-          year,
-          month,
-          isDateAlreadyUsed: isDateAlreadyUsed(year, month),
-          existingMicroPlans: existingMicroPlans.map(mp => ({
-            id: mp.id,
-            effective_date: mp.effective_date,
-            isCurrentPlan: initialData?.id === mp.id
-          }))
-        })
-        
         // Verificar se a data já está em uso
         if (isDateAlreadyUsed(year, month)) {
-          console.log('🔍 DEBUG Date already used, blocking change')
           return // Não atualizar se a data já estiver em uso
         }
         
@@ -155,8 +130,6 @@ export function MicroPlanForm({
           ...prev,
           effective_date: normalizedDate
         }))
-        
-        console.log('🔍 DEBUG Date updated successfully:', normalizedDate)
       }
     }
   }
