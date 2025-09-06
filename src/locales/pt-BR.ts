@@ -48,7 +48,12 @@ export const ptBR = {
       confirmDelete: "Tem certeza que deseja excluir este micro plano?",
       cannotDeleteBase: "Não é possível excluir o micro plano base",
       timeline: {
-        title: "Timeline dos Micro Planos"
+        title: "Timeline dos Micro Planos",
+        disclaimer: {
+          title: "Atenção",
+          message: "Existe um micro plano com data de vigência anterior à data atual que não está ativo. Isso pode ocorrer quando não há registros financeiros para ativar automaticamente o micro plano. Considere verificar os registros financeiros ou ativar manualmente o micro plano apropriado.",
+          showDetails: "Ver detalhes"
+        }
       },
       form: {
         effectiveDate: "Data de Vigência",

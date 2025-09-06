@@ -107,7 +107,15 @@ export class ProjectionService {
     }
   } 
 
-  static findFirstRetirementMonth(projectionData: YearlyProjectionData[]): RetirementDataInfo | null {
+  static findFirstRetirementMonth(projectionData: YearlyProjectionData[] | null | undefined): RetirementDataInfo | null {
+    // Verificar se projectionData é válido
+    if (!projectionData || !Array.isArray(projectionData) || projectionData.length === 0) {
+      return {
+        retirementYear: null,
+        retirementMonth: null
+      }
+    }
+
     // Encontra primeiro mês de aposentadoria
     const retirementYear = projectionData.find((year: YearlyProjectionData) => year.isRetirementTransitionYear)
     const retirementMonth = retirementYear?.months?.find((month: MonthlyProjectionData) => month.retirement)
@@ -121,7 +129,7 @@ export class ProjectionService {
   /**
    * Exemplo de uso: Obtém informações sobre dados históricos e último mês de projeção
    */
-  static getProjectionSummary(projectionData: YearlyProjectionData[]): {
+  static getProjectionSummary(projectionData: YearlyProjectionData[] | null | undefined): {
     historicalInfo: HistoricalDataInfo
     summary: string
   } {
@@ -181,8 +189,18 @@ export class ProjectionService {
     clientProfile: Profile,
     goals: Goal[],
     events: ProjectedEvent[],
-    projectionData: YearlyProjectionData[]
+    projectionData: YearlyProjectionData[] | null | undefined
   ): PlanProgressData {
+    // Verificar se projectionData é válido
+    if (!projectionData || !Array.isArray(projectionData) || projectionData.length === 0) {
+      return {
+        plannedMonths: 0,
+        projectedMonths: 0,
+        monthsDifference: 0,
+        plannedContribution: 0,
+        projectedContribution: 0,
+      }
+    }
     if (
       !investmentPlan ||
       !clientProfile ||
@@ -277,10 +295,11 @@ export class ProjectionService {
    * Calcula diferença do saldo de aposentadoria
    */
   static calculateRetirementBalanceDifference(
-    projectionData: YearlyProjectionData[],
+    projectionData: YearlyProjectionData[] | null | undefined,
     investmentPlan: InvestmentPlan
   ) {
-    if (!projectionData || !investmentPlan) {
+    // Verificar se projectionData é válido
+    if (!projectionData || !Array.isArray(projectionData) || projectionData.length === 0 || !investmentPlan) {
       return {
         nominalDifference: 0,
         percentageDifference: 0,
