@@ -1,29 +1,11 @@
-import { generateProjectionData, YearlyProjectionData } from '@/lib/chart-projections'
+import { generateProjectionData, MonthlyProjectionData, YearlyProjectionData } from '@/lib/chart-projections'
 import { processPlanProgressData, PlanProgressData } from '@/lib/plan-progress'
 import { FinancialRecord, ProjectedEvent, Goal } from '@/types/financial'
 import { Profile, InvestmentPlan } from '@/types/financial'
 import { createDateWithoutTimezone } from '@/utils/dateUtils'
 import { ChartOptions } from '@/lib/chart-projections'
 // Interface local para dados mensais de projeção
-export interface MonthlyProjectionData {
-  month: number
-  year: number
-  contribution: number
-  withdrawal: number
-  isHistorical: boolean
-  balance: number
-  projected_lifetime_withdrawal: number
-  planned_lifetime_withdrawal: number
-  old_portfolio_balance: number | null
-  retirement: boolean
-  planned_balance: number
-  returns?: number
-  goalsEventsImpact?: number
-  difference_from_planned_balance: number
-  ipcaRate: number
-  effectiveRate: number
-  accumulatedInflation: number
-}
+
 
 export interface ProjectionData {
   projectionData: YearlyProjectionData[] | null

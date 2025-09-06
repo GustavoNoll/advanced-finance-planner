@@ -10,10 +10,11 @@ interface DataPoint {
   year: number;
 }
 
-interface MonthlyProjectionData {
+export interface MonthlyProjectionData {
   month: MonthNumber;
   year: number;
   contribution: number;
+  planned_contribution: number;
   withdrawal: number;
   isHistorical: boolean;
   balance: number;
@@ -34,6 +35,7 @@ export interface YearlyProjectionData {
   age: number;
   year: number;
   contribution: number;
+  planned_contribution: number;
   withdrawal: number;
   balance: number;
   projected_lifetime_withdrawal: number;
@@ -240,6 +242,7 @@ function createHistoricalMonthData(
   monthlyOldPortfolioReturnRate: number,
   monthlyInflationRate: number,
   accumulatedInflation: number,
+  planned_contribution: number,
   expectedReturn: number,
   birthYear: number
 ): MonthlyProjectionData {
@@ -257,6 +260,7 @@ function createHistoricalMonthData(
     month: month as MonthNumber,
     year,
     contribution,
+    planned_contribution,
     withdrawal,
     isHistorical: true,
     balance: historicalRecord.ending_balance,
@@ -283,12 +287,14 @@ function createPastMonthData(
   monthlyInflationRate: number,
   accumulatedInflation: number,
   expectedReturn: number,
+  planned_contribution: number,
   birthYear: number
 ): MonthlyProjectionData {
   return {
     month: month as MonthNumber,
     year,
     contribution: 0,
+    planned_contribution,
     withdrawal: 0,
     balance: 0,
     retirement: false,
@@ -326,6 +332,7 @@ function createRetirementMonthData(
     month: month as MonthNumber,
     year,
     contribution: 0,
+    planned_contribution: 0,
     withdrawal: monthlyWithdrawal,
     balance: projectedBalance,
     planned_balance: plannedBalance,
@@ -361,6 +368,7 @@ function createFutureMonthData(
     month: month as MonthNumber,
     year,
     contribution: monthlyDeposit,
+    planned_contribution: monthlyDeposit,
     withdrawal: 0,
     balance: projectedBalance,
     planned_balance: plannedBalance,
@@ -519,6 +527,7 @@ export function generateProjectionData(
         monthlyOldPortfolioReturnRate,
         monthlyInflationRate,
         accumulatedInflation,
+        contribution,
         investmentPlan.expected_return,
         context.birthYear
       );
@@ -532,6 +541,7 @@ export function generateProjectionData(
       monthlyData = createPastMonthData(
         month,
         year,
+        contribution,
         plannedBalance,
         projectedBalance,
         oldPortfolioBalance,
@@ -619,6 +629,7 @@ export function generateProjectionData(
     
     if (monthlyData.length > 0) {
       const yearlyContribution = monthlyData.reduce((sum, month) => sum + month.contribution, 0);
+      const yearlyPlannedContribution = monthlyData.reduce((sum, month) => sum + month.planned_contribution, 0);
       const yearlyWithdrawal = monthlyData.reduce((sum, month) => sum + month.withdrawal, 0);
       const lastMonth = monthlyData[monthlyData.length - 1];
       const yearlyReturns = monthlyData.reduce((sum, month) => {
@@ -631,6 +642,7 @@ export function generateProjectionData(
         age,
         year,
         contribution: yearlyContribution,
+        planned_contribution: yearlyPlannedContribution,
         withdrawal: yearlyWithdrawal,
         balance: lastMonth.balance,
         planned_balance: lastMonth.planned_balance,
