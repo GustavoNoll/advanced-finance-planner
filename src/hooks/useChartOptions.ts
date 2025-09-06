@@ -1,9 +1,10 @@
 import { useState, useMemo } from 'react';
 import { generateProjectionData, ChartOptions } from '@/lib/chart-projections';
-import { InvestmentPlan, Profile, FinancialRecord, Goal, ProjectedEvent } from '@/types/financial';
+import { InvestmentPlan, MicroInvestmentPlan, Profile, FinancialRecord, Goal, ProjectedEvent } from '@/types/financial';
 
 interface UseChartOptionsProps {
   investmentPlan: InvestmentPlan;
+  activeMicroPlan: MicroInvestmentPlan | null;
   clientProfile: Profile;
   allFinancialRecords: FinancialRecord[];
   goals?: Goal[];
@@ -12,6 +13,7 @@ interface UseChartOptionsProps {
 
 export const useChartOptions = ({
   investmentPlan,
+  activeMicroPlan,
   clientProfile,
   allFinancialRecords,
   goals,
@@ -50,15 +52,24 @@ export const useChartOptions = ({
   const projectionDataWithOptions = useMemo(() => {
     if (!investmentPlan || !clientProfile || !allFinancialRecords) return null;
 
+    // Criar um plano combinado com dados do micro plano ativo
+    const combinedPlan = activeMicroPlan ? {
+      ...investmentPlan,
+      monthly_deposit: activeMicroPlan.monthly_deposit,
+      desired_income: activeMicroPlan.desired_income,
+      expected_return: activeMicroPlan.expected_return,
+      inflation: activeMicroPlan.inflation
+    } : investmentPlan;
+
     return generateProjectionData(
-      investmentPlan,
+      combinedPlan,
       clientProfile,
       allFinancialRecords,
       goals,
       events,
       chartOptions
     );
-  }, [investmentPlan, clientProfile, allFinancialRecords, goals, events, chartOptions]);
+  }, [investmentPlan, activeMicroPlan, clientProfile, allFinancialRecords, goals, events, chartOptions]);
 
   return {
     // States

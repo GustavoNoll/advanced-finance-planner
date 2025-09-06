@@ -25,8 +25,8 @@ export function usePlanCreation() {
   const { toast } = useToast()
 
   const createPlan = useMutation({
-    mutationFn: ({ planData, birthDate }: { planData: PlanCreationData; birthDate: Date }) =>
-      PlanCreationService.createPlan(planData, birthDate),
+    mutationFn: (planData: PlanCreationData) =>
+      PlanCreationService.createPlan(planData),
     onSuccess: (newPlan) => {
       // Invalidar queries relacionadas
       queryClient.invalidateQueries({ queryKey: ['investmentPlans'] })

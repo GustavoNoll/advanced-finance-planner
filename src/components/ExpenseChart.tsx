@@ -1,5 +1,5 @@
 import { useTranslation } from "react-i18next";
-import { ChartDataPoint, FinancialRecord, Goal, ProjectedEvent, MonthNumber, InvestmentPlan, Profile, FinancialItemFormValues } from '@/types/financial';
+import { ChartDataPoint, FinancialRecord, Goal, ProjectedEvent, MonthNumber, InvestmentPlan, MicroInvestmentPlan, Profile, FinancialItemFormValues } from '@/types/financial';
 import { generateChartProjections, YearlyProjectionData } from '@/lib/chart-projections';
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
@@ -25,6 +25,7 @@ interface ChartPoint {
 
 interface ExpenseChartProps {
   investmentPlan: InvestmentPlan;
+  activeMicroPlan: MicroInvestmentPlan | null;
   clientId: string;
   allFinancialRecords: FinancialRecord[];
   profile: Profile;
@@ -81,6 +82,7 @@ function getRawChartData({
   projectionData,
   profile,
   investmentPlan,
+  activeMicroPlan,
   allFinancialRecords,
   goals,
   events
@@ -88,6 +90,7 @@ function getRawChartData({
   projectionData?: YearlyProjectionData[]
   profile: Profile
   investmentPlan: InvestmentPlan
+  activeMicroPlan: MicroInvestmentPlan | null
   allFinancialRecords: FinancialRecord[]
   goals?: Goal[]
   events?: ProjectedEvent[]
@@ -106,9 +109,18 @@ function getRawChartData({
     )
   }
   
+  // Criar um plano combinado com dados do micro plano ativo
+  const combinedPlan = activeMicroPlan ? {
+    ...investmentPlan,
+    monthly_deposit: activeMicroPlan.monthly_deposit,
+    desired_income: activeMicroPlan.desired_income,
+    expected_return: activeMicroPlan.expected_return,
+    inflation: activeMicroPlan.inflation
+  } : investmentPlan
+
   return generateChartProjections(
     profile,
-    investmentPlan,
+    combinedPlan,
     allFinancialRecords,
     goals,
     events
@@ -263,6 +275,7 @@ function getZoomedChartData({
 export const ExpenseChart = ({ 
   profile, 
   investmentPlan, 
+  activeMicroPlan,
   clientId, 
   allFinancialRecords,
   projectionData,
@@ -543,6 +556,7 @@ export const ExpenseChart = ({
     projectionData,
     profile,
     investmentPlan,
+    activeMicroPlan,
     allFinancialRecords,
     goals,
     events

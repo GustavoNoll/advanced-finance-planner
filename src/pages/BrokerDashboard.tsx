@@ -359,9 +359,9 @@ export const BrokerDashboard = () => {
     // Find the client in the search results
     const client = searchResults.find(c => c.id === userId);
     
-    // If client doesn't have an investment plan, navigate to create-plan with client_id
+    // If client doesn't have an investment plan, navigate to simulation with client_id
     if (client && !client.investment_plan_id) {
-      navigate(`/create-plan?client_id=${userId}`);
+      navigate(`/simulation?client_id=${userId}`);
     } else {
       // If client has a plan, navigate to client profile as usual
       navigate(`/client/${userId}`);

@@ -2,7 +2,7 @@ import { useTranslation } from "react-i18next";
 import { Info, Calculator as CalculatorIcon } from "lucide-react";
 import { PlanProgressData } from "@/lib/plan-progress";
 import { DashboardCard } from "./DashboardCard";
-import { InvestmentPlan } from "@/types/financial";
+import { InvestmentPlan, MicroInvestmentPlan } from "@/types/financial";
 import { formatCurrency, CurrencyCode} from '@/utils/currency';
 
 /**
@@ -13,6 +13,8 @@ interface PlanProgressProps {
   data: PlanProgressData;
   /** Investment plan data */
   investmentPlan: InvestmentPlan;
+  /** Active micro investment plan data */
+  activeMicroPlan: MicroInvestmentPlan | null;
 }
 
 
@@ -180,7 +182,7 @@ const ComparisonRow = ({
 /**
  * Component that displays the progress of a financial plan
  */
-export const Calculator = ({ data, investmentPlan }: PlanProgressProps) => {
+export const Calculator = ({ data, investmentPlan, activeMicroPlan }: PlanProgressProps) => {
   const { t } = useTranslation();
   
   return (

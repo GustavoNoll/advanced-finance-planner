@@ -3,7 +3,7 @@ import { SavingsGoal } from "@/components/SavingsGoal";
 import { MonthlyView } from "@/components/MonthlyView";
 import { Trophy } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
-import { useEffect, useCallback, useState } from "react";
+import { useEffect, useCallback, useState, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { Spinner } from "@/components/ui/spinner";
 import { Calculator } from "@/components/Calculator";
@@ -12,7 +12,7 @@ import { EditPlanModal } from "@/components/EditPlanModal";
 import { ChartAdvancedOptionsModal } from "@/components/chart/ChartAdvancedOptionsModal";
 import { useIPCASync } from "@/hooks/useIPCASync";
 import { useChartOptions } from "@/hooks/useChartOptions";
-import { Profile, InvestmentPlan } from "@/types/financial";
+import { Profile, InvestmentPlan, MicroInvestmentPlan } from "@/types/financial";
 import { DashboardCard } from "@/components/DashboardCard";
 import { DashboardNavigation } from "@/components/dashboard/DashboardNavigation";
 import { DashboardHighlights } from "@/components/dashboard/DashboardHighlights";
@@ -22,6 +22,8 @@ import { useGoalsAndEvents } from "@/hooks/useFinancialData";
 import { useProjectionData } from "@/hooks/useProjectionData";
 import { PlanProgressData } from "@/lib/plan-progress";
 import { ChartOptions } from "@/lib/chart-projections";
+import { calculateMicroPlanFutureValues } from '@/utils/investmentPlanCalculations';
+import { createDateWithoutTimezone } from '@/utils/dateUtils';
 
 type TimePeriod = 'all' | '6m' | '12m' | '24m';
 
@@ -30,8 +32,12 @@ interface FinancesProps {
   clientProfile: Profile;
   brokerProfile: Profile;
   investmentPlan: InvestmentPlan;
+  activeMicroPlan: MicroInvestmentPlan | null;
+  microPlans: MicroInvestmentPlan[];
+  hasFinancialRecordForActivePlan: boolean;
   onLogout: () => void;
   onShareClient: () => void;
+  onRefreshMicroPlans: () => Promise<void>;
 }
 
 const Finances = ({
@@ -39,8 +45,12 @@ const Finances = ({
   clientProfile,
   brokerProfile,
   investmentPlan,
+  activeMicroPlan,
+  microPlans,
+  hasFinancialRecordForActivePlan,
   onLogout,
-  onShareClient
+  onShareClient,
+  onRefreshMicroPlans
 }: FinancesProps) => {
   const { t } = useTranslation();
   const [selectedPeriod, setSelectedPeriod] = useState<TimePeriod>('all');
@@ -61,11 +71,34 @@ const Finances = ({
   // Hook para opções de gráfico
   const chartOptionsHook = useChartOptions({
     investmentPlan,
+    activeMicroPlan,
     clientProfile,
     allFinancialRecords,
     goals: goalsAndEvents.goals,
     events: goalsAndEvents.events
   });
+
+  // Cálculos centralizados usando o micro plano ativo
+  const microPlanCalculations = useMemo(() => {
+    if (!activeMicroPlan || !investmentPlan || !clientProfile?.birth_date) {
+      return null;
+    }
+
+    const birthDate = createDateWithoutTimezone(clientProfile.birth_date);
+    const calculations = calculateMicroPlanFutureValues(investmentPlan, activeMicroPlan, allFinancialRecords, birthDate);
+
+    return {
+      futureValue: calculations.futureValue,
+      presentFutureValue: calculations.presentFutureValue,
+      inflationAdjustedIncome: calculations.inflationAdjustedIncome,
+      requiredMonthlyDeposit: calculations.requiredMonthlyDeposit,
+      monthlyDeposit: activeMicroPlan.monthly_deposit,
+      desiredIncome: activeMicroPlan.desired_income,
+      expectedReturn: activeMicroPlan.expected_return,
+      inflation: activeMicroPlan.inflation,
+      returnRate: activeMicroPlan.inflation + activeMicroPlan.expected_return
+    };
+  }, [activeMicroPlan, investmentPlan, clientProfile?.birth_date, allFinancialRecords]);
 
   // Hook para dados de projeção
   const chartOptions: ChartOptions = {
@@ -78,6 +111,7 @@ const Finances = ({
   // Hook para dados de projeção - deve ser chamado antes de qualquer return
   const projectionDataHook = useProjectionData(
     investmentPlan,
+    activeMicroPlan,
     clientProfile,
     allFinancialRecords,
     goalsAndEvents.goals,
@@ -138,6 +172,7 @@ const Finances = ({
       <DashboardHighlights
         clientId={clientId}
         investmentPlan={investmentPlan}
+        activeMicroPlan={activeMicroPlan}
       />
 
       <main className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
@@ -145,6 +180,7 @@ const Finances = ({
         <DashboardMetrics
           clientId={clientId}
           investmentPlan={investmentPlan}
+          activeMicroPlan={activeMicroPlan}
           selectedPeriod={selectedPeriod}
           contributionPeriod={contributionPeriod}
           onSelectedPeriodChange={setSelectedPeriod}
@@ -160,6 +196,7 @@ const Finances = ({
             <ExpenseChart 
               profile={clientProfile}
               investmentPlan={investmentPlan}
+              activeMicroPlan={activeMicroPlan}
               clientId={clientId}
               allFinancialRecords={allFinancialRecords}
               projectionData={projectionDataWithOptions}
@@ -181,14 +218,17 @@ const Finances = ({
           {projectionDataHook.planProgressData && (
             <Calculator 
               data={projectionDataHook.planProgressData as PlanProgressData} 
-              investmentPlan={investmentPlan} 
+              investmentPlan={investmentPlan}
+              activeMicroPlan={activeMicroPlan}
             />
           )}
           
-          {investmentPlan?.present_future_value > 0 && (
+          {microPlanCalculations?.presentFutureValue > 0 && (
             <SavingsGoal 
               allFinancialRecords={allFinancialRecords}
               investmentPlan={investmentPlan}
+              activeMicroPlan={activeMicroPlan}
+              microPlanCalculations={microPlanCalculations}
               profile={{
                 birth_date: clientProfile?.birth_date
               }}
@@ -207,9 +247,14 @@ const Finances = ({
           >
             <InvestmentPlanDetails 
               investmentPlan={investmentPlan}
+              activeMicroPlan={activeMicroPlan}
+              microPlanCalculations={microPlanCalculations}
+              microPlans={microPlans}
+              hasFinancialRecordForActivePlan={hasFinancialRecordForActivePlan}
               birthDate={clientProfile?.birth_date}
               onPlanUpdated={handlePlanUpdated}
               onEditClick={() => setIsEditModalOpen(true)}
+              onRefreshMicroPlans={onRefreshMicroPlans}
               isBroker={brokerProfile !== undefined}
               financialRecords={allFinancialRecords}
               projectionData={projectionDataWithoutOptions}
@@ -225,6 +270,7 @@ const Finances = ({
               userId={clientId} 
               allFinancialRecords={allFinancialRecords}
               investmentPlan={investmentPlan}
+              activeMicroPlan={activeMicroPlan}
               profile={clientProfile}
               projectionData={projectionDataWithOptions}
             />
@@ -240,6 +286,9 @@ const Finances = ({
       {isEditModalOpen && investmentPlan && clientProfile?.birth_date && (
         <EditPlanModal
           investmentPlan={investmentPlan}
+          activeMicroPlan={activeMicroPlan}
+          microPlans={microPlans}
+          onRefreshMicroPlans={onRefreshMicroPlans}
           birthDate={clientProfile.birth_date}
           financialRecords={allFinancialRecords}
           onClose={() => setIsEditModalOpen(false)}

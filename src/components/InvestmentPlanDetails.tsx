@@ -1,5 +1,5 @@
 import { TrendingUp, Building2, Coins, Scale, ChartLine, CalendarDays, UserCog, HeartPulse, WalletCards, Pencil } from "lucide-react";
-import { InvestmentPlan, FinancialRecord } from "@/types/financial";
+import { InvestmentPlan, MicroInvestmentPlan, MicroPlanCalculations, FinancialRecord } from "@/types/financial";
 import { format, isValid } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { useTranslation } from "react-i18next";
@@ -12,9 +12,14 @@ import { utils } from "@/lib/plan-progress";
 
 interface InvestmentPlanDetailsProps {
   investmentPlan: InvestmentPlan | null;
+  activeMicroPlan: MicroInvestmentPlan | null;
+  microPlanCalculations?: MicroPlanCalculations | null;
+  microPlans: MicroInvestmentPlan[];
+  hasFinancialRecordForActivePlan: boolean;
   birthDate: string | null;
   onPlanUpdated?: () => void;
   onEditClick: () => void;
+  onRefreshMicroPlans: () => Promise<void>;
   isBroker?: boolean;
   financialRecords?: FinancialRecord[];
   projectionData?: YearlyProjectionData[];
@@ -56,9 +61,14 @@ function PlanMetric({ icon, label, value, color, duration }: PlanMetricProps) {
 
 export function InvestmentPlanDetails(
   { investmentPlan,
+    activeMicroPlan,
+    microPlanCalculations,
+    microPlans,
+    hasFinancialRecordForActivePlan,
     birthDate,
     onPlanUpdated,
     onEditClick,
+    onRefreshMicroPlans,
     isBroker = false,
     financialRecords = [],
     projectionData,
@@ -210,7 +220,7 @@ export function InvestmentPlanDetails(
       icon: <Scale className="h-4 w-4 text-indigo-600" />,
       label: t('dashboard.investmentPlan.adjustedWithdrawal'),
       value: formatCurrency(
-        chartOptions?.showRealValues ? investmentPlan.inflation_adjusted_income : firstRetirementWithdrawal || investmentPlan.inflation_adjusted_income,
+        chartOptions?.showRealValues ? microPlanCalculations?.inflationAdjustedIncome || 0 : firstRetirementWithdrawal || microPlanCalculations?.inflationAdjustedIncome || 0,
         investmentPlan.currency
       ),
       color: "text-indigo-600"

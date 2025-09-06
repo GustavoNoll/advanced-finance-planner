@@ -3,19 +3,21 @@ import { DashboardCard } from "./DashboardCard";
 import { useTranslation } from "react-i18next";
 import { BarChart } from "lucide-react";
 import { YearlyProjectionData } from '@/lib/chart-projections';
-import { FinancialRecord, InvestmentPlan, Goal, ProjectedEvent, Profile } from '@/types/financial';
+import { FinancialRecord, InvestmentPlan, MicroInvestmentPlan, Goal, ProjectedEvent, Profile } from '@/types/financial';
 import { ReturnChartTab, TableTab, FutureProjectionTab } from "./monthly-view";
 
 export const MonthlyView = ({ 
   userId, 
   allFinancialRecords,
   investmentPlan, 
+  activeMicroPlan,
   profile,
   projectionData
 }: {
   userId: string;
   allFinancialRecords: FinancialRecord[];
   investmentPlan: InvestmentPlan;
+  activeMicroPlan: MicroInvestmentPlan | null;
   profile: Profile;
   projectionData?: YearlyProjectionData[];
 }) => {
@@ -55,6 +57,7 @@ export const MonthlyView = ({
             <ReturnChartTab
               allFinancialRecords={allFinancialRecords}
               investmentPlan={investmentPlan}
+              activeMicroPlan={activeMicroPlan}
               profile={profile}
             />
           </TabsContent>
@@ -64,6 +67,7 @@ export const MonthlyView = ({
           <TableTab
             allFinancialRecords={allFinancialRecords}
             investmentPlan={investmentPlan}
+            activeMicroPlan={activeMicroPlan}
             profile={profile}
           />
         </TabsContent>
@@ -71,6 +75,7 @@ export const MonthlyView = ({
         <TabsContent value="futureProjection">
           <FutureProjectionTab
             investmentPlan={investmentPlan}
+            activeMicroPlan={activeMicroPlan}
             profile={profile}
             allFinancialRecords={allFinancialRecords}
             projectionData={projectionData}

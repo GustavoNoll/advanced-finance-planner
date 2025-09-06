@@ -140,26 +140,26 @@ CREATE TABLE public.investment_plans (
   user_id uuid NOT NULL UNIQUE,
   initial_amount numeric NOT NULL,
   final_age integer NOT NULL,
+  plan_type character varying NOT NULL CHECK (plan_type::text = ANY (ARRAY['1'::character varying, '2'::character varying, '3'::character varying]::text[])),
+  status character varying DEFAULT 'active'::character varying CHECK (status::text = ANY (ARRAY['active'::character varying, 'inactive'::character varying, 'deleted'::character varying]::text[])),
+  limit_age integer,
+  legacy_amount numeric,
+  plan_initial_date date,
+  currency character varying NOT NULL DEFAULT 'BRL'::character varying CHECK (currency::text = ANY (ARRAY['BRL'::character varying::text, 'USD'::character varying::text, 'EUR'::character varying::text])),
+  CONSTRAINT investment_plans_pkey PRIMARY KEY (id),
+  CONSTRAINT investment_plans_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.profiles(id)
+);
+CREATE TABLE public.micro_investment_plans (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  created_at timestamp with time zone NOT NULL DEFAULT timezone('utc'::text, now()),
+  life_investment_plan_id uuid NOT NULL,
+  effective_date date NOT NULL,
   monthly_deposit numeric NOT NULL,
   desired_income numeric NOT NULL,
   expected_return numeric NOT NULL,
   inflation numeric NOT NULL,
-  plan_type character varying NOT NULL CHECK (plan_type::text = ANY (ARRAY['1'::character varying, '2'::character varying, '3'::character varying]::text[])),
-  future_value numeric NOT NULL,
-  inflation_adjusted_income numeric NOT NULL,
-  required_monthly_deposit numeric NOT NULL,
-  status character varying DEFAULT 'active'::character varying CHECK (status::text = ANY (ARRAY['active'::character varying, 'inactive'::character varying, 'deleted'::character varying]::text[])),
-  adjust_contribution_for_inflation boolean NOT NULL DEFAULT false,
-  limit_age integer,
-  legacy_amount numeric,
-  present_future_value numeric,
-  plan_initial_date date,
-  adjust_income_for_inflation boolean DEFAULT false,
-  currency character varying NOT NULL DEFAULT 'BRL'::character varying CHECK (currency::text = ANY (ARRAY['BRL'::character varying::text, 'USD'::character varying::text, 'EUR'::character varying::text])),
-  plan_end_accumulation_date date,
-  old_portfolio_profitability integer,
-  CONSTRAINT investment_plans_pkey PRIMARY KEY (id),
-  CONSTRAINT investment_plans_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.profiles(id)
+  CONSTRAINT micro_investment_plans_pkey PRIMARY KEY (id),
+  CONSTRAINT micro_investment_plans_life_investment_plan_id_fkey FOREIGN KEY (life_investment_plan_id) REFERENCES public.investment_plans(id) ON DELETE CASCADE
 );
 CREATE TABLE public.investment_policies (
   id uuid NOT NULL DEFAULT uuid_generate_v4(),

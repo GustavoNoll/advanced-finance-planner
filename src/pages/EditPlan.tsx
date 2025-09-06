@@ -9,7 +9,6 @@ import { ArrowLeft, Lock } from "lucide-react"
 import { Spinner } from "@/components/ui/spinner"
 import { useTranslation } from "react-i18next"
 import CurrencyInput from 'react-currency-input-field'
-import { RISK_PROFILES } from '@/constants/riskProfiles'
 
 // Custom hooks
 import { useInvestmentPlanState } from '@/features/investment-plans/hooks/useInvestmentPlanState'
@@ -30,17 +29,13 @@ export const EditPlan = () => {
     isLoadingData,
     birthDate,
     formData,
-    expandedRow,
     isSyncing,
     updateSource,
-    calculations,
-    isCalculationReady: isCalculationReadyState,
     hasFinancialRecords,
     setLoading,
     setIsLoadingData,
     setBirthDate,
     setFormData,
-    setExpandedRow,
     setIsSyncing,
     setUpdateSource,
     setHasFinancialRecords,
@@ -163,8 +158,11 @@ export const EditPlan = () => {
               <form onSubmit={handleSubmit} className="space-y-8">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div className="space-y-2">
-                    <label className="text-sm font-medium text-muted-foreground">
+                    <label className="text-sm font-medium text-muted-foreground flex items-center gap-2">
                       {t('investmentPlan.form.planInitialDate')}
+                      {hasFinancialRecords && (
+                        <Lock className="h-3 w-3 text-muted-foreground" />
+                      )}
                     </label>
                     <Input
                       type="date"
@@ -174,7 +172,14 @@ export const EditPlan = () => {
                       required
                       max={new Date().toISOString().split('T')[0]}
                       className="h-10"
+                      disabled={hasFinancialRecords}
                     />
+                    {hasFinancialRecords && (
+                      <p className="text-xs text-muted-foreground flex items-center gap-1">
+                        <Lock className="h-3 w-3" />
+                        {t('investmentPlan.form.planInitialDateLockedMessage')}
+                      </p>
+                    )}
                   </div>
 
                   <div className="space-y-2">
@@ -292,84 +297,6 @@ export const EditPlan = () => {
                     </div>
                   </div>
 
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium text-muted-foreground">
-                      {t('investmentPlan.form.monthlyDeposit')}
-                    </label>
-                    <CurrencyInput
-                      name="monthlyDeposit"
-                      value={formData.monthlyDeposit}
-                      onValueChange={(value) => {
-                        handleFormDataChange({ monthlyDeposit: value || '' })
-                      }}
-                      placeholder="1000"
-                      prefix={currencySymbol}
-                      decimalsLimit={2}
-                      decimalSeparator=","
-                      groupSeparator="."
-                      className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                      required
-                    />
-                  </div>
-
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium text-muted-foreground">
-                      {t('investmentPlan.form.desiredIncome')}
-                    </label>
-                    <CurrencyInput
-                      name="desiredIncome"
-                      value={formData.desiredIncome}
-                      onValueChange={(value) => {
-                        handleFormDataChange({ desiredIncome: value || '' })
-                      }}
-                      placeholder="5000"
-                      prefix={currencySymbol}
-                      decimalsLimit={2}
-                      decimalSeparator=","
-                      groupSeparator="."
-                      className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                      required
-                    />
-                  </div>
-
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium text-muted-foreground">
-                      {t('investmentPlan.form.riskProfile')}
-                    </label>
-                    <select
-                      name="expectedReturn"
-                      value={formData.expectedReturn}
-                      onChange={handleChange}
-                      className="w-full h-10 rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                      required
-                    >
-                      {RISK_PROFILES[formData.currency].map((profile) => (
-                        <option
-                          key={profile.value}
-                          value={profile.return}
-                          className={`${profile.bgColor} ${profile.textColor}`}
-                        >
-                          {profile.label} ({formData.currency === 'BRL' ? 'IPCA' : 'CPI'}+{profile.return}%)
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium text-muted-foreground">
-                      {t('investmentPlan.form.inflationRate')}
-                    </label>
-                    <Input
-                      type="number"
-                      name="inflation"
-                      value={formData.inflation}
-                      onChange={handleChange}
-                      placeholder="6.0"
-                      step="0.1"
-                      required
-                      className="h-10"
-                    />
-                  </div>
 
                   <div className="space-y-2">
                     <div className="flex items-center space-x-2 mb-2">
@@ -525,73 +452,6 @@ export const EditPlan = () => {
             )}
           </CardContent>
 
-          {!isLoadingData && (
-            <div className="mt-8 p-6 bg-muted border-t border-border">
-              <h3 className="text-lg font-semibold mb-4 text-foreground">
-                {t('investmentPlan.create.calculations.title')}
-              </h3>
-              {isCalculationReadyState ? (
-                <div className="space-y-4">
-                  <div className="flex justify-between p-3 bg-card rounded-lg border border-border">
-                    <div className="flex items-center gap-2">
-                      <span className="text-sm text-muted-foreground">{t('investmentPlan.create.calculations.inflationAdjustedIncome')}:</span>
-                    </div>
-                    <span className="font-medium">{currencySymbol} {calculations?.inflationAdjustedIncome.toLocaleString('pt-BR', { maximumFractionDigits: 2 }) || '---'}/mês</span>
-                  </div>
-                  
-                  <div className="flex justify-between p-3 bg-card rounded-lg border border-border">
-                    <div className="flex items-center gap-2">
-                      <span className="text-sm text-muted-foreground">{t('investmentPlan.create.calculations.requiredFutureValue')}:</span>
-                    </div>
-                    <span className="font-medium">
-                      {currencySymbol} {calculations?.futureValue.toLocaleString('pt-BR', { maximumFractionDigits: 2 }) || '---'}
-                    </span>
-                  </div>
-
-                  <div className="bg-card rounded-lg border border-border overflow-hidden">
-                    <div 
-                      className="flex justify-between p-3 cursor-pointer hover:bg-accent"
-                      onClick={() => setExpandedRow(expandedRow === 'return' ? null : 'return')}
-                    >
-                      <div className="flex items-center gap-2">
-                        <span className="text-sm text-muted-foreground">{t('investmentPlan.create.calculations.totalMonthlyReturn')}:</span>
-                      </div>
-                      <span className="font-medium">{currencySymbol} {calculations?.totalMonthlyReturn.toLocaleString('pt-BR', { maximumFractionDigits: 2 }) || '---'}</span>
-                    </div>
-                    {expandedRow === 'return' && (
-                      <div className="px-3 pb-3 space-y-2 border-t border-border">
-                        <div className="flex justify-between pt-3">
-                          <div className="flex items-center gap-2">
-                            <span className="text-sm text-muted-foreground">{t('investmentPlan.create.calculations.monthlyRealReturn')}:</span>
-                          </div>
-                          <span className="font-medium">{currencySymbol} {calculations?.realReturn.toLocaleString('pt-BR', { maximumFractionDigits: 2 }) || '---'}</span>
-                        </div>
-                        <div className="flex justify-between">
-                          <div className="flex items-center gap-2">
-                            <span className="text-sm text-muted-foreground">{t('investmentPlan.create.calculations.monthlyInflationReturn')}:</span>
-                          </div>
-                          <span className="font-medium">{currencySymbol} {calculations?.inflationReturn.toLocaleString('pt-BR', { maximumFractionDigits: 2 }) || '---'}</span>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-
-                  <div className="flex justify-between p-3 bg-card rounded-lg border border-border">
-                    <div className="flex items-center gap-2">
-                      <span className="text-sm text-muted-foreground">{t('investmentPlan.create.calculations.requiredMonthlyDeposit')}:</span>
-                    </div>
-                    <span className="font-medium">
-                      {currencySymbol} {calculations?.requiredMonthlyDeposit.toLocaleString('pt-BR', { maximumFractionDigits: 2 }) || '---'}
-                    </span>
-                  </div>
-                </div>
-              ) : (
-                <div className="text-center text-muted-foreground py-4">
-                  {t('investmentPlan.create.calculations.fillRequired')}
-                </div>
-              )}
-            </div>
-          )}
         </Card>
       </div>
     </div>

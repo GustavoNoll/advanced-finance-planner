@@ -5,6 +5,7 @@ export interface InvestmentPlanWithProfile extends InvestmentPlan {
   profiles?: {
     name: string
     broker_id: string
+    birth_date: string
   }
 }
 
@@ -37,7 +38,7 @@ export class InvestmentPlanService {
       // Buscar o perfil relacionado
       const { data: profile, error: profileError } = await supabase
         .from('profiles')
-        .select('name, broker_id')
+        .select('name, broker_id, birth_date')
         .eq('id', investmentPlan.user_id)
         .single()
 
@@ -93,7 +94,7 @@ export class InvestmentPlanService {
         .from('investment_plans')
         .select(`
           *,
-          profiles!inner(name, broker_id)
+          profiles!inner(name, broker_id, birth_date)
         `)
         .eq('profiles.broker_id', brokerId)
         .order('created_at', { ascending: false })

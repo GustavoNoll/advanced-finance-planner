@@ -1,5 +1,5 @@
 import { supabase } from '@/lib/supabase'
-import { FinancialRecord } from '@/types/financial'
+import { FinancialRecord, InvestmentPlan, MicroInvestmentPlan } from '@/types/financial'
 import { createDateWithoutTimezone } from '@/utils/dateUtils'
 
 export interface ProcessedFinancialRecords {
@@ -164,8 +164,9 @@ export class FinancialRecordsService {
    */
   static calculateHighlights(
     records: FinancialRecord[], 
-    investmentPlan: any, 
-    t: (key: string, params?: any) => string
+    investmentPlan: InvestmentPlan, 
+    activeMicroPlan: MicroInvestmentPlan | null,
+    t: (key: string, params?: Record<string, string | number>) => string
   ) {
     if (!investmentPlan) return []
     if (!records?.length) return [
@@ -182,8 +183,9 @@ export class FinancialRecordsService {
 
     // Cálculo da sequência de aportes consistentes
     let streak = 0
+    const requiredMonthlyDeposit = activeMicroPlan?.monthly_deposit || 0
     for (const record of records) {
-      if (record.monthly_contribution >= (investmentPlan.required_monthly_deposit || 0)) {
+      if (record.monthly_contribution >= requiredMonthlyDeposit) {
         streak++
       } else break
     }
@@ -212,8 +214,10 @@ export class FinancialRecordsService {
     })
 
     // Meta de renda mensal alcançada
-    const currentMonthlyIncome = (latest?.ending_balance || 0) * (investmentPlan.expected_return / 100) / 12
-    const incomeProgress = (currentMonthlyIncome / investmentPlan.desired_income) * 100
+    const expectedReturn = activeMicroPlan?.expected_return || 0
+    const desiredIncome = activeMicroPlan?.desired_income || 0
+    const currentMonthlyIncome = (latest?.ending_balance || 0) * (expectedReturn / 100) / 12
+    const incomeProgress = desiredIncome > 0 ? (currentMonthlyIncome / desiredIncome) * 100 : 0
     highlights.push({
       message: t('dashboard.highlights.incomeProgress', { percentage: incomeProgress.toFixed(1) }),
       value: incomeProgress,

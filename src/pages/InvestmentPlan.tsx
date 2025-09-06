@@ -1,13 +1,17 @@
 import { useParams, Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
+import { useMemo } from "react";
 import { Spinner } from "@/components/ui/spinner";
 import { useAuth } from "@/components/auth/AuthProvider";
 import { 
   InvestmentPlanHeader, 
   EditPlanButton, 
-  PlanDetailsCards 
+  PlanDetailsCards,
+  MicroPlansList
 } from "@/components/investment-plan";
 import { useInvestmentPlan } from "@/hooks/useInvestmentPlan";
+import { useMicroInvestmentPlans } from "@/hooks/useMicroInvestmentPlans";
+import { useFinancialRecordsForMicroPlan } from "@/hooks/useFinancialRecordsForMicroPlan";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft } from "lucide-react";
 
@@ -18,6 +22,30 @@ export const InvestmentPlanShow = () => {
 
   // Hook para dados do plano
   const { plan, isLoading, hasAccess } = useInvestmentPlan(id || '');
+  
+  // Hook para micro planos
+  const {
+    microPlans,
+    activeMicroPlan,
+    isLoading: isLoadingMicroPlans,
+    createMicroPlan,
+    updateMicroPlan,
+    deleteMicroPlan,
+    hasFinancialRecordForActivePlan
+  } = useMicroInvestmentPlans(id || '');
+
+  // Memoize birthDate to prevent unnecessary re-renders
+  const birthDate = useMemo(() => {
+    return plan?.profiles?.birth_date ? new Date(plan.profiles.birth_date) : new Date();
+  }, [plan?.profiles?.birth_date]);
+
+  // Hook para cálculos baseados no micro plano ativo
+  const { calculations, isLoading: isLoadingCalculations } = useFinancialRecordsForMicroPlan({
+    planId: id || '',
+    activeMicroPlan,
+    plan,
+    birthDate
+  });
 
   if (isLoading) {
     return (
@@ -61,8 +89,27 @@ export const InvestmentPlanShow = () => {
         <EditPlanButton planId={plan.id} t={t} />
       )}
 
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <PlanDetailsCards plan={plan} t={t} />
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
+        <PlanDetailsCards 
+          plan={plan} 
+          activeMicroPlan={activeMicroPlan}
+          calculations={calculations}
+          t={t} 
+        />
+        
+        {/* Micro Plans Section */}
+        <MicroPlansList
+          microPlans={microPlans}
+          activeMicroPlan={activeMicroPlan}
+          isLoading={isLoadingMicroPlans}
+          onCreateMicroPlan={createMicroPlan}
+          onUpdateMicroPlan={updateMicroPlan}
+          onDeleteMicroPlan={deleteMicroPlan}
+          planId={plan.id}
+          planInitialDate={plan.plan_initial_date}
+          planLimitAge={plan.limit_age}
+          currency={plan.currency}
+        />
       </main>
     </div>
   );

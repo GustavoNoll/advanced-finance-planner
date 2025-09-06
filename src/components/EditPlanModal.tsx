@@ -2,9 +2,10 @@ import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/components/ui/use-toast";
 import { supabase } from "@/lib/supabase";
-import { X, Lock } from "lucide-react";
+import { X, Lock, Calendar, Settings } from "lucide-react";
 import { 
   calculateFutureValues, 
   isCalculationReady, 
@@ -14,27 +15,42 @@ import {
 import { useTranslation } from "react-i18next";
 import CurrencyInput from 'react-currency-input-field';
 import { CurrencyCode, getCurrencySymbol } from "@/utils/currency";
-import { InvestmentPlan, FinancialRecord } from "@/types/financial";
+import { InvestmentPlan, MicroInvestmentPlan, FinancialRecord } from "@/types/financial";
 import { calculateAge, calculateEndDate, calculateFinalAge } from '@/utils/dateUtils';
 import { handleAgeDateSync, handleFormChange, type Currency } from '@/utils/formUtils';
 import { RISK_PROFILES } from '@/constants/riskProfiles';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 interface EditPlanModalProps {
   investmentPlan: InvestmentPlan;
+  activeMicroPlan: MicroInvestmentPlan | null;
+  microPlans: MicroInvestmentPlan[];
   birthDate: string;
   financialRecords?: FinancialRecord[];
   onClose: () => void;
   onSuccess: () => void;
+  onRefreshMicroPlans: () => void;
 }
 
-export function EditPlanModal({ investmentPlan, birthDate, financialRecords = [], onClose, onSuccess }: EditPlanModalProps) {
+export function EditPlanModal({ 
+  investmentPlan, 
+  activeMicroPlan, 
+  microPlans, 
+  birthDate, 
+  financialRecords = [], 
+  onClose, 
+  onSuccess, 
+  onRefreshMicroPlans 
+}: EditPlanModalProps) {
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
   
   // Verificar se existem registros financeiros para bloquear a edição do valor inicial
   const hasFinancialRecords = financialRecords.length > 0;
   
-  const [formData, setFormData] = useState<FormData>({
+  // Form data for investment plan (basic plan information)
+  const [investmentPlanFormData, setInvestmentPlanFormData] = useState({
     initialAmount: investmentPlan.initial_amount.toString(),
     plan_initial_date: new Date(investmentPlan.plan_initial_date).toISOString().split('T')[0],
     finalAge: investmentPlan.final_age.toString(),
@@ -51,10 +67,6 @@ export function EditPlanModal({ investmentPlan, birthDate, financialRecords = []
           birth.setDate(1); // Always use first day of month
           return birth.toISOString().split('T')[0];
         })(),
-    monthlyDeposit: investmentPlan.monthly_deposit.toString(),
-    desiredIncome: investmentPlan.desired_income.toString(),
-    expectedReturn: investmentPlan.expected_return.toFixed(1),
-    inflation: investmentPlan.inflation.toString(),
     planType: investmentPlan.plan_type,
     adjustContributionForInflation: investmentPlan.adjust_contribution_for_inflation,
     adjustIncomeForInflation: investmentPlan.adjust_income_for_inflation,
@@ -65,20 +77,35 @@ export function EditPlanModal({ investmentPlan, birthDate, financialRecords = []
     hasOldPortfolio: investmentPlan.old_portfolio_profitability !== null,
   });
 
+  // Form data for active micro plan
+  const [microPlanFormData, setMicroPlanFormData] = useState({
+    monthlyDeposit: activeMicroPlan?.monthly_deposit.toString() || '',
+    desiredIncome: activeMicroPlan?.desired_income.toString() || '',
+    expectedReturn: activeMicroPlan?.expected_return.toFixed(1) || '',
+    inflation: activeMicroPlan?.inflation.toString() || '',
+    effectiveDate: activeMicroPlan?.effective_date || '',
+  });
+
   const [calculations, setCalculations] = useState<InvestmentCalculations | null>(null);
   const { t } = useTranslation();
   const [isSyncing, setIsSyncing] = useState(false);
   const [updateSource, setUpdateSource] = useState<'age' | 'date' | null>(null);
 
   useEffect(() => {
-    if (isCalculationReady(formData) && birthDate) {
-      setCalculations(calculateFutureValues(formData, new Date(birthDate)));
+    // Create combined form data for calculations
+    const combinedFormData = {
+      ...investmentPlanFormData,
+      ...microPlanFormData,
+    };
+    
+    if (isCalculationReady(combinedFormData) && birthDate) {
+      setCalculations(calculateFutureValues(combinedFormData, new Date(birthDate)));
     }
-  }, [formData, birthDate]);
+  }, [investmentPlanFormData, microPlanFormData, birthDate]);
 
   // Helper to get current age
   const getCurrentAge = () => {
-    return calculateAge(new Date(birthDate), new Date(formData.plan_initial_date));
+    return calculateAge(new Date(birthDate), new Date(investmentPlanFormData.plan_initial_date));
   };
 
   // Sync age <-> date
@@ -86,9 +113,9 @@ export function EditPlanModal({ investmentPlan, birthDate, financialRecords = []
     if (!birthDate || isSyncing) return;
     if (updateSource === 'age') {
       setIsSyncing(true);
-      const result = handleAgeDateSync('finalAge', formData.finalAge || '', new Date(birthDate), isSyncing, updateSource);
+      const result = handleAgeDateSync('finalAge', investmentPlanFormData.finalAge || '', new Date(birthDate), isSyncing, updateSource);
       if (result) {
-        setFormData(prev => ({ ...prev, ...result }));
+        setInvestmentPlanFormData(prev => ({ ...prev, ...result }));
       }
       setTimeout(() => {
         setIsSyncing(false);
@@ -96,16 +123,16 @@ export function EditPlanModal({ investmentPlan, birthDate, financialRecords = []
       }, 0);
     } else if (updateSource === 'date') {
       setIsSyncing(true);
-      const result = handleAgeDateSync('planEndAccumulationDate', formData.planEndAccumulationDate || '', new Date(birthDate), isSyncing, updateSource);
+      const result = handleAgeDateSync('planEndAccumulationDate', investmentPlanFormData.planEndAccumulationDate || '', new Date(birthDate), isSyncing, updateSource);
       if (result) {
-        setFormData(prev => ({ ...prev, ...result }));
+        setInvestmentPlanFormData(prev => ({ ...prev, ...result }));
       }
       setTimeout(() => {
         setIsSyncing(false);
         setUpdateSource(null);
       }, 0);
     }
-  }, [formData.finalAge, formData.planEndAccumulationDate, birthDate, updateSource, isSyncing]);
+  }, [investmentPlanFormData.finalAge, investmentPlanFormData.planEndAccumulationDate, birthDate, updateSource, isSyncing]);
 
   // Handler for age/date change
   function handleAgeDateChange(e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) {
@@ -115,40 +142,49 @@ export function EditPlanModal({ investmentPlan, birthDate, financialRecords = []
     const result = handleAgeDateSync(name, value, new Date(birthDate), isSyncing, updateSource);
     if (result) {
       setUpdateSource(name === 'finalAge' ? 'age' : 'date');
-      setFormData(prev => ({ ...prev, ...result }));
+      setInvestmentPlanFormData(prev => ({ ...prev, ...result }));
     }
   }
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+  // Handler for investment plan form changes
+  const handleInvestmentPlanChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
     const checked = (e.target as HTMLInputElement).checked;
     
-    const newFormData = handleFormChange(name, value, checked, formData.currency as Currency, RISK_PROFILES);
-    setFormData(prev => ({ ...prev, ...newFormData }));
+    const newFormData = handleFormChange(name, value, checked, investmentPlanFormData.currency as Currency, RISK_PROFILES);
+    setInvestmentPlanFormData(prev => ({ ...prev, ...newFormData }));
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  // Handler for micro plan form changes
+  const handleMicroPlanChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+    const { name, value } = e.target;
+    setMicroPlanFormData(prev => ({ ...prev, [name]: value }));
+  };
+
+  // Handler for investment plan submission
+  const handleInvestmentPlanSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
 
     try {
-      const calculations = calculateFutureValues(formData, new Date(birthDate));
-      
-      const adjustedEndDate = new Date(formData.planEndAccumulationDate);
+      const adjustedEndDate = new Date(investmentPlanFormData.planEndAccumulationDate);
       adjustedEndDate.setDate(adjustedEndDate.getDate() + 1);
+      
       const { error } = await supabase
         .from("investment_plans")
         .update({
-          initial_amount: parseFloat(formData.initialAmount.replace(',', '.')),
-          final_age: parseInt(formData.finalAge),
+          initial_amount: parseFloat(investmentPlanFormData.initialAmount.replace(',', '.')),
+          final_age: parseInt(investmentPlanFormData.finalAge),
           plan_end_accumulation_date: adjustedEndDate.toISOString().split('T')[0],
-          monthly_deposit: parseFloat(formData.monthlyDeposit.replace(',', '.')),
-          desired_income: parseFloat(formData.desiredIncome.replace(',', '.')),
-          plan_type: formData.planType,
-          future_value: calculations.futureValue,
-          present_future_value: calculations.presentFutureValue,
-          inflation_adjusted_income: calculations.inflationAdjustedIncome,
-          required_monthly_deposit: calculations.requiredMonthlyDeposit,
+          plan_type: investmentPlanFormData.planType,
+          adjust_contribution_for_inflation: investmentPlanFormData.adjustContributionForInflation,
+          adjust_income_for_inflation: investmentPlanFormData.adjustIncomeForInflation,
+          limit_age: parseInt(investmentPlanFormData.limitAge),
+          legacy_amount: parseFloat(investmentPlanFormData.legacyAmount.replace(',', '.')),
+          currency: investmentPlanFormData.currency,
+          old_portfolio_profitability: investmentPlanFormData.hasOldPortfolio 
+            ? parseFloat(investmentPlanFormData.oldPortfolioProfitability?.replace(',', '.') || '0')
+            : null,
         })
         .eq('id', investmentPlan.id);
 
@@ -160,7 +196,6 @@ export function EditPlanModal({ investmentPlan, birthDate, financialRecords = []
       });
 
       onSuccess();
-      onClose();
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred';
       toast({
@@ -173,7 +208,47 @@ export function EditPlanModal({ investmentPlan, birthDate, financialRecords = []
     }
   };
 
-  const prefix = getCurrencySymbol(formData.currency as CurrencyCode);
+  // Handler for micro plan submission
+  const handleMicroPlanSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+
+    try {
+      if (!activeMicroPlan) {
+        throw new Error('No active micro plan found');
+      }
+
+      const { error } = await supabase
+        .from("micro_investment_plans")
+        .update({
+          monthly_deposit: parseFloat(microPlanFormData.monthlyDeposit.replace(',', '.')),
+          desired_income: parseFloat(microPlanFormData.desiredIncome.replace(',', '.')),
+          expected_return: parseFloat(microPlanFormData.expectedReturn.replace(',', '.')),
+          inflation: parseFloat(microPlanFormData.inflation.replace(',', '.')),
+        })
+        .eq('id', activeMicroPlan.id);
+
+      if (error) throw error;
+
+      toast({
+        title: t('common.success'),
+        description: t('investmentPlan.edit.microPlanSuccess'),
+      });
+
+      onRefreshMicroPlans();
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred';
+      toast({
+        title: t('common.error'),
+        description: errorMessage,
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const prefix = getCurrencySymbol(investmentPlanFormData.currency as CurrencyCode);
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm">
@@ -193,7 +268,20 @@ export function EditPlanModal({ investmentPlan, birthDate, financialRecords = []
             </div>
           </CardHeader>
           <CardContent className="pt-6 px-6">
-            <form onSubmit={handleSubmit} className="space-y-6">
+            <Tabs defaultValue="investment-plan" className="w-full">
+              <TabsList className="grid w-full grid-cols-2">
+                <TabsTrigger value="investment-plan" className="flex items-center gap-2">
+                  <Settings className="h-4 w-4" />
+                  {t('investmentPlan.edit.investmentPlan')}
+                </TabsTrigger>
+                <TabsTrigger value="micro-plan" className="flex items-center gap-2">
+                  <Calendar className="h-4 w-4" />
+                  {t('investmentPlan.edit.microPlan')}
+                </TabsTrigger>
+              </TabsList>
+              
+              <TabsContent value="investment-plan" className="mt-6">
+                <form onSubmit={handleInvestmentPlanSubmit} className="space-y-6">
               <div className="space-y-4">
                 <div className="space-y-2">
                   <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
@@ -201,8 +289,8 @@ export function EditPlanModal({ investmentPlan, birthDate, financialRecords = []
                   </label>
                   <select
                     name="planType"
-                    value={formData.planType}
-                    onChange={handleChange}
+                    value={investmentPlanFormData.planType}
+                    onChange={handleInvestmentPlanChange}
                     className="w-full h-10 rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
                     required
                   >
@@ -221,9 +309,9 @@ export function EditPlanModal({ investmentPlan, birthDate, financialRecords = []
                   </label>
                   <CurrencyInput
                     name="initialAmount"
-                    value={formData.initialAmount}
+                    value={investmentPlanFormData.initialAmount}
                     onValueChange={(value) => {
-                      setFormData(prev => ({
+                      setInvestmentPlanFormData(prev => ({
                         ...prev,
                         initialAmount: value || ''
                       }))
@@ -252,7 +340,7 @@ export function EditPlanModal({ investmentPlan, birthDate, financialRecords = []
                   <div className="flex gap-2">
                     <select
                       name="finalAge"
-                      value={formData.finalAge}
+                      value={investmentPlanFormData.finalAge}
                       onChange={handleAgeDateChange}
                       className="h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
                       required
@@ -273,9 +361,9 @@ export function EditPlanModal({ investmentPlan, birthDate, financialRecords = []
                     <div className="flex gap-2">
                       <select
                         name="month"
-                        value={new Date(formData.planEndAccumulationDate).getMonth()}
+                        value={new Date(investmentPlanFormData.planEndAccumulationDate).getMonth()}
                         onChange={(e) => {
-                          const newDate = new Date(formData.planEndAccumulationDate);
+                          const newDate = new Date(investmentPlanFormData.planEndAccumulationDate);
                           newDate.setMonth(parseInt(e.target.value));
                           handleAgeDateChange({
                             target: {
@@ -301,9 +389,9 @@ export function EditPlanModal({ investmentPlan, birthDate, financialRecords = []
                       </select>
                       <select
                         name="year"
-                        value={new Date(formData.planEndAccumulationDate).getFullYear()}
+                        value={new Date(investmentPlanFormData.planEndAccumulationDate).getFullYear()}
                         onChange={(e) => {
-                          const newDate = new Date(formData.planEndAccumulationDate);
+                          const newDate = new Date(investmentPlanFormData.planEndAccumulationDate);
                           newDate.setFullYear(parseInt(e.target.value));
                           handleAgeDateChange({
                             target: {
@@ -331,51 +419,6 @@ export function EditPlanModal({ investmentPlan, birthDate, financialRecords = []
                   </div>
                 </div>
 
-                <div className="space-y-2">
-                  <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                    {t('investmentPlan.form.monthlyDeposit')}
-                  </label>
-                  <CurrencyInput
-                    name="monthlyDeposit"
-                    value={formData.monthlyDeposit}
-                    onValueChange={(value) => {
-                      setFormData(prev => ({
-                        ...prev,
-                        monthlyDeposit: value || ''
-                      }))
-                    }}
-                    placeholder="1000"
-                    prefix={prefix}
-                    decimalsLimit={2}
-                    decimalSeparator=","
-                    groupSeparator="."
-                    className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                    required
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                    {t('investmentPlan.form.desiredIncome')}
-                  </label>
-                  <CurrencyInput
-                    name="desiredIncome"
-                    value={formData.desiredIncome}
-                    onValueChange={(value) => {
-                      setFormData(prev => ({
-                        ...prev,
-                        desiredIncome: value || ''
-                      }))
-                    }}
-                    placeholder="5000"
-                    prefix={prefix}
-                    decimalsLimit={2}
-                    decimalSeparator=","
-                    groupSeparator="."
-                    className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                    required
-                  />
-                </div>
 
                 <div className="space-y-2">
                   <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
@@ -384,14 +427,169 @@ export function EditPlanModal({ investmentPlan, birthDate, financialRecords = []
                   <Input
                     type="number"
                     name="limitAge"
-                    value={formData.limitAge}
-                    onChange={handleChange}
+                    value={investmentPlanFormData.limitAge}
+                    onChange={handleInvestmentPlanChange}
                     placeholder="85"
                     min="60"
                     max="120"
                     required
                     className="h-10"
                   />
+                </div>
+
+                <div className="space-y-2">
+                  <div className="flex items-center space-x-2 mb-2">
+                    <Checkbox
+                      id="hasOldPortfolio"
+                      checked={investmentPlanFormData.hasOldPortfolio}
+                      onCheckedChange={(checked) => {
+                        setInvestmentPlanFormData(prev => ({
+                          ...prev,
+                          hasOldPortfolio: checked as boolean,
+                          oldPortfolioProfitability: checked ? prev.oldPortfolioProfitability : null
+                        }))
+                      }}
+                    />
+                    <label htmlFor="hasOldPortfolio" className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                      {t('investmentPlan.form.hasOldPortfolio')}
+                    </label>
+                  </div>
+                  {investmentPlanFormData.hasOldPortfolio && (
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                        {t('investmentPlan.form.oldPortfolioProfitability')}
+                      </label>
+                      <select
+                        name="oldPortfolioProfitability"
+                        value={investmentPlanFormData.oldPortfolioProfitability || ""}
+                        onChange={(e) => {
+                          setInvestmentPlanFormData(prev => ({
+                            ...prev,
+                            oldPortfolioProfitability: e.target.value || null
+                          }))
+                        }}
+                        className="w-full h-10 rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                        required={investmentPlanFormData.hasOldPortfolio}
+                      >
+                        <option value="">{t('investmentPlan.form.selectProfitability')}</option>
+                        <option value="0">{investmentPlanFormData.currency === 'BRL' ? 'IPCA' : 'CPI'} + 0%</option>
+                        <option value="1">{investmentPlanFormData.currency === 'BRL' ? 'IPCA' : 'CPI'} + 1%</option>
+                        <option value="2">{investmentPlanFormData.currency === 'BRL' ? 'IPCA' : 'CPI'} + 2%</option>
+                        <option value="3">{investmentPlanFormData.currency === 'BRL' ? 'IPCA' : 'CPI'} + 3%</option>
+                        <option value="4">{investmentPlanFormData.currency === 'BRL' ? 'IPCA' : 'CPI'} + 4%</option>
+                        <option value="5">{investmentPlanFormData.currency === 'BRL' ? 'IPCA' : 'CPI'} + 5%</option>
+                        <option value="6">{investmentPlanFormData.currency === 'BRL' ? 'IPCA' : 'CPI'} + 6%</option>
+                        <option value="7">{investmentPlanFormData.currency === 'BRL' ? 'IPCA' : 'CPI'} + 7%</option>
+                        <option value="8">{investmentPlanFormData.currency === 'BRL' ? 'IPCA' : 'CPI'} + 8%</option>
+                      </select>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {investmentPlanFormData.planType !== "3" && (
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                    {investmentPlanFormData.planType === "1" 
+                      ? t('investmentPlan.form.endAge') 
+                      : t('investmentPlan.form.legacyAge')}
+                  </label>
+                  <Input
+                    type="number"
+                    name="limitAge"
+                    value={investmentPlanFormData.limitAge}
+                    onChange={handleInvestmentPlanChange}
+                    placeholder={investmentPlanFormData.planType === "1" ? "120" : "85"}
+                    required
+                    min={parseInt(investmentPlanFormData.finalAge)}
+                    max="120"
+                    step="1"
+                    className="h-10"
+                    onKeyDown={(e) => {
+                      if (e.key === "." || e.key === ",") {
+                        e.preventDefault()
+                      }
+                    }}
+                  />
+                </div>
+              )}
+
+              {investmentPlanFormData.planType === "2" && (
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                    {t('investmentPlan.form.legacyAmount')}
+                  </label>
+                  <CurrencyInput
+                    name="legacyAmount"
+                    value={investmentPlanFormData.legacyAmount}
+                    onValueChange={(value) => {
+                      setInvestmentPlanFormData(prev => ({
+                        ...prev,
+                        legacyAmount: value || ''
+                      }))
+                    }}
+                    placeholder="1000000"
+                    prefix={prefix}
+                    decimalsLimit={2}
+                    decimalSeparator=","
+                    groupSeparator="."
+                    className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                    required
+                  />
+                </div>
+              )}
+
+              <div className="space-y-4">
+                <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100">{t('investmentPlan.form.advancedSettings')}</h3>
+                <div className="space-y-4">
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                      {t('investmentPlan.form.currency')}
+                    </label>
+                    <select
+                      name="currency"
+                      value={investmentPlanFormData.currency}
+                      onChange={handleInvestmentPlanChange}
+                      className="w-full h-10 rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                      required
+                    >
+                      <option value="BRL">{t('investmentPlan.form.currencies.BRL')}</option>
+                      <option value="USD">{t('investmentPlan.form.currencies.USD')}</option>
+                      <option value="EUR">{t('investmentPlan.form.currencies.EUR')}</option>
+                    </select>
+                  </div>
+
+                  <div className="flex items-center space-x-2">
+                    <Checkbox
+                      id="adjust_contribution_for_inflation"
+                      checked={investmentPlanFormData.adjustContributionForInflation}
+                      onCheckedChange={(checked) => {
+                        setInvestmentPlanFormData(prev => ({
+                          ...prev,
+                          adjustContributionForInflation: checked as boolean
+                        }))
+                      }}
+                    />
+                    <label htmlFor="adjust_contribution_for_inflation" className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                      {t('investmentPlan.form.adjustContributionForInflation')}
+                    </label>
+                  </div>
+
+                  <div className="flex items-center space-x-2">
+                    <Checkbox
+                      id="adjust_income_for_inflation"
+                      checked={investmentPlanFormData.adjustIncomeForInflation}
+                      onCheckedChange={(checked) => {
+                        setInvestmentPlanFormData(prev => ({
+                          ...prev,
+                          adjustIncomeForInflation: checked as boolean
+                        }))
+                      }}
+                    />
+                    <label htmlFor="adjust_income_for_inflation" className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                      {t('investmentPlan.form.adjustIncomeForInflation')}
+                    </label>
+                  </div>
                 </div>
               </div>
 
@@ -402,7 +600,139 @@ export function EditPlanModal({ investmentPlan, birthDate, financialRecords = []
               >
                 {loading ? t('common.saving') : t('common.save')}
               </Button>
-            </form>
+                </form>
+              </TabsContent>
+              
+              <TabsContent value="micro-plan" className="mt-6">
+                {activeMicroPlan ? (
+                  <form onSubmit={handleMicroPlanSubmit} className="space-y-6">
+                    <div className="space-y-4">
+                      <div className="space-y-2">
+                        <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                          {t('investmentPlan.form.effectiveDate')}
+                        </label>
+                        <Input
+                          type="date"
+                          name="effectiveDate"
+                          value={microPlanFormData.effectiveDate}
+                          onChange={handleMicroPlanChange}
+                          disabled
+                          className="h-10 bg-gray-50 dark:bg-gray-800"
+                        />
+                        <p className="text-xs text-muted-foreground">
+                          {t('investmentPlan.form.effectiveDateLockedMessage')}
+                        </p>
+                      </div>
+
+                      <div className="space-y-2">
+                        <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                          {t('investmentPlan.form.monthlyDeposit')}
+                        </label>
+                        <CurrencyInput
+                          name="monthlyDeposit"
+                          value={microPlanFormData.monthlyDeposit}
+                          onValueChange={(value) => {
+                            setMicroPlanFormData(prev => ({
+                              ...prev,
+                              monthlyDeposit: value || ''
+                            }))
+                          }}
+                          placeholder="1000"
+                          prefix={prefix}
+                          decimalsLimit={2}
+                          decimalSeparator=","
+                          groupSeparator="."
+                          className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                          required
+                        />
+                      </div>
+
+                      <div className="space-y-2">
+                        <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                          {t('investmentPlan.form.desiredIncome')}
+                        </label>
+                        <CurrencyInput
+                          name="desiredIncome"
+                          value={microPlanFormData.desiredIncome}
+                          onValueChange={(value) => {
+                            setMicroPlanFormData(prev => ({
+                              ...prev,
+                              desiredIncome: value || ''
+                            }))
+                          }}
+                          placeholder="5000"
+                          prefix={prefix}
+                          decimalsLimit={2}
+                          decimalSeparator=","
+                          groupSeparator="."
+                          className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                          required
+                        />
+                      </div>
+
+                      <div className="space-y-2">
+                        <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                          {t('investmentPlan.form.expectedReturn')}
+                        </label>
+                        <Select
+                          value={microPlanFormData.expectedReturn}
+                          onValueChange={(value) => {
+                            setMicroPlanFormData(prev => ({
+                              ...prev,
+                              expectedReturn: value
+                            }))
+                          }}
+                          required
+                        >
+                          <SelectTrigger className="h-10">
+                            <SelectValue placeholder={t('investmentPlan.microPlans.form.selectExpectedReturn')} />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {RISK_PROFILES[investmentPlanFormData.currency].map((profile) => (
+                              <SelectItem key={profile.value} value={profile.return}>
+                                {profile.label} ({investmentPlanFormData.currency === 'BRL' ? 'IPCA' : 'CPI'}+{profile.return}%)
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+
+                      <div className="space-y-2">
+                        <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                          {t('investmentPlan.form.inflation')}
+                        </label>
+                        <Input
+                          type="number"
+                          name="inflation"
+                          value={microPlanFormData.inflation}
+                          onChange={handleMicroPlanChange}
+                          placeholder="6"
+                          step="1"
+                          min="0"
+                          max="20"
+                          required
+                          className="h-10"
+                        />
+                      </div>
+                    </div>
+
+                    <Button 
+                      type="submit" 
+                      className="w-full bg-green-600 hover:bg-green-700 text-white font-medium py-2 px-4 rounded-md transition-colors duration-200 dark:bg-green-600 dark:hover:bg-green-500" 
+                      disabled={loading}
+                    >
+                      {loading ? t('common.saving') : t('investmentPlan.edit.saveMicroPlan')}
+                    </Button>
+                  </form>
+                ) : (
+                  <div className="text-center py-8">
+                    <p className="text-muted-foreground">
+                      {t('investmentPlan.edit.noActiveMicroPlan')}
+                    </p>
+                  </div>
+                )}
+              </TabsContent>
+            </Tabs>
           </CardContent>
         </Card>
       </div>

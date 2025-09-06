@@ -1,11 +1,12 @@
 import { Target, Trophy, Calendar, TrendingUp, LineChart, PiggyBank } from 'lucide-react'
 import { useFinancialHighlights } from '@/hooks/useFinancialData'
-import { InvestmentPlan } from '@/types/financial'
+import { InvestmentPlan, MicroInvestmentPlan } from '@/types/financial'
 import { useTranslation } from 'react-i18next'
 
 interface DashboardHighlightsProps {
   clientId: string
   investmentPlan: InvestmentPlan
+  activeMicroPlan: MicroInvestmentPlan | null
 }
 
 const iconMap = {
@@ -17,9 +18,9 @@ const iconMap = {
   PiggyBank
 }
 
-export function DashboardHighlights({ clientId, investmentPlan }: DashboardHighlightsProps) {
+export function DashboardHighlights({ clientId, investmentPlan, activeMicroPlan }: DashboardHighlightsProps) {
   const { t } = useTranslation()
-  const highlights = useFinancialHighlights(clientId, investmentPlan, t)
+  const highlights = useFinancialHighlights(clientId, investmentPlan, activeMicroPlan, t)
 
   function getHighlightBgClasses(i: number): string {
     if (i === 0) return 'bg-gradient-to-br from-emerald-50 via-green-50 to-emerald-100/70 dark:from-emerald-900/60 dark:via-emerald-800/40 dark:to-emerald-700/40 border border-emerald-100/60 dark:border-emerald-700/60'

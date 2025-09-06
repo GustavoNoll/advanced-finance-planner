@@ -1,23 +1,31 @@
-import { useState, useMemo } from 'react'
-import { calculateFutureValues, isCalculationReady } from '@/utils/investmentPlanCalculations'
-import { RISK_PROFILES } from '@/constants/riskProfiles'
-import type { FormData } from '@/utils/investmentPlanCalculations'
+import { useState } from 'react'
 import { createDateWithoutTimezone } from '@/utils/dateUtils'
+
+type SimplifiedFormData = {
+  initialAmount: string;
+  plan_initial_date: string;
+  finalAge: string;
+  planEndAccumulationDate: string;
+  planType: string;
+  adjustContributionForInflation: boolean;
+  adjustIncomeForInflation: boolean;
+  limitAge: string;
+  legacyAmount: string;
+  currency: 'BRL' | 'USD' | 'EUR';
+  oldPortfolioProfitability: string | null;
+  hasOldPortfolio: boolean;
+}
 
 export function useInvestmentPlanState() {
   const [loading, setLoading] = useState(false)
   const [isLoadingData, setIsLoadingData] = useState(false)
   const [birthDate, setBirthDate] = useState<Date | null>(null)
   const [hasFinancialRecords, setHasFinancialRecords] = useState(false)
-  const [formData, setFormData] = useState<FormData>({
+  const [formData, setFormData] = useState<SimplifiedFormData>({
     initialAmount: "",
     plan_initial_date: createDateWithoutTimezone(new Date()).toISOString().split('T')[0],
     finalAge: "",
     planEndAccumulationDate: "",
-    monthlyDeposit: "",
-    desiredIncome: "",
-    expectedReturn: RISK_PROFILES.BRL[1].return,
-    inflation: "6.0",
     planType: "3",
     adjustContributionForInflation: false,
     adjustIncomeForInflation: false,
@@ -28,21 +36,8 @@ export function useInvestmentPlanState() {
     hasOldPortfolio: false,
   })
 
-  const [expandedRow, setExpandedRow] = useState<string | null>(null)
   const [isSyncing, setIsSyncing] = useState(false)
   const [updateSource, setUpdateSource] = useState<'age' | 'date' | null>(null)
-
-  // Memoize calculations to prevent unnecessary recalculations
-  const calculations = useMemo(() => {
-    if (isCalculationReady(formData) && birthDate) {
-      return calculateFutureValues(formData, birthDate)
-    }
-    return null
-  }, [formData, birthDate])
-
-  const isCalculationReadyState = useMemo(() => {
-    return isCalculationReady(formData)
-  }, [formData])
 
   return {
     // State
@@ -50,11 +45,8 @@ export function useInvestmentPlanState() {
     isLoadingData,
     birthDate,
     formData,
-    expandedRow,
     isSyncing,
     updateSource,
-    calculations,
-    isCalculationReady: isCalculationReadyState,
     hasFinancialRecords,
     
     // Setters
@@ -62,7 +54,6 @@ export function useInvestmentPlanState() {
     setIsLoadingData,
     setBirthDate,
     setFormData,
-    setExpandedRow,
     setIsSyncing,
     setUpdateSource,
     setHasFinancialRecords,

@@ -3,12 +3,13 @@ import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import { Download, ChevronDown, ChevronRight } from "lucide-react";
 import { generateProjectionData, YearlyProjectionData, ChartOptions } from '@/lib/chart-projections';
-import { FinancialRecord, InvestmentPlan, Goal, ProjectedEvent, Profile, ChartDataPoint } from '@/types/financial';
+import { FinancialRecord, InvestmentPlan, MicroInvestmentPlan, Goal, ProjectedEvent, Profile, ChartDataPoint } from '@/types/financial';
 import { formatCurrency, CurrencyCode } from "@/utils/currency";
 import { toast } from "@/components/ui/use-toast";
 
 interface FutureProjectionTabProps {
   investmentPlan: InvestmentPlan;
+  activeMicroPlan?: MicroInvestmentPlan | null;
   profile: Profile;
   allFinancialRecords: FinancialRecord[];
   goals?: Goal[];
@@ -23,6 +24,7 @@ interface FutureProjectionTabProps {
 
 export function FutureProjectionTab({ 
   investmentPlan, 
+  activeMicroPlan,
   profile, 
   allFinancialRecords, 
   goals, 
@@ -135,8 +137,17 @@ export function FutureProjectionTab({
     }
 
     // Otherwise, generate projection data
+    // Criar um plano combinado com dados do micro plano ativo
+    const combinedPlan = activeMicroPlan ? {
+      ...investmentPlan,
+      monthly_deposit: activeMicroPlan.monthly_deposit,
+      desired_income: activeMicroPlan.desired_income,
+      expected_return: activeMicroPlan.expected_return,
+      inflation: activeMicroPlan.inflation
+    } : investmentPlan;
+
     const data = generateProjectionData(
-      investmentPlan,
+      combinedPlan,
       profile,
       allFinancialRecords,
       goals,

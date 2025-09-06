@@ -1,6 +1,6 @@
 import { generateProjectionData, MonthlyProjectionData, YearlyProjectionData } from '@/lib/chart-projections'
 import { processPlanProgressData, PlanProgressData } from '@/lib/plan-progress'
-import { FinancialRecord, ProjectedEvent, Goal } from '@/types/financial'
+import { FinancialRecord, ProjectedEvent, Goal, MicroInvestmentPlan } from '@/types/financial'
 import { Profile, InvestmentPlan } from '@/types/financial'
 import { createDateWithoutTimezone } from '@/utils/dateUtils'
 import { ChartOptions } from '@/lib/chart-projections'
@@ -175,6 +175,7 @@ export class ProjectionService {
   static calculatePlanProgress(
     allFinancialRecords: FinancialRecord[],
     investmentPlan: InvestmentPlan,
+    activeMicroPlan: MicroInvestmentPlan | null,
     clientProfile: Profile,
     goals: Goal[],
     events: ProjectedEvent[],
@@ -234,6 +235,7 @@ export class ProjectionService {
       return processPlanProgressData(
         allFinancialRecords,
         investmentPlan,
+        activeMicroPlan,
         { 
           birth_date: clientProfile.birth_date
         },
