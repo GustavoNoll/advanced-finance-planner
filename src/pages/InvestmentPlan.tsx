@@ -5,9 +5,9 @@ import { Spinner } from "@/components/ui/spinner";
 import { useAuth } from "@/components/auth/AuthProvider";
 import { 
   InvestmentPlanHeader, 
-  EditPlanButton, 
-  PlanDetailsCards,
-  MicroPlansList
+  MicroPlansTimeline,
+  InvestmentPlanParamsCard,
+  MicroPlanCalculationsCard
 } from "@/components/investment-plan";
 import { useInvestmentPlan } from "@/hooks/useInvestmentPlan";
 import { useMicroInvestmentPlans } from "@/hooks/useMicroInvestmentPlans";
@@ -33,7 +33,7 @@ export const InvestmentPlanShow = () => {
     deleteMicroPlan,
     hasFinancialRecordForActivePlan
   } = useMicroInvestmentPlans(id || '');
-
+  console.log(activeMicroPlan)
   // Memoize birthDate to prevent unnecessary re-renders
   const birthDate = useMemo(() => {
     return plan?.profiles?.birth_date ? new Date(plan.profiles.birth_date) : new Date();
@@ -66,7 +66,7 @@ export const InvestmentPlanShow = () => {
             {t('investmentPlan.messages.notFound.description')}
           </p>
           <Link to="/">
-            <Button>
+            <Button variant="outline">
               <ArrowLeft className="h-4 w-4 mr-2" />
               {t('common.back')} 
             </Button>
@@ -84,31 +84,41 @@ export const InvestmentPlanShow = () => {
         t={t} 
       />
 
-      {/* Botão de editar (apenas para brokers) */}
-      {user?.id && plan?.profiles?.broker_id === user.id && (
-        <EditPlanButton planId={plan.id} t={t} />
-      )}
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
-        <PlanDetailsCards 
-          plan={plan} 
+        {/* Investment Plan Parameters and Timeline - Side by Side */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          {/* Investment Plan Parameters */}
+          <div className="order-2 lg:order-1">
+            <InvestmentPlanParamsCard
+              plan={plan}
+              t={t}
+              canEdit={user?.id && plan?.profiles?.broker_id === user.id}
+            />
+          </div>
+
+          {/* Micro Plans Timeline */}
+          <div className="order-1 lg:order-2">
+            <MicroPlansTimeline
+              microPlans={microPlans}
+              activeMicroPlan={activeMicroPlan}
+              currency={plan.currency}
+              planId={plan.id}
+              planInitialDate={plan.plan_initial_date}
+              planLimitAge={plan.limit_age}
+              onCreateMicroPlan={createMicroPlan}
+              onUpdateMicroPlan={updateMicroPlan}
+              onDeleteMicroPlan={deleteMicroPlan}
+            />
+          </div>
+        </div>
+
+        {/* Micro Plan Calculations */}
+        <MicroPlanCalculationsCard
+          plan={plan}
           activeMicroPlan={activeMicroPlan}
           calculations={calculations}
-          t={t} 
-        />
-        
-        {/* Micro Plans Section */}
-        <MicroPlansList
-          microPlans={microPlans}
-          activeMicroPlan={activeMicroPlan}
-          isLoading={isLoadingMicroPlans}
-          onCreateMicroPlan={createMicroPlan}
-          onUpdateMicroPlan={updateMicroPlan}
-          onDeleteMicroPlan={deleteMicroPlan}
-          planId={plan.id}
-          planInitialDate={plan.plan_initial_date}
-          planLimitAge={plan.limit_age}
-          currency={plan.currency}
+          t={t}
         />
       </main>
     </div>

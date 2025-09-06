@@ -1,4 +1,5 @@
 export { InvestmentPlanHeader } from './InvestmentPlanHeader'
-export { EditPlanButton } from './EditPlanButton'
-export { PlanDetailsCards } from './PlanDetailsCards'
-export { MicroPlansList } from './MicroPlansList'
+export { MicroPlansTimeline } from './MicroPlansTimeline'
+export { InvestmentPlanInfoCard } from './InvestmentPlanInfoCard'
+export { InvestmentPlanParamsCard } from './InvestmentPlanParamsCard'
+export { MicroPlanCalculationsCard } from './MicroPlanCalculationsCard'

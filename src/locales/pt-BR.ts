@@ -11,6 +11,7 @@ export const ptBR = {
   investmentPlan: {
     edit: {
       title: "Editar Plano de Investimento",
+      lifePlanTitle: "Editar Plano de Vida",
       success: "Plano de investimento atualizado com sucesso",
       successWithMicroPlans: "Plano de investimento e micro planos atualizados com sucesso",
       investmentPlan: "Plano de Investimento",
@@ -19,6 +20,9 @@ export const ptBR = {
       microPlanError: "Erro ao atualizar micro plano",
       noActiveMicroPlan: "Nenhum micro plano ativo encontrado",
       saveMicroPlan: "Salvar Micro Plano",
+      lifePlanInfo: {
+        title: "Informações do Plano de Vida"
+      }
     },
     messages: {
       notFound: {
@@ -43,6 +47,9 @@ export const ptBR = {
       noPlansDescription: "Crie micro planos para gerenciar diferentes estratégias de investimento ao longo do tempo.",
       confirmDelete: "Tem certeza que deseja excluir este micro plano?",
       cannotDeleteBase: "Não é possível excluir o micro plano base",
+      timeline: {
+        title: "Timeline dos Micro Planos"
+      },
       form: {
         effectiveDate: "Data de Vigência",
         monthlyDeposit: "Depósito Mensal",
@@ -57,13 +64,18 @@ export const ptBR = {
       }
     },
     details: {
-      title: "Detalhes do Plano de Investimento",
+      title: "Parâmetros do Plano de Investimento",
       clientInfo: {
         title: "Informações do Cliente",
         name: "Nome",
         initialAge: "Idade Inicial",
         finalAge: "Idade Final",
         years: "anos"
+      },
+      currency: {
+        title: "Moeda e Status",
+        currency: "Moeda",
+        createdAt: "Criado em"
       },
       planOverview: {
         title: "Visão Geral do Plano",
@@ -77,8 +89,8 @@ export const ptBR = {
         title: "Objetivos Financeiros",
         desiredMonthlyIncome: "Renda Mensal Desejada",
         inflationAdjustedIncome: "Renda Ajustada pela Inflação",
-        futureValue: "Meta Valor Futuro",
-        presentFutureValue: "Meta Valor Real"
+        futureValue: "Valor Futuro Necessário",
+        presentFutureValue: "Valor Presente da Meta"
       },
       investmentParams: {
         title: "Parâmetros do Investimento",
@@ -95,6 +107,15 @@ export const ptBR = {
         adjustIncomeForInflation: "Ajuste do Resgate pela Inflação",
         enabled: "Ativado",
         disabled: "Desativado"
+      },
+      calculations: {
+        title: "Cálculos Baseados no Micro Plano Ativo",
+        expectedReturn: "Retorno Esperado",
+        inflation: "Inflação",
+        returnRate: "Taxa de Retorno Real",
+        realReturn: "Retorno Real Mensal",
+        inflationReturn: "Retorno da Inflação Mensal",
+        totalMonthlyReturn: "Retorno Total Mensal"
       }
     },
     form: {
@@ -221,7 +242,7 @@ export const ptBR = {
       }
     },
     charts: {
-      portfolioPerformance: "Projeção Patrimonial"
+      portfolioPerformance: "Criação de Plano Inicial"
     },
     nextSteps: {
       title: "Próximos Passos",
@@ -240,6 +261,7 @@ export const ptBR = {
       investmentPlan: "Plano de Investimento",
       clientProfile: "Informações do Cliente",
       editPlan: "Editar Plano",
+      editLifePlan: "Editar Plano de Vida",
       financialGoals: "Objetivos Financeiros",
       events: 'Eventos',
     },
@@ -281,7 +303,7 @@ export const ptBR = {
       monthlyContribution: "Contribuição Mensal",
       monthlyWithdrawal: "Renda Mensal",
       planned: "Planejado",
-      projected: "Projetado",
+      projected: "Planejado",
       difference: "diferença",
       ageAtRetirement: "Idade na Aposentadoria"
     },
@@ -328,13 +350,30 @@ export const ptBR = {
       creatingPlan: "Criando plano...",
       planCreatedSuccessfully: "Plano criado com sucesso!",
       planParameters: "Parâmetros do Plano",
-      projectionChart: "Gráfico de Projeção",
-      projectionTable: "Tabela de Projeção",
+      projectionChart: "Gráfico do Plano",
+      projectionTable: "Tabela do Plano",
       simulationNotice: {
         title: "Simulação",
         description: "Esta é uma simulação baseada nos parâmetros informados. Nenhum dado será salvo no banco de dados. Use esta ferramenta para demonstrar diferentes cenários ao cliente."
       },
       planInitialDateDisabled: "Data fixada para simulações. Edite quando criar um plano real.",
+      errors: {
+        missingClientData: "Dados do cliente não encontrados"
+      }
+    },
+    planCreation: {
+      title: "Criação de Plano Inicial",
+      creatingForClient: "Criando plano para cliente",
+      createPlan: "Criar Plano",
+      creatingPlan: "Criando plano...",
+      planCreatedSuccessfully: "Plano criado com sucesso!",
+      planParameters: "Parâmetros do Plano",
+      planChart: "Gráfico do Plano",
+      planTable: "Tabela do Plano",
+      planNotice: {
+        title: "Criação de Plano",
+        description: "Configure os parâmetros do plano de investimento para o cliente. Este plano será salvo no banco de dados."
+      },
       errors: {
         missingClientData: "Dados do cliente não encontrados"
       }
@@ -642,7 +681,8 @@ export const ptBR = {
       balance: "Evolução Real",
       expandYear: "Expandir detalhes mensais",
       collapseYear: "Recolher detalhes mensais",
-      projectedBalance: "Projeção Financeira",
+      projectedBalance: "Planejado",
+      plannedBalance: "Planejado",
       monthlyDetails: "Mês",
       cashFlow: "Fluxo de Caixa",
       historical: 'Histórico',
@@ -663,8 +703,8 @@ export const ptBR = {
     actualValue: "Evolução Real",
     actualValueReal: "Evolução Real",
     actualValueProjection: "Evolução Projetada",
-    projectedValue: "Projeção Financeira",
-    projectedValueReal: "Projeção Financeira Real",
+    projectedValue: "Planejado",
+    projectedValueReal: "Planejado Real",
     oldPortfolioValue: "Carteira Antiga",
     years: "anos",
     goalAchievement: "Meta atingida",

@@ -9,9 +9,10 @@ import { getActiveMicroPlanForDate } from '@/utils/microPlanUtils';
  * Verifica se é o momento de mudar para um novo micro plano ativo
  * @param microPlans Array de micro planos
  * @param currentDate Data atual da iteração
- * @returns true se for o mês exato de vigência de um micro plano
+ * @param previousDate Data anterior da iteração (para detectar mudanças)
+ * @returns true se for o mês exato de vigência de um novo micro plano
  */
-function isTimeForChangeActivePlan(microPlans: MicroInvestmentPlan[], currentDate: Date): boolean {
+function isTimeForChangeActivePlan(microPlans: MicroInvestmentPlan[], currentDate: Date, previousDate?: Date): boolean {
   if (!microPlans || microPlans.length === 0) {
     return false;
   }
@@ -25,7 +26,8 @@ function isTimeForChangeActivePlan(microPlans: MicroInvestmentPlan[], currentDat
     const effectiveYear = effectiveDate.getFullYear();
     const effectiveMonth = effectiveDate.getMonth();
 
-    if (currentYear === effectiveYear && currentMonth === effectiveMonth) {
+    // Se a data de vigência for exatamente este mês, é hora de mudar
+    if (effectiveYear === currentYear && effectiveMonth === currentMonth) {
       return true;
     }
   }
@@ -482,12 +484,14 @@ export function generateProjectionData(
   let currentDate = new Date(startDate);
   // Definir como primeiro dia do mês para começar no início do mês
   currentDate.setDate(1);
+  let previousDate: Date | undefined;
+  
   while (currentDate <= endDate) {
     const year = currentDate.getFullYear();
     const month = currentDate.getMonth() + 1;
   
     // Verificar se é o momento de mudar para um novo micro plano ativo
-    if (isTimeForChangeActivePlan(context.microPlans, currentDate)) {
+    if (isTimeForChangeActivePlan(context.microPlans, currentDate, previousDate)) {
       const activeMicroPlanForDate = getActiveMicroPlanForDate(context.microPlans, currentDate);
       if (activeMicroPlanForDate) {
         currentMonthlyDeposit = activeMicroPlanForDate.monthly_deposit;
@@ -685,6 +689,9 @@ export function generateProjectionData(
     }
     yearlyDataMap.get(year)!.push(monthlyData);
 
+    // Atualizar data anterior antes de avançar
+    previousDate = new Date(currentDate);
+    
     // Avançar para o próximo mês
     currentDate.setMonth(currentDate.getMonth() + 1);
   }
