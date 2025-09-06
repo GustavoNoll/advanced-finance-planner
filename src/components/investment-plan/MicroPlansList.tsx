@@ -8,6 +8,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Edit, Plus, Calendar, DollarSign, TrendingUp, Target } from 'lucide-react'
 import { MicroInvestmentPlan, CreateMicroInvestmentPlan, UpdateMicroInvestmentPlan } from '@/types/financial'
 import { formatCurrency } from '@/utils/currency'
+import { createDateWithoutTimezone } from '@/utils/dateUtils'
 
 const MicroPlanForm = lazy(() => import('./MicroPlanForm').then(module => ({ default: module.MicroPlanForm })))
 
@@ -143,7 +144,7 @@ export function MicroPlansList({
                     {t('investmentPlan.microPlans.active')}
                   </Badge>
                   <span className="text-sm text-muted-foreground">
-                    {t('investmentPlan.microPlans.effectiveFrom')} {new Date(activeMicroPlan.effective_date).toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' })}
+                    {t('investmentPlan.microPlans.effectiveFrom')} {createDateWithoutTimezone(activeMicroPlan.effective_date).toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' })}
                   </span>
                 </div>
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
@@ -184,7 +185,7 @@ export function MicroPlansList({
                     <TableCell>
                       <div className="flex items-center gap-2">
                         <Calendar className="h-4 w-4 text-muted-foreground" />
-                        {new Date(microPlan.effective_date).toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' })}
+                        {createDateWithoutTimezone(microPlan.effective_date).toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' })}
                         <div className="flex gap-1">
                           {microPlan.id === activeMicroPlan?.id && (
                             <Badge variant="secondary" className="text-xs">

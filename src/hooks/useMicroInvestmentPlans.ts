@@ -22,22 +22,16 @@ export function useMicroInvestmentPlans(lifeInvestmentPlanId: string): UseMicroI
   const [error, setError] = useState<string | null>(null)
   const [hasFinancialRecordForActivePlan, setHasFinancialRecordForActivePlan] = useState(false)
 
-  const checkFinancialRecordForActivePlan = useCallback(async (activePlan: MicroInvestmentPlan | null, userId: string, allMicroPlans: MicroInvestmentPlan[]) => {
-    if (!activePlan || !userId) {
-      setHasFinancialRecordForActivePlan(false)
-      return
-    }
-
+  const checkIfMicroPlanHasFinancialRecord = useCallback(async (plan: MicroInvestmentPlan, userId: string, allMicroPlans: MicroInvestmentPlan[]): Promise<boolean> => {
     try {
       // Se é o primeiro micro plano (base), sempre tem financial record (usar dados do plano principal)
-      const isFirstMicroPlan = allMicroPlans.length > 0 && allMicroPlans[0].id === activePlan.id
+      const isFirstMicroPlan = allMicroPlans.length > 0 && allMicroPlans[0].id === plan.id
       if (isFirstMicroPlan) {
-        setHasFinancialRecordForActivePlan(true)
-        return
+        return true
       }
 
       // Para micro planos não-base, verificar se existe financial record no mesmo mês
-      const microPlanDate = new Date(activePlan.effective_date)
+      const microPlanDate = new Date(plan.effective_date)
       const currentMonth = microPlanDate.getMonth() + 1 // getMonth() retorna 0-11, precisamos 1-12
       const currentYear = microPlanDate.getFullYear()
 
@@ -51,8 +45,7 @@ export function useMicroInvestmentPlans(lifeInvestmentPlanId: string): UseMicroI
         .single()
 
       if (currentMonthRecord && !currentMonthError) {
-        setHasFinancialRecordForActivePlan(true)
-        return
+        return true
       }
 
       // Se não tem no mesmo mês, verificar o mês anterior
@@ -67,12 +60,22 @@ export function useMicroInvestmentPlans(lifeInvestmentPlanId: string): UseMicroI
         .eq('record_month', previousMonth)
         .single()
 
-      setHasFinancialRecordForActivePlan(!!previousMonthRecord && !previousMonthError)
+      return !!(previousMonthRecord && !previousMonthError)
     } catch (err) {
       console.error('Error checking financial record:', err)
-      setHasFinancialRecordForActivePlan(false)
+      return false
     }
   }, [])
+
+  const checkFinancialRecordForActivePlan = useCallback(async (activePlan: MicroInvestmentPlan | null, userId: string, allMicroPlans: MicroInvestmentPlan[]) => {
+    if (!activePlan || !userId) {
+      setHasFinancialRecordForActivePlan(false)
+      return
+    }
+
+    const hasRecord = await checkIfMicroPlanHasFinancialRecord(activePlan, userId, allMicroPlans)
+    setHasFinancialRecordForActivePlan(hasRecord)
+  }, [checkIfMicroPlanHasFinancialRecord])
 
   const fetchMicroPlans = useCallback(async () => {
     if (!lifeInvestmentPlanId) return
@@ -84,25 +87,47 @@ export function useMicroInvestmentPlans(lifeInvestmentPlanId: string): UseMicroI
       const plans = await MicroInvestmentPlanService.fetchMicroPlansByLifePlanId(lifeInvestmentPlanId)
       setMicroPlans(plans)
 
-      // O micro plano ativo é aquele cuja data de vigência é <= data atual
+      // Buscar o user_id do plano
+      const { data: planData } = await supabase
+        .from('investment_plans')
+        .select('user_id')
+        .eq('id', lifeInvestmentPlanId)
+        .single()
+
+      if (!planData?.user_id) {
+        setActiveMicroPlan(null)
+        setIsLoading(false)
+        return
+      }
+
+      // Primeiro, tentar encontrar um micro plano com registros financeiros
+      let active = null
       const today = new Date()
-      const active = plans
+      
+      // Ordenar planos por data de vigência (mais recente primeiro)
+      const eligiblePlans = plans
         .filter(plan => new Date(plan.effective_date) <= today)
-        .sort((a, b) => new Date(b.effective_date).getTime() - new Date(a.effective_date).getTime())[0] || null
+        .sort((a, b) => new Date(b.effective_date).getTime() - new Date(a.effective_date).getTime())
+
+      // Verificar cada plano para encontrar um com registros financeiros
+      for (const plan of eligiblePlans) {
+        const hasFinancialRecord = await checkIfMicroPlanHasFinancialRecord(plan, planData.user_id, plans)
+        if (hasFinancialRecord) {
+          active = plan
+          break
+        }
+      }
+
+      // Se nenhum plano tem registros financeiros, usar o mais antigo (primeiro criado)
+      if (!active && plans.length > 0) {
+        active = plans.sort((a, b) => new Date(a.created_at || a.effective_date).getTime() - new Date(b.created_at || b.effective_date).getTime())[0]
+      }
+
       setActiveMicroPlan(active)
 
       // Verificar se o micro plano ativo tem financial record
-      // Para isso, precisamos buscar o user_id do plano
       if (active) {
-        const { data: planData } = await supabase
-          .from('investment_plans')
-          .select('user_id')
-          .eq('id', lifeInvestmentPlanId)
-          .single()
-
-        if (planData?.user_id) {
-          await checkFinancialRecordForActivePlan(active, planData.user_id, plans)
-        }
+        await checkFinancialRecordForActivePlan(active, planData.user_id, plans)
       }
     } catch (err) {
       console.error('Error fetching micro investment plans:', err)
@@ -110,7 +135,7 @@ export function useMicroInvestmentPlans(lifeInvestmentPlanId: string): UseMicroI
     } finally {
       setIsLoading(false)
     }
-  }, [lifeInvestmentPlanId, checkFinancialRecordForActivePlan])
+  }, [lifeInvestmentPlanId, checkFinancialRecordForActivePlan, checkIfMicroPlanHasFinancialRecord])
 
   const createMicroPlan = useCallback(async (data: CreateMicroInvestmentPlan): Promise<MicroInvestmentPlan | null> => {
     try {

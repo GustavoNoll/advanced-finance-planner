@@ -7,6 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import CurrencyInput from 'react-currency-input-field'
 import { MicroInvestmentPlan, CreateMicroInvestmentPlan, UpdateMicroInvestmentPlan } from '@/types/financial'
 import { RISK_PROFILES } from '@/constants/riskProfiles'
+import { createDateWithoutTimezone } from '@/utils/dateUtils'
 
 interface MicroPlanFormProps {
   onSubmit: (data: CreateMicroInvestmentPlan | UpdateMicroInvestmentPlan) => Promise<void>
@@ -46,19 +47,28 @@ export function MicroPlanForm({
     inflation: ''
   })
   
-  const [monthYear, setMonthYear] = useState({
-    month: '',
-    year: ''
-  })
+  const [effectiveDateInput, setEffectiveDateInput] = useState('')
+  
 
   const currencySymbol = currency === 'BRL' ? 'R$' : currency === 'USD' ? '$' : '€'
 
   // Função para verificar se já existe um micro plano no mesmo mês/ano
   const isDateAlreadyUsed = (year: number, month: number): boolean => {
-    return existingMicroPlans.some(plan => {
-      const planDate = new Date(plan.effective_date)
+    const result = existingMicroPlans.some(plan => {
+      const planDate = createDateWithoutTimezone(plan.effective_date)
       const planYear = planDate.getFullYear()
       const planMonth = planDate.getMonth() + 1
+      
+      console.log('🔍 DEBUG isDateAlreadyUsed check:', {
+        checkingYear: year,
+        checkingMonth: month,
+        planId: plan.id,
+        planEffectiveDate: plan.effective_date,
+        planYear,
+        planMonth,
+        isCurrentPlan: initialData?.id === plan.id,
+        matches: planYear === year && planMonth === month
+      })
       
       // Se estamos editando, não considerar o próprio plano
       if (initialData && plan.id === initialData.id) {
@@ -67,11 +77,14 @@ export function MicroPlanForm({
       
       return planYear === year && planMonth === month
     })
+    
+    console.log('🔍 DEBUG isDateAlreadyUsed result:', result)
+    return result
   }
 
   useEffect(() => {
     if (initialData) {
-      const date = new Date(initialData.effective_date)
+      const date = createDateWithoutTimezone(initialData.effective_date)
       // Normalizar o expected_return para garantir compatibilidade com os valores dos perfis
       // Converter para número e depois para string com 1 casa decimal para match com os perfis
       const expectedReturnStr = parseFloat(initialData.expected_return.toString()).toFixed(1)
@@ -84,20 +97,16 @@ export function MicroPlanForm({
         expected_return: expectedReturnStr,
         inflation: initialData.inflation.toString()
       })
-      setMonthYear({
-        month: (date.getMonth() + 1).toString().padStart(2, '0'),
-        year: date.getFullYear().toString()
-      })
+      
+      // Definir a data no formato YYYY-MM-DD para o input
+      setEffectiveDateInput(date.toISOString().split('T')[0])
     } else if (isFirstMicroPlan) {
       const date = new Date(planInitialDate)
       setFormData(prev => ({
         ...prev,
         effective_date: planInitialDate
       }))
-      setMonthYear({
-        month: (date.getMonth() + 1).toString().padStart(2, '0'),
-        year: date.getFullYear().toString()
-      })
+      setEffectiveDateInput(planInitialDate)
     }
   }, [initialData, isFirstMicroPlan, planId, planInitialDate])
 
@@ -108,74 +117,50 @@ export function MicroPlanForm({
     }))
   }
 
-  const handleMonthYearChange = (field: 'month' | 'year', value: string) => {
-    const newMonthYear = {
-      ...monthYear,
-      [field]: value
-    }
+  const handleDateChange = (value: string) => {
+    console.log('🔍 DEBUG handleDateChange called with:', value)
     
-    // Validar limites de ano
-    if (field === 'year') {
-      const year = parseInt(value)
-      if (year < minYear || year > maxYear) {
-        return // Não atualizar se estiver fora dos limites
-      }
-    }
+    setEffectiveDateInput(value)
     
-    // Validar limites de mês
-    if (field === 'month') {
-      const month = parseInt(value)
-      const year = parseInt(newMonthYear.year || monthYear.year)
+    if (value) {
+      const date = createDateWithoutTimezone(value)
       
-      // Se é o mesmo ano do micro plano base, verificar se o mês não é anterior
-      if (baseMicroPlanDate && !isFirstMicroPlan && year === minYear) {
-        const baseDate = new Date(baseMicroPlanDate)
-        const baseMonth = baseDate.getMonth() + 1
-        if (month < baseMonth) {
-          return // Não atualizar se o mês for anterior ao base
-        }
-      }
-    }
-    
-    setMonthYear(newMonthYear)
-    
-    // Atualizar a data efetiva se ambos mês e ano estiverem preenchidos
-    if (newMonthYear.month && newMonthYear.year) {
-      const year = parseInt(newMonthYear.year)
-      const month = parseInt(newMonthYear.month)
-      
-      // Verificar se a data está dentro dos limites
-      if (year >= minYear && year <= maxYear) {
-        // Verificação adicional para mês no mesmo ano do base
-        if (baseMicroPlanDate && !isFirstMicroPlan) {
-          const baseDate = new Date(baseMicroPlanDate)
-          const baseYear = baseDate.getFullYear()
-          const baseMonth = baseDate.getMonth() + 1
-          
-          // Se o ano é menor que o ano base, não permitir
-          if (year < baseYear) {
-            return
-          }
-          
-          // Se o ano é igual ao ano base, só permitir meses >= mês base
-          if (year === baseYear && month < baseMonth) {
-            return
-          }
-        }
+      // Verificar se a data é válida
+      if (!isNaN(date.getTime())) {
+        const year = date.getFullYear()
+        const month = date.getMonth() + 1
+        
+        console.log('🔍 DEBUG Date validation:', {
+          year,
+          month,
+          isDateAlreadyUsed: isDateAlreadyUsed(year, month),
+          existingMicroPlans: existingMicroPlans.map(mp => ({
+            id: mp.id,
+            effective_date: mp.effective_date,
+            isCurrentPlan: initialData?.id === mp.id
+          }))
+        })
         
         // Verificar se a data já está em uso
         if (isDateAlreadyUsed(year, month)) {
+          console.log('🔍 DEBUG Date already used, blocking change')
           return // Não atualizar se a data já estiver em uso
         }
         
-        const newDate = new Date(year, month - 1, 1)
+        // Sempre salvar com dia 01, independente do dia selecionado
+        const normalizedDate = `${year}-${month.toString().padStart(2, '0')}-01`
+        
+        // Atualizar o formData com a data normalizada (dia 01)
         setFormData(prev => ({
           ...prev,
-          effective_date: newDate.toISOString().split('T')[0]
+          effective_date: normalizedDate
         }))
+        
+        console.log('🔍 DEBUG Date updated successfully:', normalizedDate)
       }
     }
   }
+
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -183,9 +168,10 @@ export function MicroPlanForm({
 
     try {
       // Validação final: verificar se a data já está em uso
-      if (monthYear.month && monthYear.year) {
-        const year = parseInt(monthYear.year)
-        const month = parseInt(monthYear.month)
+      if (effectiveDateInput) {
+        const date = createDateWithoutTimezone(effectiveDateInput)
+        const year = date.getFullYear()
+        const month = date.getMonth() + 1
         
         if (isDateAlreadyUsed(year, month)) {
           alert(t('investmentPlan.microPlans.form.dateAlreadyUsed'))
@@ -247,74 +233,16 @@ export function MicroPlanForm({
           <Label>
             {t('investmentPlan.microPlans.form.effectiveDate')}
           </Label>
-          <div className="flex gap-2">
-            <Select
-              value={monthYear.month}
-              onValueChange={(value) => handleMonthYearChange('month', value)}
-              disabled={isFirstMicroPlan || isBaseMicroPlan}
-              required
-            >
-              <SelectTrigger className="h-10 w-32">
-                <SelectValue placeholder="Mês" />
-              </SelectTrigger>
-              <SelectContent>
-                {Array.from({ length: 12 }, (_, i) => {
-                  const month = i + 1
-                  const monthName = new Date(2024, i, 1).toLocaleDateString('pt-BR', { month: 'long' })
-                  const currentYear = parseInt(monthYear.year || new Date().getFullYear().toString())
-                  
-                  // Filtrar meses anteriores ao base se necessário
-                  if (baseMicroPlanDate && !isFirstMicroPlan) {
-                    const baseDate = new Date(baseMicroPlanDate)
-                    const baseYear = baseDate.getFullYear()
-                    const baseMonth = baseDate.getMonth() + 1
-                    
-                    // Se o ano atual é menor que o ano base, não mostrar nenhum mês
-                    if (currentYear < baseYear) {
-                      return null
-                    }
-                    
-                    // Se o ano atual é igual ao ano base, só mostrar meses >= mês base
-                    if (currentYear === baseYear && month < baseMonth) {
-                      return null
-                    }
-                  }
-                  
-                  // Filtrar meses já em uso
-                  if (isDateAlreadyUsed(currentYear, month)) {
-                    return null
-                  }
-                  
-                  return (
-                    <SelectItem key={month} value={month.toString().padStart(2, '0')}>
-                      {monthName}
-                    </SelectItem>
-                  )
-                }).filter(Boolean)}
-              </SelectContent>
-            </Select>
-            
-            <Select
-              value={monthYear.year}
-              onValueChange={(value) => handleMonthYearChange('year', value)}
-              disabled={isFirstMicroPlan || isBaseMicroPlan}
-              required
-            >
-              <SelectTrigger className="h-10 w-24">
-                <SelectValue placeholder="Ano" />
-              </SelectTrigger>
-              <SelectContent>
-                {Array.from({ length: maxYear - minYear + 1 }, (_, i) => {
-                  const year = minYear + i
-                  return (
-                    <SelectItem key={year} value={year.toString()}>
-                      {year}
-                    </SelectItem>
-                  )
-                })}
-              </SelectContent>
-            </Select>
-          </div>
+          <Input
+            type="date"
+            value={effectiveDateInput}
+            onChange={(e) => handleDateChange(e.target.value)}
+            disabled={isFirstMicroPlan || isBaseMicroPlan}
+            required
+            className="h-10"
+            min={baseMicroPlanDate && !isFirstMicroPlan ? baseMicroPlanDate : undefined}
+            max={`${maxYear}-12-31`}
+          />
           {isFirstMicroPlan && (
             <p className="text-xs text-muted-foreground">
               {t('investmentPlan.microPlans.form.firstPlanDateNote')}

@@ -86,38 +86,34 @@ export class PlanCreationService {
       throw new Error('User ID is required')
     }
 
-    try {
-      // Ajustar data (adicionar um dia para evitar problemas de timezone)
-      const adjustedDate = createDateWithoutTimezone(planData.plan_initial_date)
-      adjustedDate.setDate(adjustedDate.getDate() + 1)
+    // Ajustar data (adicionar um dia para evitar problemas de timezone)
+    const adjustedDate = createDateWithoutTimezone(planData.plan_initial_date)
+    adjustedDate.setDate(adjustedDate.getDate() + 1)
 
-      // Inserir plano no banco (apenas dados básicos)
-      const { data, error } = await supabase.from("investment_plans").insert([
-        {
-          user_id: planData.user_id,
-          initial_amount: planData.initial_amount,
-          plan_initial_date: adjustedDate.toISOString().split('T')[0],
-          final_age: planData.final_age,
-          plan_type: planData.plan_type,
-          plan_end_accumulation_date: planData.plan_end_accumulation_date,
-          status: "active",
-          adjust_contribution_for_inflation: planData.adjust_contribution_for_inflation,
-          adjust_income_for_inflation: planData.adjust_income_for_inflation,
-          limit_age: planData.limit_age,
-          legacy_amount: planData.plan_type === "2" ? planData.legacy_amount : null,
-          currency: planData.currency,
-          old_portfolio_profitability: planData.old_portfolio_profitability,
-        },
-      ]).select().single()
+    // Inserir plano no banco (apenas dados básicos)
+    const { data, error } = await supabase.from("investment_plans").insert([
+      {
+        user_id: planData.user_id,
+        initial_amount: planData.initial_amount,
+        plan_initial_date: adjustedDate.toISOString().split('T')[0],
+        final_age: planData.final_age,
+        plan_type: planData.plan_type,
+        plan_end_accumulation_date: planData.plan_end_accumulation_date,
+        status: "active",
+        adjust_contribution_for_inflation: planData.adjust_contribution_for_inflation,
+        adjust_income_for_inflation: planData.adjust_income_for_inflation,
+        limit_age: planData.limit_age,
+        legacy_amount: planData.plan_type === "2" ? planData.legacy_amount : null,
+        currency: planData.currency,
+        old_portfolio_profitability: planData.old_portfolio_profitability,
+      },
+    ]).select().single()
 
-      if (error) {
-        throw new Error('Failed to create investment plan')
-      }
-
-      return data
-    } catch (error) {
-      throw error
+    if (error) {
+      throw new Error('Failed to create investment plan')
     }
+
+    return data
   }
 
   /**
@@ -128,31 +124,26 @@ export class PlanCreationService {
       throw new Error('Life investment plan ID is required')
     }
 
-    try {
-      // Ajustar data (adicionar um dia para evitar problemas de timezone)
-      const adjustedDate = createDateWithoutTimezone(microPlanData.effective_date)
-      adjustedDate.setDate(adjustedDate.getDate() + 1)
+    // Usar a data diretamente sem ajustes desnecessários
+    const effectiveDate = createDateWithoutTimezone(microPlanData.effective_date)
 
-      // Inserir micro plano no banco
-      const { data, error } = await supabase.from("micro_investment_plans").insert([
-        {
-          life_investment_plan_id: microPlanData.life_investment_plan_id,
-          effective_date: adjustedDate.toISOString().split('T')[0],
-          monthly_deposit: microPlanData.monthly_deposit,
-          desired_income: microPlanData.desired_income,
-          expected_return: microPlanData.expected_return,
-          inflation: microPlanData.inflation,
-        },
-      ]).select().single()
+    // Inserir micro plano no banco
+    const { data, error } = await supabase.from("micro_investment_plans").insert([
+      {
+        life_investment_plan_id: microPlanData.life_investment_plan_id,
+        effective_date: effectiveDate.toISOString().split('T')[0],
+        monthly_deposit: microPlanData.monthly_deposit,
+        desired_income: microPlanData.desired_income,
+        expected_return: microPlanData.expected_return,
+        inflation: microPlanData.inflation,
+      },
+    ]).select().single()
 
-      if (error) {
-        throw new Error('Failed to create micro investment plan')
-      }
-
-      return data
-    } catch (error) {
-      throw error
+    if (error) {
+      throw new Error('Failed to create micro investment plan')
     }
+
+    return data
   }
 
   /**

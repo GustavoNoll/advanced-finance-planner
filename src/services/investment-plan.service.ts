@@ -108,21 +108,17 @@ export class InvestmentPlanService {
    * Cria um novo plano de investimento
    */
   static async createPlan(planData: Partial<InvestmentPlan>): Promise<InvestmentPlan> {
-    try {
-      const { data, error } = await supabase
-        .from('investment_plans')
-        .insert([planData])
-        .select()
-        .single()
+    const { data, error } = await supabase
+      .from('investment_plans')
+      .insert([planData])
+      .select()
+      .single()
 
-      if (error) {
-        throw new Error('Failed to create investment plan')
-      }
-
-      return data
-    } catch (error) {
-      throw error
+    if (error) {
+      throw new Error('Failed to create investment plan')
     }
+
+    return data
   }
 
   /**
@@ -131,22 +127,18 @@ export class InvestmentPlanService {
   static async updatePlan(planId: string, planData: Partial<InvestmentPlan>): Promise<InvestmentPlan> {
     if (!planId) throw new Error('Plan ID is required')
 
-    try {
-      const { data, error } = await supabase
-        .from('investment_plans')
-        .update(planData)
-        .eq('id', planId)
-        .select()
-        .single()
+    const { data, error } = await supabase
+      .from('investment_plans')
+      .update(planData)
+      .eq('id', planId)
+      .select()
+      .single()
 
-      if (error) {
-        throw new Error('Failed to update investment plan')
-      }
-
-      return data
-    } catch (error) {
-      throw error
+    if (error) {
+      throw new Error('Failed to update investment plan')
     }
+
+    return data
   }
 
   /**
@@ -155,17 +147,13 @@ export class InvestmentPlanService {
   static async deletePlan(planId: string): Promise<void> {
     if (!planId) throw new Error('Plan ID is required')
 
-    try {
-      const { error } = await supabase
-        .from('investment_plans')
-        .delete()
-        .eq('id', planId)
+    const { error } = await supabase
+      .from('investment_plans')
+      .delete()
+      .eq('id', planId)
 
-      if (error) {
-        throw new Error('Failed to delete investment plan')
-      }
-    } catch (error) {
-      throw error
+    if (error) {
+      throw new Error('Failed to delete investment plan')
     }
   }
 
