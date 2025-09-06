@@ -249,7 +249,7 @@ export const Simulation = () => {
     if (!clientId || !birthDate) {
       toast({
         title: t('common.error'),
-        description: t('brokerDashboard.simulation.errors.missingClientData'),
+        description: t('brokerDashboard.planCreation.errors.missingClientData'),
         variant: "destructive",
       });
       return;
@@ -296,7 +296,7 @@ export const Simulation = () => {
 
       toast({
         title: t('common.success'),
-        description: t('brokerDashboard.simulation.planCreatedSuccessfully'),
+        description: t('brokerDashboard.planCreation.planCreatedSuccessfully'),
       });
 
       navigate(`/client/${clientId}`);
@@ -329,11 +329,11 @@ export const Simulation = () => {
             </Button>
             <div>
               <h1 className="text-2xl font-bold text-foreground">
-                {t('brokerDashboard.simulation.title')}
+                {clientId ? t('brokerDashboard.planCreation.title') : t('brokerDashboard.simulation.title')}
               </h1>
               {clientId && (
                 <p className="text-sm text-muted-foreground mt-1">
-                  {t('brokerDashboard.simulation.creatingForClient')}: {profileData?.name || 'Cliente'}
+                  {t('brokerDashboard.planCreation.creatingForClient')}: {profileData?.name || 'Cliente'}
                 </p>
               )}
             </div>
@@ -349,12 +349,12 @@ export const Simulation = () => {
                 {isCreatingPlan ? (
                   <>
                     <Spinner size="sm" />
-                    {t('brokerDashboard.simulation.creatingPlan')}
+                    {t('brokerDashboard.planCreation.creatingPlan')}
                   </>
                 ) : (
                   <>
                     <Plus className="h-4 w-4" />
-                    {t('brokerDashboard.simulation.createPlanFromSimulation')}
+                    {t('brokerDashboard.planCreation.createPlan')}
                   </>
                 )}
               </Button>
@@ -374,7 +374,7 @@ export const Simulation = () => {
                 <CardHeader>
                   <CardTitle className="text-lg flex items-center gap-2">
                     <Calculator className="h-5 w-5 text-blue-500" />
-                    {t('brokerDashboard.simulation.planParameters')}
+                    {clientId ? t('brokerDashboard.planCreation.planParameters') : t('brokerDashboard.simulation.planParameters')}
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
@@ -739,7 +739,7 @@ export const Simulation = () => {
               <CardHeader>
                 <CardTitle className="text-lg flex items-center gap-2">
                   <TrendingUp className="h-5 w-5 text-blue-500" />
-                  {t('brokerDashboard.simulation.projectionChart')}
+                  {clientId ? t('brokerDashboard.planCreation.planChart') : t('brokerDashboard.simulation.projectionChart')}
                 </CardTitle>
               </CardHeader>
               <CardContent>
@@ -763,7 +763,7 @@ export const Simulation = () => {
               <CardHeader>
                 <CardTitle className="text-lg flex items-center gap-2">
                   <TrendingUp className="h-5 w-5 text-blue-500" />
-                  {t('brokerDashboard.simulation.projectionTable')}
+                  {clientId ? t('brokerDashboard.planCreation.planTable') : t('brokerDashboard.simulation.projectionTable')}
                 </CardTitle>
               </CardHeader>
               <CardContent>
