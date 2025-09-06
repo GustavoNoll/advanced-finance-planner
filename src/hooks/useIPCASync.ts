@@ -21,7 +21,7 @@ export const useIPCASync = (clientId: string | undefined, records: FinancialReco
 
   const syncIPCAMutation = useMutation({
     mutationFn: async (): Promise<SyncResult> => {
-      if (!clientId || !records?.length || !investmentPlan) {
+      if (!clientId || !records?.length || !investmentPlan || microPlans.length === 0) {
         return { count: 0, updates: [] };
       }
       
