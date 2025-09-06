@@ -2,7 +2,8 @@ import { FinancialRecord, InvestmentPlan, Goal, ProjectedEvent } from "@/types/f
 import { calculateCompoundedRates, nper, yearlyReturnRateToMonthlyReturnRate, pmt, vp } from "@/lib/financial-math";
 import { processItem } from './financial-goals-processor';
 import { createDateWithoutTimezone, createDateFromYearMonth } from '@/utils/dateUtils';
-import { HistoricalDataInfo, MonthlyProjectionData } from "@/services/projection.service";
+import { HistoricalDataInfo } from "@/services/projection.service";
+import { MonthlyProjectionData } from "./chart-projections";
 
 /**
  * Constants for date calculations
@@ -290,8 +291,7 @@ const financialCalculations = {
     events: ProjectedEvent[],
     plannedFuturePresentValue: number,
     projectedFuturePresentValue: number,
-    monthlyProjectionData: MonthlyProjectionData | null,
-    nextMonthAfterHistorical: MonthlyProjectionData | null
+    monthlyProjectionData: MonthlyProjectionData | null
   ): ProjectionResult => {
     const lastFinancialRecord = allFinancialRecords[0];
     const currentMonth = lastFinancialRecord?.record_month || 0;
@@ -336,7 +336,8 @@ const financialCalculations = {
     
     // Get plan parameters
     const shouldAdjustContributionForInflation = investmentPlan.adjust_contribution_for_inflation;
-    const monthlyContribution = nextMonthAfterHistorical ? nextMonthAfterHistorical.contribution : investmentPlan.monthly_deposit;
+    // PEGAR PLANNED CONTRIBUTION DO ULTIMO MES DA PROJEÇÃO
+    const monthlyContribution = monthlyProjectionData ? monthlyProjectionData.planned_contribution : investmentPlan.monthly_deposit;
     
     const maximumAgeDate = utils.createDateAtAge(birthDate, investmentPlan.limit_age || 100);
     const monthsInRetirement = utils.calculateMonthsBetweenDates(planEndDate, maximumAgeDate);
@@ -503,8 +504,7 @@ export function processPlanProgressData(
     events.filter(event => event.status === 'pending'),
     plannedFuturePresentValue,
     projectedFuturePresentValue,
-    lastHistoricalDataInfo.lastHistoricalMonth,
-    lastHistoricalDataInfo.nextMonthAfterHistorical
+    lastHistoricalDataInfo.lastHistoricalMonth
   );
 
   // Calcular a idade projetada em anos e meses
