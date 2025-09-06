@@ -16,7 +16,7 @@ export function useProjectionData(
 ) {
   // Dados de projeção originais (sem opções avançadas)
   const originalProjectionData = useMemo(() => {
-    if (!investmentPlan || !clientProfile || !allFinancialRecords || !goals || !events) return null
+    if (!investmentPlan || !clientProfile || !allFinancialRecords || !goals || !events || !activeMicroPlan || microPlans.length === 0) return null
 
     return generateProjectionData(
       investmentPlan,
