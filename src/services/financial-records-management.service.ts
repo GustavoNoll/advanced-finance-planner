@@ -1,5 +1,5 @@
 import { supabase } from '@/lib/supabase'
-import { FinancialRecord, InvestmentPlan } from '@/types/financial'
+import { FinancialRecord, InvestmentPlan, MicroInvestmentPlan } from '@/types/financial'
 import { CurrencyCode } from '@/utils/currency'
 import { fetchIPCARates, fetchUSCPIRates, fetchEuroCPIRates } from '@/lib/bcb-api'
 import { createDateWithoutTimezone } from '@/utils/dateUtils'
@@ -57,13 +57,11 @@ export class FinancialRecordsManagementService {
         .order('record_month', { ascending: false })
 
       if (error) {
-        console.error('Error fetching financial records:', error)
         throw new Error('Failed to fetch financial records')
       }
 
       return data || []
     } catch (error) {
-      console.error('Error in fetchRecordsByUserId:', error)
       return []
     }
   }
@@ -77,18 +75,16 @@ export class FinancialRecordsManagementService {
     try {
       const { data, error } = await supabase
         .from('investment_plans')
-        .select('monthly_deposit, expected_return, currency, plan_initial_date, initial_amount, inflation')
+        .select('currency, plan_initial_date, initial_amount')
         .eq('user_id', userId)
         .single()
 
       if (error) {
-        console.error('Error fetching investment plan:', error)
         return null
       }
 
       return data as InvestmentPlan
     } catch (error) {
-      console.error('Error in fetchInvestmentPlanByUserId:', error)
       return null
     }
   }
@@ -105,13 +101,11 @@ export class FinancialRecordsManagementService {
         .single()
 
       if (error) {
-        console.error('Error creating financial record:', error)
         throw new Error('Failed to create financial record')
       }
 
       return data
     } catch (error) {
-      console.error('Error in createRecord:', error)
       throw error
     }
   }
@@ -131,13 +125,11 @@ export class FinancialRecordsManagementService {
         .single()
 
       if (error) {
-        console.error('Error updating financial record:', error)
         throw new Error('Failed to update financial record')
       }
 
       return data
     } catch (error) {
-      console.error('Error in updateRecord:', error)
       throw error
     }
   }
@@ -155,11 +147,9 @@ export class FinancialRecordsManagementService {
         .eq('id', recordId)
 
       if (error) {
-        console.error('Error deleting financial record:', error)
         throw new Error('Failed to delete financial record')
       }
     } catch (error) {
-      console.error('Error in deleteRecord:', error)
       throw error
     }
   }
@@ -177,11 +167,9 @@ export class FinancialRecordsManagementService {
         .eq('user_id', userId)
 
       if (error) {
-        console.error('Error deleting all financial records:', error)
         throw new Error('Failed to delete all financial records')
       }
     } catch (error) {
-      console.error('Error in deleteAllRecordsByUserId:', error)
       throw error
     }
   }
@@ -322,7 +310,6 @@ export class FinancialRecordsManagementService {
 
       return result
     } catch (error) {
-      console.error('Error in importRecords:', error)
       throw error
     }
   }
@@ -332,7 +319,8 @@ export class FinancialRecordsManagementService {
    */
   static async syncInflationRates(
     records: FinancialRecord[],
-    investmentPlan: InvestmentPlan | null
+    investmentPlan: InvestmentPlan | null,
+    activeMicroPlan: MicroInvestmentPlan | null
   ): Promise<SyncResult> {
     if (!records?.length || !investmentPlan) {
       return { count: 0, updates: [] }
@@ -391,7 +379,8 @@ export class FinancialRecordsManagementService {
         if (cpiRateMap.has(recordKey)) {
           const cpiRate = cpiRateMap.get(recordKey)
           const parsedCpiRate = cpiRate
-          const cpiRateConverted = parseFloat((calculateCompoundedRates([parsedCpiRate/100, yearlyReturnRateToMonthlyReturnRate(investmentPlan.expected_return/100)]) * 100).toFixed(2))
+          const expectedReturn = activeMicroPlan?.expected_return || 8; // Default 8% se não houver micro plano
+          const cpiRateConverted = parseFloat((calculateCompoundedRates([parsedCpiRate/100, yearlyReturnRateToMonthlyReturnRate(expectedReturn/100)]) * 100).toFixed(2))
           const parsedTargetRentability = parseFloat(record.target_rentability?.toFixed(2) || '0')
           if (parsedTargetRentability !== cpiRateConverted) {
             updates.push({
@@ -414,7 +403,6 @@ export class FinancialRecordsManagementService {
             .eq('id', update.id)
 
           if (error) {
-            console.error(`Error updating record ${update.id}:`, error)
             throw error
           }
           updatedIds.push(update.id)
@@ -426,7 +414,6 @@ export class FinancialRecordsManagementService {
         updates
       }
     } catch (error) {
-      console.error('Error in syncInflationRates:', error)
       throw error
     }
   }
@@ -476,13 +463,11 @@ export class FinancialRecordsManagementService {
         .eq('financial_record_id', financialRecordId)
 
       if (error) {
-        console.error('Error fetching financial record links:', error)
         throw error
       }
 
       return { data: data || [], error: null }
     } catch (error) {
-      console.error('Error in fetchLinksByFinancialRecordId:', error)
       return { data: [], error }
     }
   }
@@ -527,7 +512,6 @@ export class FinancialRecordsManagementService {
             .single()
 
           if (eventError) {
-            console.error('Erro ao criar evento:', eventError)
             continue
           }
 
@@ -538,7 +522,7 @@ export class FinancialRecordsManagementService {
             .eq('id', createdEvent.id)
 
           if (updateError) {
-            console.error('Erro ao atualizar valor do evento:', updateError)
+            // Erro ao atualizar valor do evento
           }
 
           // Criar o link entre o evento e o registro financeiro
@@ -553,12 +537,12 @@ export class FinancialRecordsManagementService {
             }])
 
           if (linkError) {
-            console.error('Erro ao criar link do evento:', linkError)
+            // Erro ao criar link do evento
           }
         }
       }
     } catch (error) {
-      console.error('Erro ao processar eventos do CSV:', error)
+      // Erro ao processar eventos do CSV
     }
   }
 }

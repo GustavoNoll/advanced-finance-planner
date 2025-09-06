@@ -9,7 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { TrendingUp, ArrowLeft, Settings, Calculator, Plus } from "lucide-react";
 import { SimulationChart } from "@/components/broker-dashboard/SimulationChart";
 import { FutureProjectionTab } from "@/components/monthly-view";
-import { InvestmentPlan } from "@/types/financial";
+import { InvestmentPlan, MicroInvestmentPlan } from "@/types/financial";
 import { formatCurrency, CurrencyCode } from "@/utils/currency";
 import { RISK_PROFILES } from '@/constants/riskProfiles';
 import CurrencyInput from 'react-currency-input-field';
@@ -166,10 +166,6 @@ export const Simulation = () => {
       plan_initial_date: new Date().toISOString().split('T')[0],
       plan_end_accumulation_date: planEndDate.toISOString().split('T')[0],
       final_age: finalAge,
-      monthly_deposit: parseFloat(formData.monthlyDeposit.replace(/[^\d.,]/g, '').replace(',', '.') || '0'),
-      desired_income: parseFloat(formData.desiredIncome.replace(/[^\d.,]/g, '').replace(',', '.') || '0'),
-      expected_return: parseFloat(formData.expectedReturn),
-      inflation: parseFloat(formData.inflation),
       plan_type: formData.planType,
       adjust_contribution_for_inflation: formData.adjustContributionForInflation,
       adjust_income_for_inflation: formData.adjustIncomeForInflation,
@@ -200,6 +196,20 @@ export const Simulation = () => {
 
     const profile = { ...mockProfile, birth_date: birthDate.toISOString().split('T')[0] };
     
+    // Create a simulated micro plan with the form values
+    const simulatedMicroPlan: MicroInvestmentPlan = {
+      id: 'simulation-micro-' + Date.now(),
+      life_investment_plan_id: simulationPlan.id,
+      effective_date: simulationPlan.plan_initial_date,
+      monthly_deposit: parseFloat(formData.monthlyDeposit.replace(/[^\d.,]/g, '').replace(',', '.') || '0'),
+      desired_income: parseFloat(formData.desiredIncome.replace(/[^\d.,]/g, '').replace(',', '.') || '0'),
+      expected_return: parseFloat(formData.expectedReturn),
+      inflation: parseFloat(formData.inflation),
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString()
+    };
+
+    
     // Generate chart data for the chart component
     const chartData = generateChartProjections(
       profile,
@@ -207,7 +217,8 @@ export const Simulation = () => {
       [], // No financial records in simulation
       [], // No goals in simulation
       [], // No events in simulation
-      chartOptions
+      chartOptions,
+      [simulatedMicroPlan] // Pass the simulated micro plan
     );
 
     // Generate projection data for the table component
@@ -215,6 +226,7 @@ export const Simulation = () => {
       simulationPlan,
       profile,
       [], // No financial records in simulation
+      [simulatedMicroPlan], // Pass the simulated micro plan
       [], // No goals in simulation
       [], // No events in simulation
       chartOptions
@@ -224,7 +236,7 @@ export const Simulation = () => {
       rawChartData: chartData,
       projectionData: tableData
     };
-  }, [simulationPlan, birthDate, chartOptions]);
+  }, [simulationPlan, birthDate, chartOptions, formData.monthlyDeposit, formData.desiredIncome, formData.expectedReturn, formData.inflation]);
 
   const handleFormChange = (field: keyof SimulationFormData, value: string | boolean) => {
     setFormData(prev => ({
@@ -245,10 +257,15 @@ export const Simulation = () => {
 
     setIsCreatingPlan(true);
     try {
+      const finalAge = parseInt(formData.finalAge);
+      const planEndDate = new Date(birthDate);
+      planEndDate.setFullYear(birthDate.getFullYear() + finalAge);
+      planEndDate.setMonth(planEndDate.getMonth() + 1); // Adiciona 1 mês
       const planData = {
         user_id: clientId,
         initial_amount: parseFloat(formData.initialAmount.replace(/[^\d.,]/g, '').replace(',', '.') || '0'),
         plan_initial_date: formData.planInitialDate,
+        plan_end_accumulation_date: planEndDate.toISOString().split('T')[0],
         final_age: parseInt(formData.finalAge),
         plan_type: formData.planType,
         limit_age: 100,
@@ -368,9 +385,15 @@ export const Simulation = () => {
                       <Input
                         type="date"
                         value={formData.planInitialDate}
-                        disabled
-                        className="h-10 bg-muted"
+                        onChange={(e) => handleFormChange('planInitialDate', e.target.value)}
+                        disabled={!clientId} // Só permite editar se for um cliente real
+                        className="h-10"
                       />
+                      {!clientId && (
+                        <p className="text-xs text-muted-foreground">
+                          {t('brokerDashboard.simulation.planInitialDateDisabled')}
+                        </p>
+                      )}
                     </div>
 
                     {/* Initial Amount */}
@@ -748,6 +771,17 @@ export const Simulation = () => {
                   investmentPlan={simulationPlan}
                   profile={{...mockProfile, birth_date: birthDate.toISOString().split('T')[0]}}
                   allFinancialRecords={[]}
+                  microPlans={simulationPlan ? [{
+                    id: 'simulation-micro-' + Date.now(),
+                    life_investment_plan_id: simulationPlan.id,
+                    effective_date: simulationPlan.plan_initial_date,
+                    monthly_deposit: parseFloat(formData.monthlyDeposit.replace(/[^\d.,]/g, '').replace(',', '.') || '0'),
+                    desired_income: parseFloat(formData.desiredIncome.replace(/[^\d.,]/g, '').replace(',', '.') || '0'),
+                    expected_return: parseFloat(formData.expectedReturn),
+                    inflation: parseFloat(formData.inflation),
+                    created_at: new Date().toISOString(),
+                    updated_at: new Date().toISOString()
+                  }] : []}
                   showGoalsEvents={false}
                   showRealEvolution={false}
                   isSimulation={true}

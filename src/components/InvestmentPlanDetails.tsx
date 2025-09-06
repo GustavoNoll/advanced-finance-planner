@@ -204,7 +204,7 @@ export function InvestmentPlanDetails(
     {
       icon: <WalletCards className="h-4 w-4 text-cyan-600" />,
       label: t('dashboard.investmentPlan.desiredWithdrawal'),
-      value: formatCurrency(investmentPlan.desired_income, investmentPlan.currency),
+      value: formatCurrency(activeMicroPlan?.desired_income || 0, investmentPlan.currency),
       color: "text-cyan-600"
     }
   ];
@@ -213,7 +213,7 @@ export function InvestmentPlanDetails(
     {
       icon: <TrendingUp className="h-4 w-4 text-rose-600" />,
       label: t('dashboard.investmentPlan.monthlyContribution'),
-      value: formatCurrency(investmentPlan.monthly_deposit, investmentPlan.currency),
+      value: formatCurrency(activeMicroPlan?.monthly_deposit || 0, investmentPlan.currency),
       color: "text-rose-600"
     },
     {

@@ -7,12 +7,13 @@ import { HoverCard, HoverCardContent, HoverCardTrigger } from "@/components/ui/h
 import { HelpCircle } from "lucide-react";
 import { formatCurrency, getCurrencySymbol } from "@/utils/currency";
 import CurrencyInput from 'react-currency-input-field';
-import { InvestmentPlan } from "@/types/financial";
+import { InvestmentPlan, MicroInvestmentPlan } from "@/types/financial";
 
 interface ChartAdvancedOptionsModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   investmentPlan: InvestmentPlan;
+  activeMicroPlan: MicroInvestmentPlan | null;
   
   // Value type options
   showRealValues: boolean;
@@ -50,6 +51,7 @@ export const ChartAdvancedOptionsModal = ({
   open,
   onOpenChange,
   investmentPlan,
+  activeMicroPlan,
   showRealValues,
   setShowRealValues,
   showNegativeValues,
@@ -158,7 +160,7 @@ export const ChartAdvancedOptionsModal = ({
                 <div className="space-y-2 pl-4 border-l-2 border-gray-200">
                   <div>
                     <Label htmlFor="monthly-deposit" className="text-xs text-gray-600 dark:text-gray-300">
-                      {t('expenseChart.newDepositValue', { value: formatCurrency(investmentPlan.monthly_deposit, investmentPlan.currency) })}
+                      {t('expenseChart.newDepositValue', { value: formatCurrency(activeMicroPlan?.monthly_deposit || 0, investmentPlan.currency) })}
                     </Label>
                     <CurrencyInput
                       id="monthly-deposit"
@@ -207,7 +209,7 @@ export const ChartAdvancedOptionsModal = ({
                 <div className="space-y-2 pl-4 border-l-2 border-gray-200">
                   <div>
                     <Label htmlFor="monthly-withdraw" className="text-xs text-gray-600 dark:text-gray-300">
-                      {t('expenseChart.newWithdrawValue', { value: formatCurrency(investmentPlan.desired_income, investmentPlan.currency) })}
+                      {t('expenseChart.newWithdrawValue', { value: formatCurrency(activeMicroPlan?.desired_income || 0, investmentPlan.currency) })}
                     </Label>
                     <CurrencyInput
                       id="monthly-withdraw"

@@ -9,6 +9,7 @@ import { toast } from "@/components/ui/use-toast";
 
 interface FutureProjectionTabProps {
   investmentPlan: InvestmentPlan;
+  microPlans: MicroInvestmentPlan[];
   activeMicroPlan?: MicroInvestmentPlan | null;
   profile: Profile;
   allFinancialRecords: FinancialRecord[];
@@ -23,7 +24,8 @@ interface FutureProjectionTabProps {
 }
 
 export function FutureProjectionTab({ 
-  investmentPlan, 
+  investmentPlan,
+  microPlans,
   activeMicroPlan,
   profile, 
   allFinancialRecords, 
@@ -150,6 +152,7 @@ export function FutureProjectionTab({
       combinedPlan,
       profile,
       allFinancialRecords,
+      microPlans,
       goals,
       events,
       chartOptions
@@ -168,7 +171,7 @@ export function FutureProjectionTab({
     }
 
     return data;
-  }, [projectionData, investmentPlan, profile, allFinancialRecords, goals, events, isSimulation, chartOptions]);
+  }, [projectionData, investmentPlan, profile, allFinancialRecords, goals, events, isSimulation, chartOptions, activeMicroPlan, microPlans]);
 
   return (
     <div className="space-y-4">

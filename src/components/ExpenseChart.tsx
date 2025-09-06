@@ -26,6 +26,7 @@ interface ChartPoint {
 interface ExpenseChartProps {
   investmentPlan: InvestmentPlan;
   activeMicroPlan: MicroInvestmentPlan | null;
+  microPlans: MicroInvestmentPlan[];
   clientId: string;
   allFinancialRecords: FinancialRecord[];
   profile: Profile;
@@ -83,6 +84,7 @@ function getRawChartData({
   profile,
   investmentPlan,
   activeMicroPlan,
+  microPlans,
   allFinancialRecords,
   goals,
   events
@@ -91,6 +93,7 @@ function getRawChartData({
   profile: Profile
   investmentPlan: InvestmentPlan
   activeMicroPlan: MicroInvestmentPlan | null
+  microPlans: MicroInvestmentPlan[]
   allFinancialRecords: FinancialRecord[]
   goals?: Goal[]
   events?: ProjectedEvent[]
@@ -123,7 +126,9 @@ function getRawChartData({
     combinedPlan,
     allFinancialRecords,
     goals,
-    events
+    events,
+    undefined, // chartOptions
+    microPlans
   )
 }
 
@@ -276,6 +281,7 @@ export const ExpenseChart = ({
   profile, 
   investmentPlan, 
   activeMicroPlan,
+  microPlans,
   clientId, 
   allFinancialRecords,
   projectionData,
@@ -557,6 +563,7 @@ export const ExpenseChart = ({
     profile,
     investmentPlan,
     activeMicroPlan,
+    microPlans,
     allFinancialRecords,
     goals,
     events
@@ -757,6 +764,7 @@ export const ExpenseChart = ({
           hideNegativeValues={!showNegativeValues}
           showOldPortfolio={showOldPortfolio}
           investmentPlan={investmentPlan}
+          activeMicroPlan={activeMicroPlan}
           handleEditItem={(item) => {
             // Try to find the matching goal or event by id
             const foundGoal = goals?.find(g => g.id === item.id)

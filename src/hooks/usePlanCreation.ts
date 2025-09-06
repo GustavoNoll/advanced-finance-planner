@@ -5,7 +5,6 @@ import { InvestmentPlan } from '@/types/financial'
 import { FormData, Calculations } from '@/utils/investmentPlanCalculations'
 
 
-
 export function useProfileData(userId: string) {
   const { data: profileData, isLoading, error } = useQuery({
     queryKey: ['profileData', userId],

@@ -151,6 +151,7 @@ export class ProjectionService {
     investmentPlan: InvestmentPlan,
     clientProfile: Profile,
     allFinancialRecords: FinancialRecord[],
+    microPlans: MicroInvestmentPlan[],
     goals: Goal[],
     events: ProjectedEvent[],
     chartOptions: ChartOptions
@@ -163,6 +164,7 @@ export class ProjectionService {
       investmentPlan,
       clientProfile,
       allFinancialRecords,
+      microPlans,
       goals,
       events,
       chartOptions
@@ -246,7 +248,6 @@ export class ProjectionService {
         lastHistoricalDataInfo
       )
     } catch (error) {
-      console.error('Error calculating plan progress data:', error)
       return {
         plannedMonths: 0,
         projectedMonths: 0,
@@ -333,7 +334,6 @@ export class ProjectionService {
         oldPortfolioBalance
       }
     } catch (error) {
-      console.error('Error calculating retirement balance difference:', error)
       return {
         nominalDifference: 0,
         percentageDifference: 0,
@@ -395,7 +395,6 @@ export class ProjectionService {
         retirementBalanceData
       }
     } catch (error) {
-      console.error('Error calculating projection metrics:', error)
       return null
     }
   }

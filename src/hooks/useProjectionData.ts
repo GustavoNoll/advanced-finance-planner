@@ -7,6 +7,7 @@ import { ChartOptions, generateProjectionData } from '@/lib/chart-projections'
 export function useProjectionData(
   investmentPlan: InvestmentPlan | null,
   activeMicroPlan: MicroInvestmentPlan | null,
+  microPlans: MicroInvestmentPlan[],
   clientProfile: Profile | null,
   allFinancialRecords: FinancialRecord[],
   goals: Goal[],
@@ -21,11 +22,12 @@ export function useProjectionData(
       investmentPlan,
       clientProfile,
       allFinancialRecords,
+      microPlans,
       goals,
       events,
       {}
     )
-  }, [investmentPlan, clientProfile, allFinancialRecords, goals, events, chartOptions])
+  }, [investmentPlan, microPlans, clientProfile, allFinancialRecords, goals, events, chartOptions])
 
   // Dados de projeção com opções avançadas
   const projectionDataWithOptions = useMemo(() => {
@@ -35,11 +37,12 @@ export function useProjectionData(
       investmentPlan,
       clientProfile,
       allFinancialRecords,
+      microPlans,
       goals,
       events,
       chartOptions
     )
-  }, [investmentPlan, clientProfile, allFinancialRecords, goals, events, chartOptions])
+  }, [investmentPlan, microPlans, clientProfile, allFinancialRecords, goals, events, chartOptions])
 
   // Dados de progresso do plano
   const planProgressData = useMemo(() => {

@@ -58,7 +58,7 @@ export function PlanDetailsCards({ plan, activeMicroPlan, calculations, t }: Pla
             <p className="text-sm text-muted-foreground">{t('investmentPlan.details.planOverview.monthlyDeposit')}</p>
             <p className="font-medium">
               {formatCurrency(
-                activeMicroPlan?.monthly_deposit || plan.monthly_deposit, 
+                activeMicroPlan?.monthly_deposit || 0, 
                 plan.currency as CurrencyCode
               )}
             </p>
@@ -85,7 +85,7 @@ export function PlanDetailsCards({ plan, activeMicroPlan, calculations, t }: Pla
             <p className="text-sm text-muted-foreground">{t('investmentPlan.details.financialGoals.desiredMonthlyIncome')}</p>
             <p className="font-medium">
               {formatCurrency(
-                activeMicroPlan?.desired_income || plan.desired_income, 
+                activeMicroPlan?.desired_income || 0, 
                 plan.currency as CurrencyCode
               )}
             </p>
@@ -127,7 +127,7 @@ export function PlanDetailsCards({ plan, activeMicroPlan, calculations, t }: Pla
             <p className="text-sm text-muted-foreground">{t('investmentPlan.details.investmentParams.expectedReturn')}</p>
             <p className="font-medium">
               {(() => {
-                const expectedReturn = activeMicroPlan?.expected_return || plan.expected_return
+                const expectedReturn = activeMicroPlan?.expected_return 
                 const profiles = RISK_PROFILES[plan.currency]
                 const profile = profiles.find(p => parseInt(p.return) === expectedReturn)
                 return profile 
@@ -138,7 +138,7 @@ export function PlanDetailsCards({ plan, activeMicroPlan, calculations, t }: Pla
           </div>
           <div>
             <p className="text-sm text-muted-foreground">{t('investmentPlan.details.investmentParams.inflationRate')}</p>
-            <p className="font-medium">{activeMicroPlan?.inflation || plan.inflation}%</p>
+            <p className="font-medium">{activeMicroPlan?.inflation}%</p>
           </div>
           <div>
             <p className="text-sm text-muted-foreground">{t('investmentPlan.details.investmentParams.planType')}</p>

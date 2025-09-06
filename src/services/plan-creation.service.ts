@@ -10,6 +10,7 @@ export interface PlanCreationData {
   final_age: number
   plan_type: string
   limit_age?: number
+  plan_end_accumulation_date: string
   legacy_amount?: number
   currency: string
   adjust_contribution_for_inflation: boolean
@@ -45,13 +46,11 @@ export class PlanCreationService {
         .eq('user_id', userId)
 
       if (error) {
-        console.error('Error checking existing plan:', error)
         return null
       }
 
       return data && data.length > 0 ? data[0] : null
     } catch (error) {
-      console.error('Error in checkExistingPlan:', error)
       return null
     }
   }
@@ -70,13 +69,11 @@ export class PlanCreationService {
         .single()
 
       if (error) {
-        console.error('Error fetching profile data:', error)
         return null
       }
 
       return data
     } catch (error) {
-      console.error('Error in fetchProfileData:', error)
       return null
     }
   }
@@ -102,6 +99,7 @@ export class PlanCreationService {
           plan_initial_date: adjustedDate.toISOString().split('T')[0],
           final_age: planData.final_age,
           plan_type: planData.plan_type,
+          plan_end_accumulation_date: planData.plan_end_accumulation_date,
           status: "active",
           adjust_contribution_for_inflation: planData.adjust_contribution_for_inflation,
           adjust_income_for_inflation: planData.adjust_income_for_inflation,
@@ -113,13 +111,11 @@ export class PlanCreationService {
       ]).select().single()
 
       if (error) {
-        console.error('Error creating investment plan:', error)
         throw new Error('Failed to create investment plan')
       }
 
       return data
     } catch (error) {
-      console.error('Error in createPlan:', error)
       throw error
     }
   }
@@ -150,13 +146,11 @@ export class PlanCreationService {
       ]).select().single()
 
       if (error) {
-        console.error('Error creating micro investment plan:', error)
         throw new Error('Failed to create micro investment plan')
       }
 
       return data
     } catch (error) {
-      console.error('Error in createMicroPlan:', error)
       throw error
     }
   }

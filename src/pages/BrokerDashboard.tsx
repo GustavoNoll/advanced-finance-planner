@@ -211,7 +211,7 @@ export const BrokerDashboard = () => {
       type3: plans.filter(plan => plan.plan_type === '3').length
     };
 
-    const averageDesiredIncome = plans.reduce((sum, plan) => sum + plan.desired_income, 0) / plans.length;
+    const averageDesiredIncome = 0; // Campo removido - usar micro planos para obter desired_income
     const averageRetirementAge = plans.reduce((sum, plan) => sum + plan.final_age, 0) / plans.length;
 
     // Calculate average age using birth_date from the view

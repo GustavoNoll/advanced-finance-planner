@@ -367,10 +367,8 @@ const financialCalculations = {
     // Calculate projections
 
     // PROJECTIONS 
-    console.log('balanceVPAdjustedParams', monthlyExpectedReturnRate, totalPlannedMonths - remainingMonthsToRetirement, -monthlyContribution, -currentBalanceWithGoals)
-    const balancePresentValueAdjusted = vp(monthlyExpectedReturnRate, totalPlannedMonths - remainingMonthsToRetirement, -monthlyContribution, -currentBalanceWithGoals);
-    console.log('balanceVPAdjusted', balancePresentValueAdjusted)
-    console.log('projectedMonthsToRetirement', effectiveMonthlyRate, -monthlyContribution, balancePresentValueAdjusted, adjustedGoalProjectedFutureValue)
+    // const balancePresentValueAdjusted = vp(monthlyExpectedReturnRate, totalPlannedMonths - remainingMonthsToRetirement, -monthlyContribution, -currentBalanceWithGoals);
+    console.log('projectedMonthsToRetirementParams', effectiveMonthlyRate, -monthlyContribution, -currentBalanceWithGoals, adjustedGoalProjectedFutureValue)
     const projectedMonthsToRetirement = nper(
       effectiveMonthlyRate,
       -monthlyContribution,
@@ -404,10 +402,8 @@ const financialCalculations = {
     if (monthlyProjectionData) {
       // se tiver registros financeiros, usar os dados da projeção
       const plannedBalanceWithGoals = (monthlyProjectionData.planned_balance + preRetirementGoalsTotal)
-      console.log('plannedVPBalanceParams', monthlyExpectedReturnRate, totalPlannedMonths - remainingMonthsToRetirement, -monthlyContribution, -plannedBalanceWithGoals)
-      const plannedBalancePresentValue = vp(monthlyExpectedReturnRate, totalPlannedMonths - remainingMonthsToRetirement, -monthlyContribution, -plannedBalanceWithGoals)
-      console.log('plannedVPBalance', plannedBalancePresentValue)
-      console.log('plannedMonthsToRetirementParams', effectiveMonthlyRate, -monthlyContribution, plannedBalancePresentValue, adjustedGoalPlannedFutureValue)
+      // const plannedBalancePresentValue = vp(monthlyExpectedReturnRate, totalPlannedMonths - remainingMonthsToRetirement, -monthlyContribution, -plannedBalanceWithGoals)
+      console.log('plannedMonthsToRetirementParams', effectiveMonthlyRate, -monthlyContribution, -plannedBalanceWithGoals, adjustedGoalPlannedFutureValue)
       plannedMonthsToRetirement = nper(
         effectiveMonthlyRate,
         -monthlyContribution,
@@ -422,17 +418,19 @@ const financialCalculations = {
         adjustedGoalPlannedFutureValue
       )
     }else{
+      console.log('plannedMonthsToRetirementParams', effectiveMonthlyRate, -monthlyContribution, -initialAmountWithGoals, adjustedGoalPlannedFutureValue)
       plannedMonthsToRetirement = nper(
         effectiveMonthlyRate,
         -monthlyContribution,
-        initialAmountWithGoals,
+        -initialAmountWithGoals,
         adjustedGoalPlannedFutureValue
       );
+      console.log('plannedMonthsToRetirement', plannedMonthsToRetirement)
   
       plannedContribution = -pmt(
         effectiveMonthlyRate,
         totalPlannedMonths,
-        initialAmountWithGoals,
+        -initialAmountWithGoals,
         adjustedGoalPlannedFutureValue
       );
     }

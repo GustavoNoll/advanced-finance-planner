@@ -72,6 +72,7 @@ const Finances = ({
   const chartOptionsHook = useChartOptions({
     investmentPlan,
     activeMicroPlan,
+    microPlans,
     clientProfile,
     allFinancialRecords,
     goals: goalsAndEvents.goals,
@@ -112,6 +113,7 @@ const Finances = ({
   const projectionDataHook = useProjectionData(
     investmentPlan,
     activeMicroPlan,
+    microPlans,
     clientProfile,
     allFinancialRecords,
     goalsAndEvents.goals,
@@ -126,7 +128,7 @@ const Finances = ({
   const projectionDataWithOptions = projectionDataHook.projectionDataWithOptions
 
   // Sincronização IPCA
-  const { syncIPCA, isSyncing } = useIPCASync(clientId, allFinancialRecords, investmentPlan);
+  const { syncIPCA, isSyncing } = useIPCASync(clientId, allFinancialRecords, investmentPlan, microPlans);
 
   // Efeito para sincronizar IPCA
   useEffect(() => {
@@ -197,6 +199,7 @@ const Finances = ({
               profile={clientProfile}
               investmentPlan={investmentPlan}
               activeMicroPlan={activeMicroPlan}
+              microPlans={microPlans}
               clientId={clientId}
               allFinancialRecords={allFinancialRecords}
               projectionData={projectionDataWithOptions}
@@ -303,6 +306,7 @@ const Finances = ({
         open={showAdvancedOptions}
         onOpenChange={setShowAdvancedOptions}
         investmentPlan={investmentPlan}
+        activeMicroPlan={activeMicroPlan}
         showRealValues={showRealValues}
         setShowRealValues={setShowRealValues}
         showNegativeValues={showNegativeValues}

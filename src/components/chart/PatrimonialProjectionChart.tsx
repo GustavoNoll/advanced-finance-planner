@@ -18,7 +18,7 @@ import { ChartPointDialog } from "@/components/chart/ChartPointDialog"
 import type { GoalFormValues, EventFormValues } from '@/types/financial'
 import { useTranslation } from 'react-i18next'
 import { CurrencyCode } from "@/utils/currency"
-import { InvestmentPlan } from "@/types/financial"
+import { InvestmentPlan, MicroInvestmentPlan } from "@/types/financial"
 import { createDateWithoutTimezone, createDateFromYearMonth } from '@/utils/dateUtils'
 import { eventIcons } from "@/constants/events"
 import { goalIcons } from "@/constants/goals"
@@ -54,6 +54,7 @@ type PatrimonialProjectionChartProps = {
   hideNegativeValues: boolean
   showOldPortfolio: boolean
   investmentPlan: InvestmentPlan
+  activeMicroPlan: MicroInvestmentPlan | null
   onSubmitGoal: (values: GoalFormValues) => Promise<void>
   onSubmitEvent: (values: EventFormValues) => Promise<void>
   currency: 'BRL' | 'USD' | 'EUR'
@@ -137,6 +138,7 @@ export default function PatrimonialProjectionChart({
   hideNegativeValues,
   showOldPortfolio,
   investmentPlan,
+  activeMicroPlan,
   width = '100%',
   height = 400,
   onSubmitGoal,
@@ -691,7 +693,7 @@ export default function PatrimonialProjectionChart({
                 label: t('expenseChart.actualValue'),
                 color: 'linear-gradient(to right, #3b82f6, #60a5fa)',
                 textColor: tooltipData.actualValue >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400',
-                additionalInfo: `${t('expenseChart.lifetimeIncome')}: ${formatCurrency((tooltipData.actualValue * (investmentPlan.expected_return/100))/12, investmentPlan?.currency as CurrencyCode)}/${t('common.perMonth')}`
+                additionalInfo: `${t('expenseChart.lifetimeIncome')}: ${formatCurrency((tooltipData.actualValue * ((activeMicroPlan?.expected_return || 8)/100))/12, investmentPlan?.currency as CurrencyCode)}/${t('common.perMonth')}`
               })
             }
             
@@ -702,7 +704,7 @@ export default function PatrimonialProjectionChart({
                 label: t('expenseChart.projectedValue'),
                 color: 'linear-gradient(to right, #f97316, #fb923c)',
                 textColor: tooltipData.projectedValue >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400',
-                additionalInfo: `${t('expenseChart.plannedLifetimeIncome')}: ${formatCurrency((tooltipData.projectedValue * (investmentPlan.expected_return/100))/12, investmentPlan?.currency as CurrencyCode)}/${t('common.perMonth')}`
+                additionalInfo: `${t('expenseChart.plannedLifetimeIncome')}: ${formatCurrency((tooltipData.projectedValue * ((activeMicroPlan?.expected_return || 8)/100))/12, investmentPlan?.currency as CurrencyCode)}/${t('common.perMonth')}`
               })
             }
             

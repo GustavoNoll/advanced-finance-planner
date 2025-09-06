@@ -238,13 +238,6 @@ export const InvestmentPreferencesForm = ({
     name: 'risk_profile',
   });
 
-  // Watch all form values for debugging
-  const allFormValues = useWatch({
-    control: form.control,
-  });
-
-  // console.log('allFormValues', allFormValues);
-
   // Track if this is the initial load
   const isInitialLoad = useRef(true);
 

@@ -80,11 +80,7 @@ export interface InvestmentPlan {
   legacy_amount: number;
   final_age: number;
   limit_age: number;
-  monthly_deposit: number;
-  inflation: number;
-  expected_return: number;
   plan_type: string;
-  desired_income: number;
   adjust_contribution_for_inflation: boolean;
   adjust_income_for_inflation: boolean;
   plan_initial_date: string;

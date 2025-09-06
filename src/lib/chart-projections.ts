@@ -1,8 +1,38 @@
 import { yearlyReturnRateToMonthlyReturnRate, calculateCompoundedRates } from './financial-math';
-import { ChartDataPoint, FinancialRecord, Goal, InvestmentPlan, MonthNumber, ProjectedEvent } from '@/types/financial';
+import { ChartDataPoint, FinancialRecord, Goal, InvestmentPlan, MicroInvestmentPlan, MonthNumber, ProjectedEvent } from '@/types/financial';
 import { createIPCARatesMap } from './inflation-utils';
 import { processGoalsForChart, processEventsForChart, ProcessedGoalEvent } from '@/lib/financial-goals-processor';
 import { createDateWithoutTimezone, createDateFromYearMonth } from '@/utils/dateUtils';
+import { getActiveMicroPlanForDate } from '@/utils/microPlanUtils';
+
+/**
+ * Verifica se é o momento de mudar para um novo micro plano ativo
+ * @param microPlans Array de micro planos
+ * @param currentDate Data atual da iteração
+ * @returns true se for o mês exato de vigência de um micro plano
+ */
+function isTimeForChangeActivePlan(microPlans: MicroInvestmentPlan[], currentDate: Date): boolean {
+  if (!microPlans || microPlans.length === 0) {
+    return false;
+  }
+
+  const currentYear = currentDate.getFullYear();
+  const currentMonth = currentDate.getMonth();
+
+  // Verificar se algum micro plano tem vigência exatamente neste mês
+  for (const microPlan of microPlans) {
+    const effectiveDate = createDateWithoutTimezone(microPlan.effective_date);
+    const effectiveYear = effectiveDate.getFullYear();
+    const effectiveMonth = effectiveDate.getMonth();
+
+    if (currentYear === effectiveYear && currentMonth === effectiveMonth) {
+      return true;
+    }
+  }
+
+  return false;
+}
+
 
 interface DataPoint {
   age: string;
@@ -75,6 +105,7 @@ interface ProjectionContext {
   goals?: Goal[];
   events?: ProjectedEvent[];
   chartOptions?: ChartOptions;
+  microPlans: MicroInvestmentPlan[];
   birthDate: Date;
   birthYear: number;
   planStartDate: Date;
@@ -101,9 +132,11 @@ function createProjectionContext(
   initialRecords: FinancialRecord[],
   goals?: Goal[],
   events?: ProjectedEvent[],
-  chartOptions?: ChartOptions
+  chartOptions?: ChartOptions,
+  microPlans: MicroInvestmentPlan[] = []
 ): ProjectionContext | null {
-  if (!profile?.birth_date || !investmentPlan) {
+
+  if (!profile?.birth_date || !investmentPlan || !microPlans || microPlans.length === 0) {
     return null;
   }
 
@@ -134,8 +167,18 @@ function createProjectionContext(
   limitAgeDate.setDate(new Date(limitAgeDate.getFullYear(), limitAgeDate.getMonth() + 1, 0).getDate());
   
   const oldPortfolioProfitability = investmentPlan.old_portfolio_profitability;
-  const defaultMonthlyInflationRate = yearlyReturnRateToMonthlyReturnRate(investmentPlan.inflation / 100);
-  const monthlyExpectedReturnRate = yearlyReturnRateToMonthlyReturnRate(investmentPlan.expected_return / 100);
+  
+  // Obter o micro plano ativo na data inicial do plano
+  const initialMicroPlan = getActiveMicroPlanForDate(microPlans, planStartDate);
+  
+  // Usar valores do micro plano ativo (sem fallback para investment plan)
+  const defaultMonthlyInflationRate = initialMicroPlan 
+    ? yearlyReturnRateToMonthlyReturnRate(initialMicroPlan.inflation / 100)
+    : yearlyReturnRateToMonthlyReturnRate(6 / 100); // Default 6% se não houver micro plano
+  
+  const monthlyExpectedReturnRate = initialMicroPlan
+    ? yearlyReturnRateToMonthlyReturnRate(initialMicroPlan.expected_return / 100)
+    : yearlyReturnRateToMonthlyReturnRate(8 / 100); // Default 8% se não houver micro plano
   const monthlyOldPortfolioExpectedReturnRate = oldPortfolioProfitability 
     ? yearlyReturnRateToMonthlyReturnRate(oldPortfolioProfitability / 100) 
     : 0;
@@ -172,6 +215,7 @@ function createProjectionContext(
     goals: pendingGoals,
     events: pendingEvents,
     chartOptions,
+    microPlans,
     birthDate,
     birthYear,
     planStartDate,
@@ -389,9 +433,10 @@ export function generateProjectionData(
   investmentPlan: InvestmentPlan,
   profile: { birth_date: string },
   initialRecords: FinancialRecord[],
+  microPlans: MicroInvestmentPlan[],
   goals?: Goal[],
   events?: ProjectedEvent[],
-  chartOptions?: ChartOptions
+  chartOptions?: ChartOptions,
 ): YearlyProjectionData[] {
   const context = createProjectionContext(
     investmentPlan, 
@@ -399,7 +444,8 @@ export function generateProjectionData(
     initialRecords, 
     goals, 
     events, 
-    chartOptions
+    chartOptions,
+    microPlans
   );
   
   if (!context) return [];
@@ -411,8 +457,11 @@ export function generateProjectionData(
   let oldPortfolioBalance = context.oldPortfolioProfitability ? investmentPlan.initial_amount : null;
   let projectedBalance = initialRecords[0]?.ending_balance || investmentPlan.initial_amount;
   let plannedBalance = investmentPlan.initial_amount;
-  let currentMonthlyDeposit = investmentPlan.monthly_deposit;
-  let currentMonthlyWithdrawal = investmentPlan.desired_income;
+  
+  // Obter o micro plano ativo na data inicial
+  const initialMicroPlan = getActiveMicroPlanForDate(context.microPlans, context.planStartDate);
+  let currentMonthlyDeposit = initialMicroPlan?.monthly_deposit || 0; // Default 0 se não houver micro plano
+  let currentMonthlyWithdrawal = initialMicroPlan?.desired_income || 0; // Default 0 se não houver micro plano
   let accumulatedInflation = 1;
   let lastHistoricalRecord: Date | null = null;
 
@@ -437,8 +486,16 @@ export function generateProjectionData(
     const year = currentDate.getFullYear();
     const month = currentDate.getMonth() + 1;
   
+    // Verificar se é o momento de mudar para um novo micro plano ativo
+    if (isTimeForChangeActivePlan(context.microPlans, currentDate)) {
+      const activeMicroPlanForDate = getActiveMicroPlanForDate(context.microPlans, currentDate);
+      if (activeMicroPlanForDate) {
+        currentMonthlyDeposit = activeMicroPlanForDate.monthly_deposit;
+        currentMonthlyWithdrawal = activeMicroPlanForDate.desired_income;
+      }
+    }
 
-    // Check for deposit/withdrawal changes
+    // Check for deposit/withdrawal changes (chart options override micro plan values)
     if (context.changeDepositDate && 
         context.changeDepositDate.getFullYear() === year && 
         context.changeDepositDate.getMonth() + 1 === month) {
@@ -454,14 +511,23 @@ export function generateProjectionData(
     const isRetirementAge = year > context.endDate.getFullYear() ||
       (year === context.endDate.getFullYear() && month >= context.endDate.getMonth() + 2);
 
-    // Calculate rates
+    // Calculate rates using active micro plan values
+    const activeMicroPlanForRates = getActiveMicroPlanForDate(context.microPlans, currentDate);
+    const monthlyInflationRateForDate = activeMicroPlanForRates
+      ? yearlyReturnRateToMonthlyReturnRate(activeMicroPlanForRates.inflation / 100)
+      : yearlyReturnRateToMonthlyReturnRate(6 / 100); // Default 6% se não houver micro plano
+    
+    const monthlyExpectedReturnRateForDate = activeMicroPlanForRates
+      ? yearlyReturnRateToMonthlyReturnRate(activeMicroPlanForRates.expected_return / 100)
+      : yearlyReturnRateToMonthlyReturnRate(8 / 100); // Default 8% se não houver micro plano
+    
     const { monthlyInflationRate, monthlyReturnRate, monthlyOldPortfolioReturnRate } = 
       calculateMonthlyRates(
         year, 
         month, 
         context.ipcaRatesMap, 
-        context.defaultMonthlyInflationRate,
-        context.monthlyExpectedReturnRate,
+        monthlyInflationRateForDate,
+        monthlyExpectedReturnRateForDate,
         context.monthlyOldPortfolioExpectedReturnRate,
         chartOptions?.showRealValues || false
       );
@@ -528,7 +594,7 @@ export function generateProjectionData(
         monthlyInflationRate,
         accumulatedInflation,
         contribution,
-        investmentPlan.expected_return,
+        activeMicroPlanForRates?.expected_return || 8, // Default 8% se não houver micro plano
         context.birthYear
       );
     } else if (isInPast) {
@@ -548,7 +614,7 @@ export function generateProjectionData(
         monthlyReturnRate,
         monthlyInflationRate,
         accumulatedInflation,
-        investmentPlan.expected_return,
+        activeMicroPlanForRates?.expected_return || 8, // Default 8% se não houver micro plano
         context.birthYear
       );
     } else {
@@ -584,7 +650,7 @@ export function generateProjectionData(
           accumulatedInflation,
           withdrawal,
           goalsEventsImpact,
-          investmentPlan.expected_return,
+          activeMicroPlanForRates?.expected_return || 8, // Default 8% se não houver micro plano
           context.birthYear
         );
       } else {
@@ -607,7 +673,7 @@ export function generateProjectionData(
           accumulatedInflation,
           goalsEventsImpact,
           contribution,
-          investmentPlan.expected_return,
+          activeMicroPlanForRates?.expected_return || 8, // Default 8% se não houver micro plano
           context.birthYear
         );
       }
@@ -646,8 +712,8 @@ export function generateProjectionData(
         withdrawal: yearlyWithdrawal,
         balance: lastMonth.balance,
         planned_balance: lastMonth.planned_balance,
-        projected_lifetime_withdrawal: lastMonth.balance / (investmentPlan.expected_return / 100),
-        planned_lifetime_withdrawal: lastMonth.planned_balance / (investmentPlan.expected_return / 100),
+        projected_lifetime_withdrawal: lastMonth.balance / ((getActiveMicroPlanForDate(context.microPlans, new Date(year, 11, 31))?.expected_return || 8) / 100), // Default 8% se não houver micro plano
+        planned_lifetime_withdrawal: lastMonth.planned_balance / ((getActiveMicroPlanForDate(context.microPlans, new Date(year, 11, 31))?.expected_return || 8) / 100), // Default 8% se não houver micro plano
         months: monthlyData,
         isRetirementTransitionYear: age === investmentPlan.final_age,
         hasHistoricalData: monthlyData.some(month => month.isHistorical),
@@ -670,12 +736,14 @@ export function generateChartProjections(
   financialRecordsByYear: FinancialRecord[],
   goals?: Goal[],
   events?: ProjectedEvent[],
-  chartOptions?: ChartOptions
+  chartOptions?: ChartOptions,
+  microPlans: MicroInvestmentPlan[] = []
 ): ChartDataPoint[] {
   const projectionData = generateProjectionData(
     investmentPlan,
     profile,
     financialRecordsByYear,
+    microPlans,
     goals,
     events,
     chartOptions

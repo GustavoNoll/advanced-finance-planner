@@ -5,6 +5,7 @@ import { InvestmentPlan, MicroInvestmentPlan, Profile, FinancialRecord, Goal, Pr
 interface UseChartOptionsProps {
   investmentPlan: InvestmentPlan;
   activeMicroPlan: MicroInvestmentPlan | null;
+  microPlans: MicroInvestmentPlan[];
   clientProfile: Profile;
   allFinancialRecords: FinancialRecord[];
   goals?: Goal[];
@@ -14,6 +15,7 @@ interface UseChartOptionsProps {
 export const useChartOptions = ({
   investmentPlan,
   activeMicroPlan,
+  microPlans,
   clientProfile,
   allFinancialRecords,
   goals,
@@ -22,13 +24,13 @@ export const useChartOptions = ({
   // Chart options states
   const [changeMonthlyDeposit, setChangeMonthlyDeposit] = useState({
     enabled: false,
-    value: investmentPlan.monthly_deposit,
+    value: activeMicroPlan?.monthly_deposit || 0,
     date: ''
   });
   
   const [changeMonthlyWithdraw, setChangeMonthlyWithdraw] = useState({
     enabled: false,
-    value: investmentPlan.desired_income,
+    value: activeMicroPlan?.desired_income || 0,
     date: ''
   });
 
@@ -52,24 +54,16 @@ export const useChartOptions = ({
   const projectionDataWithOptions = useMemo(() => {
     if (!investmentPlan || !clientProfile || !allFinancialRecords) return null;
 
-    // Criar um plano combinado com dados do micro plano ativo
-    const combinedPlan = activeMicroPlan ? {
-      ...investmentPlan,
-      monthly_deposit: activeMicroPlan.monthly_deposit,
-      desired_income: activeMicroPlan.desired_income,
-      expected_return: activeMicroPlan.expected_return,
-      inflation: activeMicroPlan.inflation
-    } : investmentPlan;
-
     return generateProjectionData(
-      combinedPlan,
+      investmentPlan,
       clientProfile,
       allFinancialRecords,
+      microPlans,
       goals,
       events,
       chartOptions
     );
-  }, [investmentPlan, activeMicroPlan, clientProfile, allFinancialRecords, goals, events, chartOptions]);
+  }, [investmentPlan, microPlans, clientProfile, allFinancialRecords, goals, events, chartOptions]);
 
   return {
     // States

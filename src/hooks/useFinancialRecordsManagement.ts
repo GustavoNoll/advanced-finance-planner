@@ -1,7 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useToast } from '@/components/ui/use-toast'
 import { FinancialRecordsManagementService, CSVRecord, ImportResult, SyncResult } from '@/services/financial-records-management.service'
-import { FinancialRecord, FinancialRecordLink, InvestmentPlan } from '@/types/financial'
+import { FinancialRecord, FinancialRecordLink, InvestmentPlan, MicroInvestmentPlan } from '@/types/financial'
 import { useMemo } from 'react'
 
 export interface FinancialRecordsStats {
@@ -224,8 +224,8 @@ export function useFinancialRecordsMutations(userId: string) {
   })
 
   const syncInflationRates = useMutation({
-    mutationFn: ({ records, investmentPlan }: { records: FinancialRecord[]; investmentPlan: InvestmentPlan | null }) =>
-      FinancialRecordsManagementService.syncInflationRates(records, investmentPlan),
+    mutationFn: ({ records, investmentPlan, activeMicroPlan }: { records: FinancialRecord[]; investmentPlan: InvestmentPlan | null; activeMicroPlan: MicroInvestmentPlan | null }) =>
+      FinancialRecordsManagementService.syncInflationRates(records, investmentPlan, activeMicroPlan),
     onSuccess: (result: SyncResult) => {
       // Atualizar cache local com as novas taxas de rentabilidade
       queryClient.setQueryData(['financialRecords', userId], (oldData: FinancialRecord[] | undefined) => {

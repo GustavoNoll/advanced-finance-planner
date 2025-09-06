@@ -4,7 +4,8 @@ import { toast } from "@/components/ui/use-toast";
 import { useTranslation } from "react-i18next";
 import { fetchIPCARates, fetchUSCPIRates, fetchEuroCPIRates } from "@/lib/bcb-api";
 import { calculateCompoundedRates, yearlyReturnRateToMonthlyReturnRate } from "@/lib/financial-math";
-import { FinancialRecord, InvestmentPlan } from "@/types/financial";
+import { FinancialRecord, InvestmentPlan, MicroInvestmentPlan } from "@/types/financial";
+import { getActiveMicroPlanForDate } from '@/utils/microPlanUtils';
 
 interface SyncResult {
   count: number;
@@ -14,7 +15,7 @@ interface SyncResult {
   }>;
 }
 
-export const useIPCASync = (clientId: string | undefined, records: FinancialRecord[] | undefined, investmentPlan: InvestmentPlan | null) => {
+export const useIPCASync = (clientId: string | undefined, records: FinancialRecord[] | undefined, investmentPlan: InvestmentPlan | null, microPlans: MicroInvestmentPlan[]) => {
   const { t } = useTranslation();
   const queryClient = useQueryClient();
 
@@ -64,10 +65,18 @@ export const useIPCASync = (clientId: string | undefined, records: FinancialReco
           const recordKey = `${record.record_year}-${record.record_month}`;
           if (cpiRateMap.has(recordKey)) {
             const cpiRate = cpiRateMap.get(recordKey);
+            
+            // Encontrar o micro plano ativo para a data do record
+            const recordDate = new Date(record.record_year, record.record_month - 1, 1);
+            const activeMicroPlanForRecord = getActiveMicroPlanForDate(microPlans, recordDate);
+            
+            // Usar o expected_return do micro plano ativo ou default de 8%
+            const expectedReturn = activeMicroPlanForRecord.expected_return;
+            
             const cpiRateConverted = parseFloat((
               calculateCompoundedRates([
                 cpiRate/100, 
-                yearlyReturnRateToMonthlyReturnRate(investmentPlan.expected_return/100)
+                yearlyReturnRateToMonthlyReturnRate(expectedReturn/100)
               ]) * 100
             ).toFixed(2));
             

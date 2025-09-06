@@ -12,6 +12,7 @@ import {
   RecordsList 
 } from "@/components/financial-records";
 import { useFinancialRecords, useInvestmentPlan, useFinancialRecordsMutations } from "@/hooks/useFinancialRecordsManagement";
+import { useMicroInvestmentPlans } from "@/hooks/useMicroInvestmentPlans";
 import { CSVRecord } from "@/services/financial-records-management.service";
 import { supabase } from "@/lib/supabase";
 
@@ -41,6 +42,7 @@ const FinancialRecords = () => {
   // Hooks para dados
   const { records, isLoading: recordsLoading } = useFinancialRecords(clientId || '', initialRecords);
   const { investmentPlan, isLoading: planLoading } = useInvestmentPlan(clientId || '');
+  const { activeMicroPlan } = useMicroInvestmentPlans(investmentPlan?.id || '');
   const { 
     createRecord, 
     updateRecord, 
@@ -119,7 +121,7 @@ const FinancialRecords = () => {
 
   const handleSyncIPCA = async () => {
     if (window.confirm(t('financialRecords.confirmIPCASync'))) {
-      await syncInflationRates.mutate({ records, investmentPlan });
+      await syncInflationRates.mutate({ records, investmentPlan, activeMicroPlan });
     }
   };
 
@@ -190,6 +192,7 @@ const FinancialRecords = () => {
         <RecordsList
           records={records}
           investmentPlan={investmentPlan}
+          activeMicroPlan={activeMicroPlan}
           isBroker={brokerProfile?.is_broker || false}
           editingRecordId={editingRecordId}
           onEdit={handleEdit}
