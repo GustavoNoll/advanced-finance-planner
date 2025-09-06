@@ -211,7 +211,7 @@ export const BrokerDashboard = () => {
       type3: plans.filter(plan => plan.plan_type === '3').length
     };
 
-    const averageDesiredIncome = plans.reduce((sum, plan) => sum + plan.desired_income, 0) / plans.length;
+    const averageDesiredIncome = 0; // Campo removido - usar micro planos para obter desired_income
     const averageRetirementAge = plans.reduce((sum, plan) => sum + plan.final_age, 0) / plans.length;
 
     // Calculate average age using birth_date from the view
@@ -359,9 +359,9 @@ export const BrokerDashboard = () => {
     // Find the client in the search results
     const client = searchResults.find(c => c.id === userId);
     
-    // If client doesn't have an investment plan, navigate to create-plan with client_id
+    // If client doesn't have an investment plan, navigate to simulation with client_id
     if (client && !client.investment_plan_id) {
-      navigate(`/create-plan?client_id=${userId}`);
+      navigate(`/simulation?client_id=${userId}`);
     } else {
       // If client has a plan, navigate to client profile as usual
       navigate(`/client/${userId}`);

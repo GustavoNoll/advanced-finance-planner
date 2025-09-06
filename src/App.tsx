@@ -8,7 +8,6 @@ import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
 import { LoginForm } from "./components/auth/LoginForm";
 import { ClientLoginForm } from "./components/auth/ClientLoginForm";
-import { CreatePlan } from "./pages/CreatePlan";
 import { EditPlan } from "./pages/EditPlan";
 import { CreateClient } from "./pages/CreateClient";
 import { InvestmentPlanShow } from "./pages/InvestmentPlan";
@@ -112,16 +111,6 @@ function AppRoutes() {
             <ProtectedRoute>
               <PageTransition>
                 <Index />
-              </PageTransition>
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/create-plan"
-          element={
-            <ProtectedRoute>
-              <PageTransition>
-                <CreatePlan />
               </PageTransition>
             </ProtectedRoute>
           }

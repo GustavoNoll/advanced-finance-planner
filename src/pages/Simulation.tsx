@@ -1,24 +1,27 @@
 import { useState, useEffect, useMemo } from "react";
 import { useTranslation } from "react-i18next";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { TrendingUp, ArrowLeft, Settings, Calculator } from "lucide-react";
+import { TrendingUp, ArrowLeft, Settings, Calculator, Plus } from "lucide-react";
 import { SimulationChart } from "@/components/broker-dashboard/SimulationChart";
 import { FutureProjectionTab } from "@/components/monthly-view";
-import { InvestmentPlan } from "@/types/financial";
+import { InvestmentPlan, MicroInvestmentPlan } from "@/types/financial";
 import { formatCurrency, CurrencyCode } from "@/utils/currency";
 import { RISK_PROFILES } from '@/constants/riskProfiles';
 import CurrencyInput from 'react-currency-input-field';
 import { getCurrencySymbol } from "@/utils/currency";
-import { usePlanCalculations } from "@/hooks/usePlanCreation";
+import { usePlanCalculations, usePlanCreation } from "@/hooks/usePlanCreation";
 import { FormData } from "@/utils/investmentPlanCalculations";
 import { Switch } from "@/components/ui/switch";
 import { Checkbox } from "@/components/ui/checkbox";
 import { generateChartProjections, generateProjectionData, ChartOptions } from '@/lib/chart-projections';
+import { useProfileData } from "@/hooks/usePlanCreation";
+import { useToast } from "@/components/ui/use-toast";
+import { Spinner } from "@/components/ui/spinner";
 
 interface SimulationFormData {
   initialAmount: string;
@@ -53,6 +56,11 @@ const mockProfile = {
 export const Simulation = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const { toast } = useToast();
+  
+  // Get client ID from URL params
+  const clientId = searchParams.get('client_id');
 
   const [formData, setFormData] = useState<SimulationFormData>({
     initialAmount: "100000",
@@ -73,6 +81,11 @@ export const Simulation = () => {
 
   const [simulationPlan, setSimulationPlan] = useState<InvestmentPlan | null>(null);
   const [expandedRow, setExpandedRow] = useState<string | null>(null);
+  const [isCreatingPlan, setIsCreatingPlan] = useState(false);
+
+  // Hooks para dados do cliente e criação de plano
+  const { profileData } = useProfileData(clientId || '');
+  const { createPlan } = usePlanCreation();
 
   // Chart options state
   const [showRealValues, setShowRealValues] = useState(false);
@@ -85,6 +98,27 @@ export const Simulation = () => {
       setShowOldPortfolio(true);
     }
   }, [formData.hasOldPortfolio, showOldPortfolio]);
+
+  // Load client data when available
+  useEffect(() => {
+    if (clientId && profileData?.birth_date) {
+      const birthDate = new Date(profileData.birth_date);
+      const today = new Date();
+      let age = today.getFullYear() - birthDate.getFullYear();
+      const monthDiff = today.getMonth() - birthDate.getMonth();
+      
+      if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
+        age--;
+      }
+
+      setFormData(prev => ({
+        ...prev,
+        birthDate: profileData.birth_date,
+        planInitialDate: today.toISOString().split('T')[0],
+        finalAge: (age + 30).toString(),
+      }));
+    }
+  }, [clientId, profileData]);
 
   // Convert formData to FormData for calculations
   const calculationFormData: FormData = {
@@ -132,10 +166,6 @@ export const Simulation = () => {
       plan_initial_date: new Date().toISOString().split('T')[0],
       plan_end_accumulation_date: planEndDate.toISOString().split('T')[0],
       final_age: finalAge,
-      monthly_deposit: parseFloat(formData.monthlyDeposit.replace(/[^\d.,]/g, '').replace(',', '.') || '0'),
-      desired_income: parseFloat(formData.desiredIncome.replace(/[^\d.,]/g, '').replace(',', '.') || '0'),
-      expected_return: parseFloat(formData.expectedReturn),
-      inflation: parseFloat(formData.inflation),
       plan_type: formData.planType,
       adjust_contribution_for_inflation: formData.adjustContributionForInflation,
       adjust_income_for_inflation: formData.adjustIncomeForInflation,
@@ -145,14 +175,11 @@ export const Simulation = () => {
       old_portfolio_profitability: formData.hasOldPortfolio ? parseInt(formData.oldPortfolioProfitability) : null,
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
-      future_value: 0,
-      present_future_value: 0,
-      inflation_adjusted_income: 0,
-      required_monthly_deposit: 0,
+      status: 'active',
     };
 
     setSimulationPlan(simulationInvestmentPlan);
-  }, [formData]);
+  }, [formData, birthDate]);
 
   // Generate chart options
   const chartOptions: ChartOptions = useMemo(() => ({
@@ -169,6 +196,20 @@ export const Simulation = () => {
 
     const profile = { ...mockProfile, birth_date: birthDate.toISOString().split('T')[0] };
     
+    // Create a simulated micro plan with the form values
+    const simulatedMicroPlan: MicroInvestmentPlan = {
+      id: 'simulation-micro-' + Date.now(),
+      life_investment_plan_id: simulationPlan.id,
+      effective_date: simulationPlan.plan_initial_date,
+      monthly_deposit: parseFloat(formData.monthlyDeposit.replace(/[^\d.,]/g, '').replace(',', '.') || '0'),
+      desired_income: parseFloat(formData.desiredIncome.replace(/[^\d.,]/g, '').replace(',', '.') || '0'),
+      expected_return: parseFloat(formData.expectedReturn),
+      inflation: parseFloat(formData.inflation),
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString()
+    };
+
+    
     // Generate chart data for the chart component
     const chartData = generateChartProjections(
       profile,
@@ -176,7 +217,8 @@ export const Simulation = () => {
       [], // No financial records in simulation
       [], // No goals in simulation
       [], // No events in simulation
-      chartOptions
+      chartOptions,
+      [simulatedMicroPlan] // Pass the simulated micro plan
     );
 
     // Generate projection data for the table component
@@ -184,6 +226,7 @@ export const Simulation = () => {
       simulationPlan,
       profile,
       [], // No financial records in simulation
+      [simulatedMicroPlan], // Pass the simulated micro plan
       [], // No goals in simulation
       [], // No events in simulation
       chartOptions
@@ -193,13 +236,80 @@ export const Simulation = () => {
       rawChartData: chartData,
       projectionData: tableData
     };
-  }, [simulationPlan, birthDate, chartOptions]);
+  }, [simulationPlan, birthDate, chartOptions, formData.monthlyDeposit, formData.desiredIncome, formData.expectedReturn, formData.inflation]);
 
   const handleFormChange = (field: keyof SimulationFormData, value: string | boolean) => {
     setFormData(prev => ({
       ...prev,
       [field]: value
     }));
+  };
+
+  const handleCreatePlanFromSimulation = async () => {
+    if (!clientId || !birthDate) {
+      toast({
+        title: t('common.error'),
+        description: t('brokerDashboard.simulation.errors.missingClientData'),
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsCreatingPlan(true);
+    try {
+      const finalAge = parseInt(formData.finalAge);
+      const planEndDate = new Date(birthDate);
+      planEndDate.setFullYear(birthDate.getFullYear() + finalAge);
+      planEndDate.setMonth(planEndDate.getMonth() + 1); // Adiciona 1 mês
+      const planData = {
+        user_id: clientId,
+        initial_amount: parseFloat(formData.initialAmount.replace(/[^\d.,]/g, '').replace(',', '.') || '0'),
+        plan_initial_date: formData.planInitialDate,
+        plan_end_accumulation_date: planEndDate.toISOString().split('T')[0],
+        final_age: parseInt(formData.finalAge),
+        plan_type: formData.planType,
+        limit_age: 100,
+        legacy_amount: formData.planType === "2" ? 1000000 : undefined,
+        currency: formData.currency,
+        adjust_contribution_for_inflation: formData.adjustContributionForInflation,
+        adjust_income_for_inflation: formData.adjustIncomeForInflation,
+        old_portfolio_profitability: formData.hasOldPortfolio ? parseInt(formData.oldPortfolioProfitability) : null,
+      };
+
+      const newPlan = await createPlan.mutateAsync(planData);
+      
+      // Criar o primeiro micro plano com os dados da simulação
+      if (newPlan) {
+        const microPlanData = {
+          life_investment_plan_id: newPlan.id,
+          effective_date: formData.planInitialDate, // Deve ser igual ao plan_initial_date
+          monthly_deposit: parseFloat(formData.monthlyDeposit.replace(/[^\d.,]/g, '').replace(',', '.') || '0'),
+          desired_income: parseFloat(formData.desiredIncome.replace(/[^\d.,]/g, '').replace(',', '.') || '0'),
+          expected_return: parseFloat(formData.expectedReturn),
+          inflation: parseFloat(formData.inflation),
+        };
+        
+        // Importar o serviço de micro planos
+        const { MicroInvestmentPlanService } = await import('@/services/micro-investment-plan.service');
+        await MicroInvestmentPlanService.createMicroPlan(microPlanData);
+      }
+
+      toast({
+        title: t('common.success'),
+        description: t('brokerDashboard.simulation.planCreatedSuccessfully'),
+      });
+
+      navigate(`/client/${clientId}`);
+    } catch (error) {
+      console.error('Error creating plan from simulation:', error);
+      toast({
+        title: t('common.error'),
+        description: error instanceof Error ? error.message : String(error),
+        variant: "destructive",
+      });
+    } finally {
+      setIsCreatingPlan(false);
+    }
   };
 
   const prefix = getCurrencySymbol(formData.currency as CurrencyCode);
@@ -221,8 +331,35 @@ export const Simulation = () => {
               <h1 className="text-2xl font-bold text-foreground">
                 {t('brokerDashboard.simulation.title')}
               </h1>
+              {clientId && (
+                <p className="text-sm text-muted-foreground mt-1">
+                  {t('brokerDashboard.simulation.creatingForClient')}: {profileData?.name || 'Cliente'}
+                </p>
+              )}
             </div>
           </div>
+          
+          {clientId && (
+            <div className="flex gap-2">
+              <Button
+                onClick={handleCreatePlanFromSimulation}
+                disabled={isCreatingPlan || !simulationPlan}
+                className="flex items-center gap-2"
+              >
+                {isCreatingPlan ? (
+                  <>
+                    <Spinner size="sm" />
+                    {t('brokerDashboard.simulation.creatingPlan')}
+                  </>
+                ) : (
+                  <>
+                    <Plus className="h-4 w-4" />
+                    {t('brokerDashboard.simulation.createPlanFromSimulation')}
+                  </>
+                )}
+              </Button>
+            </div>
+          )}
           
 
         </div>
@@ -248,9 +385,15 @@ export const Simulation = () => {
                       <Input
                         type="date"
                         value={formData.planInitialDate}
-                        disabled
-                        className="h-10 bg-muted"
+                        onChange={(e) => handleFormChange('planInitialDate', e.target.value)}
+                        disabled={!clientId} // Só permite editar se for um cliente real
+                        className="h-10"
                       />
+                      {!clientId && (
+                        <p className="text-xs text-muted-foreground">
+                          {t('brokerDashboard.simulation.planInitialDateDisabled')}
+                        </p>
+                      )}
                     </div>
 
                     {/* Initial Amount */}
@@ -516,23 +659,25 @@ export const Simulation = () => {
               </Card>
 
               {/* Simulation Notice */}
-              <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
-                <div className="flex items-start gap-3">
-                  <div className="flex-shrink-0">
-                    <div className="w-8 h-8 bg-blue-100 dark:bg-blue-800 rounded-full flex items-center justify-center">
-                      <Calculator className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+              { !clientId  && (
+                <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
+                  <div className="flex items-start gap-3">
+                    <div className="flex-shrink-0">
+                      <div className="w-8 h-8 bg-blue-100 dark:bg-blue-800 rounded-full flex items-center justify-center">
+                        <Calculator className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+                      </div>
+                    </div>
+                    <div className="flex-1">
+                      <h4 className="text-sm font-medium text-blue-900 dark:text-blue-100 mb-1">
+                        {t('brokerDashboard.simulation.simulationNotice.title')}
+                      </h4>
+                      <p className="text-sm text-blue-700 dark:text-blue-300">
+                        {t('brokerDashboard.simulation.simulationNotice.description')}
+                      </p>
                     </div>
                   </div>
-                  <div className="flex-1">
-                    <h4 className="text-sm font-medium text-blue-900 dark:text-blue-100 mb-1">
-                      {t('brokerDashboard.simulation.simulationNotice.title')}
-                    </h4>
-                    <p className="text-sm text-blue-700 dark:text-blue-300">
-                      {t('brokerDashboard.simulation.simulationNotice.description')}
-                    </p>
-                  </div>
                 </div>
-              </div>
+              )}
             </div>
           </div>
 
@@ -626,6 +771,17 @@ export const Simulation = () => {
                   investmentPlan={simulationPlan}
                   profile={{...mockProfile, birth_date: birthDate.toISOString().split('T')[0]}}
                   allFinancialRecords={[]}
+                  microPlans={simulationPlan ? [{
+                    id: 'simulation-micro-' + Date.now(),
+                    life_investment_plan_id: simulationPlan.id,
+                    effective_date: simulationPlan.plan_initial_date,
+                    monthly_deposit: parseFloat(formData.monthlyDeposit.replace(/[^\d.,]/g, '').replace(',', '.') || '0'),
+                    desired_income: parseFloat(formData.desiredIncome.replace(/[^\d.,]/g, '').replace(',', '.') || '0'),
+                    expected_return: parseFloat(formData.expectedReturn),
+                    inflation: parseFloat(formData.inflation),
+                    created_at: new Date().toISOString(),
+                    updated_at: new Date().toISOString()
+                  }] : []}
                   showGoalsEvents={false}
                   showRealEvolution={false}
                   isSimulation={true}

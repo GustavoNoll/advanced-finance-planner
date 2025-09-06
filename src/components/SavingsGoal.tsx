@@ -2,7 +2,7 @@ import { Progress } from "@/components/ui/progress";
 import { DashboardCard } from "./DashboardCard";
 import { ArrowUpRight, Clock, Target, Info } from "lucide-react";
 import { useTranslation } from "react-i18next";
-import { FinancialRecord, InvestmentPlan } from "@/types/financial";
+import { FinancialRecord, InvestmentPlan, MicroInvestmentPlan, MicroPlanCalculations } from "@/types/financial";
 import { useMemo } from "react";
 import { PlanProgressData, utils } from "@/lib/plan-progress";
 import {
@@ -16,6 +16,8 @@ import { createDateWithoutTimezone } from '@/utils/dateUtils';
 interface SavingsGoalProps {
   allFinancialRecords: FinancialRecord[];
   investmentPlan?: InvestmentPlan;
+  activeMicroPlan?: MicroInvestmentPlan | null;
+  microPlanCalculations?: MicroPlanCalculations | null;
   profile?: {
     birth_date: string;
   };
@@ -29,7 +31,7 @@ interface ProjectedAgeResult {
   monthsDifference: number;
 }
 
-export const SavingsGoal = ({ allFinancialRecords, investmentPlan, profile, planProgressData }: SavingsGoalProps) => {
+export const SavingsGoal = ({ allFinancialRecords, investmentPlan, activeMicroPlan, microPlanCalculations, profile, planProgressData }: SavingsGoalProps) => {
   const { t } = useTranslation();
 
   const lastFinancialRecord = useMemo(() => {
@@ -44,9 +46,11 @@ export const SavingsGoal = ({ allFinancialRecords, investmentPlan, profile, plan
   }, [allFinancialRecords]);
 
   const currentInvestment = lastFinancialRecord?.ending_balance ?? 0;
-  const presentFutureValue = investmentPlan?.present_future_value ?? 0;
-  const investmentGoal = investmentPlan?.future_value ?? 0;
-  const returnRate = (investmentPlan?.inflation ?? 0) + (investmentPlan?.expected_return ?? 0);
+  
+  // Usar cálculos centralizados do componente pai
+  const presentFutureValue = microPlanCalculations?.presentFutureValue ?? 0;
+  const investmentGoal = microPlanCalculations?.futureValue ?? 0;
+  const returnRate = microPlanCalculations?.returnRate ?? 0;
   const birthDate = profile?.birth_date;
 
   const calculateProjectedAge = (): ProjectedAgeResult | 'ageNotAvailable' | 'metaNotAchieved' => {

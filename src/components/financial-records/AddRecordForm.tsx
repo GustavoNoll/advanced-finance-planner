@@ -195,14 +195,11 @@ export const AddRecordForm = ({ clientId, onSuccess, editingRecord, investmentPl
     
     setSelectedItems(prev => {
       const updated = [...prev, newItem];
-      console.log('Lista de itens atualizada após criação:', updated);
-      console.log('Total de itens selecionados:', updated.length);
       return updated;
     });
   };
 
   const handleSelectExistingItem = (item: (Goal | Event) & { type: 'goal' | 'event' }) => {
-    console.log('Item selecionado:', item);
     
     // Calcular valor alocado baseado no modo de pagamento
     let allocatedAmount = 0;
@@ -219,7 +216,6 @@ export const AddRecordForm = ({ clientId, onSuccess, editingRecord, investmentPl
       allocatedAmount = item.type === 'goal' ? -item.asset_value : item.asset_value;
     }
 
-    console.log('Valor alocado calculado:', allocatedAmount);
 
     const newItem: LinkedItem = {
       id: item.id,
@@ -230,30 +226,22 @@ export const AddRecordForm = ({ clientId, onSuccess, editingRecord, investmentPl
       icon: item.icon
     };
     
-    console.log('Novo item criado:', newItem);
-    
     setSelectedItems(prev => {
       const updated = [...prev, newItem];
-      console.log('Lista de itens atualizada após seleção:', updated);
-      console.log('Total de itens selecionados:', updated.length);
       return updated;
     });
   };
 
   const handleUpdateItem = (itemId: string, updates: Partial<LinkedItem>) => {
-    console.log('Atualizando item:', itemId, 'com updates:', updates);
     setSelectedItems(prev => {
       const updated = prev.map(item => item.id === itemId ? { ...item, ...updates } : item);
-      console.log('Lista atualizada após update:', updated);
       return updated;
     });
   };
 
   const handleRemoveItem = (itemId: string) => {
-    console.log('Removendo item:', itemId);
     setSelectedItems(prev => {
       const filtered = prev.filter(item => item.id !== itemId);
-      console.log('Lista atualizada após remoção:', filtered);
       return filtered;
     });
   };
@@ -262,8 +250,6 @@ export const AddRecordForm = ({ clientId, onSuccess, editingRecord, investmentPl
   const processCompletingItems = async (completingItems: LinkedItem[], recordMonth: number, recordYear: number) => {
     for (const item of completingItems) {
       try {
-        console.log(`Processando item finalizado: ${item.type} - ${item.id}`);
-        
         // Calcular o valor total de todos os links para este item
         const { data: allLinks, error: linksError } = await supabase
           .from('financial_record_links')
@@ -278,11 +264,9 @@ export const AddRecordForm = ({ clientId, onSuccess, editingRecord, investmentPl
 
         // Somar todos os valores alocados
         const totalAllocated = allLinks.reduce((sum, link) => sum + (link.allocated_amount || 0), 0);
-        console.log(`Valor total alocado para ${item.type} ${item.id}: ${totalAllocated}`);
 
         // Para goals, converter para positivo (despesa), para events manter o sinal
         const finalValue = item.type === 'goal' ? Math.abs(totalAllocated) : totalAllocated;
-        console.log(`Valor final para ${item.type} ${item.id}: ${finalValue} (${item.type === 'goal' ? 'despesa positiva' : 'mantém sinal'})`);
 
         // Atualizar o item com a data do registro e o valor total
         const tableName = item.type === 'goal' ? 'financial_goals' : 'events';
@@ -298,8 +282,6 @@ export const AddRecordForm = ({ clientId, onSuccess, editingRecord, investmentPl
 
         if (updateError) {
           console.error(`Erro ao atualizar ${item.type}:`, updateError);
-        } else {
-          console.log(`${item.type} ${item.id} atualizado com sucesso - Data: ${recordMonth}/${recordYear}, Valor: ${totalAllocated}`);
         }
       } catch (error) {
         console.error(`Erro ao processar ${item.type} ${item.id}:`, error);
@@ -347,14 +329,9 @@ export const AddRecordForm = ({ clientId, onSuccess, editingRecord, investmentPl
         if (error) throw error;
 
         // Criar os links se houver itens selecionados (para edição também)
-        console.log('Editando registro - Itens selecionados para criar links:', selectedItems);
-        console.log('ID do registro financeiro editado:', data.id);
         
         if (selectedItems.length > 0) {
           const linkData = selectedItems.map(item => {
-            console.log('Processando item para edição:', item);
-            console.log('Item ID starts with temp-?', item.id.startsWith('temp-'));
-            
             const link = {
               financial_record_id: data.id,
               item_id: item.id.startsWith('temp-') ? null : item.id, // Ignorar IDs temporários
@@ -362,19 +339,12 @@ export const AddRecordForm = ({ clientId, onSuccess, editingRecord, investmentPl
               allocated_amount: item.allocatedAmount,
               is_completing: item.isCompleting
             };
-            console.log('Link individual para edição:', link);
             return link;
           }).filter(link => {
-            console.log('Filtrando link para edição:', link, 'item_id !== null?', link.item_id !== null);
             return link.item_id !== null;
           }); // Filtrar apenas itens existentes
 
-          console.log('Dados dos links para edição:', linkData);
-
           if (linkData.length > 0) {
-            console.log('Tentando criar links na tabela financial_record_links para edição...');
-            
-            console.log('Tentando inserir na tabela financial_record_links com dados:', linkData);
             
             const { data: insertedLinks, error: linksError } = await supabase
               .from('financial_record_links')
@@ -383,15 +353,8 @@ export const AddRecordForm = ({ clientId, onSuccess, editingRecord, investmentPl
 
             if (linksError) {
               console.error('Error creating links para edição:', linksError);
-              console.error('Detalhes do erro:', {
-                code: linksError.code,
-                message: linksError.message,
-                details: linksError.details,
-                hint: linksError.hint
-              });
               // Não falhar se os links não puderem ser criados
             } else {
-              console.log('Links criados com sucesso para edição!', insertedLinks);
               // Notificar que os links foram atualizados
               if (onLinksUpdated) {
                 onLinksUpdated();
@@ -453,14 +416,9 @@ export const AddRecordForm = ({ clientId, onSuccess, editingRecord, investmentPl
         }
 
         // Criar os links se houver itens selecionados
-        console.log('Itens selecionados para criar links:', selectedItems);
-        console.log('ID do registro financeiro criado:', data.id);
         
         if (selectedItems.length > 0) {
           const linkData = selectedItems.map(item => {
-            console.log('Processando item:', item);
-            console.log('Item ID starts with temp-?', item.id.startsWith('temp-'));
-            
             const link = {
               financial_record_id: data.id,
               item_id: item.id.startsWith('temp-') ? null : item.id, // Ignorar IDs temporários
@@ -468,26 +426,12 @@ export const AddRecordForm = ({ clientId, onSuccess, editingRecord, investmentPl
               allocated_amount: item.allocatedAmount,
               is_completing: item.isCompleting
             };
-            console.log('Link individual:', link);
             return link;
           }).filter(link => {
-            console.log('Filtrando link:', link, 'item_id !== null?', link.item_id !== null);
             return link.item_id !== null;
           }); // Filtrar apenas itens existentes
 
-          console.log('Dados dos links a serem criados:', linkData);
-
           if (linkData.length > 0) {
-            console.log('Tentando criar links na tabela financial_record_links...');
-            console.log('Estrutura da tabela esperada:', {
-              financial_record_id: 'integer',
-              item_id: 'uuid',
-              item_type: 'varchar (goal/event)',
-              allocated_amount: 'numeric',
-              is_completing: 'boolean'
-            });
-            
-            console.log('Tentando inserir na tabela financial_record_links com dados:', linkData);
             
             const { data: insertedLinks, error: linksError } = await supabase
               .from('financial_record_links')
@@ -496,15 +440,8 @@ export const AddRecordForm = ({ clientId, onSuccess, editingRecord, investmentPl
 
             if (linksError) {
               console.error('Error creating links:', linksError);
-              console.error('Detalhes do erro:', {
-                code: linksError.code,
-                message: linksError.message,
-                details: linksError.details,
-                hint: linksError.hint
-              });
               // Não falhar se os links não puderem ser criados
             } else {
-              console.log('Links criados com sucesso!', insertedLinks);
               // Notificar que os links foram atualizados
               if (onLinksUpdated) {
                 onLinksUpdated();

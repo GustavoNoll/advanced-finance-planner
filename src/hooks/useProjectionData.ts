@@ -1,11 +1,13 @@
 import { useMemo } from 'react'
 import { ProjectionService, ProjectionData } from '@/services/projection.service'
-import { Profile, InvestmentPlan, ProjectedEvent, Goal } from '@/types/financial'
+import { Profile, InvestmentPlan, MicroInvestmentPlan, ProjectedEvent, Goal } from '@/types/financial'
 import { FinancialRecord } from '@/types/financial'
 import { ChartOptions, generateProjectionData } from '@/lib/chart-projections'
 
 export function useProjectionData(
   investmentPlan: InvestmentPlan | null,
+  activeMicroPlan: MicroInvestmentPlan | null,
+  microPlans: MicroInvestmentPlan[],
   clientProfile: Profile | null,
   allFinancialRecords: FinancialRecord[],
   goals: Goal[],
@@ -20,11 +22,12 @@ export function useProjectionData(
       investmentPlan,
       clientProfile,
       allFinancialRecords,
+      microPlans,
       goals,
       events,
       {}
     )
-  }, [investmentPlan, clientProfile, allFinancialRecords, goals, events, chartOptions])
+  }, [investmentPlan, microPlans, clientProfile, allFinancialRecords, goals, events, chartOptions])
 
   // Dados de projeção com opções avançadas
   const projectionDataWithOptions = useMemo(() => {
@@ -34,11 +37,12 @@ export function useProjectionData(
       investmentPlan,
       clientProfile,
       allFinancialRecords,
+      microPlans,
       goals,
       events,
       chartOptions
     )
-  }, [investmentPlan, clientProfile, allFinancialRecords, goals, events, chartOptions])
+  }, [investmentPlan, microPlans, clientProfile, allFinancialRecords, goals, events, chartOptions])
 
   // Dados de progresso do plano
   const planProgressData = useMemo(() => {
@@ -55,6 +59,7 @@ export function useProjectionData(
     return ProjectionService.calculatePlanProgress(
       allFinancialRecords,
       investmentPlan,
+      activeMicroPlan,
       clientProfile,
       goals,
       events,
@@ -62,6 +67,7 @@ export function useProjectionData(
     )
   }, [
     investmentPlan,
+    activeMicroPlan,
     clientProfile,
     allFinancialRecords,
     goals,

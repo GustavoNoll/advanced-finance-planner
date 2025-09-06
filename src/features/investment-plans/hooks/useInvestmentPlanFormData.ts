@@ -1,11 +1,24 @@
 import { useCallback } from 'react'
-import { RISK_PROFILES } from '@/constants/riskProfiles'
-import type { FormData } from '@/utils/investmentPlanCalculations'
 import { createDateWithoutTimezone } from '@/utils/dateUtils'
 import { InvestmentPlan, Profile } from '@/types/financial'
 
+type SimplifiedFormData = {
+  initialAmount: string;
+  plan_initial_date: string;
+  finalAge: string;
+  planEndAccumulationDate: string;
+  planType: string;
+  adjustContributionForInflation: boolean;
+  adjustIncomeForInflation: boolean;
+  limitAge: string;
+  legacyAmount: string;
+  currency: 'BRL' | 'USD' | 'EUR';
+  oldPortfolioProfitability: string | null;
+  hasOldPortfolio: boolean;
+}
+
 interface UseInvestmentPlanFormDataProps {
-  setFormData: React.Dispatch<React.SetStateAction<FormData>>
+  setFormData: React.Dispatch<React.SetStateAction<SimplifiedFormData>>
   setBirthDate: (date: Date | null) => void
   setHasFinancialRecords: (hasRecords: boolean) => void
 }
@@ -25,20 +38,12 @@ export function useInvestmentPlanFormData({
     const planDate = createDateWithoutTimezone(planData.plan_initial_date)
     planDate.setDate(planDate.getDate() - 1)
 
-    // Find the matching risk profile for the plan's currency
-    const profiles = RISK_PROFILES[planData.currency || "BRL"]
-    const matchingProfile = profiles.find(p => parseFloat(p.return) === parseFloat(planData.expected_return.toString()))
-    const defaultProfile = profiles[1] // Use moderate as default
 
     setFormData({
       initialAmount: planData.initial_amount.toString(),
       plan_initial_date: planDate.toISOString().split('T')[0],
       finalAge: planData.final_age.toString(),
       planEndAccumulationDate: planData.plan_end_accumulation_date,
-      monthlyDeposit: planData.monthly_deposit.toString(),
-      desiredIncome: planData.desired_income.toString(),
-      expectedReturn: matchingProfile?.return || defaultProfile.return,
-      inflation: planData.inflation.toString(),
       planType: planData.plan_type,
       adjustContributionForInflation: planData.adjust_contribution_for_inflation,
       adjustIncomeForInflation: planData.adjust_income_for_inflation,
@@ -56,7 +61,7 @@ export function useInvestmentPlanFormData({
   }, [setBirthDate])
 
   // Validate form data
-  const validateFormData = useCallback((formData: FormData, birthDate: Date | null) => {
+  const validateFormData = useCallback((formData: SimplifiedFormData, birthDate: Date | null) => {
     const errors: string[] = []
 
     if (!birthDate) {
@@ -75,21 +80,6 @@ export function useInvestmentPlanFormData({
       errors.push("Plan end accumulation date is required")
     }
 
-    if (!formData.monthlyDeposit || parseFloat(formData.monthlyDeposit.replace(',', '.')) < 0) {
-      errors.push("Monthly deposit cannot be negative")
-    }
-
-    if (!formData.desiredIncome || parseFloat(formData.desiredIncome.replace(',', '.')) <= 0) {
-      errors.push("Desired income must be greater than 0")
-    }
-
-    if (!formData.expectedReturn || parseFloat(formData.expectedReturn.replace(',', '.')) <= 0) {
-      errors.push("Expected return must be greater than 0")
-    }
-
-    if (!formData.inflation || parseFloat(formData.inflation.replace(',', '.')) < 0) {
-      errors.push("Inflation rate cannot be negative")
-    }
 
     if (formData.planType === "2" && (!formData.legacyAmount || parseFloat(formData.legacyAmount.replace(',', '.')) <= 0)) {
       errors.push("Legacy amount must be greater than 0 for this plan type")

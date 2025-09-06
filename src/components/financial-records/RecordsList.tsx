@@ -1,7 +1,7 @@
 import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Pencil, Trash2 } from "lucide-react"
-import { FinancialRecord, InvestmentPlan } from "@/types/financial"
+import { FinancialRecord, InvestmentPlan, MicroInvestmentPlan } from "@/types/financial"
 import { CurrencyCode, formatCurrency } from "@/utils/currency"
 import { AddRecordForm } from "@/components/financial-records/AddRecordForm"
 import LinkedItemsDisplay from "./LinkedItemsDisplay"
@@ -10,6 +10,7 @@ import { useState } from "react"
 interface RecordsListProps {
   records: FinancialRecord[]
   investmentPlan: InvestmentPlan | null
+  activeMicroPlan: MicroInvestmentPlan | null
   isBroker: boolean
   editingRecordId: number | null
   onEdit: (recordId: number) => void
@@ -21,6 +22,7 @@ interface RecordsListProps {
 export function RecordsList({
   records,
   investmentPlan,
+  activeMicroPlan,
   isBroker,
   editingRecordId,
   onEdit,
@@ -70,16 +72,16 @@ export function RecordsList({
               <p className="text-sm text-muted-foreground">{t('financialRecords.monthlyContribution')}</p>
               <div>
                 <p className={`font-semibold ${
-                  investmentPlan?.monthly_deposit && 
-                  record.monthly_contribution >= investmentPlan.monthly_deposit 
+                  activeMicroPlan?.monthly_deposit && 
+                  record.monthly_contribution >= activeMicroPlan.monthly_deposit 
                     ? 'text-green-600' 
                     : ''
                 }`}>
                   {formatCurrency(record.monthly_contribution, investmentPlan?.currency as CurrencyCode)}
                 </p>
-                {investmentPlan?.monthly_deposit && (
+                {activeMicroPlan?.monthly_deposit && (
                   <p className="text-xs text-muted-foreground mt-0.5">
-                    Meta: {formatCurrency(investmentPlan.monthly_deposit, investmentPlan?.currency as CurrencyCode)}
+                    Meta: {formatCurrency(activeMicroPlan.monthly_deposit, investmentPlan?.currency as CurrencyCode)}
                   </p>
                 )}
               </div>

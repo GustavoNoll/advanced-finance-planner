@@ -11,6 +11,7 @@ import { Spinner } from "@/components/ui/spinner";
 import { Logo } from '@/components/ui/logo';
 import Finances from './Finances';
 import InvestmentPolicy from './InvestmentPolicy';
+import { useMicroInvestmentPlans } from '@/hooks/useMicroInvestmentPlans';
 
 const Index = () => {
   const { user } = useAuth();
@@ -88,6 +89,19 @@ const Index = () => {
 
   const { clientProfile, brokerProfile } = profiles || {};
 
+  // Hook para gerenciar micro planos de investimento
+  const {
+    microPlans,
+    activeMicroPlan,
+    isLoading: isMicroPlansLoading,
+    error: microPlansError,
+    createMicroPlan,
+    updateMicroPlan,
+    deleteMicroPlan,
+    refreshMicroPlans,
+    hasFinancialRecordForActivePlan
+  } = useMicroInvestmentPlans(investmentPlan?.id || '');
+
   useEffect(() => {
     if (!isInvestmentPlanLoading && !isProfilesLoading) { 
       // If user is a broker but not viewing a client, redirect to broker dashboard
@@ -146,7 +160,7 @@ const Index = () => {
     });
   };
 
-  if (isInvestmentPlanLoading || isProfilesLoading || (!investmentPlan && !brokerProfile)) {
+  if (isInvestmentPlanLoading || isProfilesLoading || isMicroPlansLoading || (!investmentPlan && !brokerProfile)) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <Spinner size="lg" />
@@ -246,8 +260,12 @@ const Index = () => {
           clientProfile={clientProfile}
           brokerProfile={brokerProfile}
           investmentPlan={investmentPlan}
+          activeMicroPlan={activeMicroPlan}
+          microPlans={microPlans}
+          hasFinancialRecordForActivePlan={hasFinancialRecordForActivePlan}
           onLogout={handleLogout}
           onShareClient={handleShareClient}
+          onRefreshMicroPlans={refreshMicroPlans}
         />
       )}
 

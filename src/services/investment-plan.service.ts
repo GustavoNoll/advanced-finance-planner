@@ -5,6 +5,7 @@ export interface InvestmentPlanWithProfile extends InvestmentPlan {
   profiles?: {
     name: string
     broker_id: string
+    birth_date: string
   }
 }
 
@@ -30,19 +31,17 @@ export class InvestmentPlanService {
         .single()
 
       if (planError) {
-        console.error('Error fetching investment plan:', planError)
         return null
       }
 
       // Buscar o perfil relacionado
       const { data: profile, error: profileError } = await supabase
         .from('profiles')
-        .select('name, broker_id')
+        .select('name, broker_id, birth_date')
         .eq('id', investmentPlan.user_id)
         .single()
 
       if (profileError) {
-        console.error('Error fetching profile:', profileError)
         return null
       }
 
@@ -52,7 +51,6 @@ export class InvestmentPlanService {
         profiles: profile
       }
     } catch (error) {
-      console.error('Error in fetchPlanById:', error)
       return null
     }
   }
@@ -71,13 +69,11 @@ export class InvestmentPlanService {
         .order('created_at', { ascending: false })
 
       if (error) {
-        console.error('Error fetching plans by user ID:', error)
         throw new Error('Failed to fetch investment plans')
       }
 
       return data || []
     } catch (error) {
-      console.error('Error in fetchPlansByUserId:', error)
       return []
     }
   }
@@ -93,19 +89,17 @@ export class InvestmentPlanService {
         .from('investment_plans')
         .select(`
           *,
-          profiles!inner(name, broker_id)
+          profiles!inner(name, broker_id, birth_date)
         `)
         .eq('profiles.broker_id', brokerId)
         .order('created_at', { ascending: false })
 
       if (error) {
-        console.error('Error fetching plans by broker ID:', error)
         throw new Error('Failed to fetch investment plans')
       }
 
       return data || []
     } catch (error) {
-      console.error('Error in fetchPlansByBrokerId:', error)
       return []
     }
   }
@@ -122,13 +116,11 @@ export class InvestmentPlanService {
         .single()
 
       if (error) {
-        console.error('Error creating investment plan:', error)
         throw new Error('Failed to create investment plan')
       }
 
       return data
     } catch (error) {
-      console.error('Error in createPlan:', error)
       throw error
     }
   }
@@ -148,13 +140,11 @@ export class InvestmentPlanService {
         .single()
 
       if (error) {
-        console.error('Error updating investment plan:', error)
         throw new Error('Failed to update investment plan')
       }
 
       return data
     } catch (error) {
-      console.error('Error in updatePlan:', error)
       throw error
     }
   }
@@ -172,11 +162,9 @@ export class InvestmentPlanService {
         .eq('id', planId)
 
       if (error) {
-        console.error('Error deleting investment plan:', error)
         throw new Error('Failed to delete investment plan')
       }
     } catch (error) {
-      console.error('Error in deletePlan:', error)
       throw error
     }
   }
@@ -194,7 +182,6 @@ export class InvestmentPlanService {
       // Verificar se o usuário é o dono do plano ou o broker
       return plan.user_id === userId || plan.profiles?.broker_id === userId
     } catch (error) {
-      console.error('Error checking plan access:', error)
       return false
     }
   }
@@ -207,7 +194,7 @@ export class InvestmentPlanService {
     const active = plans.filter(plan => plan.status === 'active').length
     const inactive = plans.filter(plan => plan.status === 'inactive').length
     const totalInitialAmount = plans.reduce((sum, plan) => sum + plan.initial_amount, 0)
-    const totalMonthlyDeposit = plans.reduce((sum, plan) => sum + plan.monthly_deposit, 0)
+    const totalMonthlyDeposit = 0; // Campo removido - usar micro planos para obter monthly_deposit
 
     return {
       total,

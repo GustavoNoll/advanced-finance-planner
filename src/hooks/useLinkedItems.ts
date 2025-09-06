@@ -23,7 +23,6 @@ export const useLinkedItems = (financialRecordId: number, refreshKey?: number) =
     setError(null);
     
     try {
-      console.log('Buscando itens vinculados para o registro:', financialRecordId);
       
       // Primeiro, buscar os links
       const { data: links, error: fetchError } = await supabase
@@ -108,8 +107,6 @@ export const useLinkedItems = (financialRecordId: number, refreshKey?: number) =
 
   const removeLink = async (linkId: string, itemType: 'goal' | 'event', itemId: string, isCompleting: boolean) => {
     try {
-      console.log(`Removendo link ${linkId} do tipo ${itemType} (ID: ${itemId})`);
-      console.log(`Link é completo? ${isCompleting}`);
       
       // 1. Remover o vínculo
       const { error: deleteError } = await supabase
@@ -122,11 +119,11 @@ export const useLinkedItems = (financialRecordId: number, refreshKey?: number) =
         throw new Error('Falha ao remover vínculo');
       }
 
-      console.log('Vínculo removido com sucesso');
+    
 
       // 2. Se o link for completo (is_completing = true), remover o objetivo/evento também
       if (isCompleting) {
-        console.log('Link é completo, removendo o item também...');
+    
         
         const tableName = itemType === 'goal' ? 'financial_goals' : 'events';
         const { error: deleteItemError } = await supabase
@@ -138,17 +135,12 @@ export const useLinkedItems = (financialRecordId: number, refreshKey?: number) =
           console.error('Erro ao deletar item:', deleteItemError);
           throw new Error('Falha ao remover item');
         }
-
-        console.log('Item removido com sucesso (link era completo)');
-      } else {
-        console.log('Link é parcial, mantendo o item (apenas vínculo removido)');
       }
 
       // 3. Recarregar a lista
       await fetchLinkedItems();
       
-      const actionText = isCompleting ? 'vínculo e item removidos' : 'vínculo removido';
-      console.log(`${actionText} com sucesso`);
+
       return true;
       
     } catch (err) {

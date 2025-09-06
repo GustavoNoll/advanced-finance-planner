@@ -5,7 +5,6 @@ import { InvestmentPlan } from '@/types/financial'
 import { FormData, Calculations } from '@/utils/investmentPlanCalculations'
 
 
-
 export function useProfileData(userId: string) {
   const { data: profileData, isLoading, error } = useQuery({
     queryKey: ['profileData', userId],
@@ -25,8 +24,8 @@ export function usePlanCreation() {
   const { toast } = useToast()
 
   const createPlan = useMutation({
-    mutationFn: ({ planData, birthDate }: { planData: PlanCreationData; birthDate: Date }) =>
-      PlanCreationService.createPlan(planData, birthDate),
+    mutationFn: (planData: PlanCreationData) =>
+      PlanCreationService.createPlan(planData),
     onSuccess: (newPlan) => {
       // Invalidar queries relacionadas
       queryClient.invalidateQueries({ queryKey: ['investmentPlans'] })

@@ -12,11 +12,48 @@ export const ptBR = {
     edit: {
       title: "Editar Plano de Investimento",
       success: "Plano de investimento atualizado com sucesso",
+      successWithMicroPlans: "Plano de investimento e micro planos atualizados com sucesso",
+      investmentPlan: "Plano de Investimento",
+      microPlan: "Micro Plano",
+      microPlanSuccess: "Micro plano atualizado com sucesso",
+      microPlanError: "Erro ao atualizar micro plano",
+      noActiveMicroPlan: "Nenhum micro plano ativo encontrado",
+      saveMicroPlan: "Salvar Micro Plano",
     },
     messages: {
       notFound: {
         title: "Plano de investimento não encontrado",
         description: "O plano que você está procurando não existe ou foi removido."
+      }
+    },
+    microPlans: {
+      title: "Micro Planos de Investimento",
+      createNew: "Criar Novo Micro Plano",
+      createFirst: "Criar Primeiro Micro Plano",
+      edit: "Editar Micro Plano",
+      active: "Ativo",
+      base: "Base",
+      effectiveFrom: "Vigente desde",
+      effectiveDate: "Data de Vigência",
+      monthlyDeposit: "Depósito Mensal",
+      desiredIncome: "Renda Desejada",
+      expectedReturn: "Retorno Esperado",
+      inflation: "Inflação",
+      noPlans: "Nenhum micro plano encontrado",
+      noPlansDescription: "Crie micro planos para gerenciar diferentes estratégias de investimento ao longo do tempo.",
+      confirmDelete: "Tem certeza que deseja excluir este micro plano?",
+      cannotDeleteBase: "Não é possível excluir o micro plano base",
+      form: {
+        effectiveDate: "Data de Vigência",
+        monthlyDeposit: "Depósito Mensal",
+        desiredIncome: "Renda Desejada",
+        expectedReturn: "Retorno Esperado",
+        inflation: "Taxa de Inflação",
+        selectExpectedReturn: "Selecione o retorno esperado",
+        firstPlanDateNote: "Para o primeiro micro plano, a data de vigência será igual à data de início do plano principal.",
+        basePlanDateNote: "A data do micro plano base não pode ser editada. Para alterar a data, edite o plano principal.",
+        cannotCreateBeforeBase: "Não é possível criar micro planos em datas anteriores ao micro plano base.",
+        dateAlreadyUsed: "Já existe um micro plano para este mês/ano. Escolha uma data diferente."
       }
     },
     details: {
@@ -68,6 +105,7 @@ export const ptBR = {
       initialAmount: "Valor Inicial",
       initialAmountLockedMessage: "O valor inicial não pode ser alterado quando já existem registros financeiros para este cliente. Isso garante a integridade dos dados históricos.",
       planInitialDate: "Data de Início do Plano",
+      planInitialDateLockedMessage: "A data de início do plano não pode ser alterada quando já existem registros financeiros para este cliente. Isso garante a integridade dos dados históricos.",
       initialAge: "Idade Inicial",
       finalAge: "Idade Final",
       monthlyDeposit: "Depósito Mensal",
@@ -93,7 +131,11 @@ export const ptBR = {
       },
       hasOldPortfolio: "Cliente possui carteira anterior",
       oldPortfolioProfitability: "Rentabilidade da Carteira Anterior (IPCA+)",
-      selectProfitability: "Selecione a rentabilidade"
+      selectProfitability: "Selecione a rentabilidade",
+      effectiveDate: "Data de Vigência",
+      effectiveDateLockedMessage: "A data de vigência não pode ser alterada para o micro plano ativo",
+      expectedReturn: "Retorno Esperado",
+      inflation: "Taxa de Inflação"
     },
     planTypes: {
       endAt120: "Encerrar",
@@ -279,6 +321,24 @@ export const ptBR = {
       logout: "Sair",
       search: "Buscar"
     },
+    simulation: {
+      title: "Simulação de Projeção",
+      creatingForClient: "Criando para cliente",
+      createPlanFromSimulation: "Criar Plano da Simulação",
+      creatingPlan: "Criando plano...",
+      planCreatedSuccessfully: "Plano criado com sucesso!",
+      planParameters: "Parâmetros do Plano",
+      projectionChart: "Gráfico de Projeção",
+      projectionTable: "Tabela de Projeção",
+      simulationNotice: {
+        title: "Simulação",
+        description: "Esta é uma simulação baseada nos parâmetros informados. Nenhum dado será salvo no banco de dados. Use esta ferramenta para demonstrar diferentes cenários ao cliente."
+      },
+      planInitialDateDisabled: "Data fixada para simulações. Edite quando criar um plano real.",
+      errors: {
+        missingClientData: "Dados do cliente não encontrados"
+      }
+    },
     client: {
       pendingPlan: "Plano Pendente",
       id: "ID",
@@ -375,23 +435,10 @@ export const ptBR = {
     share: "Compartilhar",
     shareWithClient: "Compartilhar com Cliente",
     linkCopied: "Link copiado com sucesso!",
-    loading: "Verificando permissões...",
-    simulation: {
-      title: "Simulação de Projeção",
-      subtitle: "Simulando para {{clientName}}",
-      planParameters: "Parâmetros do Plano",
-      generateChart: "Gerar Gráfico",
-      projectionChart: "Gráfico de Projeção",
-      projectionTable: "Tabela de Projeção",
-      backToForm: "Voltar ao Formulário",
-      noClients: "Nenhum cliente disponível para simulação",
-      simulationNotice: {
-        title: "Simulação",
-        description: "Esta é uma simulação baseada nos parâmetros informados. Nenhum dado será salvo no banco de dados. Use esta ferramenta para demonstrar diferentes cenários ao cliente."
-      }
-    }
+    loading: "Verificando permissões..."
   },
   common: {
+    actions: "Ações",
     confirmDeleteTitle: "Confirmar exclusão",
     confirmDeleteMessage: "Tem certeza que deseja excluir este item? Esta ação não pode ser desfeita.",
     perYear: "por ano",

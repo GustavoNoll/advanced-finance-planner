@@ -2,7 +2,7 @@ import { useQuery } from '@tanstack/react-query'
 import { FinancialRecordsService, ProcessedFinancialRecords } from '@/services/financial-records.service'
 import { GoalsEventsService } from '@/services/goals-events.service'
 import { useMemo } from 'react'
-import { InvestmentPlan, Goal, ProjectedEvent } from '@/types/financial'
+import { InvestmentPlan, MicroInvestmentPlan, Goal, ProjectedEvent } from '@/types/financial'
 
 export function useFinancialRecords(clientId: string) {
   const { data: allFinancialRecords, isLoading: isFinancialRecordsLoading, error: financialRecordsError } = useQuery({
@@ -165,13 +165,14 @@ export function useFinancialMetrics(
 export function useFinancialHighlights(
   clientId: string,
   investmentPlan: InvestmentPlan,
+  activeMicroPlan: MicroInvestmentPlan | null,
   t: (key: string, params?: Record<string, string | number>) => string
 ) {
   const { allFinancialRecords } = useFinancialRecords(clientId)
 
   const highlights = useMemo(() => {
-    return FinancialRecordsService.calculateHighlights(allFinancialRecords, investmentPlan, t)
-  }, [allFinancialRecords, investmentPlan, t])
+    return FinancialRecordsService.calculateHighlights(allFinancialRecords, investmentPlan, activeMicroPlan, t)
+  }, [allFinancialRecords, investmentPlan, activeMicroPlan, t])
 
   return highlights
 }

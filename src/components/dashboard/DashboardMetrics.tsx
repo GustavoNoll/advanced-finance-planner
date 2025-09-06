@@ -4,7 +4,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { HoverCard, HoverCardContent, HoverCardTrigger } from "@/components/ui/hover-card"
 import { formatCurrency, CurrencyCode } from "@/utils/currency"
 import { useFinancialMetrics } from "@/hooks/useFinancialData"
-import { InvestmentPlan } from "@/types/financial"
+import { InvestmentPlan, MicroInvestmentPlan } from "@/types/financial"
 import { ProjectionData } from "@/services/projection.service"
 
 type TimePeriod = 'all' | '6m' | '12m' | '24m'
@@ -12,6 +12,7 @@ type TimePeriod = 'all' | '6m' | '12m' | '24m'
 interface DashboardMetricsProps {
   clientId: string
   investmentPlan: InvestmentPlan
+  activeMicroPlan: MicroInvestmentPlan | null
   selectedPeriod: TimePeriod
   contributionPeriod: TimePeriod
   onSelectedPeriodChange: (period: TimePeriod) => void
@@ -28,6 +29,7 @@ interface DashboardMetricsProps {
 export function DashboardMetrics({
   clientId,
   investmentPlan,
+  activeMicroPlan,
   selectedPeriod,
   contributionPeriod,
   onSelectedPeriodChange,
@@ -46,7 +48,6 @@ export function DashboardMetrics({
   const portfolioIncreaseRate = processedRecords.latestRecord?.starting_balance 
     ? ((portfolioValue - processedRecords.latestRecord.starting_balance) / processedRecords.latestRecord.starting_balance) * 100 
     : null
-
   return (
     <div className={`grid gap-6 ${
       investmentPlan?.old_portfolio_profitability 
@@ -79,7 +80,7 @@ export function DashboardMetrics({
           <p className="text-3xl font-bold bg-gradient-to-r from-blue-600 via-indigo-600 to-slate-700 dark:from-blue-400 dark:via-indigo-400 dark:to-slate-300 bg-clip-text text-transparent drop-shadow-sm">
             {formatCurrency(portfolioValue, investmentPlan?.currency as CurrencyCode)}
           </p>
-          {portfolioIncreaseRate && (
+          {portfolioIncreaseRate !== null && (
             <div className={`flex items-center gap-2 ${
               portfolioIncreaseRate >= 0 ? 'bg-gradient-to-r from-emerald-50 via-green-50 to-emerald-100/50 dark:from-emerald-900/30 dark:via-emerald-900/20 dark:to-emerald-900/10' : 'bg-gradient-to-r from-rose-50 via-red-50 to-rose-100/50 dark:from-rose-900/30 dark:via-rose-900/20 dark:to-rose-900/10'
             } rounded-full px-3 py-1 w-fit shadow-sm backdrop-blur-sm border border-white/50 dark:border-gray-800`}>
@@ -89,7 +90,7 @@ export function DashboardMetrics({
               <p className={`text-sm font-medium ${
                 portfolioIncreaseRate >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'
               }`}>
-                {portfolioIncreaseRate.toFixed(2)}% {t('dashboard.cards.portfolioValue.monthlyReturn')}
+                {portfolioIncreaseRate >= 0 ? '+' : ''}{portfolioIncreaseRate.toFixed(2)}% {t('dashboard.cards.portfolioValue.monthlyReturn')}
               </p>
             </div>
           )}
@@ -133,8 +134,8 @@ export function DashboardMetrics({
       >
         <div className="space-y-3">
           <p className={`text-2xl font-bold drop-shadow-sm ${
-            investmentPlan?.required_monthly_deposit && 
-            totalContribution >= investmentPlan.required_monthly_deposit 
+            activeMicroPlan?.monthly_deposit && 
+            totalContribution >= activeMicroPlan.monthly_deposit 
               ? 'text-green-600 dark:text-green-400' 
               : 'text-red-600 dark:text-red-400'
           }`}>

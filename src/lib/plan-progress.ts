@@ -1,9 +1,10 @@
-import { FinancialRecord, InvestmentPlan, Goal, ProjectedEvent } from "@/types/financial";
+import { FinancialRecord, InvestmentPlan, MicroInvestmentPlan, Goal, ProjectedEvent } from "@/types/financial";
 import { calculateCompoundedRates, nper, yearlyReturnRateToMonthlyReturnRate, pmt, vp } from "@/lib/financial-math";
 import { processItem } from './financial-goals-processor';
 import { createDateWithoutTimezone, createDateFromYearMonth } from '@/utils/dateUtils';
 import { HistoricalDataInfo } from "@/services/projection.service";
 import { MonthlyProjectionData } from "./chart-projections";
+import { calculateMicroPlanFutureValues } from '@/utils/investmentPlanCalculations';
 
 /**
  * Constants for date calculations
@@ -286,6 +287,7 @@ const financialCalculations = {
   calculateProjections: (
     allFinancialRecords: FinancialRecord[],
     investmentPlan: InvestmentPlan,
+    activeMicroPlan: MicroInvestmentPlan | null,
     birthDate: Date,
     goals: Goal[],
     events: ProjectedEvent[],
@@ -297,8 +299,10 @@ const financialCalculations = {
     const currentMonth = lastFinancialRecord?.record_month || 0;
     const currentYear = lastFinancialRecord?.record_year || 0;
 
-    const monthlyExpectedReturnRate = yearlyReturnRateToMonthlyReturnRate(investmentPlan.expected_return/100);
-    const monthlyInflationRate = yearlyReturnRateToMonthlyReturnRate(investmentPlan.inflation/100);
+    const expectedReturn = activeMicroPlan?.expected_return || 0;
+    const inflation = activeMicroPlan?.inflation || 0;
+    const monthlyExpectedReturnRate = yearlyReturnRateToMonthlyReturnRate(expectedReturn/100);
+    const monthlyInflationRate = yearlyReturnRateToMonthlyReturnRate(inflation/100);
     
     // Calculate reference date and months to retirement
     let remainingMonthsToRetirement;
@@ -337,7 +341,8 @@ const financialCalculations = {
     // Get plan parameters
     const shouldAdjustContributionForInflation = investmentPlan.adjust_contribution_for_inflation;
     // PEGAR PLANNED CONTRIBUTION DO ULTIMO MES DA PROJEÇÃO
-    const monthlyContribution = monthlyProjectionData ? monthlyProjectionData.planned_contribution : investmentPlan.monthly_deposit;
+    const monthlyDeposit = activeMicroPlan?.monthly_deposit || 0;
+    const monthlyContribution = monthlyProjectionData ? monthlyProjectionData.planned_contribution : monthlyDeposit;
     
     const maximumAgeDate = utils.createDateAtAge(birthDate, investmentPlan.limit_age || 100);
     const monthsInRetirement = utils.calculateMonthsBetweenDates(planEndDate, maximumAgeDate);
@@ -350,19 +355,20 @@ const financialCalculations = {
     const initialAmountWithGoals = (investmentPlan.initial_amount + preRetirementGoalsTotal);
     const inflationFactorAtRetirement = (1 + monthlyInflationRate) ** remainingMonthsToRetirement;
     const projectedPresentValue = projectedFuturePresentValue / inflationFactorAtRetirement;
-    const goalProjectedPresentValue = investmentPlan.present_future_value * (shouldAdjustContributionForInflation ? 1 : inflationFactorAtRetirement);
+    // Calcular valores usando o micro plano ativo
+    const calculations = calculateMicroPlanFutureValues(investmentPlan, activeMicroPlan, allFinancialRecords, birthDate);
+    
+    const goalProjectedPresentValue = calculations.presentFutureValue * (shouldAdjustContributionForInflation ? 1 : inflationFactorAtRetirement);
     const adjustedGoalProjectedFutureValue = (goalProjectedPresentValue - postRetirementGoalsTotal * (shouldAdjustContributionForInflation ? 1 : inflationFactorAtRetirement));
     const plannedPresentValue = plannedFuturePresentValue / inflationFactorAtRetirement;
-    const goalPlannedPresentValue = investmentPlan.present_future_value * (shouldAdjustContributionForInflation ? 1 : inflationFactorAtRetirement);
+    const goalPlannedPresentValue = calculations.presentFutureValue * (shouldAdjustContributionForInflation ? 1 : inflationFactorAtRetirement);
     const adjustedGoalPlannedFutureValue = (goalPlannedPresentValue - postRetirementGoalsTotal * (shouldAdjustContributionForInflation ? 1 : inflationFactorAtRetirement));
 
     // Calculate projections
 
     // PROJECTIONS 
-    console.log('balanceVPAdjustedParams', monthlyExpectedReturnRate, totalPlannedMonths - remainingMonthsToRetirement, -monthlyContribution, -currentBalanceWithGoals)
-    const balancePresentValueAdjusted = vp(monthlyExpectedReturnRate, totalPlannedMonths - remainingMonthsToRetirement, -monthlyContribution, -currentBalanceWithGoals);
-    console.log('balanceVPAdjusted', balancePresentValueAdjusted)
-    console.log('projectedMonthsToRetirement', effectiveMonthlyRate, -monthlyContribution, balancePresentValueAdjusted, adjustedGoalProjectedFutureValue)
+    // const balancePresentValueAdjusted = vp(monthlyExpectedReturnRate, totalPlannedMonths - remainingMonthsToRetirement, -monthlyContribution, -currentBalanceWithGoals);
+    console.log('projectedMonthsToRetirementParams', effectiveMonthlyRate, -monthlyContribution, -currentBalanceWithGoals, adjustedGoalProjectedFutureValue)
     const projectedMonthsToRetirement = nper(
       effectiveMonthlyRate,
       -monthlyContribution,
@@ -396,10 +402,8 @@ const financialCalculations = {
     if (monthlyProjectionData) {
       // se tiver registros financeiros, usar os dados da projeção
       const plannedBalanceWithGoals = (monthlyProjectionData.planned_balance + preRetirementGoalsTotal)
-      console.log('plannedVPBalanceParams', monthlyExpectedReturnRate, totalPlannedMonths - remainingMonthsToRetirement, -monthlyContribution, -plannedBalanceWithGoals)
-      const plannedBalancePresentValue = vp(monthlyExpectedReturnRate, totalPlannedMonths - remainingMonthsToRetirement, -monthlyContribution, -plannedBalanceWithGoals)
-      console.log('plannedVPBalance', plannedBalancePresentValue)
-      console.log('plannedMonthsToRetirementParams', effectiveMonthlyRate, -monthlyContribution, plannedBalancePresentValue, adjustedGoalPlannedFutureValue)
+      // const plannedBalancePresentValue = vp(monthlyExpectedReturnRate, totalPlannedMonths - remainingMonthsToRetirement, -monthlyContribution, -plannedBalanceWithGoals)
+      console.log('plannedMonthsToRetirementParams', effectiveMonthlyRate, -monthlyContribution, -plannedBalanceWithGoals, adjustedGoalPlannedFutureValue)
       plannedMonthsToRetirement = nper(
         effectiveMonthlyRate,
         -monthlyContribution,
@@ -414,17 +418,19 @@ const financialCalculations = {
         adjustedGoalPlannedFutureValue
       )
     }else{
+      console.log('plannedMonthsToRetirementParams', effectiveMonthlyRate, -monthlyContribution, -initialAmountWithGoals, adjustedGoalPlannedFutureValue)
       plannedMonthsToRetirement = nper(
         effectiveMonthlyRate,
         -monthlyContribution,
-        initialAmountWithGoals,
+        -initialAmountWithGoals,
         adjustedGoalPlannedFutureValue
       );
+      console.log('plannedMonthsToRetirement', plannedMonthsToRetirement)
   
       plannedContribution = -pmt(
         effectiveMonthlyRate,
         totalPlannedMonths,
-        initialAmountWithGoals,
+        -initialAmountWithGoals,
         adjustedGoalPlannedFutureValue
       );
     }
@@ -479,6 +485,7 @@ const financialCalculations = {
 export function processPlanProgressData(
   allFinancialRecords: FinancialRecord[],
   investmentPlan: InvestmentPlan,
+  activeMicroPlan: MicroInvestmentPlan | null,
   profile: { birth_date?: string },
   goals: Goal[],
   events: ProjectedEvent[],
@@ -492,13 +499,16 @@ export function processPlanProgressData(
   const lastFinancialRecord = allFinancialRecords[0];
 
   const currentBalance = lastFinancialRecord?.ending_balance || investmentPlan.initial_amount;
-  const investmentGoal = investmentPlan.future_value || 0;
+  // Calcular valores usando o micro plano ativo
+  const calculations = calculateMicroPlanFutureValues(investmentPlan, activeMicroPlan, allFinancialRecords, birthDate);
+  const investmentGoal = calculations.futureValue || 0;
   const currentProgress = (currentBalance / investmentGoal) * 100;
   
   // Calculate projections
   const projections = financialCalculations.calculateProjections(
     allFinancialRecords, 
     investmentPlan, 
+    activeMicroPlan,
     birthDate, 
     goals.filter(goal => goal.status === 'pending'), 
     events.filter(event => event.status === 'pending'),

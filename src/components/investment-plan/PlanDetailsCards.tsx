@@ -2,13 +2,17 @@ import { DashboardCard } from "@/components/DashboardCard"
 import { formatCurrency, CurrencyCode } from "@/utils/currency"
 import { RISK_PROFILES } from '@/constants/riskProfiles'
 import { InvestmentPlanWithProfile } from "@/services/investment-plan.service"
+import { MicroInvestmentPlan } from "@/types/financial"
+import { Calculations } from "@/utils/investmentPlanCalculations"
 
 interface PlanDetailsCardsProps {
   plan: InvestmentPlanWithProfile
+  activeMicroPlan: MicroInvestmentPlan | null
+  calculations: Calculations | null
   t: (key: string) => string
 }
 
-export function PlanDetailsCards({ plan, t }: PlanDetailsCardsProps) {
+export function PlanDetailsCards({ plan, activeMicroPlan, calculations, t }: PlanDetailsCardsProps) {
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
       {/* Client Info Card */}
@@ -53,7 +57,10 @@ export function PlanDetailsCards({ plan, t }: PlanDetailsCardsProps) {
           <div>
             <p className="text-sm text-muted-foreground">{t('investmentPlan.details.planOverview.monthlyDeposit')}</p>
             <p className="font-medium">
-              {formatCurrency(plan.monthly_deposit, plan.currency as CurrencyCode)}
+              {formatCurrency(
+                activeMicroPlan?.monthly_deposit || 0, 
+                plan.currency as CurrencyCode
+              )}
             </p>
           </div>
           <div>
@@ -77,25 +84,37 @@ export function PlanDetailsCards({ plan, t }: PlanDetailsCardsProps) {
           <div>
             <p className="text-sm text-muted-foreground">{t('investmentPlan.details.financialGoals.desiredMonthlyIncome')}</p>
             <p className="font-medium">
-              {formatCurrency(plan.desired_income, plan.currency as CurrencyCode)}
+              {formatCurrency(
+                activeMicroPlan?.desired_income || 0, 
+                plan.currency as CurrencyCode
+              )}
             </p>
           </div>
           <div>
             <p className="text-sm text-muted-foreground">{t('investmentPlan.details.financialGoals.inflationAdjustedIncome')}</p>
             <p className="font-medium">
-              {formatCurrency(plan.inflation_adjusted_income, plan.currency as CurrencyCode)}
+              {formatCurrency(
+                calculations?.inflationAdjustedIncome || 0, 
+                plan.currency as CurrencyCode
+              )}
             </p>
           </div>
           <div>
             <p className="text-sm text-muted-foreground">{t('investmentPlan.details.financialGoals.presentFutureValue')}</p>
             <p className="font-medium">
-              {formatCurrency(plan.present_future_value, plan.currency as CurrencyCode)}
+              {formatCurrency(
+                calculations?.presentFutureValue || 0, 
+                plan.currency as CurrencyCode
+              )}
             </p>
           </div>
           <div>
             <p className="text-sm text-muted-foreground">{t('investmentPlan.details.financialGoals.futureValue')}</p>
             <p className="font-medium">
-              {formatCurrency(plan.future_value, plan.currency as CurrencyCode)}
+              {formatCurrency(
+                calculations?.futureValue || 0, 
+                plan.currency as CurrencyCode
+              )}
             </p>
           </div>
         </div>
@@ -108,17 +127,18 @@ export function PlanDetailsCards({ plan, t }: PlanDetailsCardsProps) {
             <p className="text-sm text-muted-foreground">{t('investmentPlan.details.investmentParams.expectedReturn')}</p>
             <p className="font-medium">
               {(() => {
+                const expectedReturn = activeMicroPlan?.expected_return 
                 const profiles = RISK_PROFILES[plan.currency]
-                const profile = profiles.find(p => parseInt(p.return) === parseInt(plan.expected_return))
+                const profile = profiles.find(p => parseInt(p.return) === expectedReturn)
                 return profile 
-                  ? `${profile.label} (${plan.currency === 'BRL' ? 'IPCA' : 'CPI'}+${plan.expected_return}%)`
-                  : `${plan.currency === 'BRL' ? 'IPCA' : 'CPI'}+${plan.expected_return}%`
+                  ? `${profile.label} (${plan.currency === 'BRL' ? 'IPCA' : 'CPI'}+${expectedReturn}%)`
+                  : `${plan.currency === 'BRL' ? 'IPCA' : 'CPI'}+${expectedReturn}%`
               })()}
             </p>
           </div>
           <div>
             <p className="text-sm text-muted-foreground">{t('investmentPlan.details.investmentParams.inflationRate')}</p>
-            <p className="font-medium">{plan.inflation}%</p>
+            <p className="font-medium">{activeMicroPlan?.inflation}%</p>
           </div>
           <div>
             <p className="text-sm text-muted-foreground">{t('investmentPlan.details.investmentParams.planType')}</p>

@@ -1,5 +1,5 @@
 import { supabase } from '@/lib/supabase'
-import { InvestmentPlan } from '@/types/financial'
+import { InvestmentPlan, MicroInvestmentPlan } from '@/types/financial'
 import { calculateFutureValues, isCalculationReady, type FormData, type Calculations } from '@/utils/investmentPlanCalculations'
 import { createDateWithoutTimezone } from '@/utils/dateUtils'
 
@@ -7,23 +7,29 @@ export interface PlanCreationData {
   user_id: string
   initial_amount: number
   plan_initial_date: string
-  plan_end_accumulation_date: string
   final_age: number
+  plan_type: string
+  limit_age?: number
+  plan_end_accumulation_date: string
+  legacy_amount?: number
+  currency: string
+  adjust_contribution_for_inflation: boolean
+  adjust_income_for_inflation: boolean
+  old_portfolio_profitability?: number | null
+}
+
+export interface MicroPlanCreationData {
+  life_investment_plan_id: string
+  effective_date: string
   monthly_deposit: number
   desired_income: number
   expected_return: number
   inflation: number
-  plan_type: string
-  adjust_contribution_for_inflation: boolean
-  adjust_income_for_inflation: boolean
-  limit_age?: number
-  legacy_amount?: number
-  currency: string
-  old_portfolio_profitability?: number | null
 }
 
 export interface ProfileData {
   birth_date: string
+  name?: string
 }
 
 export class PlanCreationService {
@@ -40,13 +46,11 @@ export class PlanCreationService {
         .eq('user_id', userId)
 
       if (error) {
-        console.error('Error checking existing plan:', error)
         return null
       }
 
       return data && data.length > 0 ? data[0] : null
     } catch (error) {
-      console.error('Error in checkExistingPlan:', error)
       return null
     }
   }
@@ -60,82 +64,42 @@ export class PlanCreationService {
     try {
       const { data, error } = await supabase
         .from('profiles')
-        .select('birth_date')
+        .select('birth_date, name')
         .eq('id', userId)
         .single()
 
       if (error) {
-        console.error('Error fetching profile data:', error)
         return null
       }
 
       return data
     } catch (error) {
-      console.error('Error in fetchProfileData:', error)
       return null
     }
   }
 
   /**
-   * Cria um novo plano de investimento
+   * Cria um novo plano de investimento (apenas dados básicos)
    */
-  static async createPlan(planData: PlanCreationData, birthDate: Date): Promise<InvestmentPlan> {
+  static async createPlan(planData: PlanCreationData): Promise<InvestmentPlan> {
     if (!planData.user_id) {
       throw new Error('User ID is required')
     }
 
     try {
-      // Preparar dados do formulário para cálculos
-      const formData: FormData = {
-        initialAmount: planData.initial_amount.toString(),
-        plan_initial_date: planData.plan_initial_date,
-        finalAge: planData.final_age.toString(),
-        planEndAccumulationDate: planData.plan_end_accumulation_date,
-        monthlyDeposit: planData.monthly_deposit.toString(),
-        desiredIncome: planData.desired_income.toString(),
-        expectedReturn: planData.expected_return.toString(),
-        inflation: planData.inflation.toString(),
-        planType: planData.plan_type,
-        adjustContributionForInflation: planData.adjust_contribution_for_inflation,
-        adjustIncomeForInflation: planData.adjust_income_for_inflation,
-        limitAge: planData.limit_age?.toString() || "100",
-        legacyAmount: planData.legacy_amount?.toString() || "1000000",
-        currency: planData.currency as 'BRL' | 'USD' | 'EUR',
-        oldPortfolioProfitability: planData.old_portfolio_profitability?.toString() || null,
-        hasOldPortfolio: planData.old_portfolio_profitability !== null,
-      }
-
-      // Verificar se os cálculos estão prontos
-      if (!isCalculationReady(formData)) {
-        throw new Error('Required data for calculations is missing')
-      }
-
-      // Calcular valores futuros
-      const calculations = calculateFutureValues(formData, birthDate)
-
-      // Ajustar datas (adicionar um dia para evitar problemas de timezone)
+      // Ajustar data (adicionar um dia para evitar problemas de timezone)
       const adjustedDate = createDateWithoutTimezone(planData.plan_initial_date)
       adjustedDate.setDate(adjustedDate.getDate() + 1)
-      const adjustedEndDate = createDateWithoutTimezone(planData.plan_end_accumulation_date)
-      adjustedEndDate.setDate(adjustedEndDate.getDate() + 1)
 
-      // Inserir plano no banco
+      // Inserir plano no banco (apenas dados básicos)
       const { data, error } = await supabase.from("investment_plans").insert([
         {
           user_id: planData.user_id,
           initial_amount: planData.initial_amount,
           plan_initial_date: adjustedDate.toISOString().split('T')[0],
-          plan_end_accumulation_date: adjustedEndDate.toISOString().split('T')[0],
           final_age: planData.final_age,
-          monthly_deposit: planData.monthly_deposit,
-          desired_income: planData.desired_income,
-          expected_return: planData.expected_return,
-          inflation: planData.inflation,
           plan_type: planData.plan_type,
-          future_value: calculations.futureValue,
-          inflation_adjusted_income: calculations.inflationAdjustedIncome,
-          required_monthly_deposit: calculations.requiredMonthlyDeposit,
-          present_future_value: calculations.presentFutureValue,
+          plan_end_accumulation_date: planData.plan_end_accumulation_date,
           status: "active",
           adjust_contribution_for_inflation: planData.adjust_contribution_for_inflation,
           adjust_income_for_inflation: planData.adjust_income_for_inflation,
@@ -147,13 +111,46 @@ export class PlanCreationService {
       ]).select().single()
 
       if (error) {
-        console.error('Error creating investment plan:', error)
         throw new Error('Failed to create investment plan')
       }
 
       return data
     } catch (error) {
-      console.error('Error in createPlan:', error)
+      throw error
+    }
+  }
+
+  /**
+   * Cria um micro plano de investimento
+   */
+  static async createMicroPlan(microPlanData: MicroPlanCreationData): Promise<MicroInvestmentPlan> {
+    if (!microPlanData.life_investment_plan_id) {
+      throw new Error('Life investment plan ID is required')
+    }
+
+    try {
+      // Ajustar data (adicionar um dia para evitar problemas de timezone)
+      const adjustedDate = createDateWithoutTimezone(microPlanData.effective_date)
+      adjustedDate.setDate(adjustedDate.getDate() + 1)
+
+      // Inserir micro plano no banco
+      const { data, error } = await supabase.from("micro_investment_plans").insert([
+        {
+          life_investment_plan_id: microPlanData.life_investment_plan_id,
+          effective_date: adjustedDate.toISOString().split('T')[0],
+          monthly_deposit: microPlanData.monthly_deposit,
+          desired_income: microPlanData.desired_income,
+          expected_return: microPlanData.expected_return,
+          inflation: microPlanData.inflation,
+        },
+      ]).select().single()
+
+      if (error) {
+        throw new Error('Failed to create micro investment plan')
+      }
+
+      return data
+    } catch (error) {
       throw error
     }
   }

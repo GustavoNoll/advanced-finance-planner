@@ -1,9 +1,11 @@
 import { useState, useMemo } from 'react';
 import { generateProjectionData, ChartOptions } from '@/lib/chart-projections';
-import { InvestmentPlan, Profile, FinancialRecord, Goal, ProjectedEvent } from '@/types/financial';
+import { InvestmentPlan, MicroInvestmentPlan, Profile, FinancialRecord, Goal, ProjectedEvent } from '@/types/financial';
 
 interface UseChartOptionsProps {
   investmentPlan: InvestmentPlan;
+  activeMicroPlan: MicroInvestmentPlan | null;
+  microPlans: MicroInvestmentPlan[];
   clientProfile: Profile;
   allFinancialRecords: FinancialRecord[];
   goals?: Goal[];
@@ -12,6 +14,8 @@ interface UseChartOptionsProps {
 
 export const useChartOptions = ({
   investmentPlan,
+  activeMicroPlan,
+  microPlans,
   clientProfile,
   allFinancialRecords,
   goals,
@@ -20,13 +24,13 @@ export const useChartOptions = ({
   // Chart options states
   const [changeMonthlyDeposit, setChangeMonthlyDeposit] = useState({
     enabled: false,
-    value: investmentPlan.monthly_deposit,
+    value: activeMicroPlan?.monthly_deposit || 0,
     date: ''
   });
   
   const [changeMonthlyWithdraw, setChangeMonthlyWithdraw] = useState({
     enabled: false,
-    value: investmentPlan.desired_income,
+    value: activeMicroPlan?.desired_income || 0,
     date: ''
   });
 
@@ -54,11 +58,12 @@ export const useChartOptions = ({
       investmentPlan,
       clientProfile,
       allFinancialRecords,
+      microPlans,
       goals,
       events,
       chartOptions
     );
-  }, [investmentPlan, clientProfile, allFinancialRecords, goals, events, chartOptions]);
+  }, [investmentPlan, microPlans, clientProfile, allFinancialRecords, goals, events, chartOptions]);
 
   return {
     // States
