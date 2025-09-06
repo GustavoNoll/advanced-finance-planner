@@ -4,7 +4,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
-import { Calendar, Target, TrendingUp, DollarSign, Plus, Edit, Trash2, ArrowUp, ArrowDown, Minus } from 'lucide-react'
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
+import { Calendar, Target, TrendingUp, DollarSign, Plus, Edit, Trash2, ArrowUp, ArrowDown, Minus, AlertTriangle } from 'lucide-react'
 import { MicroInvestmentPlan, CreateMicroInvestmentPlan, UpdateMicroInvestmentPlan } from '@/types/financial'
 import { formatCurrency } from '@/utils/currency'
 import { createDateWithoutTimezone } from '@/utils/dateUtils'
@@ -59,6 +60,45 @@ export function MicroPlansTimeline({
       await onDeleteMicroPlan(id)
     }
   }
+
+  // Função para verificar se existe micro plano com data menor que hoje mas não ativo
+  const getInactiveMicroPlansWithPastDate = () => {
+    const today = new Date()
+    today.setHours(0, 0, 0, 0) // Zerar horas para comparação apenas de data
+    
+    // Filtrar micro planos com data anterior à hoje
+    const pastMicroPlans = microPlans.filter(microPlan => {
+      const effectiveDate = createDateWithoutTimezone(microPlan.effective_date)
+      effectiveDate.setHours(0, 0, 0, 0) // Zerar horas para comparação apenas de data
+      
+      return effectiveDate < today
+    })
+    
+    // Se não há micro planos com data anterior, não há problema
+    if (pastMicroPlans.length === 0) {
+      return []
+    }
+    
+    // Encontrar o micro plano mais recente entre os que têm data anterior
+    const mostRecentPastMicroPlan = pastMicroPlans.reduce((mostRecent, current) => {
+      const mostRecentDate = createDateWithoutTimezone(mostRecent.effective_date)
+      const currentDate = createDateWithoutTimezone(current.effective_date)
+      return currentDate > mostRecentDate ? current : mostRecent
+    })
+    
+    // Verificar se o micro plano mais recente com data anterior está ativo
+    const isMostRecentPastMicroPlanActive = activeMicroPlan?.id === mostRecentPastMicroPlan.id
+    
+    // Se o mais recente está ativo, não há problema
+    if (isMostRecentPastMicroPlanActive) {
+      return []
+    }
+    
+    // Se o mais recente não está ativo, retornar ele para mostrar o disclaimer
+    return [mostRecentPastMicroPlan]
+  }
+
+  const inactiveMicroPlansWithPastDate = getInactiveMicroPlansWithPastDate()
 
   // Função para calcular mudanças entre micro planos consecutivos
   const getChangeIndicator = (currentValue: number, previousValue: number | null) => {
@@ -169,6 +209,22 @@ export function MicroPlansTimeline({
           </Dialog>
         </div>
       </CardHeader>
+      
+      {/* Disclaimer para micro planos com data menor que hoje mas não ativos */}
+      {inactiveMicroPlansWithPastDate.length > 0 && (
+        <div className="px-6 pb-4">
+          <Alert className="border-amber-200 bg-amber-50 dark:border-amber-800 dark:bg-amber-950/20">
+            <AlertTriangle className="h-4 w-4 text-amber-600 dark:text-amber-400" />
+            <AlertTitle className="text-amber-800 dark:text-amber-200">
+              {t('investmentPlan.microPlans.timeline.disclaimer.title')}
+            </AlertTitle>
+            <AlertDescription className="text-amber-700 dark:text-amber-300">
+              {t('investmentPlan.microPlans.timeline.disclaimer.message')}
+            </AlertDescription>
+          </Alert>
+        </div>
+      )}
+      
       <CardContent>
         <div className="relative">
           {/* Timeline line */}
