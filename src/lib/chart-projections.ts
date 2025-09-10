@@ -572,7 +572,7 @@ export function generateProjectionData(
     const historicalRecord = context.historicalRecordsMap.get(historicalKey);
     const isInPast = lastHistoricalRecord 
       ? lastHistoricalRecord > createDateFromYearMonth(year, month) 
-      : createDateFromYearMonth(year, month) < createDateFromYearMonth(new Date().getFullYear(), new Date().getMonth() + 1);
+      : false;
     let monthlyData: MonthlyProjectionData;
 
     if (historicalRecord) {
