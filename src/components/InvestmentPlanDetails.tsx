@@ -1,6 +1,6 @@
 import { TrendingUp, Building2, Coins, Scale, ChartLine, CalendarDays, UserCog, HeartPulse, WalletCards, Pencil } from "lucide-react";
 import { InvestmentPlan, MicroInvestmentPlan, MicroPlanCalculations, FinancialRecord } from "@/types/financial";
-import { format, isValid } from "date-fns";
+import { format, isValid, addMonths } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { useTranslation } from "react-i18next";
 import { formatCurrency } from '@/utils/currency';
@@ -9,6 +9,7 @@ import { createDateWithoutTimezone, createDateFromYearMonth } from '@/utils/date
 import { ChartOptions, YearlyProjectionData } from "@/lib/chart-projections";
 import { ProjectionService } from "@/services/projection.service";
 import { utils } from "@/lib/plan-progress";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from './ui/tooltip';
 
 interface InvestmentPlanDetailsProps {
   investmentPlan: InvestmentPlan | null;
@@ -32,9 +33,10 @@ interface PlanMetricProps {
   value: string;
   color: string;
   duration?: string;
+  durationTooltip?: string;
 }
 
-function PlanMetric({ icon, label, value, color, duration }: PlanMetricProps) {
+function PlanMetric({ icon, label, value, color, duration, durationTooltip }: PlanMetricProps) {
   const { t } = useTranslation();
   return (
     <div className="flex items-center gap-2 py-1">
@@ -50,9 +52,18 @@ function PlanMetric({ icon, label, value, color, duration }: PlanMetricProps) {
       {duration && (
         <div className="text-right">
           <p className="text-sm text-gray-500 dark:text-gray-400">{t('dashboard.investmentPlan.duration')}</p>
-          <p className="text-base font-medium text-gray-900 dark:text-gray-100">
-            {duration}
-          </p>
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <p className="text-base font-medium text-gray-900 dark:text-gray-100 cursor-help">
+                  {duration}
+                </p>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>{durationTooltip}</p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
         </div>
       )}
     </div>
@@ -104,38 +115,46 @@ export function InvestmentPlanDetails(
     return targetDate;
   };
 
-  const calculatePlanDuration = () => {
-    // Se não há registros financeiros, calcula do início ao fim do plano
-    if (!financialRecords || financialRecords.length === 0) {
-      const planStartDate = parseLocalDate(investmentPlan.plan_initial_date);
-      const planEndDate = parseLocalDate(investmentPlan.plan_end_accumulation_date);
-      
-      if (!planStartDate || !planEndDate || !isValid(planStartDate) || !isValid(planEndDate)) {
-        return 0;
-      }
-
-      return utils.calculateMonthsBetweenDates(planStartDate, planEndDate);
-    }
-
-    // Se há registros, calcula do último registro até o fim do plano
-    const sortedRecords = [...financialRecords].sort((a, b) => {
-      if (a.record_year !== b.record_year) {
-        return b.record_year - a.record_year;
-      }
-      return b.record_month - a.record_month;
-    });
-
-    const latestRecord = sortedRecords[0];
+  const getDurationInfo = () => {
     const planEndDate = parseLocalDate(investmentPlan.plan_end_accumulation_date);
     
     if (!planEndDate || !isValid(planEndDate)) {
-      return 0;
+      return { duration: 0, tooltip: undefined };
     }
 
-    // Cria uma data para o último registro (último dia do mês)
-    const lastRecordDate = createDateFromYearMonth(latestRecord.record_year, latestRecord.record_month);
+    let startDate: Date;
     
-    return utils.calculateMonthsBetweenDates(lastRecordDate, planEndDate);
+    if (!financialRecords || financialRecords.length === 0) {
+      // Sem registros: calcula do início ao fim do plano
+      const planStartDate = parseLocalDate(investmentPlan.plan_initial_date);
+      if (!planStartDate || !isValid(planStartDate)) {
+        return { duration: 0, tooltip: undefined };
+      }
+      startDate = planStartDate;
+    } else {
+      // Com registros: calcula do último registro até o fim do plano
+      const sortedRecords = [...financialRecords].sort((a, b) => {
+        if (a.record_year !== b.record_year) {
+          return b.record_year - a.record_year;
+        }
+        return b.record_month - a.record_month;
+      });
+
+      const latestRecord = sortedRecords[0];
+      const lastRecordDate = createDateFromYearMonth(latestRecord.record_year, latestRecord.record_month);
+      startDate = addMonths(lastRecordDate, 1);
+    }
+
+    const duration = utils.calculateMonthsBetweenDates(startDate, planEndDate);
+    const startMonth = format(startDate, "MMM/yyyy", { locale: ptBR });
+    const endMonth = format(planEndDate, "MMM/yyyy", { locale: ptBR });
+    
+    const tooltip = t('dashboard.investmentPlan.durationTooltip', { 
+      startMonth, 
+      endMonth 
+    });
+
+    return { duration, tooltip };
   };
 
   const formatDate = (date: Date | null) => {
@@ -166,6 +185,8 @@ export function InvestmentPlanDetails(
   const planStartDate = parseLocalDate(investmentPlan.plan_initial_date);
   const planEndDate = parseLocalDate(investmentPlan.plan_end_accumulation_date);
 
+  const { duration, tooltip: durationTooltip } = getDurationInfo();
+
   const timelineMetrics: PlanMetricProps[] = [
     {
       icon: <UserCog className="h-4 w-4 text-emerald-600" />,
@@ -178,7 +199,8 @@ export function InvestmentPlanDetails(
       label: t('dashboard.investmentPlan.planStart'),
       value: formatDate(planStartDate) ? formatDate(planStartDate)!.charAt(0).toUpperCase() + formatDate(planStartDate)!.slice(1) : '',
       color: "text-blue-600",
-      duration: `${calculatePlanDuration()} ${t('dashboard.investmentPlan.months')}`
+      duration: `${duration} ${t('dashboard.investmentPlan.months')}`,
+      durationTooltip
     },
     {
       icon: <CalendarDays className="h-4 w-4 text-blue-600" />,

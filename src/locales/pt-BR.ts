@@ -326,6 +326,7 @@ export const ptBR = {
       planDuration: "Duração do Plano",
       planStart: "Início do Plano",
       duration: "Duração",
+      durationTooltip: "Calculado de {{startMonth}} até {{endMonth}}",
       years: "anos",
       months: "meses"
     },
