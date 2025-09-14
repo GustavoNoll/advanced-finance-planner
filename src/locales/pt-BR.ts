@@ -355,6 +355,7 @@ export const ptBR = {
       totalClients: "Total de Clientes",
       totalValue: "Valor Total",
       averageValue: "Valor Médio",
+      percentage: "Percentual",
       distributionBreakdown: "Distribuição Detalhada",
       clients: "clientes",
       contributionTrends: "Tendências de Contribuição",
