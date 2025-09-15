@@ -70,7 +70,40 @@ export function processItem<T extends Goal | ProjectedEvent>(
     return [baseItem];
   }
 
-  // Para parcelamento, calcula quantas parcelas ainda precisam ser pagas
+  // Para modo repeat, cada repetição tem o valor completo
+  if (item.payment_mode === 'repeat') {
+    const totalPaid = item.financial_links?.reduce((sum, link) => sum + Math.abs(link.allocated_amount), 0) || 0;
+    const paidRepetitions = Math.floor(totalPaid / item.asset_value);
+    const remainingRepetitions = item.installment_count - paidRepetitions;
+
+    // Se todas as repetições foram pagas, não retorna nada
+    if (remainingRepetitions <= 0) {
+      return [];
+    }
+
+    return Array.from({ length: remainingRepetitions }, (_, index) => {
+      const interval = item.installment_interval || 1;
+      const repetitionIndex = paidRepetitions + index;
+      const totalMonths = item.month + (repetitionIndex * interval);
+      const yearOffset = Math.floor((totalMonths - 1) / 12);
+      const month = ((totalMonths - 1) % 12) + 1;
+      
+      return {
+        id: item.id,
+        type: type,
+        year: item.year + yearOffset,
+        payment_mode: item.payment_mode,
+        installment_count: item.installment_count,
+        installment_interval: item.installment_interval,
+        month: month,
+        amount: item.asset_value, // Valor completo para cada repetição
+        description: `${item.icon} (${repetitionIndex + 1}/${item.installment_count})`,
+        status: item.status
+      };
+    });
+  }
+
+  // Para parcelamento (installment), calcula quantas parcelas ainda precisam ser pagas
   const totalPaid = item.financial_links?.reduce((sum, link) => sum + Math.abs(link.allocated_amount), 0) || 0;
   const installmentValue = item.asset_value / item.installment_count;
   const paidInstallments = Math.floor(totalPaid / installmentValue);

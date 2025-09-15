@@ -186,6 +186,7 @@ export class ProjectionService {
     allFinancialRecords: FinancialRecord[],
     investmentPlan: InvestmentPlan,
     activeMicroPlan: MicroInvestmentPlan | null,
+    microPlans: MicroInvestmentPlan[],
     clientProfile: Profile,
     goals: Goal[],
     events: ProjectedEvent[],
@@ -199,6 +200,21 @@ export class ProjectionService {
         monthsDifference: 0,
         plannedContribution: 0,
         projectedContribution: 0,
+        projectedPresentValue: 0,
+        plannedPresentValue: 0,
+        projectedFuturePresentValue: 0,
+        plannedFuturePresentValue: 0,
+        projectedMonthlyIncome: 0,
+        plannedMonthlyIncome: 0,
+        projectedRetirementDate: undefined,
+        finalAgeDate: undefined,
+        currentProgress: 0,
+        plannedAgeYears: 0,
+        plannedAgeMonths: 0,
+        projectedAgeYears: 0,
+        projectedAgeMonths: 0,
+        projectedAge: 0,
+        isAheadOfSchedule: false
       }
     }
     if (
@@ -255,6 +271,7 @@ export class ProjectionService {
       return processPlanProgressData(
         allFinancialRecords,
         investmentPlan,
+        microPlans,
         activeMicroPlan,
         { 
           birth_date: clientProfile.birth_date
@@ -359,62 +376,6 @@ export class ProjectionService {
         currentBalance: 0,
         oldPortfolioBalance: 0
       }
-    }
-  }
-
-  /**
-   * Calcula todas as métricas de projeção
-   */
-  static calculateAllProjectionMetrics(
-    investmentPlan: InvestmentPlan,
-    clientProfile: Profile,
-    allFinancialRecords: FinancialRecord[],
-    goals: Goal[],
-    events: ProjectedEvent[],
-    chartOptions: ChartOptions
-  ): ProjectionData | null {
-    if (!investmentPlan || !clientProfile || !allFinancialRecords || !goals || !events) {
-      return null
-    }
-
-    try {
-      // Gera dados de projeção
-      const projectionData = this.generateProjectionWithOptions(
-        investmentPlan,
-        clientProfile,
-        allFinancialRecords,
-        goals,
-        events,
-        chartOptions
-      )
-
-      if (!projectionData) {
-        return null
-      }
-
-      // Calcula progresso do plano
-      const planProgressData = this.calculatePlanProgress(
-        allFinancialRecords,
-        investmentPlan,
-        clientProfile,
-        goals,
-        events,
-        projectionData
-      )
-
-      // Calcula diferença do saldo de aposentadoria
-      const retirementBalanceData = this.calculateRetirementBalanceDifference(
-        projectionData,
-        investmentPlan
-      )
-
-      return {
-        projectionData,
-        planProgressData,
-        retirementBalanceData
-      }
-    } catch (error) {
-      return null
     }
   }
 }

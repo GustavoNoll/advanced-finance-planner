@@ -1,4 +1,4 @@
-import { fetchIPCARates } from './bcb-api';
+import { fetchIPCARates, fetchUSCPIRates, fetchEuroCPIRates } from './bcb-api';
 import { calculateCompoundedRates, yearlyReturnRateToMonthlyReturnRate } from './financial-math';
 import { FinancialRecord, InvestmentPlan } from '@/types/financial';
 import { createDateWithoutTimezone } from '@/utils/dateUtils';
@@ -53,6 +53,41 @@ export function createIPCARatesMap(startDate: Date, endDate: Date): Map<string, 
   });
   
   return ipcaRatesMap;
+}
+
+/**
+ * Creates a CPI map by currency (BRL -> IPCA, USD -> US CPI, EUR -> Euro CPI)
+ * Keys in format "YYYY-M" with values as decimal monthly rates
+ */
+export function createCPIRatesMapByCurrency(
+  startDate: Date,
+  endDate: Date,
+  currency: 'BRL' | 'USD' | 'EUR'
+): Map<string, number> {
+  const map = new Map<string, number>();
+  const start = formatDateForBCB(startDate);
+  const end = formatDateForBCB(endDate);
+
+  let rates: Array<{ date: Date; monthlyRate: number }>; 
+  switch (currency) {
+    case 'USD':
+      rates = fetchUSCPIRates(start, end);
+      break;
+    case 'EUR':
+      rates = fetchEuroCPIRates(start, end);
+      break;
+    case 'BRL':
+    default:
+      rates = fetchIPCARates(start, end);
+      break;
+  }
+
+  rates.forEach(rate => {
+    const key = `${rate.date.getFullYear()}-${rate.date.getMonth() + 1}`;
+    map.set(key, rate.monthlyRate / 100);
+  });
+
+  return map;
 }
 
 /**

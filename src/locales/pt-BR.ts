@@ -630,6 +630,8 @@ export const ptBR = {
     startDate: "Data Inicial",
     endDate: "Data Final",
     months: "Meses",
+    time: "vez",
+    times: "vezes",
     last1YearS: "1A",
     last5YearsS: "5A",
     last10YearsS: "10A",
@@ -1061,7 +1063,8 @@ export const ptBR = {
       selectInstallments: "Selecione o número de parcelas",
       installmentCount: "Número de parcelas",
       repeatCount: "Número de repetições",
-      installmentInterval: "Intervalo entre parcelas (meses)"
+      installmentInterval: "Intervalo entre parcelas (meses)",
+      repeatInterval: "Intervalo entre repetições (meses)"
     },
     labels: {
       assetValue: "Valor do bem",
@@ -1107,6 +1110,7 @@ export const ptBR = {
       installmentCount: "Número de parcelas",
       repeatCount: "Número de repetições",
       installmentInterval: "Intervalo entre parcelas (meses)",
+      repeatInterval: "Intervalo entre repetições (meses)",
       eventType: "Tipo do Evento",
       amount: "Valor",
       month: "Mês",

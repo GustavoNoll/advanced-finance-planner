@@ -248,7 +248,8 @@ function calculateMonthlyRates(
   showRealValues: boolean
 ): { monthlyInflationRate: number; monthlyReturnRate: number; monthlyOldPortfolioReturnRate: number } {
   const ipcaKey = `${year}-${month}`;
-  if (ipcaRatesMap.has(ipcaKey)) {
+  // temporary showRealValues
+  if (ipcaRatesMap.has(ipcaKey) && !showRealValues) {
     const monthlyInflationRate = ipcaRatesMap.get(ipcaKey)!;
     const monthlyReturnRate = calculateCompoundedRates([
       monthlyExpectedReturnRate, 
