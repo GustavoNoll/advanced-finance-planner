@@ -23,7 +23,7 @@ export const utils = {
     if (startDate == undefined || endDate == undefined) {
       return null;
     }
-    return Math.floor((endDate.getTime() - startDate.getTime()) / (DAYS_PER_MONTH * MILLISECONDS_PER_DAY)) + 1;
+    return Math.floor((endDate.getTime() - startDate.getTime()) / (DAYS_PER_MONTH * MILLISECONDS_PER_DAY));
   },
 
   /**
@@ -322,6 +322,7 @@ const financialCalculations = {
       remainingMonthsToRetirement = utils.calculateMonthsBetweenDates(referenceDate, planEndDate)
     }
 
+    console.log('remainingMonthsToRetirement', remainingMonthsToRetirement)
     const { preRetirementHash, postRetirementHash } = financialCalculations.generatePreCalculationHash(
       monthlyExpectedReturnRate,
       monthlyInflationRate,
