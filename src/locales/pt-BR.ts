@@ -884,6 +884,7 @@ export const ptBR = {
     title: "Meta de Investimento",
     tooltip: "Acompanhe seu progresso em direção à sua meta de investimento. O gráfico mostra quanto você já acumulou em relação ao valor necessário para sua aposentadoria.",
     currentValue: "Valor Atual: {{value}}",
+    currentPeriod: "Período Atual: {{month}}/{{year}}",
     returnRate: "Taxa de retorno: {{value}}% a.a.",
     projectedAge: {
       label: "Idade Projetada:",
