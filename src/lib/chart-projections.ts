@@ -722,7 +722,7 @@ export function generateProjectionData(
         projected_lifetime_withdrawal: lastMonth.balance / ((getActiveMicroPlanForDate(context.microPlans, new Date(year, 11, 31))?.expected_return || 8) / 100), // Default 8% se não houver micro plano
         planned_lifetime_withdrawal: lastMonth.planned_balance / ((getActiveMicroPlanForDate(context.microPlans, new Date(year, 11, 31))?.expected_return || 8) / 100), // Default 8% se não houver micro plano
         months: monthlyData,
-        isRetirementTransitionYear: age === investmentPlan.final_age,
+        isRetirementTransitionYear: monthlyData.some(month => month.retirement),
         hasHistoricalData: monthlyData.some(month => month.isHistorical),
         returns: yearlyReturns,
         difference_from_planned_balance: lastMonth.difference_from_planned_balance,

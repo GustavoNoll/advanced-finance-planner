@@ -183,6 +183,7 @@ export const calculateMicroPlanFutureValues = (
     }
   }
   
+  const investmentPlanInitialDate = createDateWithoutTimezone(investmentPlan.plan_initial_date);
   const planInitialDate = createDateWithoutTimezone(activeMicroPlan?.effective_date || investmentPlan.plan_initial_date || '');
   const finalAge = investmentPlan.final_age || 0;
   const planEndAccumulationDate = investmentPlan.plan_end_accumulation_date ? createDateWithoutTimezone(investmentPlan.plan_end_accumulation_date) : null;
@@ -218,10 +219,12 @@ export const calculateMicroPlanFutureValues = (
   // vars
   const planStartDate = createDateWithoutTimezone(planInitialDate);
   
-  let monthsToRetirement;
+  let monthsToRetirement, monthsToRetirementSinceBeginning;
   if (planEndAccumulationDate) {
     monthsToRetirement = (planEndAccumulationDate.getFullYear() - planStartDate.getFullYear()) * 12 + 
                         (planEndAccumulationDate.getMonth() - planStartDate.getMonth());
+    monthsToRetirementSinceBeginning = (planEndAccumulationDate.getFullYear() - investmentPlanInitialDate.getFullYear()) * 12 + 
+                        (planEndAccumulationDate.getMonth() - investmentPlanInitialDate.getMonth());
   } else {
     // Calcula meses até a aposentadoria baseado na data de início do plano
     const retirementDate = new Date(birthDate);
@@ -229,6 +232,8 @@ export const calculateMicroPlanFutureValues = (
     
     monthsToRetirement = (retirementDate.getFullYear() - planStartDate.getFullYear()) * 12 + 
                         (retirementDate.getMonth() - planStartDate.getMonth());
+    monthsToRetirementSinceBeginning = (retirementDate.getFullYear() - investmentPlanInitialDate.getFullYear()) * 12 + 
+                        (retirementDate.getMonth() - investmentPlanInitialDate.getMonth());
   }
   const endMoney = limitAge;
   const monthsToEndMoney = (endMoney - finalAge) * 12;
@@ -241,7 +246,7 @@ export const calculateMicroPlanFutureValues = (
   
 
   // Renda ajustada para inflação
-  const inflationAdjustedIncome = fv(monthInflationRate, monthsToRetirement, 0, desiredIncome);
+  const inflationAdjustedIncome = fv(monthInflationRate, monthsToRetirementSinceBeginning, 0, desiredIncome);
   
   let presentValue = 0, futureValue = 0, necessaryFutureValue = 0;
   let requiredMonthlyDeposit = 0;
