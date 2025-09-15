@@ -117,6 +117,14 @@ export const SavingsGoal = ({ allFinancialRecords, investmentPlan, activeMicroPl
                   value: formatCurrency(currentInvestment, investmentPlan?.currency as CurrencyCode)
                 })}
               </span>
+              {lastFinancialRecord && (
+                <span className="block text-sm text-gray-600 dark:text-gray-400 mt-1">
+                  {t('savingsGoal.currentPeriod', { 
+                    month: lastFinancialRecord.record_month.toString().padStart(2, '0'),
+                    year: lastFinancialRecord.record_year
+                  })}
+                </span>
+              )}
               <span className="text-gray-500 dark:text-gray-300 flex items-center gap-1.5 mt-1">
                 <ArrowUpRight className="h-4 w-4" />
                 {t('savingsGoal.returnRate', { value: returnRate })}
