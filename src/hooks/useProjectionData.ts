@@ -60,6 +60,7 @@ export function useProjectionData(
       allFinancialRecords,
       investmentPlan,
       activeMicroPlan,
+      microPlans,
       clientProfile,
       goals,
       events,
@@ -68,6 +69,7 @@ export function useProjectionData(
   }, [
     investmentPlan,
     activeMicroPlan,
+    microPlans,
     clientProfile,
     allFinancialRecords,
     goals,

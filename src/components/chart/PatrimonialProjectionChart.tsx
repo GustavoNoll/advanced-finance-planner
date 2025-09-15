@@ -881,7 +881,7 @@ export default function PatrimonialProjectionChart({
                           <div className="text-xs text-blue-500">{t('financialGoals.form.repeatCount')}: {parcelasCount}x</div>
                         )}
                         {paymentMode === 'repeat' && parcelasInterval && (
-                          <div className="text-xs text-blue-500">{t('financialGoals.form.installmentInterval')}: {parcelasInterval} {t('common.months')}</div>
+                          <div className="text-xs text-blue-500">{t('financialGoals.form.repeatInterval')}: {parcelasInterval} {t('common.months')}</div>
                         )}
                         {paymentModeLabel && paymentMode !== 'none' && (
                           <div className="text-xs text-gray-500">{t('financialGoals.form.paymentMode')}: {paymentModeLabel}</div>

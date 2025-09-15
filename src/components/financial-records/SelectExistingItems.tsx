@@ -143,7 +143,12 @@ const SelectExistingItems = ({ onSelect, selectedItems, userId, currency }: Sele
                             </span>
                             {item.installment_count && (
                               <span>
-                                {item.installment_count} {item.installment_count === 1 ? t('common.month') : t('common.months')}
+                                {item.installment_count} {item.installment_count === 1 ? t('common.time') : t('common.times')}
+                              </span>
+                            )}
+                            {item.installment_interval && item.installment_interval > 1 && (
+                              <span>
+                                {t('common.every')} {item.installment_interval} {t('common.months')}
                               </span>
                             )}
                           </>

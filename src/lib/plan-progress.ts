@@ -4,7 +4,9 @@ import { processItem } from './financial-goals-processor';
 import { createDateWithoutTimezone, createDateFromYearMonth } from '@/utils/dateUtils';
 import { HistoricalDataInfo } from "@/services/projection.service";
 import { MonthlyProjectionData } from "./chart-projections";
+import { createCPIRatesMapByCurrency } from './inflation-utils';
 import { calculateMicroPlanFutureValues } from '@/utils/investmentPlanCalculations';
+import { getActiveMicroPlanForDate } from '@/utils/microPlanUtils';
 
 /**
  * Constants for date calculations
@@ -48,6 +50,185 @@ export const utils = {
     const newDate = createDateWithoutTimezone(baseDate);
     newDate.setMonth(baseDate.getMonth() + monthsToAdd + 1);
     return newDate;
+  },
+
+  /**
+   * Computes weighted-average monthly contribution between reference and plan end,
+   * handling multiple micro plan segments and currency-aware real CPI where available.
+   */
+  computeAverageMonthlyContribution: (
+    params: {
+      referenceDate: Date,
+      planEndDate: Date,
+      microPlans: MicroInvestmentPlan[],
+      activeMicroPlan: MicroInvestmentPlan | null,
+      adjustForInflation: boolean,
+      planCurrency: 'BRL' | 'USD' | 'EUR',
+      cpiRatesMap?: Map<string, number>
+    }
+  ): number => {
+    const { referenceDate, planEndDate, microPlans, activeMicroPlan, adjustForInflation, planCurrency, cpiRatesMap } = params;
+    const totalMonths = utils.calculateMonthsBetweenDates(referenceDate, planEndDate) + 1 || 0;
+    if (totalMonths <= 0) return 0;
+
+    // CPI map per currency for [referenceDate - 1 month, planEndDate]
+    const adjustedReference = new Date(referenceDate);
+    adjustedReference.setMonth(adjustedReference.getMonth() - 1);
+    const localCpiRatesMap = cpiRatesMap || createCPIRatesMapByCurrency(adjustedReference, planEndDate, planCurrency);
+
+    const sorted = [...(microPlans || [])]
+      .filter(mp => mp && mp.effective_date)
+      .sort((a, b) => new Date(a.effective_date).getTime() - new Date(b.effective_date).getTime());
+
+    const activeIdx = sorted
+      .map((mp, idx) => ({ idx, date: createDateWithoutTimezone(mp.effective_date) }))
+      .filter(({ date }) => date.getTime() <= referenceDate.getTime())
+      .map(({ idx }) => idx)
+      .pop();
+
+    const segments: Array<{ start: Date; end: Date; deposit: number; inflationMonthlyRate: number }> = [];
+
+    let currentDeposit = activeIdx !== undefined ? (sorted[activeIdx].monthly_deposit || 0) : (activeMicroPlan?.monthly_deposit || 0);
+    let currentInflationMonthlyRate = (() => {
+      const baseInfl = activeIdx !== undefined ? (sorted[activeIdx].inflation || 0) : (activeMicroPlan?.inflation || 0);
+      return yearlyReturnRateToMonthlyReturnRate((baseInfl || 0)/100);
+    })();
+    let currentStart = referenceDate;
+
+    const futureChanges = sorted.filter(mp => createDateWithoutTimezone(mp.effective_date).getTime() > referenceDate.getTime());
+    for (const mp of futureChanges) {
+      const changeDate = createDateWithoutTimezone(mp.effective_date);
+      // Se a mudança ocorre no ou após o fim do plano, não criamos segmento agora; saímos e deixamos o push final cuidar
+      if (changeDate.getTime() >= planEndDate.getTime()) break;
+      // Segmento atual vai até a data de mudança
+      if (changeDate.getTime() > currentStart.getTime()) {
+        segments.push({ start: currentStart, end: changeDate, deposit: currentDeposit, inflationMonthlyRate: currentInflationMonthlyRate });
+      }
+      // Abrir novo segmento a partir da data de mudança
+      currentStart = changeDate;
+      currentDeposit = mp.monthly_deposit || 0;
+      currentInflationMonthlyRate = yearlyReturnRateToMonthlyReturnRate(((mp.inflation || 0)/100));
+    }
+
+    if (planEndDate.getTime() > currentStart.getTime()) {
+      // Evitar duplicar se já houver um segmento terminando exatamente em planEndDate
+      const last = segments[segments.length - 1];
+      const alreadyCovered = last && last.end && last.end.getTime() === planEndDate.getTime();
+      if (!alreadyCovered) {
+        segments.push({ start: currentStart, end: planEndDate, deposit: currentDeposit, inflationMonthlyRate: currentInflationMonthlyRate });
+      }
+    }
+
+    let weightedSum = 0;
+    for (const seg of segments) {
+      const monthsInSegment = utils.calculateMonthsBetweenDates(seg.start, seg.end) || 0;
+      if (monthsInSegment <= 0) continue;
+      let effectiveDeposit = seg.deposit || 0;
+      if (adjustForInflation) {
+        const monthsFromRefToSeg = Math.max(0, utils.calculateMonthsBetweenDates(referenceDate, seg.start) || 0);
+        let cumulativeInflation = 1;
+        if (monthsFromRefToSeg > 0) {
+          const iterDate = new Date(referenceDate);
+          for (let i = 0; i < monthsFromRefToSeg; i++) {
+            const year = iterDate.getFullYear();
+            const month = iterDate.getMonth() + 1;
+            const key = `${year}-${month}`;
+            const realMonthlyInflation = localCpiRatesMap.get(key);
+            const rateForMonth = realMonthlyInflation !== undefined ? realMonthlyInflation : seg.inflationMonthlyRate;
+            cumulativeInflation *= (1 + rateForMonth);
+            iterDate.setMonth(iterDate.getMonth() + 1);
+          }
+        }
+        effectiveDeposit = cumulativeInflation > 0 ? (effectiveDeposit / cumulativeInflation) : effectiveDeposit;
+      }
+      weightedSum += effectiveDeposit * monthsInSegment;
+    }
+
+    const average = weightedSum / totalMonths;
+    return average;
+  },
+
+  /**
+   * Computes cumulative inflation factor from startDate (inclusive) to endDate (exclusive),
+   * using CPI by currency where available and falling back to a provided monthly rate.
+   */
+  computeInflationFactor: (
+    params: {
+      startDate: Date,
+      endDate: Date,
+      currency: 'BRL' | 'USD' | 'EUR',
+      microPlans: MicroInvestmentPlan[]
+    }
+  ): number => {
+    const { startDate, endDate, currency, microPlans } = params;
+    const months = utils.calculateMonthsBetweenDates(startDate, endDate) || 0;
+    if (months <= 0) return 1;
+
+    const adjustedStart = new Date(startDate);
+    adjustedStart.setMonth(adjustedStart.getMonth() - 1);
+    const cpiMap = createCPIRatesMapByCurrency(adjustedStart, endDate, currency);
+
+    let factor = 1;
+    const iterDate = new Date(startDate);
+    for (let i = 0; i < months; i++) {
+      const key = `${iterDate.getFullYear()}-${iterDate.getMonth() + 1}`;
+      const realMonthlyInflation = cpiMap.get(key);
+      // Fallback: inflação do micro plano ativo no mês
+      let rateForMonth = realMonthlyInflation;
+      if (rateForMonth === undefined) {
+        const activeMp = getActiveMicroPlanForDate(microPlans, iterDate);
+        const mpMonthly = yearlyReturnRateToMonthlyReturnRate(((activeMp?.inflation || 0) / 100));
+        rateForMonth = mpMonthly;
+      }
+      factor *= (1 + rateForMonth);
+      iterDate.setMonth(iterDate.getMonth() + 1);
+    }
+    return factor;
+  },
+
+  /**
+   * Computes an effective monthly expected return rate across a period,
+   * using financial records' monthly_return_rate when available, otherwise
+   * falling back to the expected_return of the active micro plan for that month.
+   */
+  computeEffectiveMonthlyReturnRate: (
+    params: {
+      startDate: Date,
+      endDate: Date,
+      financialRecords: FinancialRecord[],
+      microPlans: MicroInvestmentPlan[]
+    }
+  ): number => {
+    const { startDate, endDate, financialRecords, microPlans } = params;
+    const months = utils.calculateMonthsBetweenDates(startDate, endDate) || 0;
+    if (months <= 0) return 0;
+
+    // Map financial records by key YYYY-M
+    const recordsMap = new Map<string, FinancialRecord>();
+    for (const rec of financialRecords || []) {
+      const key = `${rec.record_year}-${rec.record_month}`;
+      if (!recordsMap.has(key)) recordsMap.set(key, rec);
+    }
+
+    let factor = 1;
+    const iterDate = new Date(startDate);
+    for (let i = 0; i < months; i++) {
+      const key = `${iterDate.getFullYear()}-${iterDate.getMonth() + 1}`;
+      const rec = recordsMap.get(key);
+      let monthlyRate: number | undefined = rec?.monthly_return_rate;
+      if (monthlyRate === undefined || monthlyRate === null) {
+        const activeMp = getActiveMicroPlanForDate(microPlans, iterDate);
+        const expectedMonthly = yearlyReturnRateToMonthlyReturnRate(((activeMp?.expected_return || 0) / 100));
+        monthlyRate = expectedMonthly;
+      } else {
+        // Convert stored percent to decimal if it looks like percent
+        monthlyRate = typeof monthlyRate === 'number' ? (monthlyRate/100) : 0;
+      }
+      factor *= (1 + (monthlyRate || 0));
+      iterDate.setMonth(iterDate.getMonth() + 1);
+    }
+    const effectiveMonthly = Math.pow(factor, 1 / months) - 1;
+    return effectiveMonthly;
   }
 };
 
@@ -293,6 +474,7 @@ const financialCalculations = {
   calculateProjections: (
     allFinancialRecords: FinancialRecord[],
     investmentPlan: InvestmentPlan,
+    microPlans: MicroInvestmentPlan[],
     activeMicroPlan: MicroInvestmentPlan | null,
     birthDate: Date,
     goals: Goal[],
@@ -306,35 +488,49 @@ const financialCalculations = {
     const currentYear = lastFinancialRecord?.record_year || 0;
 
     const expectedReturn = activeMicroPlan?.expected_return || 0;
-    const inflation = activeMicroPlan?.inflation || 0;
-    const monthlyExpectedReturnRate = yearlyReturnRateToMonthlyReturnRate(expectedReturn/100);
-    const monthlyInflationRate = yearlyReturnRateToMonthlyReturnRate(inflation/100);
+    // Effective monthly expected return rate from actualDate to planEnd will be computed below using records + micro plans
     
     // Calculate reference date and months to retirement
-    let remainingMonthsToRetirement;
-    let referenceDate;
+    let actualDate;
     
     const planStartDate = createDateWithoutTimezone(investmentPlan.plan_initial_date);
     const planEndDate = createDateWithoutTimezone(investmentPlan.plan_end_accumulation_date);
     const finalAgeDate = planEndDate;
     const totalPlannedMonths = utils.calculateMonthsBetweenDates(planStartDate, planEndDate);
-    remainingMonthsToRetirement = totalPlannedMonths;
     const plannedMonths = totalPlannedMonths;
-    if (currentMonth === 0 && currentYear === 0) {
-      referenceDate = createDateWithoutTimezone(investmentPlan.plan_initial_date);
-    } else {
-      referenceDate = createDateFromYearMonth(currentYear, currentMonth);
-      // Calculate difference in months
-      remainingMonthsToRetirement = utils.calculateMonthsBetweenDates(referenceDate, planEndDate)
+    // if (currentMonth === 0 && currentYear === 0) {
+    const referenceDate = createDateWithoutTimezone(investmentPlan.plan_initial_date);
+    const inflationFactorAtRetirement = utils.computeInflationFactor({
+      startDate: referenceDate,
+      endDate: planEndDate,
+      currency: investmentPlan.currency,
+      microPlans
+    });
+    const monthlyInflationRate = inflationFactorAtRetirement/totalPlannedMonths;
+    if (currentMonth !== 0 && currentYear !== 0) {
+      actualDate = createDateFromYearMonth(currentYear, currentMonth);
+    }else {
+      actualDate = referenceDate;
     }
 
-    console.log('remainingMonthsToRetirement', remainingMonthsToRetirement)
+    // Meses restantes até a aposentadoria a partir da actualDate
+    const totalMonthsToRetirement = Math.max(0, utils.calculateMonthsBetweenDates(referenceDate, planEndDate) || 0);
+
+    // Compute effective monthly expected return using financial records (past) and micro plans (future)
+    const monthlyExpectedReturnRate = utils.computeEffectiveMonthlyReturnRate({
+      startDate: actualDate,
+      endDate: planEndDate,
+      financialRecords: allFinancialRecords,
+      microPlans
+    });
+
+
     const { preRetirementHash, postRetirementHash } = financialCalculations.generatePreCalculationHash(
       monthlyExpectedReturnRate,
       monthlyInflationRate,
       goals,
       events,
-      remainingMonthsToRetirement,
+      totalMonthsToRetirement,
       referenceDate
     );
 
@@ -347,20 +543,32 @@ const financialCalculations = {
     
     // Get plan parameters
     const shouldAdjustContributionForInflation = investmentPlan.adjust_contribution_for_inflation;
-    // PEGAR PLANNED CONTRIBUTION DO ULTIMO MES DA PROJEÇÃO
-    const monthlyDeposit = activeMicroPlan?.monthly_deposit || 0;
-    const monthlyContribution = monthlyProjectionData ? monthlyProjectionData.planned_contribution : monthlyDeposit;
-    
+    // Calcular contribuição média ponderada considerando mudanças de micro planos e (opcionalmente) inflação
+
+    const monthlyContribution = utils.computeAverageMonthlyContribution({
+      referenceDate,
+      planEndDate,
+      microPlans,
+      activeMicroPlan,
+      adjustForInflation: shouldAdjustContributionForInflation,
+      planCurrency: investmentPlan.currency
+    });
+
+    console.log('START PARAMS ================================================')
+    console.log('monthlyContribution', monthlyContribution)
+    console.log('monthlyExpectedReturnRate', monthlyExpectedReturnRate)
+    console.log('monthlyInflationRate', monthlyInflationRate)
+    console.log('END PARAMS ================================================')
     const maximumAgeDate = utils.createDateAtAge(birthDate, investmentPlan.limit_age || 100);
     const monthsInRetirement = utils.calculateMonthsBetweenDates(planEndDate, maximumAgeDate);
-    
+
     // Calculate effective rate based on inflation adjustment setting
     const effectiveMonthlyRate = shouldAdjustContributionForInflation ? monthlyExpectedReturnRate : calculateCompoundedRates([monthlyExpectedReturnRate, monthlyInflationRate]);
     
     // Calculate adjusted present and future values
     const currentBalanceWithGoals = ((lastFinancialRecord?.ending_balance || investmentPlan.initial_amount) + preRetirementGoalsTotal) || 0;
     const initialAmountWithGoals = (investmentPlan.initial_amount + preRetirementGoalsTotal);
-    const inflationFactorAtRetirement = (1 + monthlyInflationRate) ** remainingMonthsToRetirement;
+    // Fator de inflação até a aposentadoria usando util de CPI por moeda
     const projectedPresentValue = projectedFuturePresentValue / inflationFactorAtRetirement;
     // Calcular valores usando o micro plano ativo
     const calculations = calculateMicroPlanFutureValues(investmentPlan, activeMicroPlan, allFinancialRecords, birthDate);
@@ -374,19 +582,45 @@ const financialCalculations = {
     // Calculate projections
 
     // PROJECTIONS 
-    // const balancePresentValueAdjusted = vp(monthlyExpectedReturnRate, totalPlannedMonths - remainingMonthsToRetirement, -monthlyContribution, -currentBalanceWithGoals);
-    console.log('projectedMonthsToRetirementParams', effectiveMonthlyRate, -monthlyContribution, -currentBalanceWithGoals, adjustedGoalProjectedFutureValue)
+    // Calcular a contribuição média até a data de referência (planStartDate -> actualDate)
+    const monthlyContributionUntilReference = utils.computeAverageMonthlyContribution({
+      referenceDate: planStartDate,
+      planEndDate: actualDate,
+      microPlans,
+      activeMicroPlan,
+      adjustForInflation: shouldAdjustContributionForInflation,
+      planCurrency: investmentPlan.currency
+    });
+    const monthlyAverageContributionByFinancialRecords = allFinancialRecords.reduce((acc, record) => acc + record.monthly_contribution, 0) / allFinancialRecords.length;
+    console.log('monthlyAverageContributionByFinancialRecords', monthlyAverageContributionByFinancialRecords)
+    
+    const monthlyExpectedReturnRateUntilReference = utils.computeEffectiveMonthlyReturnRate({
+      startDate: planStartDate,
+      endDate: actualDate,
+      financialRecords: allFinancialRecords,
+      microPlans
+    });
+    console.log('PROJECTED PARAMS ================================================')
+    const monthsElapsed = Math.max(0, utils.calculateMonthsBetweenDates(planStartDate, actualDate) + 1 || 0);
+    console.log('balancePresentValueAdjusted = -vp(', monthlyExpectedReturnRateUntilReference, monthsElapsed, -monthlyContributionUntilReference, -currentBalanceWithGoals, ')')
+    const balancePresentValueAdjusted = -vp(
+      monthlyExpectedReturnRateUntilReference,
+      monthsElapsed,
+      -monthlyContributionUntilReference,
+      -currentBalanceWithGoals
+    );
+    console.log('projectedMonthsToRetirementParams = nper(', effectiveMonthlyRate, -monthlyContribution, -balancePresentValueAdjusted, adjustedGoalProjectedFutureValue, ')')
     const projectedMonthsToRetirement = nper(
       effectiveMonthlyRate,
       -monthlyContribution,
-      -currentBalanceWithGoals,
+      -balancePresentValueAdjusted,
       adjustedGoalProjectedFutureValue
     );
-    console.log('projectedMonthsToRetirement', projectedMonthsToRetirement)
+    console.log('projectedMonthsToRetirement = ', projectedMonthsToRetirement)
 
     const projectedContribution = -pmt(
       effectiveMonthlyRate,
-      remainingMonthsToRetirement,
+      totalMonthsToRetirement,
       -currentBalanceWithGoals,
       adjustedGoalProjectedFutureValue
     );
@@ -406,33 +640,34 @@ const financialCalculations = {
     // PLANNED DATA
     let plannedMonthsToRetirement = 0;
     let plannedContribution = 0;
+    console.log('PLANNED PARAMS ================================================')
     if (monthlyProjectionData) {
       // se tiver registros financeiros, usar os dados da projeção
       const plannedBalanceWithGoals = (monthlyProjectionData.planned_balance + preRetirementGoalsTotal)
-      // const plannedBalancePresentValue = vp(monthlyExpectedReturnRate, totalPlannedMonths - remainingMonthsToRetirement, -monthlyContribution, -plannedBalanceWithGoals)
-      console.log('plannedMonthsToRetirementParams', effectiveMonthlyRate, -monthlyContribution, -plannedBalanceWithGoals, adjustedGoalPlannedFutureValue)
+      const plannedBalancePresentValue = -vp(monthlyExpectedReturnRateUntilReference, monthsElapsed, -monthlyContributionUntilReference, -plannedBalanceWithGoals)
+      console.log('plannedMonthsToRetirementParams = nper(', effectiveMonthlyRate, -monthlyContribution, -plannedBalanceWithGoals, adjustedGoalPlannedFutureValue, ')')
       plannedMonthsToRetirement = nper(
         effectiveMonthlyRate,
         -monthlyContribution,
-        -plannedBalanceWithGoals,
+        -plannedBalancePresentValue,
         adjustedGoalPlannedFutureValue
       );
-      console.log('plannedMonthsToRetirement', plannedMonthsToRetirement)
+      console.log('plannedMonthsToRetirement = ', plannedMonthsToRetirement)
       plannedContribution = -pmt(
         effectiveMonthlyRate,
-        remainingMonthsToRetirement,
+        totalMonthsToRetirement,
         -plannedBalanceWithGoals,
         adjustedGoalPlannedFutureValue
       )
     }else{
-      console.log('plannedMonthsToRetirementParams', effectiveMonthlyRate, -monthlyContribution, -initialAmountWithGoals, adjustedGoalPlannedFutureValue)
+      console.log('plannedMonthsToRetirementParams = nper(', effectiveMonthlyRate, -monthlyContribution, -initialAmountWithGoals, adjustedGoalPlannedFutureValue, ')')
       plannedMonthsToRetirement = nper(
         effectiveMonthlyRate,
         -monthlyContribution,
         -initialAmountWithGoals,
         adjustedGoalPlannedFutureValue
       );
-      console.log('plannedMonthsToRetirement', plannedMonthsToRetirement)
+      console.log('plannedMonthsToRetirement = ', plannedMonthsToRetirement)
   
       plannedContribution = -pmt(
         effectiveMonthlyRate,
@@ -445,7 +680,7 @@ const financialCalculations = {
 
     const plannedMonthlyIncome = financialCalculations.projectedMonthlyIncome(
       investmentPlan.plan_type,
-      effectiveMonthlyRate,
+      effectiveMonthlyRate, // use
       monthsInRetirement,
       plannedPresentValue,
       investmentPlan.adjust_income_for_inflation,
@@ -492,6 +727,7 @@ const financialCalculations = {
 export function processPlanProgressData(
   allFinancialRecords: FinancialRecord[],
   investmentPlan: InvestmentPlan,
+  microPlans: MicroInvestmentPlan[],
   activeMicroPlan: MicroInvestmentPlan | null,
   profile: { birth_date?: string },
   goals: Goal[],
@@ -515,6 +751,7 @@ export function processPlanProgressData(
   const projections = financialCalculations.calculateProjections(
     allFinancialRecords, 
     investmentPlan, 
+    microPlans,
     activeMicroPlan,
     birthDate, 
     goals.filter(goal => goal.status === 'pending'), 
