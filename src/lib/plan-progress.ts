@@ -23,7 +23,13 @@ export const utils = {
     if (startDate == undefined || endDate == undefined) {
       return null;
     }
-    return Math.floor((endDate.getTime() - startDate.getTime()) / (DAYS_PER_MONTH * MILLISECONDS_PER_DAY));
+    
+    const startYear = startDate.getFullYear();
+    const startMonth = startDate.getMonth();
+    const endYear = endDate.getFullYear();
+    const endMonth = endDate.getMonth();
+
+    return (endYear - startYear) * 12 + (endMonth - startMonth);
   },
 
   /**
