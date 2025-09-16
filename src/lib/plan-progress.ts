@@ -121,13 +121,13 @@ export const utils = {
 
     let weightedSum = 0;
     for (const seg of segments) {
-      const monthsInSegment = utils.calculateMonthsBetweenDates(seg.start, seg.end) || 0;
+      const monthsInSegment = utils.calculateMonthsBetweenDates(seg.start, seg.end) + 1 || 0;
       if (monthsInSegment <= 0) continue;
       let effectiveDeposit = seg.deposit || 0;
       if (adjustForInflation) {
-        const monthsFromRefToSeg = Math.max(0, utils.calculateMonthsBetweenDates(referenceDate, seg.start) || 0);
+        const monthsFromRefToSeg = Math.max(0, utils.calculateMonthsBetweenDates(referenceDate, seg.start) + 1 || 0);
         let cumulativeInflation = 1;
-        if (monthsFromRefToSeg > 0) {
+        if (monthsFromRefToSeg > 1) {
           const iterDate = new Date(referenceDate);
           for (let i = 0; i < monthsFromRefToSeg; i++) {
             const year = iterDate.getFullYear();
@@ -161,7 +161,7 @@ export const utils = {
     }
   ): number => {
     const { startDate, endDate, currency, microPlans } = params;
-    const months = utils.calculateMonthsBetweenDates(startDate, endDate) || 0;
+    const months = utils.calculateMonthsBetweenDates(startDate, endDate) + 1 || 0;
     if (months <= 0) return 1;
 
     const adjustedStart = new Date(startDate);
@@ -200,7 +200,7 @@ export const utils = {
     }
   ): number => {
     const { startDate, endDate, financialRecords, microPlans } = params;
-    const months = utils.calculateMonthsBetweenDates(startDate, endDate) || 0;
+    const months = utils.calculateMonthsBetweenDates(startDate, endDate) + 1 || 0;
     if (months <= 0) return 0;
 
     // Map financial records by key YYYY-M
@@ -518,7 +518,7 @@ const financialCalculations = {
 
     // Compute effective monthly expected return using financial records (past) and micro plans (future)
     const monthlyExpectedReturnRate = utils.computeEffectiveMonthlyReturnRate({
-      startDate: actualDate,
+      startDate: referenceDate,
       endDate: planEndDate,
       financialRecords: allFinancialRecords,
       microPlans
