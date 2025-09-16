@@ -151,6 +151,7 @@ export const utils = {
   /**
    * Computes cumulative inflation factor from startDate (inclusive) to endDate (exclusive),
    * using CPI by currency where available and falling back to a provided monthly rate.
+   * Uses calculateCompoundedRates for precise rate composition.
    */
   computeInflationFactor: (
     params: {
@@ -168,7 +169,8 @@ export const utils = {
     adjustedStart.setMonth(adjustedStart.getMonth() - 1);
     const cpiMap = createCPIRatesMapByCurrency(adjustedStart, endDate, currency);
 
-    let factor = 1;
+    // Collect all monthly inflation rates for the period
+    const monthlyInflationRates: number[] = [];
     const iterDate = new Date(startDate);
     for (let i = 0; i < months; i++) {
       const key = `${iterDate.getFullYear()}-${iterDate.getMonth() + 1}`;
@@ -180,54 +182,48 @@ export const utils = {
         const mpMonthly = yearlyReturnRateToMonthlyReturnRate(((activeMp?.inflation || 0) / 100));
         rateForMonth = mpMonthly;
       }
-      factor *= (1 + rateForMonth);
+      monthlyInflationRates.push(rateForMonth);
       iterDate.setMonth(iterDate.getMonth() + 1);
     }
-    return factor;
+
+    // Use calculateCompoundedRates to get the total compounded inflation rate
+    const totalCompoundedRate = calculateCompoundedRates(monthlyInflationRates);
+    
+    // Convert back to inflation factor
+    return 1 + totalCompoundedRate;
   },
 
   /**
    * Computes an effective monthly expected return rate across a period,
-   * using financial records' monthly_return_rate when available, otherwise
-   * falling back to the expected_return of the active micro plan for that month.
+   * using only the expected_return of the active micro plan for each month.
+   * Uses calculateCompoundedRates for precise rate composition.
    */
   computeEffectiveMonthlyReturnRate: (
     params: {
       startDate: Date,
       endDate: Date,
-      financialRecords: FinancialRecord[],
       microPlans: MicroInvestmentPlan[]
     }
   ): number => {
-    const { startDate, endDate, financialRecords, microPlans } = params;
+    const { startDate, endDate, microPlans } = params;
     const months = utils.calculateMonthsBetweenDates(startDate, endDate) + 1 || 0;
     if (months <= 0) return 0;
 
-    // Map financial records by key YYYY-M
-    const recordsMap = new Map<string, FinancialRecord>();
-    for (const rec of financialRecords || []) {
-      const key = `${rec.record_year}-${rec.record_month}`;
-      if (!recordsMap.has(key)) recordsMap.set(key, rec);
-    }
-
-    let factor = 1;
+    // Collect all monthly return rates for the period
+    const monthlyReturnRates: number[] = [];
     const iterDate = new Date(startDate);
     for (let i = 0; i < months; i++) {
-      const key = `${iterDate.getFullYear()}-${iterDate.getMonth() + 1}`;
-      const rec = recordsMap.get(key);
-      let monthlyRate: number | undefined = rec?.monthly_return_rate;
-      if (monthlyRate === undefined || monthlyRate === null) {
-        const activeMp = getActiveMicroPlanForDate(microPlans, iterDate);
-        const expectedMonthly = yearlyReturnRateToMonthlyReturnRate(((activeMp?.expected_return || 0) / 100));
-        monthlyRate = expectedMonthly;
-      } else {
-        // Convert stored percent to decimal if it looks like percent
-        monthlyRate = typeof monthlyRate === 'number' ? (monthlyRate/100) : 0;
-      }
-      factor *= (1 + (monthlyRate || 0));
+      const activeMp = getActiveMicroPlanForDate(microPlans, iterDate);
+      const expectedMonthly = yearlyReturnRateToMonthlyReturnRate(((activeMp?.expected_return || 0) / 100));
+      monthlyReturnRates.push(expectedMonthly);
       iterDate.setMonth(iterDate.getMonth() + 1);
     }
-    const effectiveMonthly = Math.pow(factor, 1 / months) - 1;
+
+    // Use calculateCompoundedRates to get the total compounded return rate
+    const totalCompoundedRate = calculateCompoundedRates(monthlyReturnRates);
+    
+    // Convert back to effective monthly rate
+    const effectiveMonthly = Math.pow(1 + totalCompoundedRate, 1 / months) - 1;
     return effectiveMonthly;
   }
 };
@@ -496,7 +492,7 @@ const financialCalculations = {
     const planStartDate = createDateWithoutTimezone(investmentPlan.plan_initial_date);
     const planEndDate = createDateWithoutTimezone(investmentPlan.plan_end_accumulation_date);
     const finalAgeDate = planEndDate;
-    const totalPlannedMonths = utils.calculateMonthsBetweenDates(planStartDate, planEndDate);
+    const totalPlannedMonths = utils.calculateMonthsBetweenDates(planStartDate, planEndDate) + 1;
     const plannedMonths = totalPlannedMonths;
     // if (currentMonth === 0 && currentYear === 0) {
     const referenceDate = createDateWithoutTimezone(investmentPlan.plan_initial_date);
@@ -506,7 +502,7 @@ const financialCalculations = {
       currency: investmentPlan.currency,
       microPlans
     });
-    const monthlyInflationRate = inflationFactorAtRetirement/totalPlannedMonths;
+    const monthlyInflationRate = Math.pow(inflationFactorAtRetirement, 1/totalPlannedMonths) - 1;
     if (currentMonth !== 0 && currentYear !== 0) {
       actualDate = createDateFromYearMonth(currentYear, currentMonth);
     }else {
@@ -516,11 +512,10 @@ const financialCalculations = {
     // Meses restantes até a aposentadoria a partir da actualDate
     const totalMonthsToRetirement = Math.max(0, utils.calculateMonthsBetweenDates(referenceDate, planEndDate) || 0);
 
-    // Compute effective monthly expected return using financial records (past) and micro plans (future)
+    // Compute effective monthly expected return using micro plans
     const monthlyExpectedReturnRate = utils.computeEffectiveMonthlyReturnRate({
       startDate: referenceDate,
       endDate: planEndDate,
-      financialRecords: allFinancialRecords,
       microPlans
     });
 
@@ -578,7 +573,7 @@ const financialCalculations = {
     const plannedPresentValue = plannedFuturePresentValue / inflationFactorAtRetirement;
     const goalPlannedPresentValue = calculations.presentFutureValue * (shouldAdjustContributionForInflation ? 1 : inflationFactorAtRetirement);
     const adjustedGoalPlannedFutureValue = (goalPlannedPresentValue - postRetirementGoalsTotal * (shouldAdjustContributionForInflation ? 1 : inflationFactorAtRetirement));
-
+    const monthsElapsed = Math.max(0, utils.calculateMonthsBetweenDates(planStartDate, actualDate) + 1 || 1);
     // Calculate projections
 
     // PROJECTIONS 
@@ -591,15 +586,24 @@ const financialCalculations = {
       adjustForInflation: shouldAdjustContributionForInflation,
       planCurrency: investmentPlan.currency
     });
-    
-    const monthlyExpectedReturnRateUntilReference = utils.computeEffectiveMonthlyReturnRate({
+
+    const actualInflationUntilReference = utils.computeInflationFactor({
       startDate: planStartDate,
       endDate: actualDate,
-      financialRecords: allFinancialRecords,
+      currency: investmentPlan.currency,
       microPlans
     });
+    const monthlyInflationRateUntilReference = Math.pow(actualInflationUntilReference, 1/monthsElapsed) - 1;
+    console.log('monthlyInflationRateUntilReference', monthlyInflationRateUntilReference)
+    const monthlydReturnRateUntilReference = utils.computeEffectiveMonthlyReturnRate({
+      startDate: planStartDate,
+      endDate: actualDate,
+      microPlans
+    });
+    console.log('monthlydReturnRateUntilReference', monthlydReturnRateUntilReference)
+    const monthlyExpectedReturnRateUntilReference = shouldAdjustContributionForInflation ? monthlydReturnRateUntilReference : calculateCompoundedRates([monthlydReturnRateUntilReference, monthlyInflationRateUntilReference]);
+    console.log('monthlyExpectedReturnRateUntilReference', monthlyExpectedReturnRateUntilReference)
     console.log('PROJECTED PARAMS ================================================')
-    const monthsElapsed = Math.max(0, utils.calculateMonthsBetweenDates(planStartDate, actualDate) + 1 || 1);
     console.log('balancePresentValueAdjusted = -vp(', monthlyExpectedReturnRateUntilReference, monthsElapsed, -monthlyContributionUntilReference, -currentBalanceWithGoals, ')')
     const balancePresentValueAdjusted = -vp(
       monthlyExpectedReturnRateUntilReference,
@@ -642,6 +646,7 @@ const financialCalculations = {
     if (monthlyProjectionData) {
       // se tiver registros financeiros, usar os dados da projeção
       const plannedBalanceWithGoals = (monthlyProjectionData.planned_balance + preRetirementGoalsTotal)
+      console.log('monthlyExpectedReturnRateUntilReference', monthlyExpectedReturnRateUntilReference)
       const plannedBalancePresentValue = -vp(monthlyExpectedReturnRateUntilReference, monthsElapsed, -monthlyContributionUntilReference, -plannedBalanceWithGoals)
       console.log('plannedMonthsToRetirementParams = nper(', effectiveMonthlyRate, -monthlyContribution, -plannedBalanceWithGoals, adjustedGoalPlannedFutureValue, ')')
       plannedMonthsToRetirement = Math.ceil(nper(
