@@ -591,8 +591,6 @@ const financialCalculations = {
       adjustForInflation: shouldAdjustContributionForInflation,
       planCurrency: investmentPlan.currency
     });
-    const monthlyAverageContributionByFinancialRecords = allFinancialRecords.reduce((acc, record) => acc + record.monthly_contribution, 0) / allFinancialRecords.length;
-    console.log('monthlyAverageContributionByFinancialRecords', monthlyAverageContributionByFinancialRecords)
     
     const monthlyExpectedReturnRateUntilReference = utils.computeEffectiveMonthlyReturnRate({
       startDate: planStartDate,
@@ -601,7 +599,7 @@ const financialCalculations = {
       microPlans
     });
     console.log('PROJECTED PARAMS ================================================')
-    const monthsElapsed = Math.max(0, utils.calculateMonthsBetweenDates(planStartDate, actualDate) + 1 || 0);
+    const monthsElapsed = Math.max(0, utils.calculateMonthsBetweenDates(planStartDate, actualDate) + 1 || 1);
     console.log('balancePresentValueAdjusted = -vp(', monthlyExpectedReturnRateUntilReference, monthsElapsed, -monthlyContributionUntilReference, -currentBalanceWithGoals, ')')
     const balancePresentValueAdjusted = -vp(
       monthlyExpectedReturnRateUntilReference,
@@ -610,12 +608,12 @@ const financialCalculations = {
       -currentBalanceWithGoals
     );
     console.log('projectedMonthsToRetirementParams = nper(', effectiveMonthlyRate, -monthlyContribution, -balancePresentValueAdjusted, adjustedGoalProjectedFutureValue, ')')
-    const projectedMonthsToRetirement = nper(
+    const projectedMonthsToRetirement = Math.ceil(nper(
       effectiveMonthlyRate,
       -monthlyContribution,
       -balancePresentValueAdjusted,
       adjustedGoalProjectedFutureValue
-    );
+    ) - monthsElapsed);
     console.log('projectedMonthsToRetirement = ', projectedMonthsToRetirement)
 
     const projectedContribution = -pmt(
@@ -646,12 +644,12 @@ const financialCalculations = {
       const plannedBalanceWithGoals = (monthlyProjectionData.planned_balance + preRetirementGoalsTotal)
       const plannedBalancePresentValue = -vp(monthlyExpectedReturnRateUntilReference, monthsElapsed, -monthlyContributionUntilReference, -plannedBalanceWithGoals)
       console.log('plannedMonthsToRetirementParams = nper(', effectiveMonthlyRate, -monthlyContribution, -plannedBalanceWithGoals, adjustedGoalPlannedFutureValue, ')')
-      plannedMonthsToRetirement = nper(
+      plannedMonthsToRetirement = Math.ceil(nper(
         effectiveMonthlyRate,
         -monthlyContribution,
         -plannedBalancePresentValue,
         adjustedGoalPlannedFutureValue
-      );
+      ) - monthsElapsed);
       console.log('plannedMonthsToRetirement = ', plannedMonthsToRetirement)
       plannedContribution = -pmt(
         effectiveMonthlyRate,
@@ -661,12 +659,12 @@ const financialCalculations = {
       )
     }else{
       console.log('plannedMonthsToRetirementParams = nper(', effectiveMonthlyRate, -monthlyContribution, -initialAmountWithGoals, adjustedGoalPlannedFutureValue, ')')
-      plannedMonthsToRetirement = nper(
+      plannedMonthsToRetirement = Math.ceil(nper(
         effectiveMonthlyRate,
         -monthlyContribution,
         -initialAmountWithGoals,
         adjustedGoalPlannedFutureValue
-      );
+      ) - monthsElapsed);
       console.log('plannedMonthsToRetirement = ', plannedMonthsToRetirement)
   
       plannedContribution = -pmt(
@@ -680,7 +678,7 @@ const financialCalculations = {
 
     const plannedMonthlyIncome = financialCalculations.projectedMonthlyIncome(
       investmentPlan.plan_type,
-      effectiveMonthlyRate, // use
+      effectiveMonthlyRate,
       monthsInRetirement,
       plannedPresentValue,
       investmentPlan.adjust_income_for_inflation,
@@ -691,8 +689,8 @@ const financialCalculations = {
     )
     
     // Calculate dates and differences
-    const projectedRetirementDate = utils.addMonthsToDate(referenceDate, projectedMonthsToRetirement);
-    const plannedRetirementDate = utils.addMonthsToDate(referenceDate, plannedMonthsToRetirement);
+    const projectedRetirementDate = utils.addMonthsToDate(actualDate, projectedMonthsToRetirement);
+    const plannedRetirementDate = utils.addMonthsToDate(actualDate, plannedMonthsToRetirement);
     const monthsDifference = utils.calculateMonthsBetweenDates(projectedRetirementDate, plannedRetirementDate);
     return {
       projectedPresentValue,
