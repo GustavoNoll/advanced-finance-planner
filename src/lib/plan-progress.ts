@@ -9,12 +9,6 @@ import { calculateMicroPlanFutureValues } from '@/utils/investmentPlanCalculatio
 import { getActiveMicroPlanForDate } from '@/utils/microPlanUtils';
 
 /**
- * Constants for date calculations
- */
-const DAYS_PER_MONTH = 30.44;
-const MILLISECONDS_PER_DAY = 24 * 60 * 60 * 1000;
-
-/**
  * Utility functions
  */
 export const utils = {
