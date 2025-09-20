@@ -1,4 +1,4 @@
-import { calculateCompoundedRates, yearlyReturnRateToMonthlyReturnRate } from "@/lib/financial-math";
+import { calculateCompoundedRates, pmt, yearlyReturnRateToMonthlyReturnRate } from "@/lib/financial-math";
 import { createDateWithoutTimezone } from '@/utils/dateUtils';
 import { InvestmentPlan, MicroInvestmentPlan, FinancialRecord } from '@/types/financial';
 
@@ -165,6 +165,22 @@ export const calculateMicroPlanFutureValues = (
   financialRecords: FinancialRecord[],
   birthDate: Date
 ): Calculations => {
+  console.log('=== DADOS INICIAIS - calculateMicroPlanFutureValues ===');
+  console.log('Investment Plan:', {
+    id: investmentPlan.id,
+    plan_type: investmentPlan.plan_type,
+    initial_amount: investmentPlan.initial_amount,
+    plan_initial_date: investmentPlan.plan_initial_date,
+    final_age: investmentPlan.final_age,
+    plan_end_accumulation_date: investmentPlan.plan_end_accumulation_date,
+    limit_age: investmentPlan.limit_age,
+    legacy_amount: investmentPlan.legacy_amount
+  });
+  
+  console.log('Active Micro Plan:', activeMicroPlan);
+  console.log('Birth Date:', birthDate);
+  console.log('Financial Records Count:', financialRecords.length);
+
   // Determinar o valor inicial baseado no financial record do mês da effective_date
   let initialAmount = investmentPlan.initial_amount || 0;
   
@@ -173,6 +189,12 @@ export const calculateMicroPlanFutureValues = (
     const effectiveYear = effectiveDate.getFullYear();
     const effectiveMonth = effectiveDate.getMonth() + 1; // getMonth() retorna 0-11, precisamos 1-12
     
+    console.log('Effective Date:', {
+      effective_date: activeMicroPlan.effective_date,
+      effective_year: effectiveYear,
+      effective_month: effectiveMonth
+    });
+    
     // Buscar o financial record do mesmo mês da effective_date
     const financialRecord = financialRecords.find(record => 
       record.record_year === effectiveYear && record.record_month === effectiveMonth
@@ -180,6 +202,13 @@ export const calculateMicroPlanFutureValues = (
     
     if (financialRecord) {
       initialAmount = financialRecord.ending_balance;
+      console.log('Financial Record Found:', {
+        record_year: financialRecord.record_year,
+        record_month: financialRecord.record_month,
+        ending_balance: financialRecord.ending_balance
+      });
+    } else {
+      console.log('No Financial Record found for effective date');
     }
   }
   
@@ -194,6 +223,21 @@ export const calculateMicroPlanFutureValues = (
   const limitAge = investmentPlan.limit_age || 110;
   const legacyAmount = investmentPlan.legacy_amount || 0;
   const planType = investmentPlan.plan_type;
+
+  console.log('Processed Initial Data:', {
+    initialAmount,
+    investmentPlanInitialDate: investmentPlanInitialDate.toISOString(),
+    planInitialDate: planInitialDate.toISOString(),
+    finalAge,
+    planEndAccumulationDate: planEndAccumulationDate?.toISOString() || 'null',
+    desiredIncome,
+    expectedReturn: `${(expectedReturn * 100).toFixed(2)}%`,
+    monthlyDeposit,
+    inflation: `${(inflation * 100).toFixed(2)}%`,
+    limitAge,
+    legacyAmount,
+    planType
+  });
 
   const pmt = (rate: number, nper: number, pv: number, fv: number = 0) => {
     if (rate === 0) return -(fv + pv) / nper;
@@ -216,6 +260,8 @@ export const calculateMicroPlanFutureValues = (
     );
   };
   
+  console.log('=== CÁLCULOS INTERMEDIÁRIOS ===');
+  
   // vars
   const planStartDate = createDateWithoutTimezone(planInitialDate);
   
@@ -225,6 +271,7 @@ export const calculateMicroPlanFutureValues = (
                         (planEndAccumulationDate.getMonth() - planStartDate.getMonth());
     monthsToRetirementSinceBeginning = (planEndAccumulationDate.getFullYear() - investmentPlanInitialDate.getFullYear()) * 12 + 
                         (planEndAccumulationDate.getMonth() - investmentPlanInitialDate.getMonth());
+    console.log('Using planEndAccumulationDate for retirement calculation');
   } else {
     // Calcula meses até a aposentadoria baseado na data de início do plano
     const retirementDate = new Date(birthDate);
@@ -234,9 +281,18 @@ export const calculateMicroPlanFutureValues = (
                         (retirementDate.getMonth() - planStartDate.getMonth());
     monthsToRetirementSinceBeginning = (retirementDate.getFullYear() - investmentPlanInitialDate.getFullYear()) * 12 + 
                         (retirementDate.getMonth() - investmentPlanInitialDate.getMonth());
+    console.log('Using birthDate + finalAge for retirement calculation');
   }
   const endMoney = limitAge;
   const monthsToEndMoney = (endMoney - finalAge) * 12;
+
+  console.log('Time Calculations:', {
+    planStartDate: planStartDate.toISOString(),
+    monthsToRetirement,
+    monthsToRetirementSinceBeginning,
+    endMoney,
+    monthsToEndMoney
+  });
 
   const monthInflationRate = yearlyReturnRateToMonthlyReturnRate(inflation);
   const monthExpectedReturnRate = yearlyReturnRateToMonthlyReturnRate(expectedReturn);
@@ -244,9 +300,24 @@ export const calculateMicroPlanFutureValues = (
   const annualTotalReturn = calculateCompoundedRates([expectedReturn, inflation]);
   const monthlyTotalReturn = yearlyReturnRateToMonthlyReturnRate(annualTotalReturn);
   
+  console.log('Rate Calculations:', {
+    inflation: `${(inflation * 100).toFixed(4)}%`,
+    expectedReturn: `${(expectedReturn * 100).toFixed(4)}%`,
+    monthInflationRate: `${(monthInflationRate * 100).toFixed(6)}%`,
+    monthExpectedReturnRate: `${(monthExpectedReturnRate * 100).toFixed(6)}%`,
+    annualTotalReturn: `${(annualTotalReturn * 100).toFixed(4)}%`,
+    monthlyTotalReturn: `${(monthlyTotalReturn * 100).toFixed(6)}%`
+  });
 
   // Renda ajustada para inflação
   const inflationAdjustedIncome = fv(monthInflationRate, monthsToRetirementSinceBeginning, 0, desiredIncome);
+  
+  console.log('Inflation Adjusted Income:', {
+    desiredIncome,
+    monthsToRetirementSinceBeginning,
+    monthInflationRate: `${(monthInflationRate * 100).toFixed(6)}%`,
+    inflationAdjustedIncome
+  });
   
   let presentValue = 0, futureValue = 0, necessaryFutureValue = 0;
   let requiredMonthlyDeposit = 0;
@@ -257,36 +328,70 @@ export const calculateMicroPlanFutureValues = (
     return parseFloat((num.toFixed(fixed)));
   };
   
+  console.log('=== CÁLCULOS POR PLAN TYPE ===');
+  console.log('Plan Type:', planType);
+  
   switch (planType) {
     case "1":
+      console.log('--- Plan Type 1: Renda Perpétua ---');
       presentValue = vp(monthExpectedReturnRate, monthsToEndMoney, -desiredIncome, 0);
+      console.log('presentValue = vp( ', monthExpectedReturnRate, monthsToEndMoney, -desiredIncome, 0, ') = ', presentValue);
+      
       // revisar
       necessaryFutureValue = formatDecimals(inflationAdjustedIncome / monthExpectedReturnRate);
+      console.log('necessaryFutureValue = formatDecimals(inflationAdjustedIncome / monthExpectedReturnRate) = ', necessaryFutureValue);
+
+      
       necessaryDepositToNecessaryFutureValue = formatDecimals(pmt(monthlyTotalReturn, monthsToRetirement, -initialAmount, necessaryFutureValue), 2);
+      console.log('necessaryDepositToNecessaryFutureValue = formatDecimals(pmt(monthlyTotalReturn, monthsToRetirement, -initialAmount, necessaryFutureValue), 2) = ', necessaryDepositToNecessaryFutureValue);
+
       break;
       
     case "2":
+      console.log('--- Plan Type 2: Renda com Herança ---');
       presentValue = vp(monthExpectedReturnRate, monthsToEndMoney, -desiredIncome, -legacyAmount);
+      console.log('presentValue = vp( ', monthExpectedReturnRate, monthsToEndMoney, -desiredIncome, -legacyAmount, ') = ', presentValue);
       // necessaryFutureValue
       // necessaryDepositToNecessaryFutureValue
+      console.log('Note: necessaryFutureValue and necessaryDepositToNecessaryFutureValue not calculated for plan type 2');
       
       break;
       
     case "3":
+      console.log('--- Plan Type 3: Renda Simples ---');
       presentValue = desiredIncome / monthExpectedReturnRate;
+      console.log('presentValue = desiredIncome / monthExpectedReturnRate = ', presentValue);
       break;
       
     default:
+      console.log('--- Plan Type Unknown ---');
       futureValue = 0;
+      console.log('Future Value set to 0 for unknown plan type');
   }
 
+  console.log('=== CÁLCULOS FINAIS ===');
+  
   futureValue = Math.abs(-fv(monthInflationRate, monthsToRetirement, 0, presentValue));
+  console.log('futureValue = Math.abs(-fv(monthInflationRate, monthsToRetirement, 0, presentValue)) = ', futureValue);
+  
   requiredMonthlyDeposit = formatDecimals(pmt(monthlyTotalReturn, monthsToRetirement, -initialAmount, futureValue));
+  console.log('requiredMonthlyDeposit = formatDecimals(pmt(monthlyTotalReturn, monthsToRetirement, -initialAmount, futureValue)) = ', requiredMonthlyDeposit);
+  
   realReturn = formatDecimals(futureValue * monthExpectedReturnRate);
   inflationReturn = formatDecimals(futureValue * monthInflationRate);
   totalMonthlyReturn = formatDecimals(futureValue * monthlyTotalReturn);
+  
+  console.log('Return Calculations:', {
+    futureValue,
+    monthExpectedReturnRate: `${(monthExpectedReturnRate * 100).toFixed(6)}%`,
+    monthInflationRate: `${(monthInflationRate * 100).toFixed(6)}%`,
+    monthlyTotalReturn: `${(monthlyTotalReturn * 100).toFixed(6)}%`,
+    realReturn,
+    inflationReturn,
+    totalMonthlyReturn
+  });
 
-  return {
+  const result = {
     futureValue: formatDecimals(futureValue),
     presentFutureValue: formatDecimals(presentValue),
     inflationAdjustedIncome: formatDecimals(inflationAdjustedIncome),
@@ -297,4 +402,9 @@ export const calculateMicroPlanFutureValues = (
     necessaryFutureValue,
     necessaryDepositToNecessaryFutureValue
   };
+  
+  console.log('=== RESPOSTA FINAL ===');
+  console.log('Final Result:', result);
+  
+  return result;
 }; 
