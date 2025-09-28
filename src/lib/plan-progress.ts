@@ -246,6 +246,13 @@ type MonthlyValues = {
   };
 };
 
+interface RetirementGoalsTotals {
+  plannedPreRetirementGoalsTotal: number;
+  plannedPostRetirementGoalsTotal: number;
+  projectedPreRetirementGoalsTotal: number;
+  projectedPostRetirementGoalsTotal: number;
+}
+
 interface ProjectionResult {
   projectedPresentValue: number;
   plannedPresentValue: number;
@@ -326,7 +333,6 @@ const financialCalculations = {
     let currentMonth = 0;
     let cumulativeInflationFactor = 1;
     const monthlyReturnRate = calculateCompoundedRates([monthlyExpectedReturnRate, monthlyInflationRate]);
-
     for (const targetMonth of relevantMonths) {
       while (currentMonth <= targetMonth) {
         cumulativeInflationFactor *= (1 + monthlyInflationRate);
@@ -424,6 +430,64 @@ const financialCalculations = {
     return { preRetirementHash, postRetirementHash };
   },
 
+  /**
+   * Calculates planned and projected retirement goals totals
+   * Planned considers all goals/events, projected only considers pending ones
+   */
+  calculateRetirementGoalsTotals: (
+    monthlyExpectedReturnRate: number,
+    monthlyInflationRate: number,
+    allGoals: Goal[],
+    allEvents: ProjectedEvent[],
+    monthsToRetirement: number,
+    referenceDate: Date
+  ): RetirementGoalsTotals => {
+    // Separate goals and events for planned vs projected calculations
+    const pendingGoals = allGoals.filter(goal => goal.status === 'pending');
+    const pendingEvents = allEvents.filter(event => event.status === 'pending');
+
+    // Generate hash for planned calculations (all goals/events)
+    const { preRetirementHash: plannedPreRetirementHash, postRetirementHash: plannedPostRetirementHash } = financialCalculations.generatePreCalculationHash(
+      monthlyExpectedReturnRate,
+      monthlyInflationRate,
+      allGoals,
+      allEvents,
+      monthsToRetirement,
+      referenceDate
+    );
+
+    // Generate hash for projected calculations (only pending goals/events)
+    const { preRetirementHash: projectedPreRetirementHash, postRetirementHash: projectedPostRetirementHash } = financialCalculations.generatePreCalculationHash(
+      monthlyExpectedReturnRate,
+      monthlyInflationRate,
+      pendingGoals,
+      pendingEvents,
+      monthsToRetirement,
+      referenceDate
+    );
+
+    // Sum of pre/post retirement goals for planned calculations (all goals/events)
+    const plannedPreRetirementGoalsTotal = Object.values(plannedPreRetirementHash)
+      .reduce((sum, monthlyValues) => sum + monthlyValues.adjustedValues.total, 0);
+    
+    const plannedPostRetirementGoalsTotal = Object.values(plannedPostRetirementHash)
+      .reduce((sum, monthlyValues) => sum + monthlyValues.adjustedValues.total, 0);
+
+    // Sum of pre/post retirement goals for projected calculations (only pending goals/events)
+    const projectedPreRetirementGoalsTotal = Object.values(projectedPreRetirementHash)
+      .reduce((sum, monthlyValues) => sum + monthlyValues.adjustedValues.total, 0);
+    
+    const projectedPostRetirementGoalsTotal = Object.values(projectedPostRetirementHash)
+      .reduce((sum, monthlyValues) => sum + monthlyValues.adjustedValues.total, 0);
+
+    return {
+      plannedPreRetirementGoalsTotal,
+      plannedPostRetirementGoalsTotal,
+      projectedPreRetirementGoalsTotal,
+      projectedPostRetirementGoalsTotal
+    };
+  },
+
   projectedMonthlyIncome: (
     planType: string,
     effectiveMonthlyRate: number,
@@ -467,8 +531,8 @@ const financialCalculations = {
     microPlans: MicroInvestmentPlan[],
     activeMicroPlan: MicroInvestmentPlan | null,
     birthDate: Date,
-    goals: Goal[],
-    events: ProjectedEvent[],
+    allGoals: Goal[],
+    allEvents: ProjectedEvent[],
     plannedFuturePresentValue: number,
     projectedFuturePresentValue: number,
     monthlyProjectionData: MonthlyProjectionData | null
@@ -514,21 +578,20 @@ const financialCalculations = {
     });
 
 
-    const { preRetirementHash, postRetirementHash } = financialCalculations.generatePreCalculationHash(
+    // Calculate planned and projected retirement goals totals
+    const {
+      plannedPreRetirementGoalsTotal,
+      plannedPostRetirementGoalsTotal,
+      projectedPreRetirementGoalsTotal,
+      projectedPostRetirementGoalsTotal
+    } = financialCalculations.calculateRetirementGoalsTotals(
       monthlyExpectedReturnRate,
       monthlyInflationRate,
-      goals,
-      events,
+      allGoals,
+      allEvents,
       totalMonthsToRetirement,
       referenceDate
     );
-
-    // Sum of pre/post retirement goals
-    const preRetirementGoalsTotal = Object.values(preRetirementHash)
-      .reduce((sum, monthlyValues) => sum + monthlyValues.adjustedValues.total, 0);
-    
-    const postRetirementGoalsTotal = Object.values(postRetirementHash)
-      .reduce((sum, monthlyValues) => sum + monthlyValues.adjustedValues.total, 0);
     
     // Get plan parameters
     const shouldAdjustContributionForInflation = investmentPlan.adjust_contribution_for_inflation;
@@ -555,18 +618,18 @@ const financialCalculations = {
     const effectiveMonthlyRate = shouldAdjustContributionForInflation ? monthlyExpectedReturnRate : calculateCompoundedRates([monthlyExpectedReturnRate, monthlyInflationRate]);
     
     // Calculate adjusted present and future values
-    const currentBalanceWithGoals = ((lastFinancialRecord?.ending_balance || investmentPlan.initial_amount) + preRetirementGoalsTotal) || 0;
-    const initialAmountWithGoals = (investmentPlan.initial_amount + preRetirementGoalsTotal);
+    const currentBalanceWithProjectedGoals = ((lastFinancialRecord?.ending_balance || investmentPlan.initial_amount) + projectedPreRetirementGoalsTotal) || 0;
+    const initialAmountWithPlannedGoals = (investmentPlan.initial_amount + plannedPreRetirementGoalsTotal);
     // Fator de inflação até a aposentadoria usando util de CPI por moeda
     const projectedPresentValue = projectedFuturePresentValue / inflationFactorAtRetirement;
     // Calcular valores usando o micro plano ativo
     const calculations = calculateMicroPlanFutureValues(investmentPlan, activeMicroPlan, allFinancialRecords, birthDate);
     
     const goalProjectedPresentValue = calculations.presentFutureValue * (shouldAdjustContributionForInflation ? 1 : inflationFactorAtRetirement);
-    const adjustedGoalProjectedFutureValue = (goalProjectedPresentValue - postRetirementGoalsTotal * (shouldAdjustContributionForInflation ? 1 : inflationFactorAtRetirement));
+    const adjustedGoalProjectedFutureValue = (goalProjectedPresentValue - projectedPostRetirementGoalsTotal * (shouldAdjustContributionForInflation ? 1 : inflationFactorAtRetirement));
     const plannedPresentValue = plannedFuturePresentValue / inflationFactorAtRetirement;
     const goalPlannedPresentValue = calculations.presentFutureValue * (shouldAdjustContributionForInflation ? 1 : inflationFactorAtRetirement);
-    const adjustedGoalPlannedFutureValue = (goalPlannedPresentValue - postRetirementGoalsTotal * (shouldAdjustContributionForInflation ? 1 : inflationFactorAtRetirement));
+    const adjustedGoalPlannedFutureValue = (goalPlannedPresentValue - plannedPostRetirementGoalsTotal * (shouldAdjustContributionForInflation ? 1 : inflationFactorAtRetirement));
     const monthsElapsed = Math.max(0, utils.calculateMonthsBetweenDates(planStartDate, actualDate) + 1 || 1);
     // Calculate projections
 
@@ -598,12 +661,12 @@ const financialCalculations = {
     const monthlyExpectedReturnRateUntilReference = shouldAdjustContributionForInflation ? monthlydReturnRateUntilReference : calculateCompoundedRates([monthlydReturnRateUntilReference, monthlyInflationRateUntilReference]);
     console.log('monthlyExpectedReturnRateUntilReference', monthlyExpectedReturnRateUntilReference)
     console.log('PROJECTED PARAMS ================================================')
-    console.log('balancePresentValueAdjusted = -vp(', monthlyExpectedReturnRateUntilReference, monthsElapsed, -monthlyContributionUntilReference, -currentBalanceWithGoals, ')')
+    console.log('balancePresentValueAdjusted = -vp(', monthlyExpectedReturnRateUntilReference, monthsElapsed, -monthlyContributionUntilReference, -currentBalanceWithProjectedGoals, ')')
     const balancePresentValueAdjusted = -vp(
       monthlyExpectedReturnRateUntilReference,
       monthsElapsed,
       -monthlyContributionUntilReference,
-      -currentBalanceWithGoals
+      -currentBalanceWithProjectedGoals
     );
     console.log('projectedMonthsToRetirementParams = nper(', effectiveMonthlyRate, -monthlyContribution, -balancePresentValueAdjusted, adjustedGoalProjectedFutureValue, ')')
     const projectedMonthsToRetirement = Math.ceil(nper(
@@ -617,7 +680,7 @@ const financialCalculations = {
     const projectedContribution = -pmt(
       effectiveMonthlyRate,
       totalMonthsToRetirement,
-      -currentBalanceWithGoals,
+      -currentBalanceWithProjectedGoals,
       adjustedGoalProjectedFutureValue
     );
 
@@ -639,7 +702,7 @@ const financialCalculations = {
     console.log('PLANNED PARAMS ================================================')
     if (monthlyProjectionData) {
       // se tiver registros financeiros, usar os dados da projeção
-      const plannedBalanceWithGoals = (monthlyProjectionData.planned_balance + preRetirementGoalsTotal)
+      const plannedBalanceWithGoals = (monthlyProjectionData.planned_balance + plannedPreRetirementGoalsTotal)
       console.log('monthlyExpectedReturnRateUntilReference', monthlyExpectedReturnRateUntilReference)
       const plannedBalancePresentValue = -vp(monthlyExpectedReturnRateUntilReference, monthsElapsed, -monthlyContributionUntilReference, -plannedBalanceWithGoals)
       console.log('plannedMonthsToRetirementParams = nper(', effectiveMonthlyRate, -monthlyContribution, -plannedBalanceWithGoals, adjustedGoalPlannedFutureValue, ')')
@@ -657,11 +720,11 @@ const financialCalculations = {
         adjustedGoalPlannedFutureValue
       )
     }else{
-      console.log('plannedMonthsToRetirementParams = nper(', effectiveMonthlyRate, -monthlyContribution, -initialAmountWithGoals, adjustedGoalPlannedFutureValue, ')')
+      console.log('plannedMonthsToRetirementParams = nper(', effectiveMonthlyRate, -monthlyContribution, -initialAmountWithPlannedGoals, adjustedGoalPlannedFutureValue, ')')
       plannedMonthsToRetirement = Math.ceil(nper(
         effectiveMonthlyRate,
         -monthlyContribution,
-        -initialAmountWithGoals,
+        -initialAmountWithPlannedGoals,
         adjustedGoalPlannedFutureValue
       ) - monthsElapsed);
       console.log('plannedMonthsToRetirement = ', plannedMonthsToRetirement)
@@ -669,7 +732,7 @@ const financialCalculations = {
       plannedContribution = -pmt(
         effectiveMonthlyRate,
         totalPlannedMonths,
-        -initialAmountWithGoals,
+        -initialAmountWithPlannedGoals,
         adjustedGoalPlannedFutureValue
       );
     }
@@ -745,14 +808,15 @@ export function processPlanProgressData(
   const currentProgress = (currentBalance / investmentGoal) * 100;
   
   // Calculate projections
+  // Pass all goals/events - planned considers all, projected only considers pending
   const projections = financialCalculations.calculateProjections(
     allFinancialRecords, 
     investmentPlan, 
     microPlans,
     activeMicroPlan,
     birthDate, 
-    goals.filter(goal => goal.status === 'pending'), 
-    events.filter(event => event.status === 'pending'),
+    goals, 
+    events,
     plannedFuturePresentValue,
     projectedFuturePresentValue,
     lastHistoricalDataInfo.lastHistoricalMonth
