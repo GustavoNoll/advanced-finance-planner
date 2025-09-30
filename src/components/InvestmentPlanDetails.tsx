@@ -8,7 +8,7 @@ import { Button } from './ui/button';
 import { createDateWithoutTimezone, createDateFromYearMonth } from '@/utils/dateUtils';
 import { ChartOptions, YearlyProjectionData } from "@/lib/chart-projections";
 import { ProjectionService } from "@/services/projection.service";
-import { utils } from "@/lib/plan-progress";
+import { utils } from "@/lib/plan-progress-calculator";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from './ui/tooltip';
 
 interface InvestmentPlanDetailsProps {

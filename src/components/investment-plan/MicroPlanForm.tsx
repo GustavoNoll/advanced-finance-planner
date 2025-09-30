@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { Checkbox } from '@/components/ui/checkbox'
 import CurrencyInput from 'react-currency-input-field'
 import { MicroInvestmentPlan, CreateMicroInvestmentPlan, UpdateMicroInvestmentPlan } from '@/types/financial'
 import { RISK_PROFILES } from '@/constants/riskProfiles'
@@ -44,10 +45,14 @@ export function MicroPlanForm({
     monthly_deposit: '',
     desired_income: '',
     expected_return: '',
-    inflation: ''
+    inflation: '',
+    adjust_contribution_for_accumulated_inflation: true,
+    adjust_income_for_accumulated_inflation: true
   })
   
   const [effectiveDateInput, setEffectiveDateInput] = useState('')
+  const [monthInput, setMonthInput] = useState('')
+  const [yearInput, setYearInput] = useState('')
   
 
   const currencySymbol = currency === 'BRL' ? 'R$' : currency === 'USD' ? '$' : '€'
@@ -83,11 +88,16 @@ export function MicroPlanForm({
         monthly_deposit: initialData.monthly_deposit.toString(),
         desired_income: initialData.desired_income.toString(),
         expected_return: expectedReturnStr,
-        inflation: initialData.inflation.toString()
+        inflation: initialData.inflation.toString(),
+        adjust_contribution_for_accumulated_inflation: initialData.adjust_contribution_for_accumulated_inflation,
+        adjust_income_for_accumulated_inflation: initialData.adjust_income_for_accumulated_inflation
       })
       
       // Definir a data no formato YYYY-MM-DD para o input
       setEffectiveDateInput(date.toISOString().split('T')[0])
+      // Definir mês e ano separadamente
+      setMonthInput((date.getMonth() + 1).toString().padStart(2, '0'))
+      setYearInput(date.getFullYear().toString())
     } else if (isFirstMicroPlan) {
       const date = new Date(planInitialDate)
       setFormData(prev => ({
@@ -95,18 +105,46 @@ export function MicroPlanForm({
         effective_date: planInitialDate
       }))
       setEffectiveDateInput(planInitialDate)
+      setMonthInput((date.getMonth() + 1).toString().padStart(2, '0'))
+      setYearInput(date.getFullYear().toString())
     }
   }, [initialData, isFirstMicroPlan, planId, planInitialDate])
 
-  const handleChange = (field: string, value: string) => {
+  const handleChange = (field: string, value: string | boolean) => {
     setFormData(prev => ({
       ...prev,
       [field]: value
     }))
   }
 
-  const handleDateChange = (value: string) => {
+  const handleMonthYearChange = (month: string, year: string) => {
+    setMonthInput(month)
+    setYearInput(year)
     
+    if (month && year) {
+      const monthNum = parseInt(month)
+      const yearNum = parseInt(year)
+      
+      // Verificar se a data já está em uso
+      if (isDateAlreadyUsed(yearNum, monthNum)) {
+        return // Não atualizar se a data já estiver em uso
+      }
+      
+      // Sempre salvar com dia 01
+      const normalizedDate = `${yearNum}-${month.padStart(2, '0')}-01`
+      
+      // Atualizar o formData com a data normalizada (dia 01)
+      setFormData(prev => ({
+        ...prev,
+        effective_date: normalizedDate
+      }))
+      
+      // Atualizar também o input de data para compatibilidade
+      setEffectiveDateInput(normalizedDate)
+    }
+  }
+
+  const handleDateChange = (value: string) => {
     setEffectiveDateInput(value)
     
     if (value) {
@@ -141,10 +179,9 @@ export function MicroPlanForm({
 
     try {
       // Validação final: verificar se a data já está em uso
-      if (effectiveDateInput) {
-        const date = createDateWithoutTimezone(effectiveDateInput)
-        const year = date.getFullYear()
-        const month = date.getMonth() + 1
+      if (monthInput && yearInput) {
+        const month = parseInt(monthInput)
+        const year = parseInt(yearInput)
         
         if (isDateAlreadyUsed(year, month)) {
           alert(t('investmentPlan.microPlans.form.dateAlreadyUsed'))
@@ -158,7 +195,9 @@ export function MicroPlanForm({
         monthly_deposit: parseFloat(formData.monthly_deposit.replace(/[^\d,.-]/g, '').replace(',', '.')),
         desired_income: parseFloat(formData.desired_income.replace(/[^\d,.-]/g, '').replace(',', '.')),
         expected_return: parseFloat(formData.expected_return),
-        inflation: parseFloat(formData.inflation)
+        inflation: parseFloat(formData.inflation),
+        adjust_contribution_for_accumulated_inflation: formData.adjust_contribution_for_accumulated_inflation,
+        adjust_income_for_accumulated_inflation: formData.adjust_income_for_accumulated_inflation
       }
 
       await onSubmit(submitData)
@@ -206,16 +245,52 @@ export function MicroPlanForm({
           <Label>
             {t('investmentPlan.microPlans.form.effectiveDate')}
           </Label>
-          <Input
-            type="date"
-            value={effectiveDateInput}
-            onChange={(e) => handleDateChange(e.target.value)}
-            disabled={isFirstMicroPlan || isBaseMicroPlan}
-            required
-            className="h-10"
-            min={baseMicroPlanDate && !isFirstMicroPlan ? baseMicroPlanDate : undefined}
-            max={`${maxYear}-12-31`}
-          />
+          <div className="flex gap-2">
+            <Select
+              value={monthInput}
+              onValueChange={(value) => handleMonthYearChange(value, yearInput)}
+              disabled={isFirstMicroPlan || isBaseMicroPlan}
+              required
+            >
+              <SelectTrigger className="h-10 flex-1">
+                <SelectValue placeholder="Mês" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="01">{t('date.months.january')}</SelectItem>
+                <SelectItem value="02">{t('date.months.february')}</SelectItem>
+                <SelectItem value="03">{t('date.months.march')}</SelectItem>
+                <SelectItem value="04">{t('date.months.april')}</SelectItem>
+                <SelectItem value="05">{t('date.months.may')}</SelectItem>
+                <SelectItem value="06">{t('date.months.june')}</SelectItem>
+                <SelectItem value="07">{t('date.months.july')}</SelectItem>
+                <SelectItem value="08">{t('date.months.august')}</SelectItem>
+                <SelectItem value="09">{t('date.months.september')}</SelectItem>
+                <SelectItem value="10">{t('date.months.october')}</SelectItem>
+                <SelectItem value="11">{t('date.months.november')}</SelectItem>
+                <SelectItem value="12">{t('date.months.december')}</SelectItem>
+              </SelectContent>
+            </Select>
+            <Select
+              value={yearInput}
+              onValueChange={(value) => handleMonthYearChange(monthInput, value)}
+              disabled={isFirstMicroPlan || isBaseMicroPlan}
+              required
+            >
+              <SelectTrigger className="h-10 flex-1">
+                <SelectValue placeholder="Ano" />
+              </SelectTrigger>
+              <SelectContent>
+                {Array.from({ length: maxYear - minYear + 1 }, (_, i) => {
+                  const year = minYear + i
+                  return (
+                    <SelectItem key={year} value={year.toString()}>
+                      {year}
+                    </SelectItem>
+                  )
+                })}
+              </SelectContent>
+            </Select>
+          </div>
           {isFirstMicroPlan && (
             <p className="text-xs text-muted-foreground">
               {t('investmentPlan.microPlans.form.firstPlanDateNote')}
@@ -309,6 +384,32 @@ export function MicroPlanForm({
           />
         </div>
       </div>
+
+      {!isFirstMicroPlan && !isBaseMicroPlan && (
+        <div className="space-y-4">
+          <div className="flex items-center space-x-2">
+            <Checkbox
+              id="adjust_contribution_for_accumulated_inflation"
+              checked={formData.adjust_contribution_for_accumulated_inflation}
+              onCheckedChange={(checked) => handleChange('adjust_contribution_for_accumulated_inflation', checked as boolean)}
+            />
+            <Label htmlFor="adjust_contribution_for_accumulated_inflation" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+              {t('investmentPlan.microPlans.form.adjustContributionForAccumulatedInflation')}
+            </Label>
+          </div>
+          
+          <div className="flex items-center space-x-2">
+            <Checkbox
+              id="adjust_income_for_accumulated_inflation"
+              checked={formData.adjust_income_for_accumulated_inflation}
+              onCheckedChange={(checked) => handleChange('adjust_income_for_accumulated_inflation', checked as boolean)}
+            />
+            <Label htmlFor="adjust_income_for_accumulated_inflation" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+              {t('investmentPlan.microPlans.form.adjustIncomeForAccumulatedInflation')}
+            </Label>
+          </div>
+        </div>
+      )}
 
       <div className="flex justify-end gap-2 pt-4">
         <Button

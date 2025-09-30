@@ -20,7 +20,7 @@ import { DashboardMetrics } from "@/components/dashboard/DashboardMetrics";
 import { useFinancialRecords as useFinancialRecordsWithLinks } from "@/hooks/useFinancialRecordsManagement";
 import { useGoalsAndEvents } from "@/hooks/useFinancialData";
 import { useProjectionData } from "@/hooks/useProjectionData";
-import { PlanProgressData } from "@/lib/plan-progress";
+import { PlanProgressData } from "@/lib/plan-progress-calculator";
 import { ChartOptions } from "@/lib/chart-projections";
 import { calculateMicroPlanFutureValues } from '@/utils/investmentPlanCalculations';
 import { createDateWithoutTimezone } from '@/utils/dateUtils';
@@ -60,6 +60,8 @@ const Finances = ({
   const [showRealValues, setShowRealValues] = useState<boolean>(false);
   const [showNegativeValues, setShowNegativeValues] = useState<boolean>(false);
   const [showOldPortfolio, setShowOldPortfolio] = useState<boolean>(true);
+  const [showProjectedLine, setShowProjectedLine] = useState<boolean>(true);
+  const [showPlannedLine, setShowPlannedLine] = useState<boolean>(true);
   const queryClient = useQueryClient();
 
   // Hooks para dados financeiros
@@ -207,6 +209,8 @@ const Finances = ({
               showRealValues={showRealValues}
               showNegativeValues={showNegativeValues}
               showOldPortfolio={showOldPortfolio}
+              showProjectedLine={showProjectedLine}
+              showPlannedLine={showPlannedLine}
               onOpenAdvancedOptions={() => setShowAdvancedOptions(true)}
             />
           ) : (
@@ -313,6 +317,10 @@ const Finances = ({
         setShowNegativeValues={setShowNegativeValues}
         showOldPortfolio={showOldPortfolio}
         setShowOldPortfolio={setShowOldPortfolio}
+        showProjectedLine={showProjectedLine}
+        setShowProjectedLine={setShowProjectedLine}
+        showPlannedLine={showPlannedLine}
+        setShowPlannedLine={setShowPlannedLine}
         changeMonthlyDeposit={chartOptionsHook.changeMonthlyDeposit}
         setChangeMonthlyDeposit={chartOptionsHook.setChangeMonthlyDeposit}
         changeMonthlyWithdraw={chartOptionsHook.changeMonthlyWithdraw}

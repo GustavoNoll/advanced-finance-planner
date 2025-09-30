@@ -1,10 +1,7 @@
 import { useTranslation } from "react-i18next";
-import { ChartDataPoint, FinancialRecord, MonthNumber, InvestmentPlan, Profile } from '@/types/financial';
-import { ChartOptions, generateChartProjections, YearlyProjectionData } from '@/lib/chart-projections';
+import { ChartDataPoint, FinancialRecord, InvestmentPlan, Profile } from '@/types/financial';
+import { ChartOptions, generateChartProjections } from '@/lib/chart-projections';
 import { useState, useEffect } from "react";
-import { calculateCompoundedRates, yearlyReturnRateToMonthlyReturnRate } from '@/lib/financial-math';
-import { calculateInflationAdjustedValue, getInvestmentPlanBaseDate } from '@/lib/inflation-utils';
-import { TrendingUp } from "lucide-react";
 import PatrimonialProjectionChart from "@/components/chart/PatrimonialProjectionChart";
 import { createDateWithoutTimezone, createDateFromYearMonth } from '@/utils/dateUtils';
 
@@ -399,7 +396,10 @@ export const SimulationChart = ({
           showNominalValues={!showRealValues}
           hideNegativeValues={!showNegativeValues}
           showOldPortfolio={showOldPortfolio}
+          showProjectedLine={externalChartOptions.showProjectedLine ?? true}
+          showPlannedLine={externalChartOptions.showPlannedLine ?? false}
           investmentPlan={investmentPlan}
+          activeMicroPlan={null} // No active micro plan in simulation
           handleEditItem={() => {}} // No edit functionality in simulation
           onSubmitGoal={() => Promise.resolve()} // No submit functionality in simulation
           onSubmitEvent={() => Promise.resolve()} // No submit functionality in simulation

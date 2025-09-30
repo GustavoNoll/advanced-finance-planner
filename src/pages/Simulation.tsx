@@ -91,6 +91,7 @@ export const Simulation = () => {
   const [showRealValues, setShowRealValues] = useState(false);
   const [showNegativeValues, setShowNegativeValues] = useState(false);
   const [showOldPortfolio, setShowOldPortfolio] = useState(false);
+  const [showProjectedLine, setShowProjectedLine] = useState(true);
 
   // Auto-activate showOldPortfolio when hasOldPortfolio is enabled
   useEffect(() => {
@@ -185,8 +186,10 @@ export const Simulation = () => {
   const chartOptions: ChartOptions = useMemo(() => ({
     showRealValues,
     showNegativeValues,
-    showOldPortfolio
-  }), [showRealValues, showNegativeValues, showOldPortfolio]);
+    showOldPortfolio,
+    showProjectedLine,
+    showPlannedLine: false // Always false in simulation since there's no real data
+  }), [showRealValues, showNegativeValues, showOldPortfolio, showProjectedLine]);
 
   // Generate raw chart data and projection data
   const { rawChartData, projectionData } = useMemo(() => {
@@ -205,6 +208,8 @@ export const Simulation = () => {
       desired_income: parseFloat(formData.desiredIncome.replace(/[^\d.,]/g, '').replace(',', '.') || '0'),
       expected_return: parseFloat(formData.expectedReturn),
       inflation: parseFloat(formData.inflation),
+      adjust_contribution_for_accumulated_inflation: false,
+      adjust_income_for_accumulated_inflation: false,
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString()
     };
@@ -728,6 +733,15 @@ export const Simulation = () => {
                       {t('expenseChart.showOldPortfolio')}
                     </Label>
                   </div>
+                  
+                  <div className="flex items-center space-x-2">
+                    <Switch
+                      id="showProjectedLine"
+                      checked={showProjectedLine}
+                      onCheckedChange={setShowProjectedLine}
+                    />
+                    <Label htmlFor="showProjectedLine">{t('expenseChart.showProjectedLine')}</Label>
+                  </div>
                 </div>
               </CardContent>
             </Card>
@@ -779,6 +793,8 @@ export const Simulation = () => {
                     desired_income: parseFloat(formData.desiredIncome.replace(/[^\d.,]/g, '').replace(',', '.') || '0'),
                     expected_return: parseFloat(formData.expectedReturn),
                     inflation: parseFloat(formData.inflation),
+                    adjust_contribution_for_accumulated_inflation: formData.adjustContributionForInflation,
+                    adjust_income_for_accumulated_inflation: formData.adjustIncomeForInflation,
                     created_at: new Date().toISOString(),
                     updated_at: new Date().toISOString()
                   }] : []}

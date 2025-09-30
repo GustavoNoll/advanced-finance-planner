@@ -65,7 +65,9 @@ export const ptBR = {
         firstPlanDateNote: "Para o primeiro micro plano, a data de vigência será igual à data de início do plano principal.",
         basePlanDateNote: "A data do micro plano base não pode ser editada. Para alterar a data, edite o plano principal.",
         cannotCreateBeforeBase: "Não é possível criar micro planos em datas anteriores ao micro plano base.",
-        dateAlreadyUsed: "Já existe um micro plano para este mês/ano. Escolha uma data diferente."
+        dateAlreadyUsed: "Já existe um micro plano para este mês/ano. Escolha uma data diferente.",
+        adjustContributionForAccumulatedInflation: "Ajustar aporte pela inflação acumulada",
+        adjustIncomeForAccumulatedInflation: "Ajustar resgate pela inflação acumulada"
       }
     },
     details: {
@@ -87,8 +89,8 @@ export const ptBR = {
         initialAmount: "Valor Inicial",
         monthlyDeposit: "Depósito Mensal",
         requiredMonthlyDeposit: "Depósito Mensal Necessário",
-        adjustContributionForInflation: "Aporte ajustado pela inflação anualmente",
-        adjustIncomeForInflation: "Resgate ajustado pela inflação anualmente",
+        adjustContributionForAccumulatedInflation: "Aporte ajustado pela inflação acumulada",
+        adjustIncomeForAccumulatedInflation: "Resgate ajustado pela inflação acumulada",
       },
       financialGoals: {
         title: "Objetivos Financeiros",
@@ -108,8 +110,8 @@ export const ptBR = {
           "2": "Deixar Herança",
           "3": "Não tocar no principal"
         },
-        adjustContributionForInflation: "Ajuste do Aporte pela Inflação",
-        adjustIncomeForInflation: "Ajuste do Resgate pela Inflação",
+        adjustContributionForAccumulatedInflation: "Ajuste do Aporte pela Inflação Acumulada",
+        adjustIncomeForAccumulatedInflation: "Ajuste do Resgate pela Inflação Acumulada",
         enabled: "Ativado",
         disabled: "Desativado"
       },
@@ -139,11 +141,13 @@ export const ptBR = {
       lifeExpectancy: "Expectativa de Vida",
       riskProfile: "Perfil de Risco / Retorno IPCA+",
       inflationRate: "Taxa de Inflação Anual (%)",
+      adjustContributionForInflation: "Ajustar aporte pela inflação",
+      adjustIncomeForInflation: "Ajustar resgate pela inflação",
       planType: "Tipo do Plano",
       createButton: "Criar Plano",
       creating: "Criando...",
-      adjustContributionForInflation: "Ajustar aporte pela inflação anualmente",
-      adjustIncomeForInflation: "Ajustar regaste pela inflação anualmente",
+      adjustContributionForAccumulatedInflation: "Ajustar aporte pela inflação acumulada",
+      adjustIncomeForAccumulatedInflation: "Ajustar resgate pela inflação acumulada",
       advancedSettings: "Configurações Avançadas",
       endAge: "Idade de Encerramento",
       legacyAge: "Idade para Deixar Herança",
@@ -869,6 +873,10 @@ export const ptBR = {
     chartOptionsHelp: "O valor informado será aplicado a partir da data especificada, sem considerar inflação acumulada desde o início do plano. A inflação será aplicada apenas a partir da data da mudança.",
     showOldPortfolio: "Mostrar Carteira Antiga",
     showOldPortfolioHelp: "Mostra ou oculta a linha da carteira antiga no gráfico. Esta linha representa o valor que o cliente já possuía antes de iniciar o plano de investimento.",
+    showProjectedLine: "Mostrar Linha de Projeção",
+    showProjectedLineHelp: "Mostra ou oculta a linha laranja tracejada que representa a projeção financeira planejada.",
+    showPlannedLine: "Mostrar Linha de Evolução Real",
+    showPlannedLineHelp: "Mostra ou oculta a linha azul que representa a evolução real do patrimônio (dados reais e projetados).",
     chartOptions: "Opções do Gráfico",
     showRealValues: "Mostrar Valores Reais"
   },
