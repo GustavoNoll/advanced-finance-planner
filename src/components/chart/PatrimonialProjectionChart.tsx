@@ -53,6 +53,8 @@ type PatrimonialProjectionChartProps = {
   showNominalValues: boolean
   hideNegativeValues: boolean
   showOldPortfolio: boolean
+  showProjectedLine?: boolean
+  showPlannedLine?: boolean
   investmentPlan: InvestmentPlan
   activeMicroPlan: MicroInvestmentPlan | null
   onSubmitGoal: (values: GoalFormValues) => Promise<void>
@@ -137,6 +139,8 @@ export default function PatrimonialProjectionChart({
   showNominalValues,
   hideNegativeValues,
   showOldPortfolio,
+  showProjectedLine = true,
+  showPlannedLine = true,
   investmentPlan,
   activeMicroPlan,
   width = '100%',
@@ -185,7 +189,7 @@ export default function PatrimonialProjectionChart({
       month: d.month,
       realDataPoint: d.realDataPoint,
     }))
-  }, [filteredData, showNominalValues, showOldPortfolio])
+  }, [filteredData, showOldPortfolio])
 
   // Preparar dados de objetivos
   const objectivePoints = useMemo(() => {    
@@ -207,7 +211,7 @@ export default function PatrimonialProjectionChart({
         const maxDate = Math.max(...chartData.map((d) => d.date.getTime()))
         return obj.date.getTime() >= minDate && obj.date.getTime() <= maxDate
       })
-  }, [objectives, chartData, showNominalValues])
+  }, [objectives, chartData])
 
   // Escalas
   const dateScale = useMemo(() => {
@@ -314,7 +318,7 @@ export default function PatrimonialProjectionChart({
         })
       }
     },
-    [showTooltip, valueScale, dateScale, margin.left, chartData, objectivePoints, innerHeight],
+    [showTooltip, valueScale, dateScale, margin.left, margin.top, chartData, objectivePoints, innerHeight],
   )
 
   // Formatador de data com mês abreviado em português
@@ -402,7 +406,7 @@ export default function PatrimonialProjectionChart({
 
           {/* Linha dos valores reais/projetados - azul gradiente, curva única */}
           {/* Linha azul real (sólida, escura) */}
-          {!isSimulation && realPoints.length > 1 && (
+          {!isSimulation && showPlannedLine && realPoints.length > 1 && (
             <LinePath
               data={realPoints}
               x={d => dateScale(d.date) ?? 0}
@@ -413,7 +417,7 @@ export default function PatrimonialProjectionChart({
             />
           )}
           {/* Linha azul não real (clara, pontilhada) - segmento único após último real ou todos os pontos se não houver real */}
-          {!isSimulation && (() => {
+          {!isSimulation && showPlannedLine && (() => {
             if (!realPoints.length && sortedData.length > 1) {
               // Não há pontos reais, mostrar linha clara para todos os pontos
               return (
@@ -449,7 +453,7 @@ export default function PatrimonialProjectionChart({
             )
           })()}
           {/* Linha dos valores projetados - laranja tracejada */}
-          {sortedData.length > 1 && (
+          {showProjectedLine && sortedData.length > 1 && (
             <LinePath
               data={sortedData}
               x={d => dateScale(d.date) ?? 0}
@@ -635,16 +639,18 @@ export default function PatrimonialProjectionChart({
 
       {/* Legenda inferior */}
       <div className="flex items-center justify-center gap-8 mt-4 pb-4">
-        {!isSimulation && (
+        {!isSimulation && showPlannedLine && (
           <div className="flex items-center gap-2">
             <div className="w-6 h-0.5 bg-blue-500"></div>
             <span className="text-sm text-gray-600 dark:text-gray-300">Evolução Real</span>
           </div>
         )}
-        <div className="flex items-center gap-2">
-          <div className="w-6 h-0.5 bg-orange-500" style={{ borderTop: "2px dashed #f97316" }}></div>
-          <span className="text-sm text-gray-600 dark:text-gray-300">Projeção Financeira</span>
-        </div>
+        {showProjectedLine && (
+          <div className="flex items-center gap-2">
+            <div className="w-6 h-0.5 bg-orange-500" style={{ borderTop: "2px dashed #f97316" }}></div>
+            <span className="text-sm text-gray-600 dark:text-gray-300">Projeção Financeira</span>
+          </div>
+        )}
         {showOldPortfolio && sortedData.some(d => d.oldPortfolioValue !== null && d.oldPortfolioValue !== undefined) && (
           <div className="flex items-center gap-2">
             <div className="w-6 h-0.5 bg-green-500" style={{ borderTop: "2px dashed #10b981" }}></div>
@@ -686,7 +692,7 @@ export default function PatrimonialProjectionChart({
             // Criar array com todos os valores disponíveis para ordenação
             const values = []
             
-            if (!isSimulation && tooltipData.actualValue !== undefined) {
+            if (!isSimulation && showPlannedLine && tooltipData.actualValue !== undefined) {
               values.push({
                 type: 'actual',
                 value: tooltipData.actualValue,
@@ -697,7 +703,7 @@ export default function PatrimonialProjectionChart({
               })
             }
             
-            if (tooltipData.projectedValue !== undefined) {
+            if (showProjectedLine && tooltipData.projectedValue !== undefined) {
               values.push({
                 type: 'projected',
                 value: tooltipData.projectedValue,

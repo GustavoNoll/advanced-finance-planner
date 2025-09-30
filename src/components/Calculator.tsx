@@ -1,6 +1,6 @@
 import { useTranslation } from "react-i18next";
 import { Info, Calculator as CalculatorIcon } from "lucide-react";
-import { PlanProgressData } from "@/lib/plan-progress";
+import { PlanProgressData } from "@/lib/plan-progress-calculator";
 import { DashboardCard } from "./DashboardCard";
 import { InvestmentPlan, MicroInvestmentPlan } from "@/types/financial";
 import { formatCurrency, CurrencyCode} from '@/utils/currency';

@@ -4,7 +4,7 @@ import { ArrowUpRight, Clock, Target, Info } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { FinancialRecord, InvestmentPlan, MicroInvestmentPlan, MicroPlanCalculations } from "@/types/financial";
 import { useMemo } from "react";
-import { PlanProgressData, utils } from "@/lib/plan-progress";
+import { PlanProgressData, utils } from "@/lib/plan-progress-calculator";
 import {
   HoverCard,
   HoverCardContent,

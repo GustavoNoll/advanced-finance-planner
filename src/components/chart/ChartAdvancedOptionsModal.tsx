@@ -23,6 +23,12 @@ interface ChartAdvancedOptionsModalProps {
   showOldPortfolio: boolean;
   setShowOldPortfolio: (value: boolean) => void;
   
+  // Line visibility options
+  showProjectedLine: boolean;
+  setShowProjectedLine: (value: boolean) => void;
+  showPlannedLine: boolean;
+  setShowPlannedLine: (value: boolean) => void;
+  
   // Chart options
   changeMonthlyDeposit: {
     enabled: boolean;
@@ -58,6 +64,10 @@ export const ChartAdvancedOptionsModal = ({
   setShowNegativeValues,
   showOldPortfolio,
   setShowOldPortfolio,
+  showProjectedLine,
+  setShowProjectedLine,
+  showPlannedLine,
+  setShowPlannedLine,
   changeMonthlyDeposit,
   setChangeMonthlyDeposit,
   changeMonthlyWithdraw,
@@ -125,6 +135,48 @@ export const ChartAdvancedOptionsModal = ({
                 <Switch
                   checked={showOldPortfolio}
                   onCheckedChange={setShowOldPortfolio}
+                />
+              </div>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <span className="text-sm font-medium text-gray-700 dark:text-gray-200">{t('expenseChart.showProjectedLine')}</span>
+                  <HoverCard>
+                    <HoverCardTrigger asChild>
+                      <button className="text-gray-400 dark:text-gray-300 hover:text-gray-600 dark:hover:text-gray-100 transition-colors" tabIndex={-1} type="button">
+                        <HelpCircle className="w-4 h-4" />
+                      </button>
+                    </HoverCardTrigger>
+                    <HoverCardContent className="max-w-xs bg-white dark:bg-gray-900">
+                      <p className="text-sm text-gray-600 dark:text-gray-300">
+                        {t('expenseChart.showProjectedLineHelp')}
+                      </p>
+                    </HoverCardContent>
+                  </HoverCard>
+                </div>
+                <Switch
+                  checked={showProjectedLine}
+                  onCheckedChange={setShowProjectedLine}
+                />
+              </div>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <span className="text-sm font-medium text-gray-700 dark:text-gray-200">{t('expenseChart.showPlannedLine')}</span>
+                  <HoverCard>
+                    <HoverCardTrigger asChild>
+                      <button className="text-gray-400 dark:text-gray-300 hover:text-gray-600 dark:hover:text-gray-100 transition-colors" tabIndex={-1} type="button">
+                        <HelpCircle className="w-4 h-4" />
+                      </button>
+                    </HoverCardTrigger>
+                    <HoverCardContent className="max-w-xs bg-white dark:bg-gray-900">
+                      <p className="text-sm text-gray-600 dark:text-gray-300">
+                        {t('expenseChart.showPlannedLineHelp')}
+                      </p>
+                    </HoverCardContent>
+                  </HoverCard>
+                </div>
+                <Switch
+                  checked={showPlannedLine}
+                  onCheckedChange={setShowPlannedLine}
                 />
               </div>
             </div>

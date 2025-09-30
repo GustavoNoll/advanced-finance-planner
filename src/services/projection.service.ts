@@ -1,5 +1,5 @@
 import { generateProjectionData, MonthlyProjectionData, YearlyProjectionData } from '@/lib/chart-projections'
-import { processPlanProgressData, PlanProgressData } from '@/lib/plan-progress'
+import { processPlanProgressData, PlanProgressData } from '@/lib/plan-progress-calculator'
 import { FinancialRecord, ProjectedEvent, Goal, MicroInvestmentPlan } from '@/types/financial'
 import { Profile, InvestmentPlan } from '@/types/financial'
 import { createDateWithoutTimezone } from '@/utils/dateUtils'

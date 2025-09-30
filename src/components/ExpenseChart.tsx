@@ -4,8 +4,6 @@ import { generateChartProjections, YearlyProjectionData } from '@/lib/chart-proj
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
 import { useState } from "react";
-import { calculateCompoundedRates, yearlyReturnRateToMonthlyReturnRate } from '@/lib/financial-math';
-import { calculateInflationAdjustedValue, getInvestmentPlanBaseDate } from '@/lib/inflation-utils';
 import { ChartPointDialog } from "@/components/chart/ChartPointDialog";
 import { TrendingUp } from "lucide-react";
 import type { ViewBox } from 'recharts/types/util/types';
@@ -35,6 +33,8 @@ interface ExpenseChartProps {
   showRealValues?: boolean;
   showNegativeValues?: boolean;
   showOldPortfolio?: boolean;
+  showProjectedLine?: boolean;
+  showPlannedLine?: boolean;
   onOpenAdvancedOptions?: () => void;
 }
 
@@ -289,6 +289,8 @@ export const ExpenseChart = ({
   showRealValues = false,
   showNegativeValues = false,
   showOldPortfolio = false,
+  showProjectedLine = true,
+  showPlannedLine = true,
   onOpenAdvancedOptions
 }: ExpenseChartProps) => {
   const { t } = useTranslation();
@@ -763,6 +765,8 @@ export const ExpenseChart = ({
           showNominalValues={!showRealValues}
           hideNegativeValues={!showNegativeValues}
           showOldPortfolio={showOldPortfolio}
+          showProjectedLine={showProjectedLine}
+          showPlannedLine={showPlannedLine}
           investmentPlan={investmentPlan}
           activeMicroPlan={activeMicroPlan}
           handleEditItem={(item) => {
