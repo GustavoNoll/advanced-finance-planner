@@ -396,8 +396,8 @@ export const SimulationChart = ({
           showNominalValues={!showRealValues}
           hideNegativeValues={!showNegativeValues}
           showOldPortfolio={showOldPortfolio}
-          showProjectedLine={true} // Always show projected line in simulation
-          showPlannedLine={false} // No planned line in simulation since there's no real data
+          showProjectedLine={externalChartOptions.showProjectedLine ?? true}
+          showPlannedLine={externalChartOptions.showPlannedLine ?? false}
           investmentPlan={investmentPlan}
           activeMicroPlan={null} // No active micro plan in simulation
           handleEditItem={() => {}} // No edit functionality in simulation

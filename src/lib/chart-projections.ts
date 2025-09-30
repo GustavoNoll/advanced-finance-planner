@@ -98,6 +98,8 @@ export interface ChartOptions {
   showRealValues?: boolean;
   showNegativeValues?: boolean;
   showOldPortfolio?: boolean;
+  showProjectedLine?: boolean;
+  showPlannedLine?: boolean;
 }
 
 interface ProjectionContext {
