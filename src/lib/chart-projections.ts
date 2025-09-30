@@ -495,8 +495,18 @@ export function generateProjectionData(
     if (isTimeForChangeActivePlan(context.microPlans, currentDate, previousDate)) {
       const activeMicroPlanForDate = getActiveMicroPlanForDate(context.microPlans, currentDate);
       if (activeMicroPlanForDate) {
-        currentMonthlyDeposit = activeMicroPlanForDate.monthly_deposit;
-        currentMonthlyWithdrawal = activeMicroPlanForDate.desired_income;
+        // Aplicar ajuste de inflação acumulada se os campos estiverem como true
+        if (activeMicroPlanForDate.adjust_contribution_for_accumulated_inflation) {
+          currentMonthlyDeposit = activeMicroPlanForDate.monthly_deposit * accumulatedInflation;
+        } else {
+          currentMonthlyDeposit = activeMicroPlanForDate.monthly_deposit;
+        }
+        
+        if (activeMicroPlanForDate.adjust_income_for_accumulated_inflation) {
+          currentMonthlyWithdrawal = activeMicroPlanForDate.desired_income * accumulatedInflation;
+        } else {
+          currentMonthlyWithdrawal = activeMicroPlanForDate.desired_income;
+        }
       }
     }
 

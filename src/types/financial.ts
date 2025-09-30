@@ -100,10 +100,16 @@ export interface MicroInvestmentPlan {
   monthly_deposit: number;
   desired_income: number;
   expected_return: number;
+  adjust_contribution_for_accumulated_inflation: boolean;
+  adjust_income_for_accumulated_inflation: boolean;
   inflation: number;
   created_at?: string;
   updated_at?: string;
 }
+
+export type CreateInvestmentPlan = Omit<InvestmentPlan, 'id' | 'created_at' | 'updated_at' | 'micro_investment_plans'>;
+
+export type UpdateInvestmentPlan = Partial<CreateInvestmentPlan>;
 
 export type CreateMicroInvestmentPlan = Omit<MicroInvestmentPlan, 'id' | 'created_at' | 'updated_at'>;
 
