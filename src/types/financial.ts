@@ -36,7 +36,6 @@ export interface FinancialRecord {
   ending_balance: number;
   target_rentability?: number;
   growth_percentage?: number;
-
   created_at?: string;
   updated_at?: string;
   selected_items?: SelectedGoalsEvents;
