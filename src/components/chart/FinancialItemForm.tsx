@@ -1,4 +1,5 @@
 import { useForm } from "react-hook-form";
+import { useEffect } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { useTranslation } from "react-i18next";
@@ -88,12 +89,22 @@ export const FinancialItemForm = ({
       asset_value: initialValues?.asset_value || '',
       month: initialValues?.month || '',
       year: initialValues?.year || '',
-      type,
+      type: initialValues?.type || type,
       payment_mode: initialValues?.payment_mode || 'none',
       installment_count: initialValues?.installment_count?.toString() || '',
       installment_interval: initialValues?.installment_interval?.toString() || '1',
     },
   });
+
+  // Ensure 'type' is always in form state to satisfy the schema
+  useEffect(() => {
+    form.register('type');
+    form.setValue('type', type as FinancialItemFormValues['type'], { 
+      shouldDirty: false, 
+      shouldTouch: false, 
+      shouldValidate: false 
+    });
+  }, [type, form]);
 
   // Reset form when type changes
   const handleTypeChange = (newType: 'goal' | 'event') => {
@@ -460,7 +471,7 @@ export const FinancialItemForm = ({
                 hasErrors && "opacity-50 cursor-not-allowed"
               )}
             >
-              {isSubmitting ? t('common.saving') : t('common.save')}
+              {isSubmitting ? t('common.saving') : t('common.create')}
             </Button>
           </div>
         </div>

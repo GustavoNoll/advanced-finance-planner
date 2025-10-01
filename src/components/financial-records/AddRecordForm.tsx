@@ -21,6 +21,7 @@ import { Link, Plus } from "lucide-react";
 import SelectExistingItems from "./SelectExistingItems";
 import SelectedItemCard from "./SelectedItemCard";
 import { FinancialItemForm } from "@/components/chart/FinancialItemForm";
+import { GoalsEventsService } from "@/services/goals-events.service";
 
 // Interfaces para os itens selecionados
 interface Goal {
@@ -81,6 +82,11 @@ interface LinkedItem {
   allocatedAmount: number;
   isCompleting: boolean;
   icon: string;
+  month?: number;
+  year?: number;
+  payment_mode?: 'none' | 'installment' | 'repeat';
+  installment_count?: number;
+  installment_interval?: number;
 }
 
 interface AddRecordFormProps {
@@ -187,14 +193,19 @@ export const AddRecordForm = ({ clientId, onSuccess, editingRecord, investmentPl
     }
   }, [editingRecord]);
 
-  const handleCreateItem = (itemData: { type: 'goal' | 'event'; name: string; asset_value: string | number; icon: string; month?: string; year?: string }) => {
+  const handleCreateItem = (itemData: { type: 'goal' | 'event'; name: string; asset_value: string | number; icon: string; month?: string; year?: string; payment_mode?: 'none' | 'installment' | 'repeat'; installment_count?: string; installment_interval?: string }) => {
     const newItem: LinkedItem = {
       id: `temp-${Date.now()}`, // ID temporário até salvar no banco
       type: itemData.type,
       name: itemData.name,
       allocatedAmount: parseFloat(String(itemData.asset_value)),
       isCompleting: false,
-      icon: itemData.icon
+      icon: itemData.icon,
+      month: itemData.month ? parseInt(itemData.month) : undefined,
+      year: itemData.year ? parseInt(itemData.year) : undefined,
+      payment_mode: itemData.payment_mode || 'none',
+      installment_count: itemData.installment_count ? parseInt(itemData.installment_count) : undefined,
+      installment_interval: itemData.installment_interval ? parseInt(itemData.installment_interval) : undefined,
     };
     
     setSelectedItems(prev => {
@@ -248,6 +259,53 @@ export const AddRecordForm = ({ clientId, onSuccess, editingRecord, investmentPl
       const filtered = prev.filter(item => item.id !== itemId);
       return filtered;
     });
+  };
+
+  // Função para processar itens selecionados (criar temporários e vincular)
+  const processSelectedItems = async (selectedItems: LinkedItem[], recordId: string, recordMonth: number, recordYear: number) => {
+    if (selectedItems.length === 0) return;
+
+    console.log(selectedItems)
+    const itemsWithRealIds = await Promise.all(selectedItems.map(async (item) => {
+      if (!item.id.startsWith('temp-')) return item
+
+      const common = {
+        profile_id: clientId,
+        name: item.name,
+        icon: item.icon,
+        asset_value: item.allocatedAmount,
+        month: item.month ?? recordMonth,
+        year: item.year ?? recordYear,
+        payment_mode: item.payment_mode ?? 'none',
+        installment_count: item.installment_count ?? null,
+        installment_interval: item.installment_interval ?? null,
+      }
+
+      const created = await GoalsEventsService.createItem(item.type, common)
+      return { ...item, id: created.id as string }
+    }))
+
+    const linkData = itemsWithRealIds.map(item => ({
+      financial_record_id: recordId,
+      item_id: item.id,
+      item_type: item.type,
+      allocated_amount: item.allocatedAmount,
+      is_completing: item.isCompleting
+    }))
+
+    if (linkData.length > 0) {
+      const { error: linksError } = await supabase
+        .from('financial_record_links')
+        .insert(linkData)
+      if (linksError) console.error('Error creating links:', linksError)
+
+      const completingItems = itemsWithRealIds.filter(item => item.isCompleting)
+      if (completingItems.length > 0) {
+        await processCompletingItems(completingItems, recordMonth, recordYear)
+      }
+
+      if (onLinksUpdated) onLinksUpdated()
+    }
   };
 
   // Função para processar itens finalizados
@@ -332,49 +390,8 @@ export const AddRecordForm = ({ clientId, onSuccess, editingRecord, investmentPl
 
         if (error) throw error;
 
-        // Criar os links se houver itens selecionados (para edição também)
-        
-        if (selectedItems.length > 0) {
-          const linkData = selectedItems.map(item => {
-            const link = {
-              financial_record_id: data.id,
-              item_id: item.id.startsWith('temp-') ? null : item.id, // Ignorar IDs temporários
-              item_type: item.type,
-              allocated_amount: item.allocatedAmount,
-              is_completing: item.isCompleting
-            };
-            return link;
-          }).filter(link => {
-            return link.item_id !== null;
-          }); // Filtrar apenas itens existentes
-
-          if (linkData.length > 0) {
-            
-            const { data: insertedLinks, error: linksError } = await supabase
-              .from('financial_record_links')
-              .insert(linkData)
-              .select();
-
-            if (linksError) {
-              console.error('Error creating links para edição:', linksError);
-              // Não falhar se os links não puderem ser criados
-            } else {
-              // Notificar que os links foram atualizados
-              if (onLinksUpdated) {
-                onLinksUpdated();
-              }
-            }
-
-            // Processar itens marcados como concluídos
-            const completingItems = selectedItems.filter(item => 
-              item.isCompleting && !item.id.startsWith('temp-')
-            );
-
-            if (completingItems.length > 0) {
-              await processCompletingItems(completingItems, values.record_month, values.record_year);
-            }
-          }
-        }
+        // Processar itens selecionados (criar temporários e vincular)
+        await processSelectedItems(selectedItems, data.id, values.record_month, values.record_year);
 
         // Atualizar o cache do registro financeiro
         queryClient.setQueryData(['financialRecords', clientId], (oldData: FinancialRecord[] | undefined) => {
@@ -419,49 +436,8 @@ export const AddRecordForm = ({ clientId, onSuccess, editingRecord, investmentPl
           throw error;
         }
 
-        // Criar os links se houver itens selecionados
-        
-        if (selectedItems.length > 0) {
-          const linkData = selectedItems.map(item => {
-            const link = {
-              financial_record_id: data.id,
-              item_id: item.id.startsWith('temp-') ? null : item.id, // Ignorar IDs temporários
-              item_type: item.type,
-              allocated_amount: item.allocatedAmount,
-              is_completing: item.isCompleting
-            };
-            return link;
-          }).filter(link => {
-            return link.item_id !== null;
-          }); // Filtrar apenas itens existentes
-
-          if (linkData.length > 0) {
-            
-            const { data: insertedLinks, error: linksError } = await supabase
-              .from('financial_record_links')
-              .insert(linkData)
-              .select();
-
-            if (linksError) {
-              console.error('Error creating links:', linksError);
-              // Não falhar se os links não puderem ser criados
-            } else {
-              // Notificar que os links foram atualizados
-              if (onLinksUpdated) {
-                onLinksUpdated();
-              }
-            }
-
-            // Processar itens marcados como concluídos
-            const completingItems = selectedItems.filter(item => 
-              item.isCompleting && !item.id.startsWith('temp-')
-            );
-
-            if (completingItems.length > 0) {
-              await processCompletingItems(completingItems, values.record_month, values.record_year);
-            }
-          }
-        }
+        // Processar itens selecionados (criar temporários e vincular)
+        await processSelectedItems(selectedItems, data.id, values.record_month, values.record_year);
 
         // Atualizar o cache do registro financeiro
         queryClient.setQueryData(['financialRecords', clientId], (oldData: FinancialRecord[] | undefined) => {

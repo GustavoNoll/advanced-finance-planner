@@ -14,6 +14,44 @@ export interface Counters {
 
 export class GoalsEventsService {
   /**
+   * Cria uma meta ou evento
+   */
+  static async createItem(
+    itemType: 'goal' | 'event',
+    payload: {
+      profile_id: string
+      name: string
+      icon: string
+      asset_value: number
+      month: number
+      year: number
+      status?: string
+      payment_mode?: 'none' | 'installment' | 'repeat'
+      installment_count?: number | null
+      installment_interval?: number | null
+    }
+  ): Promise<Goal | ProjectedEvent> {
+    const table = itemType === 'goal' ? 'financial_goals' : 'events'
+    const defaulted = {
+      status: 'pending',
+      payment_mode: 'none',
+      installment_count: null,
+      installment_interval: null,
+      ...payload
+    }
+
+    const { data, error } = await supabase
+      .from(table)
+      .insert([defaulted])
+      .select()
+      .single()
+
+    if (error) throw error
+    // Ensure type property on return for consumer convenience
+    const created = data as Goal | ProjectedEvent
+    return { ...created, type: itemType } as Goal | ProjectedEvent
+  }
+  /**
    * Busca contadores de metas e eventos
    */
   static async fetchCounters(userId: string): Promise<Counters> {
