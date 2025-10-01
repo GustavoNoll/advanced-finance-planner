@@ -24,6 +24,9 @@ interface ChartPointDialogProps {
   onSubmitEvent: (values: EventFormValues) => Promise<void>;
   onCancel: () => void;
   type: 'goal' | 'event';
+  planInitialDate?: string;
+  limitAge?: number;
+  birthDate?: string;
 }
 
 export const ChartPointDialog = ({
@@ -34,7 +37,10 @@ export const ChartPointDialog = ({
   onSubmitGoal,
   onSubmitEvent,
   onCancel,
-  type
+  type,
+  planInitialDate,
+  limitAge,
+  birthDate
 }: ChartPointDialogProps) => {
   const { t } = useTranslation();
   const [formType, setFormType] = useState<'goal' | 'event'>(type);
@@ -92,6 +98,9 @@ export const ChartPointDialog = ({
               currency={currency}
               onTypeChange={setFormType}
               isSubmitting={false}
+              planInitialDate={planInitialDate || new Date().toISOString().split('T')[0]}
+              limitAge={limitAge}
+              birthDate={birthDate}
             />
           </>
         ) : (

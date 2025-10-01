@@ -22,6 +22,7 @@ interface MicroPlanFormProps {
   baseMicroPlanDate?: string
   existingMicroPlans?: MicroInvestmentPlan[]
   isBaseMicroPlan?: boolean
+  lastMicroPlan?: MicroInvestmentPlan | null
 }
 
 export function MicroPlanForm({
@@ -35,7 +36,8 @@ export function MicroPlanForm({
   isFirstMicroPlan,
   baseMicroPlanDate,
   existingMicroPlans = [],
-  isBaseMicroPlan = false
+  isBaseMicroPlan = false,
+  lastMicroPlan
 }: MicroPlanFormProps) {
   const { t } = useTranslation()
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -107,8 +109,22 @@ export function MicroPlanForm({
       setEffectiveDateInput(planInitialDate)
       setMonthInput((date.getMonth() + 1).toString().padStart(2, '0'))
       setYearInput(date.getFullYear().toString())
+    } else if (lastMicroPlan && !isFirstMicroPlan) {
+      // Preencher com dados do último micro plano quando criando um novo
+      const expectedReturnStr = parseFloat(lastMicroPlan.expected_return.toString()).toFixed(1)
+      
+      setFormData({
+        life_investment_plan_id: planId,
+        effective_date: '',
+        monthly_deposit: lastMicroPlan.monthly_deposit.toString(),
+        desired_income: lastMicroPlan.desired_income.toString(),
+        expected_return: expectedReturnStr,
+        inflation: lastMicroPlan.inflation.toString(),
+        adjust_contribution_for_accumulated_inflation: true, // Manter valor padrão
+        adjust_income_for_accumulated_inflation: true // Manter valor padrão
+      })
     }
-  }, [initialData, isFirstMicroPlan, planId, planInitialDate])
+  }, [initialData, isFirstMicroPlan, planId, planInitialDate, lastMicroPlan])
 
   const handleChange = (field: string, value: string | boolean) => {
     setFormData(prev => ({

@@ -58,23 +58,23 @@ export class InvestmentPlanService {
   /**
    * Busca todos os planos de investimento de um usuário
    */
-  static async fetchPlansByUserId(userId: string): Promise<InvestmentPlan[]> {
-    if (!userId) return []
+  static async fetchPlanByUserId(userId: string): Promise<InvestmentPlan | null> {
+    if (!userId) return null
 
     try {
       const { data, error } = await supabase
         .from('investment_plans')
         .select('*')
         .eq('user_id', userId)
-        .order('created_at', { ascending: false })
+        .single()
 
       if (error) {
-        throw new Error('Failed to fetch investment plans')
+        throw new Error('Failed to fetch investment plan')
       }
 
-      return data || []
+      return data || null
     } catch (error) {
-      return []
+      return null
     }
   }
 

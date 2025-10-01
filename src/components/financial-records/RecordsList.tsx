@@ -139,7 +139,7 @@ export function RecordsList({
               clientId={clientId}
               onSuccess={() => onEdit(0)}
               editingRecord={record}
-              investmentPlan={investmentPlan as InvestmentPlan}
+              investmentPlan={investmentPlan}
               onLinksUpdated={() => {
                 // Incrementar a chave de refresh para forçar atualização dos links
                 console.log('Links atualizados, incrementando chave de refresh');

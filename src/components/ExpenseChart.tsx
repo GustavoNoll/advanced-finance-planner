@@ -296,6 +296,7 @@ export const ExpenseChart = ({
   const { t } = useTranslation();
   const queryClient = useQueryClient();
   const [zoomLevel, setZoomLevel] = useState<ZoomLevel>('all');
+  
 
   const [customRange, setCustomRange] = useState<{ past: number, future: number }>({ past: 1, future: 1 });
   const [selectedPoint, setSelectedPoint] = useState<ChartPoint | null>(null);
@@ -795,6 +796,9 @@ export const ExpenseChart = ({
         onSubmitEvent={createEvent.mutateAsync}
         onCancel={handleDialogClose}
         type={'goal'}
+        planInitialDate={investmentPlan?.plan_initial_date}
+        limitAge={investmentPlan?.limit_age}
+        birthDate={profile?.birth_date}
       />
 
       <EditFinancialItemDialog
@@ -803,6 +807,9 @@ export const ExpenseChart = ({
         item={selectedItem}
         currency={investmentPlan?.currency as CurrencyCode}
         onSubmit={handleEditSubmit}
+        planInitialDate={investmentPlan?.plan_initial_date}
+        limitAge={investmentPlan?.limit_age}
+        birthDate={profile?.birth_date}
         onDelete={selectedItem ? async () => {
           if (!selectedItem) return;
           if (selectedItem.type === 'goal') {
