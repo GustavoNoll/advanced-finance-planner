@@ -3,6 +3,7 @@ import { ChartDataPoint, FinancialRecord, Goal, ProjectedEvent, MonthNumber, Inv
 import { generateChartProjections, YearlyProjectionData } from '@/lib/chart-projections';
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
+import { GoalsEventsService } from "@/services/goals-events.service";
 import { useState } from "react";
 import { ChartPointDialog } from "@/components/chart/ChartPointDialog";
 import { TrendingUp } from "lucide-react";
@@ -339,23 +340,19 @@ export const ExpenseChart = ({
   // Add mutations for creating goals and events
   const createGoal = useMutation({
     mutationFn: async (values: GoalFormValues) => {
-      const { data, error } = await supabase.from("financial_goals").insert([
-        {
-          profile_id: clientId,
-          icon: values.icon,
-          name: values.name,
-          asset_value: parseFloat(values.asset_value.replace(/[^\d.,]/g, '').replace(',', '.')),
-          month: parseInt(values.month),
-          year: parseInt(values.year),
-          payment_mode: values.payment_mode,
-          installment_count: values.payment_mode === 'installment' || values.payment_mode === 'repeat' ? parseInt(values.installment_count || "0") : null,
-          installment_interval: values.payment_mode === 'installment' || values.payment_mode === 'repeat' ? parseInt(values.installment_interval || "1") : null,
-          status: 'pending',
-        },
-      ]);
-
-      if (error) throw error;
-      return data;
+      const amount = parseFloat(values.asset_value.replace(/[^\d.,]/g, '').replace(',', '.'))
+      const created = await GoalsEventsService.createItem('goal', {
+        profile_id: clientId,
+        icon: values.icon,
+        name: values.name,
+        asset_value: amount,
+        month: parseInt(values.month),
+        year: parseInt(values.year),
+        payment_mode: values.payment_mode,
+        installment_count: values.payment_mode === 'installment' || values.payment_mode === 'repeat' ? parseInt(values.installment_count || '0') : null,
+        installment_interval: values.payment_mode === 'installment' || values.payment_mode === 'repeat' ? parseInt(values.installment_interval || '1') : null,
+      })
+      return created
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["financial-goals"] });
@@ -372,30 +369,19 @@ export const ExpenseChart = ({
 
   const createEvent = useMutation({
     mutationFn: async (values: EventFormValues) => {
-      const cleanAmount = values.asset_value
-        .replace(/[R$\s]/g, '')
-        .replace(/\./g, '')
-        .replace(',', '.');
-
-      const amount = parseFloat(cleanAmount);
-
-      const { data, error } = await supabase.from("events").insert([
-        {
-          profile_id: clientId,
-          name: values.name,
-          icon: values.icon,
-          asset_value: amount,
-          month: parseInt(values.month),
-          year: parseInt(values.year),
-          payment_mode: values.payment_mode,
-          installment_count: values.payment_mode === 'installment' || values.payment_mode === 'repeat' ? parseInt(values.installment_count || "0") : null,
-          installment_interval: values.payment_mode === 'installment' || values.payment_mode === 'repeat' ? parseInt(values.installment_interval || "1") : null,
-          status: 'pending'
-        },
-      ]);
-
-      if (error) throw error;
-      return data;
+      const amount = parseFloat(values.asset_value.replace(/[^\d.,]/g, '').replace(',', '.'))
+      const created = await GoalsEventsService.createItem('event', {
+        profile_id: clientId,
+        name: values.name,
+        icon: values.icon,
+        asset_value: amount,
+        month: parseInt(values.month),
+        year: parseInt(values.year),
+        payment_mode: values.payment_mode,
+        installment_count: values.payment_mode === 'installment' || values.payment_mode === 'repeat' ? parseInt(values.installment_count || '0') : null,
+        installment_interval: values.payment_mode === 'installment' || values.payment_mode === 'repeat' ? parseInt(values.installment_interval || '1') : null,
+      })
+      return created
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["events"] });
