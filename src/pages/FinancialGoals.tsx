@@ -11,6 +11,8 @@ import {
   ItemsList 
 } from "@/components/goals-events";
 import { useGoals, useGoalMutations } from "@/hooks/useGoalsEventsManagement";
+import { useInvestmentPlanByUserId } from "@/hooks/useInvestmentPlan";
+import { useProfileData } from "@/hooks/usePlanCreation";
 
 const FinancialGoals = () => {
   const { id: userId } = useParams();
@@ -30,6 +32,10 @@ const FinancialGoals = () => {
   // Hooks para dados e mutações com callback de sucesso
   const { projectedGoals, completedGoals, isLoading } = useGoals(userId || '');
   const { createGoal, updateGoal, deleteGoal } = useGoalMutations(userId || '', closeForm);
+  
+  // Hooks para obter dados do plano de investimento
+  const { plan: investmentPlan } = useInvestmentPlanByUserId(userId || '');
+  const { profileData } = useProfileData(userId || '');
 
   // Handlers
   const handleSubmit = (values: FinancialItemFormValues) => {
@@ -53,7 +59,7 @@ const FinancialGoals = () => {
     setShowAddForm(false);
   };
 
-  if (isLoading) {
+  if (isLoading || !profileData || !investmentPlan) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <Spinner size="lg" />
@@ -83,6 +89,9 @@ const FinancialGoals = () => {
             editingItem={editingGoal}
             onSubmit={handleSubmit}
             onCancel={handleCancel}
+            planInitialDate={investmentPlan.plan_initial_date}
+            limitAge={investmentPlan.limit_age}
+            birthDate={profileData?.birth_date}
           />
         </div>
       </div>

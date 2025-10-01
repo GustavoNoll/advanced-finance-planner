@@ -6,6 +6,7 @@ import { Goal, ProjectedEvent } from "@/types/financial";
 import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import { useState } from "react";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 
 interface EditFinancialItemDialogProps {
   open: boolean;
@@ -14,6 +15,9 @@ interface EditFinancialItemDialogProps {
   currency: CurrencyCode;
   onSubmit: (values: FinancialItemFormValues) => Promise<void>;
   onDelete?: () => void;
+  planInitialDate?: string;
+  limitAge?: number;
+  birthDate?: string;
 }
 
 export const EditFinancialItemDialog = ({
@@ -23,6 +27,9 @@ export const EditFinancialItemDialog = ({
   currency,
   onSubmit,
   onDelete,
+  planInitialDate,
+  limitAge,
+  birthDate,
 }: EditFinancialItemDialogProps) => {
   const { t } = useTranslation();
   const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
@@ -55,6 +62,9 @@ export const EditFinancialItemDialog = ({
           initialValues={initialValues}
           currency={currency}
           showTypeSelector={false}
+          planInitialDate={planInitialDate || new Date().toISOString().split('T')[0]}
+          limitAge={limitAge}
+          birthDate={birthDate}
           leftActions={onDelete ? (
             <Button
               type="button"
@@ -67,22 +77,30 @@ export const EditFinancialItemDialog = ({
           ) : null}
         />
         {onDelete && (
-          <Dialog open={confirmDeleteOpen} onOpenChange={setConfirmDeleteOpen}>
-            <DialogContent className="max-w-xs">
-              <DialogHeader>
-                <DialogTitle>{t('common.confirmDeleteTitle')}</DialogTitle>
-              </DialogHeader>
-              <p className="text-sm text-gray-700 mb-4">{t('common.confirmDeleteMessage')} </p>
-              <div className="flex justify-end gap-2">
-                <Button variant="outline" onClick={() => setConfirmDeleteOpen(false)}>
+          <AlertDialog open={confirmDeleteOpen} onOpenChange={setConfirmDeleteOpen}>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>{t('common.confirmDeleteTitle')}</AlertDialogTitle>
+                <AlertDialogDescription>
+                  {t('common.confirmDeleteMessage')}
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel onClick={() => setConfirmDeleteOpen(false)}>
                   {t('common.cancel')}
-                </Button>
-                <Button variant="destructive" onClick={() => { setConfirmDeleteOpen(false); onDelete() }}>
+                </AlertDialogCancel>
+                <AlertDialogAction 
+                  onClick={() => { 
+                    setConfirmDeleteOpen(false); 
+                    onDelete(); 
+                  }}
+                  className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                >
                   {t('common.delete')}
-                </Button>
-              </div>
-            </DialogContent>
-          </Dialog>
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
         )}
       </DialogContent>
     </Dialog>

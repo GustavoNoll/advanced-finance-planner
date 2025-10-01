@@ -567,6 +567,7 @@ export function generateProjectionData(
       accumulatedInflation,
       goalsForChart,
       eventsForChart,
+      chartOptions?.showRealValues || false
     );
 
     if (context.oldPortfolioProfitability) {
@@ -577,6 +578,7 @@ export function generateProjectionData(
         accumulatedInflation,
         goalsForChart,
         eventsForChart,
+        chartOptions?.showRealValues || false
       );
     }
 
@@ -644,6 +646,7 @@ export function generateProjectionData(
         accumulatedInflation,
         goalsForChart,
         eventsForChart,
+        chartOptions?.showRealValues || false
       );
       const goalsEventsImpact = projectedBalance - previousBalance;
 
@@ -844,7 +847,8 @@ export function handleMonthlyGoalsAndEvents(
   month: number,
   accumulatedInflation: number,
   goals?: ProcessedGoalEvent[],
-  events?: ProcessedGoalEvent[]
+  events?: ProcessedGoalEvent[],
+  showRealValues: boolean = false
 ): number {
   let updatedBalance = balance;
   
@@ -855,7 +859,8 @@ export function handleMonthlyGoalsAndEvents(
 
   if (currentGoals?.length) {
     const totalGoalWithdrawal = currentGoals.reduce((sum, goal) => {
-      const adjustedAmount = goal.amount * accumulatedInflation;
+      // Only apply accumulated inflation adjustment when showRealValues is false
+      const adjustedAmount = showRealValues ? goal.amount : goal.amount * accumulatedInflation;
       return sum + adjustedAmount;
     }, 0);
     updatedBalance -= totalGoalWithdrawal;
@@ -868,7 +873,8 @@ export function handleMonthlyGoalsAndEvents(
 
   if (currentEvents?.length) {
     const totalEventImpact = currentEvents.reduce((sum, event) => {
-      const adjustedAmount = event.amount * accumulatedInflation;
+      // Only apply accumulated inflation adjustment when showRealValues is false
+      const adjustedAmount = showRealValues ? event.amount : event.amount * accumulatedInflation;
       return sum + adjustedAmount;
     }, 0);
     updatedBalance += totalEventImpact;

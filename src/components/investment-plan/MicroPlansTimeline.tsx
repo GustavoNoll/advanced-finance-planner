@@ -173,6 +173,9 @@ export function MicroPlansTimeline({
     new Date(a.effective_date).getTime() - new Date(b.effective_date).getTime()
   )
 
+  // Obter o último micro plano (mais recente por data de vigência)
+  const lastMicroPlan = sortedMicroPlans.length > 0 ? sortedMicroPlans[sortedMicroPlans.length - 1] : null
+
   return (
     <Card className="mb-6">
       <CardHeader>
@@ -203,6 +206,7 @@ export function MicroPlansTimeline({
                   isFirstMicroPlan={false}
                   baseMicroPlanDate={microPlans.length > 0 ? microPlans[0].effective_date : undefined}
                   existingMicroPlans={microPlans}
+                  lastMicroPlan={lastMicroPlan}
                 />
               </Suspense>
             </DialogContent>

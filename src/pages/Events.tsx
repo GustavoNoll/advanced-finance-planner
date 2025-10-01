@@ -11,6 +11,8 @@ import {
   ItemsList 
 } from "@/components/goals-events";
 import { useEvents, useEventMutations } from "@/hooks/useGoalsEventsManagement";
+import { useInvestmentPlanByUserId } from "@/hooks/useInvestmentPlan";
+import { useProfileData } from "@/hooks/usePlanCreation";
 
 const Events = () => {
   const { id: userId } = useParams();
@@ -30,6 +32,10 @@ const Events = () => {
   // Hooks para dados e mutações com callback de sucesso
   const { projectedEvents, completedEvents, isLoading } = useEvents(userId || '');
   const { createEvent, updateEvent, deleteEvent } = useEventMutations(userId || '', closeForm);
+  
+  // Hooks para obter dados do plano de investimento
+  const { plan: investmentPlan } = useInvestmentPlanByUserId(userId || '');
+  const { profileData } = useProfileData(userId || '');
 
   // Handlers
   const handleSubmit = (values: FinancialItemFormValues) => {
@@ -53,7 +59,7 @@ const Events = () => {
     setShowAddForm(false);
   };
 
-  if (isLoading) {
+  if (isLoading || !profileData || !investmentPlan) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <Spinner size="lg" />
@@ -83,6 +89,9 @@ const Events = () => {
             editingItem={editingEvent}
             onSubmit={handleSubmit}
             onCancel={handleCancel}
+            planInitialDate={investmentPlan.plan_initial_date}
+            limitAge={investmentPlan.limit_age}
+            birthDate={profileData?.birth_date}
           />
         </div>
       </div>

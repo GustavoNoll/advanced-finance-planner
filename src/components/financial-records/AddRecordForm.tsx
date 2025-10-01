@@ -12,6 +12,7 @@ import { z } from "zod";
 import { useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 import CurrencyInput from 'react-currency-input-field';
+import { useProfileData } from "@/hooks/usePlanCreation";
 import { FinancialRecord, MonthNumber } from '@/types/financial';
 import { InvestmentPlan } from '@/types/financial';
 import { CurrencyCode, getCurrencySymbol } from "@/utils/currency";
@@ -108,6 +109,9 @@ export const AddRecordForm = ({ clientId, onSuccess, editingRecord, investmentPl
   const [showGoalEventOptions, setShowGoalEventOptions] = useState(false);
   const [selectedItems, setSelectedItems] = useState<LinkedItem[]>([]);
   const [newItemType, setNewItemType] = useState<'goal' | 'event'>('goal');
+  
+  // Hook para obter dados do perfil do usuário
+  const { profileData } = useProfileData(clientId);
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -173,7 +177,7 @@ export const AddRecordForm = ({ clientId, onSuccess, editingRecord, investmentPl
 
       fetchInitialData();
     }
-  }, [clientId, editingRecord]);
+  }, [clientId, editingRecord, form, investmentPlan?.initial_amount, t]);
 
   // Não carregar itens linkados existentes - apenas mostrar itens sendo selecionados no momento
   useEffect(() => {
@@ -183,7 +187,7 @@ export const AddRecordForm = ({ clientId, onSuccess, editingRecord, investmentPl
     }
   }, [editingRecord]);
 
-  const handleCreateItem = (itemData: { type: 'goal' | 'event'; name: string; asset_value: string | number; icon: string }) => {
+  const handleCreateItem = (itemData: { type: 'goal' | 'event'; name: string; asset_value: string | number; icon: string; month?: string; year?: string }) => {
     const newItem: LinkedItem = {
       id: `temp-${Date.now()}`, // ID temporário até salvar no banco
       type: itemData.type,
@@ -655,7 +659,7 @@ export const AddRecordForm = ({ clientId, onSuccess, editingRecord, investmentPl
                   </FormControl>
                   {ipcaDate && (
                     <p className="text-xs text-muted-foreground mt-1">
-                      IPCA referente a {ipcaDate}
+                      {t('financialRecords.form.ipcaReference', { date: ipcaDate })}
                     </p>
                   )}
                 </FormItem>
@@ -721,28 +725,28 @@ export const AddRecordForm = ({ clientId, onSuccess, editingRecord, investmentPl
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Link className="h-5 w-5" />
-            Vincular a Objetivos/Eventos
+            {t('financialRecords.form.linkToGoalsEvents')}
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="flex items-center justify-between">
             <p className="text-sm text-muted-foreground">
-              Vincule este registro a objetivos ou eventos existentes ou crie novos
+              {t('financialRecords.form.linkDescription')}
             </p>
             <Button
               type="button"
               variant="outline"
               onClick={() => setShowGoalEventOptions(!showGoalEventOptions)}
             >
-              {showGoalEventOptions ? 'Ocultar' : 'Vincular'}
+              {showGoalEventOptions ? t('financialRecords.form.hide') : t('financialRecords.form.link')}
             </Button>
           </div>
 
           {showGoalEventOptions && (
             <Tabs defaultValue="existing" className="w-full">
               <TabsList className="grid w-full grid-cols-2">
-                <TabsTrigger value="existing">Vincular Existente</TabsTrigger>
-                <TabsTrigger value="create">Criar Novo</TabsTrigger>
+                <TabsTrigger value="existing">{t('financialRecords.form.linkExisting')}</TabsTrigger>
+                <TabsTrigger value="create">{t('financialRecords.form.createNew')}</TabsTrigger>
               </TabsList>
 
               <TabsContent value="existing" className="space-y-4">
@@ -762,7 +766,7 @@ export const AddRecordForm = ({ clientId, onSuccess, editingRecord, investmentPl
                     size="sm"
                     onClick={() => setNewItemType('goal')}
                   >
-                    Objetivo
+                    {t('financialRecords.form.goal')}
                   </Button>
                   <Button
                     type="button"
@@ -770,7 +774,7 @@ export const AddRecordForm = ({ clientId, onSuccess, editingRecord, investmentPl
                     size="sm"
                     onClick={() => setNewItemType('event')}
                   >
-                    Evento
+                    {t('financialRecords.form.event')}
                   </Button>
                 </div>
                 
@@ -780,6 +784,13 @@ export const AddRecordForm = ({ clientId, onSuccess, editingRecord, investmentPl
                   onCancel={() => {}} // Não precisa cancelar aqui
                   currency="BRL"
                   showTypeSelector={false}
+                  initialValues={{
+                    month: form.getValues('record_month').toString(),
+                    year: form.getValues('record_year').toString()
+                  }}
+                  planInitialDate={investmentPlan.plan_initial_date}
+                  limitAge={investmentPlan.limit_age}
+                  birthDate={profileData?.birth_date}
                 />
               </TabsContent>
             </Tabs>
@@ -788,7 +799,7 @@ export const AddRecordForm = ({ clientId, onSuccess, editingRecord, investmentPl
           {/* Lista dos itens selecionados */}
           {selectedItems.length > 0 && (
             <div className="border rounded-lg p-4">
-              <h4 className="font-medium mb-3">Itens Vinculados ({selectedItems.length})</h4>
+              <h4 className="font-medium mb-3">{t('financialRecords.form.linkedItems')} ({selectedItems.length})</h4>
               <div className="space-y-3">
                 {selectedItems.map((item) => (
                   <SelectedItemCard

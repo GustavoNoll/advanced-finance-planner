@@ -29,30 +29,15 @@ export function useInvestmentPlan(planId: string) {
   }
 }
 
-export function useInvestmentPlansByUserId(userId: string) {
-  const { data: plans, isLoading, error } = useQuery({
-    queryKey: ['investmentPlans', 'user', userId],
-    queryFn: () => InvestmentPlanService.fetchPlansByUserId(userId),
+export function useInvestmentPlanByUserId(userId: string) {
+  const { data: plan, isLoading, error } = useQuery({
+    queryKey: ['investmentPlan', 'user', userId],
+    queryFn: () => InvestmentPlanService.fetchPlanByUserId(userId),
     enabled: !!userId,
   })
 
-  const stats = useMemo(() => {
-    return InvestmentPlanService.calculatePlansStats(plans || [])
-  }, [plans])
-
-  const activePlans = useMemo(() => {
-    return plans?.filter(plan => plan.status === 'active') || []
-  }, [plans])
-
-  const inactivePlans = useMemo(() => {
-    return plans?.filter(plan => plan.status === 'inactive') || []
-  }, [plans])
-
   return {
-    plans: plans || [],
-    activePlans,
-    inactivePlans,
-    stats,
+    plan: plan || null, 
     isLoading,
     error
   }

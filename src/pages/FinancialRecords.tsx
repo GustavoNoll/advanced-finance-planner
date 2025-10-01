@@ -11,7 +11,8 @@ import {
   ActionButtons, 
   RecordsList 
 } from "@/components/financial-records";
-import { useFinancialRecords, useInvestmentPlan, useFinancialRecordsMutations } from "@/hooks/useFinancialRecordsManagement";
+import { useFinancialRecords, useFinancialRecordsMutations } from "@/hooks/useFinancialRecordsManagement";
+import { useInvestmentPlanByUserId } from "@/hooks/useInvestmentPlan";
 import { useMicroInvestmentPlans } from "@/hooks/useMicroInvestmentPlans";
 import { CSVRecord } from "@/services/financial-records-management.service";
 import { supabase } from "@/lib/supabase";
@@ -41,7 +42,8 @@ const FinancialRecords = () => {
 
   // Hooks para dados
   const { records, isLoading: recordsLoading } = useFinancialRecords(clientId || '', initialRecords);
-  const { investmentPlan, isLoading: planLoading } = useInvestmentPlan(clientId || '');
+  const { plan: investmentPlan, isLoading: planLoading } = useInvestmentPlanByUserId(clientId || '');
+  console.log(investmentPlan);
   const { activeMicroPlan } = useMicroInvestmentPlans(investmentPlan?.id || '');
   const { 
     createRecord, 
@@ -183,7 +185,7 @@ const FinancialRecords = () => {
           <AddRecordForm 
             clientId={clientId!} 
             onSuccess={() => setShowAddForm(false)} 
-            investmentPlan={investmentPlan as InvestmentPlan}
+            investmentPlan={investmentPlan}
           />
         )}
       </div>

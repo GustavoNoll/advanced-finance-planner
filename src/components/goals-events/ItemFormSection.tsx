@@ -11,6 +11,9 @@ interface ItemFormSectionProps {
   editingItem: Goal | ProjectedEvent | null
   onSubmit: (values: FinancialItemFormValues) => void
   onCancel: () => void
+  planInitialDate?: string
+  limitAge?: number
+  birthDate?: string
 }
 
 export function ItemFormSection({
@@ -20,7 +23,10 @@ export function ItemFormSection({
   isSubmitting,
   editingItem,
   onSubmit,
-  onCancel
+  onCancel,
+  planInitialDate,
+  limitAge,
+  birthDate
 }: ItemFormSectionProps) {
   if (!showForm && !editingItem) return null
 
@@ -45,6 +51,9 @@ export function ItemFormSection({
         currency={currency}
         showTypeSelector={false}
         initialValues={initialValues}
+        planInitialDate={planInitialDate || new Date().toISOString().split('T')[0]}
+        limitAge={limitAge}
+        birthDate={birthDate}
       />
     </Card>
   )

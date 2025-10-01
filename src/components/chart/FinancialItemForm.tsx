@@ -57,6 +57,9 @@ interface FinancialItemFormProps {
   initialValues?: Partial<FinancialItemFormValues>;
   isSubmitting?: boolean;
   currency: CurrencyCode;
+  planInitialDate: string;
+  limitAge?: number;
+  birthDate?: string;
   onTypeChange?: (type: 'goal' | 'event') => void;
   showTypeSelector?: boolean;
   leftActions?: React.ReactNode;
@@ -69,6 +72,9 @@ export const FinancialItemForm = ({
   initialValues,
   isSubmitting = false,
   currency,
+  planInitialDate,
+  limitAge,
+  birthDate,
   onTypeChange,
   showTypeSelector = true,
   leftActions,
@@ -222,7 +228,7 @@ export const FinancialItemForm = ({
                       <SelectValue placeholder={t('common.selectMonth')} />
                     </SelectTrigger>
                   </FormControl>
-                  <SelectContent>
+                  <SelectContent className="max-h-[200px] overflow-y-auto">
                     {Array.from({ length: 12 }, (_, i) => i + 1).map((month) => (
                       <SelectItem key={month} value={month.toString()}>
                         {t(`monthlyView.table.months.${new Date(2000, month - 1).toLocaleString('en-US', { month: 'long' }).toLowerCase()}`)}
@@ -258,12 +264,30 @@ export const FinancialItemForm = ({
                       <SelectValue placeholder={t('common.selectYear')} />
                     </SelectTrigger>
                   </FormControl>
-                  <SelectContent>
-                    {Array.from({ length: 50 }, (_, i) => new Date().getFullYear() + i).map((year) => (
-                      <SelectItem key={year} value={year.toString()}>
-                        {year}
-                      </SelectItem>
-                    ))}
+                  <SelectContent className="max-h-[200px] overflow-y-auto">
+                    {(() => {
+                      const currentYear = new Date().getFullYear();
+                      const initialYear = initialValues?.year ? parseInt(initialValues.year) : currentYear;
+                      const planStartYear = new Date(planInitialDate).getFullYear();
+                      
+                      const startYear = Math.min(initialYear, planStartYear);
+                      
+                      // Calcular ano máximo baseado no limitAge e birthDate
+                      let maxYear = startYear + 100; // Padrão: 100 anos no futuro
+                      if (limitAge && birthDate) {
+                        const birthYear = new Date(birthDate).getFullYear();
+                        const calculatedLimitYear = birthYear + limitAge;
+                        maxYear = Math.min(maxYear, calculatedLimitYear);
+                      }
+                      
+                      const endYear = Math.min(maxYear, startYear + 100);
+                      
+                      return Array.from({ length: endYear - startYear + 1 }, (_, i) => startYear + i).map((year) => (
+                        <SelectItem key={year} value={year.toString()}>
+                          {year}
+                        </SelectItem>
+                      ));
+                    })()}
                   </SelectContent>
                 </Select>
                 <FormMessage className="text-destructive text-xs mt-1" />

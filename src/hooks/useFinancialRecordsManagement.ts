@@ -75,20 +75,6 @@ export function useFinancialRecords(userId: string, initialRecords: FinancialRec
   }
 }
 
-export function useInvestmentPlan(userId: string) {
-  const { data: investmentPlan, isLoading, error } = useQuery({
-    queryKey: ['investmentPlan', userId],
-    queryFn: () => FinancialRecordsManagementService.fetchInvestmentPlanByUserId(userId),
-    enabled: !!userId,
-  })
-
-  return {
-    investmentPlan,
-    isLoading,
-    error
-  }
-}
-
 export function useFinancialRecordsMutations(userId: string) {
   const queryClient = useQueryClient()
   const { toast } = useToast()
