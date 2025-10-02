@@ -346,7 +346,8 @@ function createHistoricalMonthData(
   accumulatedInflation: number,
   planned_contribution: number,
   expectedReturn: number,
-  birthYear: number
+  birthYear: number,
+  showRealValues: boolean = false
 ): MonthlyProjectionData {
   const contribution = historicalRecord.monthly_contribution > 0 ? historicalRecord.monthly_contribution : 0;
   const withdrawal = historicalRecord.monthly_contribution < 0 ? Math.abs(historicalRecord.monthly_contribution) : 0;
@@ -358,6 +359,11 @@ function createHistoricalMonthData(
     return acc + link.allocated_amount;
   }, 0) || 0;
 
+  // Descontar inflação acumulada se showRealValues for true
+  const adjustedEndingBalance = showRealValues 
+    ? historicalRecord.ending_balance / accumulatedInflation 
+    : historicalRecord.ending_balance;
+
   return {
     month: month as MonthNumber,
     year,
@@ -365,12 +371,12 @@ function createHistoricalMonthData(
     planned_contribution,
     withdrawal,
     isHistorical: true,
-    balance: historicalRecord.ending_balance,
+    balance: adjustedEndingBalance,
     planned_balance: plannedBalance,
     retirement: isRetirementAge,
     goalsEventsImpact,
-    difference_from_planned_balance: historicalRecord.ending_balance - plannedBalance,
-    projected_lifetime_withdrawal: historicalRecord.ending_balance / (expectedReturn / 100),
+    difference_from_planned_balance: adjustedEndingBalance - plannedBalance,
+    projected_lifetime_withdrawal: adjustedEndingBalance / (expectedReturn / 100),
     planned_lifetime_withdrawal: plannedBalance / (expectedReturn / 100),
     effectiveRate: monthlyReturnRate,
     ipcaRate: monthlyInflationRate,
@@ -753,7 +759,8 @@ export function generateProjectionData(
         accumulatedInflation,
         contribution,
         activeMicroPlanForRates?.expected_return || 8, // Default 8% se não houver micro plano
-        context.birthYear
+        context.birthYear,
+        chartOptions?.showRealValues || false
       );
     } else if (isInPast) {
       const contribution = chartOptions?.showRealValues ? currentRealMonthlyDeposit : currentNominalMonthlyDeposit;
