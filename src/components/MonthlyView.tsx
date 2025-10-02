@@ -12,7 +12,10 @@ export const MonthlyView = ({
   investmentPlan, 
   activeMicroPlan,
   profile,
-  projectionData
+  projectionData,
+  goals,
+  events,
+  microPlans
 }: {
   userId: string;
   allFinancialRecords: FinancialRecord[];
@@ -20,6 +23,9 @@ export const MonthlyView = ({
   activeMicroPlan: MicroInvestmentPlan | null;
   profile: Profile;
   projectionData?: YearlyProjectionData[];
+  goals?: Goal[];
+  events?: ProjectedEvent[];
+  microPlans?: MicroInvestmentPlan[];
 }) => {
   const { t } = useTranslation();
   return (
@@ -57,7 +63,6 @@ export const MonthlyView = ({
             <ReturnChartTab
               allFinancialRecords={allFinancialRecords}
               investmentPlan={investmentPlan}
-              activeMicroPlan={activeMicroPlan}
               profile={profile}
             />
           </TabsContent>
@@ -67,7 +72,6 @@ export const MonthlyView = ({
           <TableTab
             allFinancialRecords={allFinancialRecords}
             investmentPlan={investmentPlan}
-            activeMicroPlan={activeMicroPlan}
             profile={profile}
           />
         </TabsContent>
@@ -75,6 +79,7 @@ export const MonthlyView = ({
         <TabsContent value="futureProjection">
           <FutureProjectionTab
             investmentPlan={investmentPlan}
+            microPlans={microPlans}
             activeMicroPlan={activeMicroPlan}
             profile={profile}
             allFinancialRecords={allFinancialRecords}
@@ -82,6 +87,8 @@ export const MonthlyView = ({
             showGoalsEvents={true}
             showRealEvolution={true}
             isSimulation={false}
+            goals={goals}
+            events={events}
           />
         </TabsContent>
       </Tabs>

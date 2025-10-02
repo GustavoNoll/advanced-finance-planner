@@ -280,6 +280,9 @@ const Finances = ({
               activeMicroPlan={activeMicroPlan}
               profile={clientProfile}
               projectionData={projectionDataWithOptions}
+              goals={goalsAndEvents.goals}
+              events={goalsAndEvents.events}
+              microPlans={microPlans}
             />
           ) : (
             <div className="flex items-center justify-center h-[300px]">

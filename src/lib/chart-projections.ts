@@ -1,40 +1,13 @@
 import { yearlyReturnRateToMonthlyReturnRate, calculateCompoundedRates } from './financial-math';
 import { ChartDataPoint, FinancialRecord, Goal, InvestmentPlan, MicroInvestmentPlan, MonthNumber, ProjectedEvent } from '@/types/financial';
 import { createIPCARatesMap } from './inflation-utils';
-import { processGoalsForChart, processEventsForChart, ProcessedGoalEvent } from '@/lib/financial-goals-processor';
+import { processGoalsForChart, processEventsForChart, ProcessedGoalEvent, IGNORE_FINANCIAL_LINKS, CONSIDER_FINANCIAL_LINKS } from '@/lib/financial-goals-processor';
 import { createDateWithoutTimezone, createDateFromYearMonth } from '@/utils/dateUtils';
 import { getActiveMicroPlanForDate } from '@/utils/microPlanUtils';
 
-/**
- * Verifica se é o momento de mudar para um novo micro plano ativo
- * @param microPlans Array de micro planos
- * @param currentDate Data atual da iteração
- * @param previousDate Data anterior da iteração (para detectar mudanças)
- * @returns true se for o mês exato de vigência de um novo micro plano
- */
-function isTimeForChangeActivePlan(microPlans: MicroInvestmentPlan[], currentDate: Date, previousDate?: Date): boolean {
-  if (!microPlans || microPlans.length === 0) {
-    return false;
-  }
-
-  const currentYear = currentDate.getFullYear();
-  const currentMonth = currentDate.getMonth();
-
-  // Verificar se algum micro plano tem vigência exatamente neste mês
-  for (const microPlan of microPlans) {
-    const effectiveDate = createDateWithoutTimezone(microPlan.effective_date);
-    const effectiveYear = effectiveDate.getFullYear();
-    const effectiveMonth = effectiveDate.getMonth();
-
-    // Se a data de vigência for exatamente este mês, é hora de mudar
-    if (effectiveYear === currentYear && effectiveMonth === currentMonth) {
-      return true;
-    }
-  }
-
-  return false;
-}
-
+// ============================================================================
+// TYPES AND INTERFACES
+// ============================================================================
 
 interface DataPoint {
   age: string;
@@ -130,6 +103,55 @@ interface ProjectionContext {
   limitAgeDate: Date | null;
 }
 
+// ============================================================================
+// UTILITY FUNCTIONS
+// ============================================================================
+
+/**
+ * Verifica se é o momento de mudar para um novo micro plano ativo
+ * @param microPlans Array de micro planos
+ * @param currentDate Data atual da iteração
+ * @param previousDate Data anterior da iteração (para detectar mudanças)
+ * @returns true se for o mês exato de vigência de um novo micro plano
+ */
+function isTimeForChangeActivePlan(microPlans: MicroInvestmentPlan[], currentDate: Date, previousDate?: Date): boolean {
+  if (!microPlans || microPlans.length === 0) {
+    return false;
+  }
+
+  const currentYear = currentDate.getFullYear();
+  const currentMonth = currentDate.getMonth();
+
+  // Verificar se algum micro plano tem vigência exatamente neste mês
+  for (const microPlan of microPlans) {
+    const effectiveDate = createDateWithoutTimezone(microPlan.effective_date);
+    const effectiveYear = effectiveDate.getFullYear();
+    const effectiveMonth = effectiveDate.getMonth();
+
+    // Se a data de vigência for exatamente este mês, é hora de mudar
+    if (effectiveYear === currentYear && effectiveMonth === currentMonth) {
+      return true;
+    }
+  }
+
+  return false;
+}
+
+// ============================================================================
+// CONTEXT AND CONFIGURATION FUNCTIONS
+// ============================================================================
+
+/**
+ * Creates the projection context with all necessary data and configurations
+ * @param investmentPlan The investment plan configuration
+ * @param profile User profile with birth date
+ * @param initialRecords Historical financial records
+ * @param goals Optional goals array
+ * @param events Optional events array
+ * @param chartOptions Optional chart display options
+ * @param microPlans Array of micro investment plans
+ * @returns ProjectionContext or null if invalid data
+ */
 function createProjectionContext(
   investmentPlan: InvestmentPlan,
   profile: { birth_date: string },
@@ -201,7 +223,6 @@ function createProjectionContext(
   );
 
   // Parse chart options dates
-
   const changeDepositDate = chartOptions?.changeMonthlyDeposit?.date 
     ? createDateWithoutTimezone(chartOptions.changeMonthlyDeposit.date) 
     : null;
@@ -209,15 +230,12 @@ function createProjectionContext(
     ? createDateWithoutTimezone(chartOptions.changeMonthlyWithdraw.date) 
     : null;
 
-  const pendingGoals = goals?.filter(goal => goal.status === 'pending');
-  const pendingEvents = events?.filter(event => event.status === 'pending');
-
   return {
     investmentPlan,
     profile,
     initialRecords,
-    goals: pendingGoals,
-    events: pendingEvents,
+    goals,
+    events,
     chartOptions,
     microPlans,
     birthDate,
@@ -240,6 +258,21 @@ function createProjectionContext(
     limitAgeDate
   };
 }
+// ============================================================================
+// CALCULATION FUNCTIONS
+// ============================================================================
+
+/**
+ * Calculates monthly rates for inflation, returns, and old portfolio returns
+ * @param year Current year
+ * @param month Current month
+ * @param ipcaRatesMap Map of historical IPCA rates
+ * @param defaultMonthlyInflationRate Default inflation rate
+ * @param monthlyExpectedReturnRate Expected return rate
+ * @param monthlyOldPortfolioExpectedReturnRate Old portfolio return rate
+ * @param showRealValues Whether to show real values (no inflation adjustment)
+ * @returns Object with calculated monthly rates
+ */
 function calculateMonthlyRates(
   year: number,
   month: number,
@@ -280,6 +313,27 @@ function calculateMonthlyRates(
   return { monthlyInflationRate, monthlyReturnRate, monthlyOldPortfolioReturnRate };
 }
 
+// ============================================================================
+// DATA CREATION FUNCTIONS
+// ============================================================================
+
+/**
+ * Creates monthly projection data for historical records
+ * @param historicalRecord The historical financial record
+ * @param month Current month
+ * @param year Current year
+ * @param plannedBalance Planned balance for this month
+ * @param oldPortfolioBalance Old portfolio balance
+ * @param isRetirementAge Whether this is retirement age
+ * @param monthlyReturnRate Monthly return rate
+ * @param monthlyOldPortfolioReturnRate Monthly old portfolio return rate
+ * @param monthlyInflationRate Monthly inflation rate
+ * @param accumulatedInflation Accumulated inflation factor
+ * @param planned_contribution Planned contribution amount
+ * @param expectedReturn Expected return rate
+ * @param birthYear Birth year
+ * @returns MonthlyProjectionData for historical month
+ */
 function createHistoricalMonthData(
   historicalRecord: FinancialRecord,
   month: number,
@@ -326,6 +380,21 @@ function createHistoricalMonthData(
   };
 }
 
+/**
+ * Creates monthly projection data for past months (no historical record)
+ * @param month Current month
+ * @param year Current year
+ * @param plannedBalance Planned balance for this month
+ * @param projectedBalance Projected balance for this month
+ * @param oldPortfolioBalance Old portfolio balance
+ * @param monthlyReturnRate Monthly return rate
+ * @param monthlyInflationRate Monthly inflation rate
+ * @param accumulatedInflation Accumulated inflation factor
+ * @param expectedReturn Expected return rate
+ * @param planned_contribution Planned contribution amount
+ * @param birthYear Birth year
+ * @returns MonthlyProjectionData for past month
+ */
 function createPastMonthData(
   month: number,
   year: number,
@@ -360,6 +429,23 @@ function createPastMonthData(
   };
 }
 
+/**
+ * Creates monthly projection data for retirement months
+ * @param month Current month
+ * @param year Current year
+ * @param projectedBalance Projected balance for this month
+ * @param plannedBalance Planned balance for this month
+ * @param oldPortfolioBalance Old portfolio balance
+ * @param monthlyReturnRate Monthly return rate
+ * @param monthlyOldPortfolioReturnRate Monthly old portfolio return rate
+ * @param monthlyInflationRate Monthly inflation rate
+ * @param accumulatedInflation Accumulated inflation factor
+ * @param monthlyWithdrawal Monthly withdrawal amount
+ * @param goalsEventsImpact Impact from goals and events
+ * @param expectedReturn Expected return rate
+ * @param birthYear Birth year
+ * @returns MonthlyProjectionData for retirement month
+ */
 function createRetirementMonthData(
   month: number,
   year: number,
@@ -399,6 +485,22 @@ function createRetirementMonthData(
   };
 }
 
+/**
+ * Creates monthly projection data for future months (accumulation phase)
+ * @param month Current month
+ * @param year Current year
+ * @param projectedBalance Projected balance for this month
+ * @param plannedBalance Planned balance for this month
+ * @param oldPortfolioBalance Old portfolio balance
+ * @param monthlyReturnRate Monthly return rate
+ * @param monthlyInflationRate Monthly inflation rate
+ * @param accumulatedInflation Accumulated inflation factor
+ * @param goalsEventsImpact Impact from goals and events
+ * @param monthlyDeposit Monthly deposit amount
+ * @param expectedReturn Expected return rate
+ * @param birthYear Birth year
+ * @returns MonthlyProjectionData for future month
+ */
 function createFutureMonthData(
   month: number,
   year: number,
@@ -434,6 +536,23 @@ function createFutureMonthData(
   };
 }
 
+// ============================================================================
+// MAIN PROJECTION FUNCTION
+// ============================================================================
+
+/**
+ * Main function to generate comprehensive projection data for investment plans
+ * This is the primary function that orchestrates the entire projection calculation process
+ * 
+ * @param investmentPlan The investment plan configuration
+ * @param profile User profile with birth date
+ * @param initialRecords Historical financial records
+ * @param microPlans Array of micro investment plans
+ * @param goals Optional goals array
+ * @param events Optional events array
+ * @param chartOptions Optional chart display options
+ * @returns Array of yearly projection data
+ */
 export function generateProjectionData(
   investmentPlan: InvestmentPlan,
   profile: { birth_date: string },
@@ -456,9 +575,15 @@ export function generateProjectionData(
   if (!context) return [];
 
   const projectionData: YearlyProjectionData[] = [];
-  const goalsForChart = processGoals(context.goals);
-  const eventsForChart = processEvents(context.events);
-
+  
+  
+  // Para planned: ignora financial_links (cenário ideal)
+  const allGoalsForChart = processGoals(context.goals, IGNORE_FINANCIAL_LINKS);
+  const allEventsForChart = processEvents(context.events, IGNORE_FINANCIAL_LINKS);
+  
+  // Para projected: considera financial_links (realidade atual)
+  const pendingGoalsForChart = processGoals(context.goals?.filter(goal => goal.status === 'pending'), CONSIDER_FINANCIAL_LINKS);
+  const pendingEventsForChart = processEvents(context.events?.filter(event => event.status === 'pending'), CONSIDER_FINANCIAL_LINKS);
   let oldPortfolioBalance = context.oldPortfolioProfitability ? investmentPlan.initial_amount : null;
   let projectedBalance = initialRecords[0]?.ending_balance || investmentPlan.initial_amount;
   let plannedBalance = investmentPlan.initial_amount;
@@ -559,14 +684,14 @@ export function generateProjectionData(
       currentMonthlyWithdrawal *= (1 + monthlyInflationRate);
     }
     
-    // Handle goals and events for planned balance
+    // Handle goals and events for planned balance (use all goals/events)
     plannedBalance = handleMonthlyGoalsAndEvents(
       plannedBalance,
       year,
       month - 1,
       accumulatedInflation,
-      goalsForChart,
-      eventsForChart,
+      allGoalsForChart,
+      allEventsForChart,
       chartOptions?.showRealValues || false
     );
 
@@ -576,8 +701,8 @@ export function generateProjectionData(
         year,
         month - 1,
         accumulatedInflation,
-        goalsForChart,
-        eventsForChart,
+        allGoalsForChart,
+        allEventsForChart,
         chartOptions?.showRealValues || false
       );
     }
@@ -644,8 +769,8 @@ export function generateProjectionData(
         year,
         month - 1,
         accumulatedInflation,
-        goalsForChart,
-        eventsForChart,
+        pendingGoalsForChart,
+        pendingEventsForChart,
         chartOptions?.showRealValues || false
       );
       const goalsEventsImpact = projectedBalance - previousBalance;
@@ -753,6 +878,21 @@ export function generateProjectionData(
   return projectionData;
 }
 
+// ============================================================================
+// EXPORTED UTILITY FUNCTIONS
+// ============================================================================
+
+/**
+ * Generates chart projections for visualization
+ * @param profile User profile with birth date
+ * @param investmentPlan The investment plan configuration
+ * @param financialRecordsByYear Historical financial records
+ * @param goals Optional goals array
+ * @param events Optional events array
+ * @param chartOptions Optional chart display options
+ * @param microPlans Array of micro investment plans
+ * @returns Array of chart data points
+ */
 export function generateChartProjections(
   profile: { birth_date: string },
   investmentPlan: InvestmentPlan,
@@ -785,6 +925,11 @@ export function generateChartProjections(
   );
 }
 
+/**
+ * Gets the end age for an investment plan
+ * @param investmentPlan The investment plan
+ * @returns End age (default 100 if not specified)
+ */
 export function getEndAge(investmentPlan: InvestmentPlan): number {
   if (investmentPlan.limit_age) {
     return investmentPlan.limit_age;
@@ -794,26 +939,33 @@ export function getEndAge(investmentPlan: InvestmentPlan): number {
 
 /**
  * Processes an array of events into chart events, handling installments
- * @param events - Optional array of events to process
+ * @param events Optional array of events to process
+ * @param ignoreFinancialLinks Whether to ignore financial_links (for planned calculations)
  * @returns Array of processed events for the chart
  */
-export function processEvents(events?: ProjectedEvent[]): ProcessedGoalEvent[] {
+export function processEvents(events?: ProjectedEvent[], ignoreFinancialLinks: boolean = false): ProcessedGoalEvent[] {
   if (!events) return [];
-  return processEventsForChart(events);
+  return processEventsForChart(events, ignoreFinancialLinks);
 }
 
 /**
  * Processes an array of goals into chart goals, handling installments
- * @param goals - Optional array of goals to process
+ * @param goals Optional array of goals to process
+ * @param ignoreFinancialLinks Whether to ignore financial_links (for planned calculations)
  * @returns Array of processed goals for the chart
  */
-export function processGoals(goals?: Goal[]): ProcessedGoalEvent[] {
+export function processGoals(goals?: Goal[], ignoreFinancialLinks: boolean = false): ProcessedGoalEvent[] {
   if (!goals) return [];
-  return processGoalsForChart(goals);
+  return processGoalsForChart(goals, ignoreFinancialLinks);
 }
 
-
-
+/**
+ * Generates data points for chart visualization
+ * @param investmentPlan The investment plan configuration
+ * @param yearsUntilEnd Number of years until plan end
+ * @param birthYear Birth year
+ * @returns Array of data points
+ */
 export function generateDataPoints(
   investmentPlan: InvestmentPlan,
   yearsUntilEnd: number,
@@ -841,6 +993,17 @@ export function generateDataPoints(
   );
 }
 
+/**
+ * Handles monthly goals and events impact on balance
+ * @param balance Current balance
+ * @param year Current year
+ * @param month Current month (0-based)
+ * @param accumulatedInflation Accumulated inflation factor
+ * @param goals Optional processed goals
+ * @param events Optional processed events
+ * @param showRealValues Whether to show real values (no inflation adjustment)
+ * @returns Updated balance after goals and events impact
+ */
 export function handleMonthlyGoalsAndEvents(
   balance: number,
   year: number,
