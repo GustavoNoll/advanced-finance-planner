@@ -280,11 +280,10 @@ function calculateMonthlyRates(
   defaultMonthlyInflationRate: number,
   monthlyExpectedReturnRate: number,
   monthlyOldPortfolioExpectedReturnRate: number,
-  showRealValues: boolean
 ): { monthlyInflationRate: number; monthlyReturnRate: number; monthlyOldPortfolioReturnRate: number } {
   const ipcaKey = `${year}-${month}`;
   // temporary showRealValues
-  if (ipcaRatesMap.has(ipcaKey) && !showRealValues) {
+  if (ipcaRatesMap.has(ipcaKey)) {
     const monthlyInflationRate = ipcaRatesMap.get(ipcaKey)!;
     const monthlyReturnRate = calculateCompoundedRates([
       monthlyExpectedReturnRate, 
@@ -298,7 +297,7 @@ function calculateMonthlyRates(
     return { monthlyInflationRate, monthlyReturnRate, monthlyOldPortfolioReturnRate };
   }
 
-  const monthlyInflationRate = showRealValues ? 0 : defaultMonthlyInflationRate;
+  const monthlyInflationRate = defaultMonthlyInflationRate;
 
   const monthlyReturnRate = calculateCompoundedRates([
     monthlyExpectedReturnRate, 
@@ -590,8 +589,10 @@ export function generateProjectionData(
   
   // Obter o micro plano ativo na data inicial
   const initialMicroPlan = getActiveMicroPlanForDate(context.microPlans, context.planStartDate);
-  let currentMonthlyDeposit = initialMicroPlan?.monthly_deposit || 0; // Default 0 se não houver micro plano
-  let currentMonthlyWithdrawal = initialMicroPlan?.desired_income || 0; // Default 0 se não houver micro plano
+  let currentNominalMonthlyDeposit = initialMicroPlan?.monthly_deposit || 0; // Default 0 se não houver micro plano
+  let currentRealMonthlyDeposit = initialMicroPlan?.monthly_deposit || 0;
+  let currentNominalMonthlyWithdrawal = initialMicroPlan?.desired_income || 0; // Default 0 se não houver micro plano
+  let currentRealMonthlyWithdrawal = initialMicroPlan?.desired_income || 0;
   let accumulatedInflation = 1;
   let lastHistoricalRecord: Date | null = null;
 
@@ -624,15 +625,15 @@ export function generateProjectionData(
       if (activeMicroPlanForDate) {
         // Aplicar ajuste de inflação acumulada se os campos estiverem como true
         if (activeMicroPlanForDate.adjust_contribution_for_accumulated_inflation) {
-          currentMonthlyDeposit = activeMicroPlanForDate.monthly_deposit * accumulatedInflation;
+          currentNominalMonthlyDeposit = activeMicroPlanForDate.monthly_deposit * accumulatedInflation;
         } else {
-          currentMonthlyDeposit = activeMicroPlanForDate.monthly_deposit;
+          currentNominalMonthlyDeposit = activeMicroPlanForDate.monthly_deposit;
         }
         
         if (activeMicroPlanForDate.adjust_income_for_accumulated_inflation) {
-          currentMonthlyWithdrawal = activeMicroPlanForDate.desired_income * accumulatedInflation;
+          currentNominalMonthlyWithdrawal = activeMicroPlanForDate.desired_income * accumulatedInflation;
         } else {
-          currentMonthlyWithdrawal = activeMicroPlanForDate.desired_income;
+          currentNominalMonthlyWithdrawal = activeMicroPlanForDate.desired_income;
         }
       }
     }
@@ -641,13 +642,13 @@ export function generateProjectionData(
     if (context.changeDepositDate && 
         context.changeDepositDate.getFullYear() === year && 
         context.changeDepositDate.getMonth() + 1 === month) {
-      currentMonthlyDeposit = chartOptions!.changeMonthlyDeposit!.value;
+      currentNominalMonthlyDeposit = chartOptions!.changeMonthlyDeposit!.value;
     }
     
     if (context.changeWithdrawDate && 
         context.changeWithdrawDate.getFullYear() === year && 
         context.changeWithdrawDate.getMonth() + 1 === month) {
-      currentMonthlyWithdrawal = chartOptions!.changeMonthlyWithdraw!.value;
+      currentNominalMonthlyWithdrawal = chartOptions!.changeMonthlyWithdraw!.value;
     }
 
     const isRetirementAge = year > context.endDate.getFullYear() ||
@@ -663,7 +664,7 @@ export function generateProjectionData(
       ? yearlyReturnRateToMonthlyReturnRate(activeMicroPlanForRates.expected_return / 100)
       : yearlyReturnRateToMonthlyReturnRate(8 / 100); // Default 8% se não houver micro plano
     
-    const { monthlyInflationRate, monthlyReturnRate, monthlyOldPortfolioReturnRate } = 
+    const rates = 
       calculateMonthlyRates(
         year, 
         month, 
@@ -671,17 +672,30 @@ export function generateProjectionData(
         monthlyInflationRateForDate,
         monthlyExpectedReturnRateForDate,
         context.monthlyOldPortfolioExpectedReturnRate,
-        chartOptions?.showRealValues || false
       );
-    
+    let monthlyInflationRate = rates.monthlyInflationRate;
+    let monthlyReturnRate = rates.monthlyReturnRate;
+    let monthlyOldPortfolioReturnRate = rates.monthlyOldPortfolioReturnRate;
+
     accumulatedInflation *= (1 + monthlyInflationRate);
 
     // Adjust for inflation
-    if (investmentPlan.adjust_contribution_for_inflation && !isRetirementAge) {
-      currentMonthlyDeposit *= (1 + monthlyInflationRate);
+    if (investmentPlan.adjust_contribution_for_inflation  && !isRetirementAge) {
+      currentNominalMonthlyDeposit *= (1 + monthlyInflationRate);
     }
     if (investmentPlan.adjust_income_for_inflation) {
-      currentMonthlyWithdrawal *= (1 + monthlyInflationRate);
+      currentNominalMonthlyWithdrawal *= (1 + monthlyInflationRate);
+    }
+    // If showRealValues is true, we need to discount accumulated inflation
+    if (chartOptions?.showRealValues) {
+      // Descontar a inflação acumulada dos valores para mostrar valores reais
+      // Dividir pelo fator de inflação acumulada para obter valores reais
+      currentRealMonthlyDeposit = currentNominalMonthlyDeposit / accumulatedInflation;
+      currentRealMonthlyWithdrawal = currentNominalMonthlyWithdrawal / accumulatedInflation;
+      monthlyInflationRate = 0;
+      // Usar valores desconsiderando a inflação
+      monthlyReturnRate = monthlyExpectedReturnRateForDate;
+      monthlyOldPortfolioReturnRate = context.monthlyOldPortfolioExpectedReturnRate;
     }
     
     // Handle goals and events for planned balance (use all goals/events)
@@ -719,7 +733,7 @@ export function generateProjectionData(
       lastHistoricalRecord = createDateFromYearMonth(year, month);
       
       // Apply returns and contribution (if applicable)
-      const contribution = currentMonthlyDeposit;
+      const contribution = chartOptions?.showRealValues ? currentRealMonthlyDeposit : currentNominalMonthlyDeposit;
       
       plannedBalance = plannedBalance * (1 + monthlyReturnRate) + contribution;
       if (context.oldPortfolioProfitability) {
@@ -742,7 +756,7 @@ export function generateProjectionData(
         context.birthYear
       );
     } else if (isInPast) {
-      const contribution = currentMonthlyDeposit;
+      const contribution = chartOptions?.showRealValues ? currentRealMonthlyDeposit : currentNominalMonthlyDeposit;
       
       plannedBalance = plannedBalance * (1 + monthlyReturnRate) + contribution;
       if (context.oldPortfolioProfitability) {
@@ -776,7 +790,7 @@ export function generateProjectionData(
       const goalsEventsImpact = projectedBalance - previousBalance;
 
       if (isRetirementAge) {
-        const withdrawal = currentMonthlyWithdrawal;
+        const withdrawal = chartOptions?.showRealValues ? currentRealMonthlyWithdrawal : currentNominalMonthlyWithdrawal;
         
         projectedBalance = (projectedBalance * (1 + monthlyReturnRate)) - withdrawal;
         plannedBalance = (plannedBalance * (1 + monthlyReturnRate)) - withdrawal;
@@ -800,7 +814,7 @@ export function generateProjectionData(
         );
       } else {
         // Regular future month
-        const contribution = currentMonthlyDeposit;
+        const contribution = chartOptions?.showRealValues ? currentRealMonthlyDeposit : currentNominalMonthlyDeposit;
         
         projectedBalance = projectedBalance * (1 + monthlyReturnRate) + contribution;
         plannedBalance = plannedBalance * (1 + monthlyReturnRate) + contribution;
