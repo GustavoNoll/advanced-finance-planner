@@ -1,6 +1,6 @@
 import { FinancialRecord, InvestmentPlan, MicroInvestmentPlan, Goal, ProjectedEvent } from "@/types/financial";
 import { calculateCompoundedRates, nper, yearlyReturnRateToMonthlyReturnRate, pmt, vp } from "@/lib/financial-math";
-import { processItem } from './financial-goals-processor';
+import { processItem, IGNORE_FINANCIAL_LINKS, CONSIDER_FINANCIAL_LINKS } from './financial-goals-processor';
 import { createDateWithoutTimezone, createDateFromYearMonth } from '@/utils/dateUtils';
 import { HistoricalDataInfo } from "@/services/projection.service";
 import { MonthlyProjectionData } from "./chart-projections";
@@ -328,15 +328,15 @@ const financialCalculations = {
   /**
    * Processes goals for financial calculations
    */
-  processGoals: (goals: Goal[], referenceDate: Date) => {
-    return goals.flatMap(goal => processItem(goal, 'goal'));
+  processGoals: (goals: Goal[], referenceDate: Date, ignoreFinancialLinks: boolean = false) => {
+    return goals.flatMap(goal => processItem(goal, 'goal', ignoreFinancialLinks));
   },
 
   /**
    * Processes events for financial calculations
    */
-  processEvents: (events: ProjectedEvent[], referenceDate: Date) => {
-    return events.flatMap(event => processItem(event, 'event'));
+  processEvents: (events: ProjectedEvent[], referenceDate: Date, ignoreFinancialLinks: boolean = false) => {
+    return events.flatMap(event => processItem(event, 'event', ignoreFinancialLinks));
   },
 
   /**
@@ -443,13 +443,14 @@ const financialCalculations = {
       monthsToRetirement: number,
       referenceDate: Date,
       currency: 'BRL' | 'USD' | 'EUR',
-      microPlans: MicroInvestmentPlan[]
+      microPlans: MicroInvestmentPlan[],
+      ignoreFinancialLinks?: boolean
     }
   ) => {
-    const { startDate, endDate, goals, events, monthsToRetirement, referenceDate, currency, microPlans } = params;
+    const { startDate, endDate, goals, events, monthsToRetirement, referenceDate, currency, microPlans, ignoreFinancialLinks = false } = params;
     
-    const processedGoals = financialCalculations.processGoals(goals, referenceDate);
-    const processedEvents = financialCalculations.processEvents(events, referenceDate);
+    const processedGoals = financialCalculations.processGoals(goals, referenceDate, ignoreFinancialLinks);
+    const processedEvents = financialCalculations.processEvents(events, referenceDate, ignoreFinancialLinks);
 
     // Separate into pre and post retirement
     const preRetirementGoals = processedGoals.filter(goal => goal.month <= monthsToRetirement);
@@ -536,7 +537,9 @@ const financialCalculations = {
     const pendingGoals = allGoals.filter(goal => goal.status === 'pending');
     const pendingEvents = allEvents.filter(event => event.status === 'pending');
 
-    // Generate hash for planned calculations (all goals/events)
+    // Usar constantes importadas para controle de processamento
+
+    // Generate hash for planned calculations (all goals/events, ignoring financial_links)
     const { preRetirementHash: plannedPreRetirementHash, postRetirementHash: plannedPostRetirementHash } = financialCalculations.generatePreCalculationHash({
       startDate,
       endDate,
@@ -545,10 +548,11 @@ const financialCalculations = {
       monthsToRetirement,
       referenceDate,
       currency,
-      microPlans
+      microPlans,
+      ignoreFinancialLinks: IGNORE_FINANCIAL_LINKS // Para planned: ignora financial_links
     });
 
-    // Generate hash for projected calculations (only pending goals/events)
+    // Generate hash for projected calculations (only pending goals/events, considering financial_links)
     const { preRetirementHash: projectedPreRetirementHash, postRetirementHash: projectedPostRetirementHash } = financialCalculations.generatePreCalculationHash({
       startDate,
       endDate,
@@ -557,7 +561,8 @@ const financialCalculations = {
       monthsToRetirement,
       referenceDate,
       currency,
-      microPlans
+      microPlans,
+      ignoreFinancialLinks: CONSIDER_FINANCIAL_LINKS // Para projected: considera financial_links
     });
 
     // Sum of pre/post retirement goals for planned calculations (all goals/events)

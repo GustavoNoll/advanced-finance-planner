@@ -1,5 +1,9 @@
 import { Goal, ProjectedEvent, FinancialRecordLink } from '@/types/financial';
 
+// Constantes para controle de processamento de financial_links
+export const IGNORE_FINANCIAL_LINKS = true;  // Para cálculos planejados (cenário ideal)
+export const CONSIDER_FINANCIAL_LINKS = false; // Para cálculos projetados (realidade atual)
+
 export interface ProcessedGoalEvent {
   id: string;
   type: 'goal' | 'event';
@@ -46,9 +50,12 @@ function calculateRemainingAmount(
  */
 export function processItem<T extends Goal | ProjectedEvent>(
   item: T,
-  type: 'goal' | 'event'
+  type: 'goal' | 'event',
+  ignoreFinancialLinks: boolean = false
 ): ProcessedGoalEvent[] {
-  const remainingAmount = calculateRemainingAmount(item, item.financial_links);
+  const remainingAmount = ignoreFinancialLinks 
+    ? item.asset_value 
+    : calculateRemainingAmount(item, item.financial_links);
   
   // Se já foi totalmente pago/realizado, não processa
   if (remainingAmount <= 0) {
@@ -72,7 +79,9 @@ export function processItem<T extends Goal | ProjectedEvent>(
 
   // Para modo repeat, cada repetição tem o valor completo
   if (item.payment_mode === 'repeat') {
-    const totalPaid = item.financial_links?.reduce((sum, link) => sum + Math.abs(link.allocated_amount), 0) || 0;
+    const totalPaid = ignoreFinancialLinks 
+      ? 0 
+      : item.financial_links?.reduce((sum, link) => sum + Math.abs(link.allocated_amount), 0) || 0;
     const paidRepetitions = Math.floor(totalPaid / item.asset_value);
     const remainingRepetitions = item.installment_count - paidRepetitions;
 
@@ -104,7 +113,9 @@ export function processItem<T extends Goal | ProjectedEvent>(
   }
 
   // Para parcelamento (installment), calcula quantas parcelas ainda precisam ser pagas
-  const totalPaid = item.financial_links?.reduce((sum, link) => sum + Math.abs(link.allocated_amount), 0) || 0;
+  const totalPaid = ignoreFinancialLinks 
+    ? 0 
+    : item.financial_links?.reduce((sum, link) => sum + Math.abs(link.allocated_amount), 0) || 0;
   const installmentValue = item.asset_value / item.installment_count;
   const paidInstallments = Math.floor(totalPaid / installmentValue);
   const remainingInstallments = item.installment_count - paidInstallments;
@@ -145,13 +156,13 @@ export function processItem<T extends Goal | ProjectedEvent>(
 /**
  * Processa goals para cálculos financeiros, considerando financial_links
  */
-export function processGoalsForChart(goals: Goal[]): ProcessedGoalEvent[] {
-  return goals.flatMap(item => processItem(item, 'goal'));
+export function processGoalsForChart(goals: Goal[], ignoreFinancialLinks: boolean = false): ProcessedGoalEvent[] {
+  return goals.flatMap(item => processItem(item, 'goal', ignoreFinancialLinks));
 }
 
 /**
  * Processa events para cálculos financeiros, considerando financial_links
  */
-export function processEventsForChart(events: ProjectedEvent[]): ProcessedGoalEvent[] {
-  return events.flatMap(item => processItem(item, 'event'));
+export function processEventsForChart(events: ProjectedEvent[], ignoreFinancialLinks: boolean = false): ProcessedGoalEvent[] {
+  return events.flatMap(item => processItem(item, 'event', ignoreFinancialLinks));
 } 

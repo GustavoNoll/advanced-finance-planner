@@ -4,7 +4,6 @@ import { useQuery } from "@tanstack/react-query";
 import { Select, SelectItem, SelectTrigger, SelectContent, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { fetchCDIRates, fetchIPCARates, fetchUSCPIRates, fetchEuroCPIRates } from '@/lib/bcb-api';
-import { generateProjectionData, YearlyProjectionData } from '@/lib/chart-projections';
 import { FinancialRecord, InvestmentPlan, Goal, ProjectedEvent, Profile } from '@/types/financial';
 import { CartesianGrid, Line, Tooltip, LineChart as RechartsLineChart, XAxis, YAxis, Legend } from "recharts";
 import { ResponsiveContainer } from "recharts";
