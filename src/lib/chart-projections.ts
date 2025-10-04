@@ -108,6 +108,21 @@ interface ProjectionContext {
 // ============================================================================
 
 /**
+ * Adjusts monetary values for real values display by dividing by accumulated inflation
+ * @param nominalValue The nominal value to adjust
+ * @param accumulatedInflation The accumulated inflation factor
+ * @param showRealValues Whether to show real values (divide by inflation)
+ * @returns Adjusted value (real if showRealValues is true, nominal otherwise)
+ */
+function adjustValueForRealDisplay(
+  nominalValue: number, 
+  accumulatedInflation: number, 
+  showRealValues: boolean
+): number {
+  return showRealValues ? nominalValue / accumulatedInflation : nominalValue;
+}
+
+/**
  * Verifica se é o momento de mudar para um novo micro plano ativo
  * @param microPlans Array de micro planos
  * @param currentDate Data atual da iteração
@@ -349,20 +364,22 @@ function createHistoricalMonthData(
   birthYear: number,
   showRealValues: boolean = false
 ): MonthlyProjectionData {
-  const contribution = historicalRecord.monthly_contribution > 0 ? historicalRecord.monthly_contribution : 0;
-  const withdrawal = historicalRecord.monthly_contribution < 0 ? Math.abs(historicalRecord.monthly_contribution) : 0;
+  // Calcular valores nominais primeiro
+  const nominalContribution = historicalRecord.monthly_contribution > 0 ? historicalRecord.monthly_contribution : 0;
+  const nominalWithdrawal = historicalRecord.monthly_contribution < 0 ? Math.abs(historicalRecord.monthly_contribution) : 0;
 
-  // Calcular impacto dos goals/events considerando financial_links
-  const goalsEventsImpact = historicalRecord.links?.reduce((acc, link) => {
+  // Calcular impacto dos goals/events considerando financial_links (valores nominais)
+  const nominalGoalsEventsImpact = historicalRecord.links?.reduce((acc, link) => {
     // Para goals (gastos), os links são negativos
     // Para events, os links podem ser positivos ou negativos
     return acc + link.allocated_amount;
   }, 0) || 0;
 
-  // Descontar inflação acumulada se showRealValues for true
-  const adjustedEndingBalance = showRealValues 
-    ? historicalRecord.ending_balance / accumulatedInflation 
-    : historicalRecord.ending_balance;
+  // Aplicar ajuste para valores reais se necessário
+  const contribution = adjustValueForRealDisplay(nominalContribution, accumulatedInflation, showRealValues);
+  const withdrawal = adjustValueForRealDisplay(nominalWithdrawal, accumulatedInflation, showRealValues);
+  const goalsEventsImpact = adjustValueForRealDisplay(nominalGoalsEventsImpact, accumulatedInflation, showRealValues);
+  const adjustedEndingBalance = adjustValueForRealDisplay(historicalRecord.ending_balance, accumulatedInflation, showRealValues);
 
   return {
     month: month as MonthNumber,
@@ -762,6 +779,7 @@ export function generateProjectionData(
         context.birthYear,
         chartOptions?.showRealValues || false
       );
+      projectedBalance = monthlyData.balance;
     } else if (isInPast) {
       const contribution = chartOptions?.showRealValues ? currentRealMonthlyDeposit : currentNominalMonthlyDeposit;
       

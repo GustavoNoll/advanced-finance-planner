@@ -84,6 +84,8 @@ export function EditPlanModal({
     expectedReturn: activeMicroPlan?.expected_return.toFixed(1) || '',
     inflation: activeMicroPlan?.inflation.toString() || '',
     effectiveDate: activeMicroPlan?.effective_date || '',
+    adjustContributionForAccumulatedInflation: activeMicroPlan?.adjust_contribution_for_accumulated_inflation ?? true,
+    adjustIncomeForAccumulatedInflation: activeMicroPlan?.adjust_income_for_accumulated_inflation ?? true,
   });
 
   const [calculations, setCalculations] = useState<InvestmentCalculations | null>(null);
@@ -225,6 +227,8 @@ export function EditPlanModal({
           desired_income: parseFloat(microPlanFormData.desiredIncome.replace(',', '.')),
           expected_return: parseFloat(microPlanFormData.expectedReturn.replace(',', '.')),
           inflation: parseFloat(microPlanFormData.inflation.replace(',', '.')),
+          adjust_contribution_for_accumulated_inflation: microPlanFormData.adjustContributionForAccumulatedInflation,
+          adjust_income_for_accumulated_inflation: microPlanFormData.adjustIncomeForAccumulatedInflation,
         })
         .eq('id', activeMicroPlan.id);
 
@@ -715,6 +719,51 @@ export function EditPlanModal({
                         />
                       </div>
                     </div>
+
+                    {microPlans.length > 1 && activeMicroPlan && (() => {
+                      // Encontrar o micro plano mais antigo (base)
+                      const sortedPlans = [...microPlans].sort((a, b) => 
+                        new Date(a.effective_date).getTime() - new Date(b.effective_date).getTime()
+                      );
+                      const baseMicroPlan = sortedPlans[0];
+                      
+                      // Mostrar campos apenas se o micro plano atual não for o base
+                      return activeMicroPlan.id !== baseMicroPlan.id;
+                    })() && (
+                      <div className="space-y-4">
+                        <div className="flex items-center space-x-2">
+                          <Checkbox
+                            id="adjust_contribution_for_accumulated_inflation"
+                            checked={microPlanFormData.adjustContributionForAccumulatedInflation}
+                            onCheckedChange={(checked) => {
+                              setMicroPlanFormData(prev => ({
+                                ...prev,
+                                adjustContributionForAccumulatedInflation: checked as boolean
+                              }))
+                            }}
+                          />
+                          <label htmlFor="adjust_contribution_for_accumulated_inflation" className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                            {t('investmentPlan.microPlans.form.adjustContributionForAccumulatedInflation')}
+                          </label>
+                        </div>
+                        
+                        <div className="flex items-center space-x-2">
+                          <Checkbox
+                            id="adjust_income_for_accumulated_inflation"
+                            checked={microPlanFormData.adjustIncomeForAccumulatedInflation}
+                            onCheckedChange={(checked) => {
+                              setMicroPlanFormData(prev => ({
+                                ...prev,
+                                adjustIncomeForAccumulatedInflation: checked as boolean
+                              }))
+                            }}
+                          />
+                          <label htmlFor="adjust_income_for_accumulated_inflation" className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                            {t('investmentPlan.microPlans.form.adjustIncomeForAccumulatedInflation')}
+                          </label>
+                        </div>
+                      </div>
+                    )}
 
                     <Button 
                       type="submit" 
