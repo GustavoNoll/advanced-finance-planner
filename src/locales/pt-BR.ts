@@ -1272,10 +1272,8 @@ export const ptBR = {
     }
   },
   adminDashboard: {
-    top5BrokersByClients: "Top 5 Corretores por Clientes",
-    top5BrokersByBalance: "Top 5 Corretores por Patrimônio",
-    top5BrokersByPlans: "Top 5 Corretores por Planos",
-    top5BrokersByActivity: "Top 5 Corretores por Atividade",
+    activeBrokers: 'Corretores Ativos',
+    totalBrokers: 'Total de Corretores',
     averagePerClient: "Média por cliente",
     needReview: "precisam de revisão",
     title: 'Painel Administrativo',
@@ -1310,7 +1308,6 @@ export const ptBR = {
     balance: 'Saldo',
     lastActivity: 'Última Atividade',
     activeClients: 'Clientes Ativos',
-    totalBrokers: 'Total de Corretores',
     totalClients: 'Total de Clientes',
     totalPlans: 'Total de Planos',
     totalBalance: 'Saldo Total',

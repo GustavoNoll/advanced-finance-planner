@@ -4,6 +4,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate, useLocation } from "react-router-dom";
 import { AuthProvider, useAuth } from "./components/auth/AuthProvider";
+import { ActivityTracker } from "./components/ActivityTracker";
 import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
 import { LoginForm } from "./components/auth/LoginForm";
@@ -205,14 +206,16 @@ const App = () => (
   <QueryClientProvider client={queryClient}>
     <BrowserRouter>
       <AuthProvider>
-        <TooltipProvider>
-          <RouteProgress />
-          <ThemeToggle />
-          <Toaster />
-          <Sonner />
-          <ScrollToTop />
-          <AppRoutes />
-        </TooltipProvider>
+        <ActivityTracker>
+          <TooltipProvider>
+            <RouteProgress />
+            <ThemeToggle />
+            <Toaster />
+            <Sonner />
+            <ScrollToTop />
+            <AppRoutes />
+          </TooltipProvider>
+        </ActivityTracker>
         <Analytics />
         <SpeedInsights />
       </AuthProvider>

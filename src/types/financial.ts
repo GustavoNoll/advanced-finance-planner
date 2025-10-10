@@ -65,6 +65,7 @@ export interface Profile {
   is_active?: boolean;
   is_broker?: boolean;
   is_admin?: boolean;
+  last_active_at?: string;
 }
 
 

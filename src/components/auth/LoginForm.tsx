@@ -30,6 +30,12 @@ export const LoginForm = () => {
 
       if (signInError) throw signInError;
 
+      // Update last_active_at on login
+      await supabase
+        .from('profiles')
+        .update({ last_active_at: new Date().toISOString() })
+        .eq('id', signInData.user.id);
+
       // Check user profile
       const { data: profile, error: profileError } = await supabase
         .from('profiles')

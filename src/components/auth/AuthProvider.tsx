@@ -7,18 +7,33 @@ type AuthContextType = {
   user: User | null;
   loading: boolean;
   isBroker: boolean;
+  updateLastActive: () => Promise<void>;
 };
 
 const AuthContext = createContext<AuthContextType>({
   user: null,
   loading: true,
   isBroker: false,
+  updateLastActive: async () => {},
 });
 
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [isBroker, setIsBroker] = useState(false);
+
+  const updateLastActive = async () => {
+    if (!user) return;
+
+    try {
+      await supabase
+        .from('profiles')
+        .update({ last_active_at: new Date().toISOString() })
+        .eq('id', user.id);
+    } catch (error) {
+      console.error('Error updating last_active_at:', error);
+    }
+  };
 
   useEffect(() => {
     const fetchUser = async () => {
@@ -59,7 +74,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   }, []);
 
   return (
-    <AuthContext.Provider value={{ user, loading, isBroker }}>
+    <AuthContext.Provider value={{ user, loading, isBroker, updateLastActive }}>
       {children}
     </AuthContext.Provider>
   );
