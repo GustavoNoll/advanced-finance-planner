@@ -1340,6 +1340,38 @@ export const ptBR = {
     confirmPassword: 'Confirmar Senha',
     confirmPasswordPlaceholder: 'Digite novamente sua nova senha',
     passwordChanged: 'Senha alterada com sucesso',
+    clientAccessAnalysis: {
+      title: 'Análise de Acessos dos Clientes',
+      activityStatus: {
+        title: 'Status de Atividade',
+        description: 'Distribuição por tempo de inatividade',
+        today: 'Hoje',
+        thisWeek: 'Esta Semana',
+        thisMonth: 'Este Mês',
+        inactive: 'Inativos'
+      },
+      accessSummary: {
+        title: 'Resumo de Acessos',
+        description: 'Estatísticas dos últimos acessos',
+        totalClients: 'Total de Clientes',
+        accessedToday: 'Acessaram hoje',
+        accessedThisWeek: 'Acessaram esta semana',
+        inactive30Days: 'Inativos há 30+ dias'
+      },
+      recentAccess: {
+        title: 'Últimos Acessos de Clientes',
+        description: 'Últimos 50 clientes que acessaram a plataforma',
+        client: 'Cliente',
+        broker: 'Broker',
+        lastAccess: 'Último Acesso',
+        status: 'Status',
+        today: 'Hoje',
+        yesterday: 'Ontem',
+        days: 'dias',
+        inactive: 'Inativo',
+        never: 'Nunca'
+      }
+    },
   },
   familyStructure: {
     title: 'Estrutura Familiar',

@@ -182,7 +182,6 @@ export const AdminDashboard = () => {
     totalBalance: number;
     newClients: number;
     growthRate: string;
-    retentionRate: string;
   }>>([]);
   const [brokerPerformanceData, setBrokerPerformanceData] = useState<Array<{
     name: string;
@@ -210,14 +209,18 @@ export const AdminDashboard = () => {
     name: string;
     email: string;
     lastLogin: string;
-    loginCount: number;
     brokerName: string;
     daysSinceLogin: number;
   }>>([]);
-  const [loginDistributionData, setLoginDistributionData] = useState<Array<{
-    range: string;
-    count: number;
-    percentage: number;
+  
+  // All client access data for charts (no limit)
+  const [allClientAccessData, setAllClientAccessData] = useState<Array<{
+    id: string;
+    name: string;
+    email: string;
+    lastLogin: string;
+    brokerName: string;
+    daysSinceLogin: number;
   }>>([]);
   
   const navigate = useNavigate();
@@ -225,31 +228,6 @@ export const AdminDashboard = () => {
   const { t } = useTranslation();
   const { user } = useAuth();
 
-  // Monthly client creation data for last 6 months
-  const monthlyClientsData = useMemo(() => {
-    const months = [];
-    const today = new Date();
-    
-    for (let i = 5; i >= 0; i--) {
-      const date = new Date(today.getFullYear(), today.getMonth() - i, 1);
-      const monthName = date.toLocaleDateString('pt-BR', { month: 'short' });
-      const year = date.getFullYear();
-      
-      // Simulate client creation data (in a real app, this would come from historical data)
-      const baseClients = overallMetrics.totalClients;
-      const monthlyGrowth = Math.floor(baseClients * 0.02); // 2% growth per month
-      const newClients = monthlyGrowth + Math.floor(Math.random() * 20); // Add some variation
-      
-      months.push({
-        month: monthName,
-        year: year,
-        newClients: newClients,
-        color: MODERN_COLORS.primary
-      });
-    }
-    
-    return months;
-  }, [overallMetrics.totalClients]);
 
   useEffect(() => {
     checkAdminStatus();
@@ -264,7 +242,7 @@ export const AdminDashboard = () => {
   }, [])
 
   // Generate growth trend data for the last 12 months
-  const generateGrowthTrendData = useCallback((brokers: BrokerMetrics[]) => {
+  const generateGrowthTrendData = useCallback(async (brokers: BrokerMetrics[]) => {
     const months = [];
     const today = new Date();
     
@@ -273,29 +251,59 @@ export const AdminDashboard = () => {
       const monthName = date.toLocaleDateString('pt-BR', { month: 'short' });
       const year = date.getFullYear();
       
-      // Simulate growth data (in a real app, this would come from historical data)
-      const totalClients = brokers.reduce((sum, broker) => {
-        const baseClients = Number(broker.enhancedMetrics?.totalClients) || 0;
-        const growth = Math.floor(baseClients * (0.02 * (12 - i))); // 2% growth per month
-        return sum + baseClients + growth;
-      }, 0);
+      // Get real data for this month
+      const startOfMonth = new Date(year, date.getMonth(), 1);
+      const endOfMonth = new Date(year, date.getMonth() + 1, 0);
       
-      const totalBalance = brokers.reduce((sum, broker) => {
-        const baseBalance = Number(broker.enhancedMetrics?.totalBalance) || 0;
-        const growth = baseBalance * (0.03 * (12 - i)); // 3% growth per month
-        return sum + baseBalance + growth;
-      }, 0);
+      // Count clients created in this month
+      const { data: clientsCreated, error: clientsError } = await supabase
+        .from('profiles')
+        .select('id, created_at')
+        .eq('is_broker', false)
+        .gte('created_at', startOfMonth.toISOString())
+        .lte('created_at', endOfMonth.toISOString());
       
-      const newClients = Math.floor(totalClients * 0.05); // 5% new clients per month
+      if (clientsError) {
+        console.error('Error fetching clients for month:', clientsError);
+        continue;
+      }
+      
+      const newClients = clientsCreated?.length || 0;
+      
+      // Get total clients up to this month
+      const { data: totalClientsData, error: totalError } = await supabase
+        .from('profiles')
+        .select('id')
+        .eq('is_broker', false)
+        .lte('created_at', endOfMonth.toISOString());
+      
+      if (totalError) {
+        console.error('Error fetching total clients for month:', totalError);
+        continue;
+      }
+      
+      const totalClients = totalClientsData?.length || 0;
+      
+      // Get total balance for this month (from user_profiles_investment view)
+      const { data: balanceData, error: balanceError } = await supabase
+        .from('user_profiles_investment')
+        .select('ending_balance')
+        .lte('financial_created_at', endOfMonth.toISOString());
+      
+      if (balanceError) {
+        console.error('Error fetching balance for month:', balanceError);
+        continue;
+      }
+      
+      const totalBalance = balanceData?.reduce((sum, client) => sum + (client.ending_balance || 0), 0) || 0;
       
       months.push({
         month: monthName,
         year: year,
-        totalClients: isNaN(Number(totalClients)) ? 0 : Number(totalClients),
-        totalBalance: isNaN(Number(totalBalance)) ? 0 : Number(totalBalance),
-        newClients: isNaN(Number(newClients)) ? 0 : Number(newClients),
-        growthRate: (3 + Math.random() * 2).toFixed(1), // 3-5% growth rate
-        retentionRate: (85 + Math.random() * 10).toFixed(1), // 85-95% retention
+        totalClients: totalClients,
+        totalBalance: totalBalance,
+        newClients: newClients,
+        growthRate: totalClients > 0 ? ((newClients / totalClients) * 100).toFixed(1) : '0.0',
       });
     }
     
@@ -324,7 +332,7 @@ export const AdminDashboard = () => {
       const safeSharpe = isNaN(averageSharpeRatio) ? 0 : averageSharpeRatio;
       const safeEngagement = isNaN(averageEngagementScore) ? 0 : averageEngagementScore;
       const safeVolatility = isNaN(averageVolatility) ? 0 : averageVolatility;
-      const safeGrowth = Math.random() * 20 + 5;
+      const safeGrowth = totalBalance > 0 ? (totalBalance / (totalClients || 1)) / 1000 : 0; // Growth based on average balance per client
       
       return {
         name: broker.name || 'Unknown Broker',
@@ -514,87 +522,87 @@ export const AdminDashboard = () => {
 
   const fetchClientAccessData = async () => {
     try {
-      // Get all non-broker users with their last login data
-      const { data: clientUsers, error: usersError } = await supabase
-        .from('profiles')
-        .select(`
-          id,
-          name,
-          last_active_at,
-          broker_id,
-          brokers:broker_id (
-            name
-          )
-        `)
-        .eq('is_broker', false)
-        .not('name', 'ilike', '%teste%')
-        .order('last_active_at', { ascending: false })
-        .limit(50);
+      // Get activity statistics using SQL aggregation
+      const { data: activityStats, error: statsError } = await supabase
+        .rpc('get_client_activity_stats');
 
-      if (usersError) throw usersError;
+      if (statsError) {
+        console.error('Error fetching activity stats:', statsError);
+        // Fallback to empty data
+        setClientAccessData([]);
+        setAllClientAccessData([]);
+        return;
+      }
 
-      // Get user emails
-      const userIds = clientUsers?.map(user => user.id) || [];
+      // Get recent 20 clients for table
+      const { data: recentClients, error: recentError } = await supabase
+        .rpc('get_recent_client_access', { limit_count: 20 });
+
+      if (recentError) {
+        console.error('Error fetching recent clients:', recentError);
+        // Fallback to empty data
+        setClientAccessData([]);
+        setAllClientAccessData([]);
+        return;
+      }
+
+      // Get emails for recent clients separately
+      const userIds = recentClients?.map((client: { id: string }) => client.id) || [];
       const { data: userEmails, error: emailsError } = await supabase
         .from('users')
         .select('id, email')
         .in('id', userIds);
 
-      if (emailsError) throw emailsError;
+      if (emailsError) {
+        console.error('Error fetching emails:', emailsError);
+      }
 
-      const emailMap = userEmails?.reduce((acc, user) => {
+      const emailMap = userEmails?.reduce((acc: Record<string, string>, user: { id: string; email: string }) => {
         acc[user.id] = user.email;
         return acc;
-      }, {} as Record<string, string>) || {};
+      }, {}) || {};
 
-      // Process client access data
-      const today = new Date();
-      const accessData = clientUsers?.map(user => {
-        const lastLogin = user.last_active_at ? new Date(user.last_active_at) : null;
-        const daysSinceLogin = lastLogin 
-          ? Math.floor((today.getTime() - lastLogin.getTime()) / (1000 * 60 * 60 * 24))
-          : 999;
+      // Process activity stats for charts
+      const allAccessData = activityStats?.map((stat: {
+        id: string;
+        name: string;
+        last_active_at: string;
+        days_since_login: number;
+      }) => ({
+        id: stat.id,
+        name: stat.name || 'Nome não informado',
+        email: '', // Not needed for charts
+        lastLogin: stat.last_active_at || 'Nunca',
+        brokerName: '', // Not needed for charts
+        daysSinceLogin: stat.days_since_login || 999
+      })) || [];
 
-        return {
-          id: user.id,
-          name: user.name || 'Nome não informado',
-          email: emailMap[user.id] || 'Email não encontrado',
-          lastLogin: user.last_active_at || 'Nunca',
-          loginCount: Math.floor(Math.random() * 50) + 1, // Simulated login count
-          brokerName: user.brokers?.[0]?.name || 'Broker não encontrado',
-          daysSinceLogin
-        };
-      }) || [];
+      // Process recent clients for table
+      const recentAccessData = recentClients?.map((client: {
+        id: string;
+        name: string;
+        email: string;
+        last_active_at: string;
+        broker_name: string;
+        days_since_login: number;
+      }) => ({
+        id: client.id,
+        name: client.name || 'Nome não informado',
+        email: emailMap[client.id] || 'Email não encontrado',
+        lastLogin: client.last_active_at || 'Nunca',
+        brokerName: client.broker_name || 'Broker não encontrado',
+        daysSinceLogin: client.days_since_login || 999
+      })) || [];
 
-      setClientAccessData(accessData);
-
-      // Generate login distribution data
-      const distributionRanges = [
-        { min: 0, max: 5, label: '0-5 logins' },
-        { min: 6, max: 15, label: '6-15 logins' },
-        { min: 16, max: 30, label: '16-30 logins' },
-        { min: 31, max: 50, label: '31-50 logins' },
-        { min: 51, max: Infinity, label: '50+ logins' }
-      ];
-
-      const distributionData = distributionRanges.map(range => {
-        const count = accessData.filter(user => 
-          user.loginCount >= range.min && user.loginCount <= range.max
-        ).length;
-        
-        return {
-          range: range.label,
-          count,
-          percentage: accessData.length > 0 ? (count / accessData.length) * 100 : 0
-        };
-      });
-
-      setLoginDistributionData(distributionData);
+      // Set both datasets
+      setClientAccessData(recentAccessData); // For table (20 users)
+      setAllClientAccessData(allAccessData); // For charts (all users)
 
     } catch (error) {
       console.error('Error fetching client access data:', error);
     }
   };
+
 
   const checkAdminStatus = async () => {
     if (!user) {
@@ -732,7 +740,7 @@ export const AdminDashboard = () => {
       setOverallMetrics(overallMetrics);
 
       // Generate trend data using only active brokers
-      const trendData = generateGrowthTrendData(activeBrokers);
+      const trendData = await generateGrowthTrendData(activeBrokers);
       setGrowthTrendData(trendData);
 
       // Generate broker performance data using only active brokers
@@ -1798,27 +1806,34 @@ export const AdminDashboard = () => {
                     <Tooltip 
                       content={({ active, payload, label }) => {
                         if (!active || !payload || !payload.length) return null;
-                        const data = overallMetrics.wealthDistribution.find(d => d.range === label);
+                        
+                        // Get data from the nested payload structure
+                        const data = payload[0]?.payload?.payload || payload[0]?.payload;
+                        const count = payload[0]?.value || 0;
+                        const percentage = data?.percentage || 0;
+                        const total = data?.total || 0;
+                        const range = data?.range || label || 'N/A';
+                        
                         return (
                           <div className="bg-white dark:bg-slate-800 p-4 rounded-xl shadow-xl border border-slate-200 dark:border-slate-700">
-                            <p className="text-sm font-semibold text-slate-900 dark:text-slate-100 mb-2">{label}</p>
+                            <p className="text-sm font-semibold text-slate-900 dark:text-slate-100 mb-2">{range}</p>
                             <div className="space-y-1">
                               <div className="flex justify-between items-center">
                                 <span className="text-sm text-slate-600 dark:text-slate-400">Clientes:</span>
                                 <span className="text-sm font-semibold text-slate-900 dark:text-slate-100">
-                                  {payload[0].value}
+                                  {count}
                                 </span>
                               </div>
                               <div className="flex justify-between items-center">
                                 <span className="text-sm text-slate-600 dark:text-slate-400">Percentual:</span>
                                 <span className="text-sm font-semibold text-slate-900 dark:text-slate-100">
-                                  {data?.percentage.toFixed(1)}%
+                                  {percentage.toFixed(1)}%
                                 </span>
                               </div>
                               <div className="flex justify-between items-center">
                                 <span className="text-sm text-slate-600 dark:text-slate-400">Total:</span>
                                 <span className="text-sm font-semibold text-slate-900 dark:text-slate-100">
-                                  {formatCurrency(data?.total || 0)}
+                                  {formatCurrency(total)}
                                 </span>
                               </div>
                             </div>
@@ -2155,7 +2170,7 @@ export const AdminDashboard = () => {
         </div>
 
         {/* System Performance Overview */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+        <div className="grid grid-cols-1 gap-6 mb-8">
           {/* Performance Metrics Overview */}
           <Card className="hover:shadow-lg transition-all duration-300 border-0 bg-gradient-to-br from-white to-slate-50 dark:from-slate-900 dark:to-slate-800 shadow-xl">
             <CardHeader className="pb-4">
@@ -2215,64 +2230,6 @@ export const AdminDashboard = () => {
             </CardContent>
           </Card>
 
-          {/* Monthly Client Creation */}
-          <Card className="hover:shadow-lg transition-all duration-300 border-0 bg-gradient-to-br from-white to-slate-50 dark:from-slate-900 dark:to-slate-800 shadow-xl">
-            <CardHeader className="pb-4">
-              <CardTitle className="flex items-center gap-3 text-xl">
-                <div className="p-2 rounded-lg bg-gradient-to-r from-orange-500 to-red-500">
-                  <ArrowUpRight className="h-6 w-6 text-white" />
-                </div>
-                <div>
-                  <span className="text-slate-900 dark:text-slate-100">Novos Clientes por Mês</span>
-                  <p className="text-sm font-normal text-slate-600 dark:text-slate-400 mt-1">
-                    Últimos 6 meses
-                  </p>
-                </div>
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="h-[300px]">
-                <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={monthlyClientsData}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" opacity={0.3} />
-                    <XAxis 
-                      dataKey="month" 
-                      tick={{ fontSize: 12, fill: '#64748b' }}
-                      axisLine={false}
-                      tickLine={false}
-                    />
-                    <YAxis 
-                      tick={{ fontSize: 12, fill: '#64748b' }}
-                      axisLine={false}
-                      tickLine={false}
-                    />
-                    <Tooltip 
-                      content={({ active, payload, label }) => {
-                        if (!active || !payload || !payload.length) return null;
-                        const data = monthlyClientsData.find(d => d.month === label);
-                        return (
-                          <div className="bg-white dark:bg-slate-800 p-4 rounded-xl shadow-xl border border-slate-200 dark:border-slate-700">
-                            <p className="text-sm font-semibold text-slate-900 dark:text-slate-100 mb-2">{label}</p>
-                            <div className="flex items-center gap-3">
-                              <div className="w-3 h-3 rounded-full" style={{ backgroundColor: payload[0].color }} />
-                              <p className="text-sm text-slate-600 dark:text-slate-400">
-                                Novos Clientes: <span className="font-semibold text-slate-900 dark:text-slate-100">{payload[0].value}</span>
-                              </p>
-                            </div>
-                          </div>
-                        );
-                      }}
-                    />
-                    <Bar 
-                      dataKey="newClients" 
-                      fill={MODERN_COLORS.primary}
-                      radius={[4, 4, 0, 0]}
-                    />
-                  </BarChart>
-                </ResponsiveContainer>
-              </div>
-            </CardContent>
-          </Card>
         </div>
 
         {/* Broker Efficiency & Growth Analysis */}
@@ -2456,31 +2413,52 @@ export const AdminDashboard = () => {
 
         {/* Client Access Analysis */}
         <div className="mb-8">
-          <h2 className="text-2xl font-bold text-foreground mb-6">Análise de Acessos dos Clientes</h2>
+          <h2 className="text-2xl font-bold text-foreground mb-6">{t('adminDashboard.clientAccessAnalysis.title')}</h2>
           
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-            {/* Login Distribution Chart */}
+            {/* Activity Status Distribution */}
             <Card className="hover:shadow-lg transition-all duration-300 border-0 bg-gradient-to-br from-white to-slate-50 dark:from-slate-900 dark:to-slate-800 shadow-xl">
               <CardHeader className="pb-4">
                 <CardTitle className="flex items-center gap-3 text-xl">
                   <div className="p-2 rounded-lg bg-gradient-to-r from-indigo-500 to-purple-500">
                     <BarChart3 className="h-6 w-6 text-white" />
                   </div>
-                  <div>
-                    <span className="text-slate-900 dark:text-slate-100">Distribuição de Logins</span>
-                    <p className="text-sm font-normal text-slate-600 dark:text-slate-400 mt-1">
-                      Quantidade de acessos por usuário
-                    </p>
-                  </div>
+                <div>
+                  <span className="text-slate-900 dark:text-slate-100">{t('adminDashboard.clientAccessAnalysis.activityStatus.title')}</span>
+                  <p className="text-sm font-normal text-slate-600 dark:text-slate-400 mt-1">
+                    {t('adminDashboard.clientAccessAnalysis.activityStatus.description')}
+                  </p>
+                </div>
                 </CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="h-[300px]">
                   <ResponsiveContainer width="100%" height="100%">
-                    <BarChart data={loginDistributionData}>
+                    <BarChart data={[
+                      { 
+                        status: t('adminDashboard.clientAccessAnalysis.activityStatus.today'), 
+                        count: allClientAccessData.filter(c => c.daysSinceLogin === 0).length,
+                        color: MODERN_COLORS.success
+                      },
+                      { 
+                        status: t('adminDashboard.clientAccessAnalysis.activityStatus.thisWeek'), 
+                        count: allClientAccessData.filter(c => c.daysSinceLogin > 0 && c.daysSinceLogin <= 7).length,
+                        color: MODERN_COLORS.info
+                      },
+                      { 
+                        status: t('adminDashboard.clientAccessAnalysis.activityStatus.thisMonth'), 
+                        count: allClientAccessData.filter(c => c.daysSinceLogin > 7 && c.daysSinceLogin <= 30).length,
+                        color: MODERN_COLORS.warning
+                      },
+                      { 
+                        status: t('adminDashboard.clientAccessAnalysis.activityStatus.inactive'), 
+                        count: allClientAccessData.filter(c => c.daysSinceLogin > 30).length,
+                        color: MODERN_COLORS.danger
+                      }
+                    ]}>
                       <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" opacity={0.3} />
                       <XAxis 
-                        dataKey="range" 
+                        dataKey="status" 
                         tick={{ fontSize: 12, fill: '#64748b' }}
                         axisLine={false}
                         tickLine={false}
@@ -2493,23 +2471,14 @@ export const AdminDashboard = () => {
                       <Tooltip 
                         content={({ active, payload, label }) => {
                           if (!active || !payload || !payload.length) return null;
-                          const data = loginDistributionData.find(d => d.range === label);
                           return (
                             <div className="bg-white dark:bg-slate-800 p-4 rounded-xl shadow-xl border border-slate-200 dark:border-slate-700">
                               <p className="text-sm font-semibold text-slate-900 dark:text-slate-100 mb-2">{label}</p>
-                              <div className="space-y-1">
-                                <div className="flex justify-between items-center">
-                                  <span className="text-sm text-slate-600 dark:text-slate-400">Usuários:</span>
-                                  <span className="text-sm font-semibold text-slate-900 dark:text-slate-100">
-                                    {payload[0].value}
-                                  </span>
-                                </div>
-                                <div className="flex justify-between items-center">
-                                  <span className="text-sm text-slate-600 dark:text-slate-400">Percentual:</span>
-                                  <span className="text-sm font-semibold text-slate-900 dark:text-slate-100">
-                                    {data?.percentage.toFixed(1)}%
-                                  </span>
-                                </div>
+                              <div className="flex items-center gap-3">
+                                <div className="w-3 h-3 rounded-full" style={{ backgroundColor: payload[0].color }} />
+                                <p className="text-sm text-slate-600 dark:text-slate-400">
+                                  Clientes: <span className="font-semibold text-slate-900 dark:text-slate-100">{payload[0].value}</span>
+                                </p>
                               </div>
                             </div>
                           );
@@ -2533,38 +2502,38 @@ export const AdminDashboard = () => {
                   <div className="p-2 rounded-lg bg-gradient-to-r from-emerald-500 to-teal-500">
                     <Users className="h-6 w-6 text-white" />
                   </div>
-                  <div>
-                    <span className="text-slate-900 dark:text-slate-100">Resumo de Acessos</span>
-                    <p className="text-sm font-normal text-slate-600 dark:text-slate-400 mt-1">
-                      Estatísticas dos últimos acessos
-                    </p>
-                  </div>
+                <div>
+                  <span className="text-slate-900 dark:text-slate-100">{t('adminDashboard.clientAccessAnalysis.accessSummary.title')}</span>
+                  <p className="text-sm font-normal text-slate-600 dark:text-slate-400 mt-1">
+                    {t('adminDashboard.clientAccessAnalysis.accessSummary.description')}
+                  </p>
+                </div>
                 </CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
                   <div className="flex justify-between items-center p-3 bg-slate-50 dark:bg-slate-800 rounded-lg">
-                    <span className="text-sm text-slate-600 dark:text-slate-400">Total de Clientes</span>
+                    <span className="text-sm text-slate-600 dark:text-slate-400">{t('adminDashboard.clientAccessAnalysis.accessSummary.totalClients')}</span>
                     <span className="text-lg font-semibold text-slate-900 dark:text-slate-100">
-                      {clientAccessData.length}
+                      {allClientAccessData.length}
                     </span>
                   </div>
                   <div className="flex justify-between items-center p-3 bg-slate-50 dark:bg-slate-800 rounded-lg">
-                    <span className="text-sm text-slate-600 dark:text-slate-400">Acessaram hoje</span>
+                    <span className="text-sm text-slate-600 dark:text-slate-400">{t('adminDashboard.clientAccessAnalysis.accessSummary.accessedToday')}</span>
                     <span className="text-lg font-semibold text-green-600">
-                      {clientAccessData.filter(c => c.daysSinceLogin === 0).length}
+                      {allClientAccessData.filter(c => c.daysSinceLogin === 0).length}
                     </span>
                   </div>
                   <div className="flex justify-between items-center p-3 bg-slate-50 dark:bg-slate-800 rounded-lg">
-                    <span className="text-sm text-slate-600 dark:text-slate-400">Acessaram esta semana</span>
+                    <span className="text-sm text-slate-600 dark:text-slate-400">{t('adminDashboard.clientAccessAnalysis.accessSummary.accessedThisWeek')}</span>
                     <span className="text-lg font-semibold text-blue-600">
-                      {clientAccessData.filter(c => c.daysSinceLogin <= 7).length}
+                      {allClientAccessData.filter(c => c.daysSinceLogin <= 7).length}
                     </span>
                   </div>
                   <div className="flex justify-between items-center p-3 bg-slate-50 dark:bg-slate-800 rounded-lg">
-                    <span className="text-sm text-slate-600 dark:text-slate-400">Inativos há 30+ dias</span>
+                    <span className="text-sm text-slate-600 dark:text-slate-400">{t('adminDashboard.clientAccessAnalysis.accessSummary.inactive30Days')}</span>
                     <span className="text-lg font-semibold text-red-600">
-                      {clientAccessData.filter(c => c.daysSinceLogin > 30).length}
+                      {allClientAccessData.filter(c => c.daysSinceLogin > 30).length}
                     </span>
                   </div>
                 </div>
@@ -2580,9 +2549,9 @@ export const AdminDashboard = () => {
                   <Clock className="h-6 w-6 text-white" />
                 </div>
                 <div>
-                  <span className="text-slate-900 dark:text-slate-100">Últimos Acessos de Clientes</span>
+                  <span className="text-slate-900 dark:text-slate-100">{t('adminDashboard.clientAccessAnalysis.recentAccess.title')}</span>
                   <p className="text-sm font-normal text-slate-600 dark:text-slate-400 mt-1">
-                    Últimos 50 clientes que acessaram a plataforma
+                    Últimos 20 clientes que acessaram a plataforma
                   </p>
                 </div>
               </CardTitle>
@@ -2593,19 +2562,16 @@ export const AdminDashboard = () => {
                   <thead className="bg-muted">
                     <tr>
                       <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                        Cliente
+                        {t('adminDashboard.clientAccessAnalysis.recentAccess.client')}
                       </th>
                       <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                        Broker
+                        {t('adminDashboard.clientAccessAnalysis.recentAccess.broker')}
                       </th>
                       <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                        Último Acesso
+                        {t('adminDashboard.clientAccessAnalysis.recentAccess.lastAccess')}
                       </th>
                       <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                        Total de Logins
-                      </th>
-                      <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                        Status
+                        {t('adminDashboard.clientAccessAnalysis.recentAccess.status')}
                       </th>
                     </tr>
                   </thead>
@@ -2630,11 +2596,8 @@ export const AdminDashboard = () => {
                         </td>
                         <td className="px-4 py-4">
                           <div className="text-sm text-foreground">
-                            {client.lastLogin === 'Nunca' ? 'Nunca' : formatDate(client.lastLogin)}
+                            {client.lastLogin === 'Nunca' ? t('adminDashboard.clientAccessAnalysis.recentAccess.never') : formatDate(client.lastLogin)}
                           </div>
-                        </td>
-                        <td className="px-4 py-4">
-                          <div className="text-sm text-foreground">{client.loginCount}</div>
                         </td>
                         <td className="px-4 py-4">
                           <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
@@ -2647,14 +2610,14 @@ export const AdminDashboard = () => {
                               : 'bg-red-100 text-red-800'
                           }`}>
                             {client.daysSinceLogin === 0 
-                              ? 'Hoje' 
+                              ? t('adminDashboard.clientAccessAnalysis.recentAccess.today')
                               : client.daysSinceLogin === 1
-                              ? 'Ontem'
+                              ? t('adminDashboard.clientAccessAnalysis.recentAccess.yesterday')
                               : client.daysSinceLogin <= 7
-                              ? `${client.daysSinceLogin} dias`
+                              ? `${client.daysSinceLogin} ${t('adminDashboard.clientAccessAnalysis.recentAccess.days')}`
                               : client.daysSinceLogin <= 30
-                              ? `${client.daysSinceLogin} dias`
-                              : 'Inativo'
+                              ? `${client.daysSinceLogin} ${t('adminDashboard.clientAccessAnalysis.recentAccess.days')}`
+                              : t('adminDashboard.clientAccessAnalysis.recentAccess.inactive')
                             }
                           </span>
                         </td>
