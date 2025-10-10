@@ -4,7 +4,7 @@ import { supabase } from '@/lib/supabase';
 import { useToast } from '@/components/ui/use-toast';
 import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui/button';
-import { LogOut, Search, ChevronLeft, ChevronRight, Plus, UserX, UserCheck, Users, Wallet, Target, Activity, Eye, EyeOff, Key } from 'lucide-react';
+import { LogOut, Search, Plus, UserX, UserCheck, Users, Wallet, Target, Activity, Eye, EyeOff, Key } from 'lucide-react';
 import { Logo } from '@/components/ui/logo';
 import { Avatar } from '@/components/ui/avatar-initial';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -152,7 +152,7 @@ export const AdminDashboard = () => {
     try {
       const { data: brokers, error: brokersError } = await supabase
         .from('profiles')
-        .select('id, name, active')
+        .select('id, name, active, last_active_at')
         .eq('is_broker', true)
         .not('name', 'ilike', '%teste%');
 
@@ -232,7 +232,7 @@ export const AdminDashboard = () => {
             totalClients: clientIds.length,
             totalPlans: plans.length,
             totalBalance,
-            lastActivity,
+            lastActivity: broker.last_active_at,
             clientsWithActiveRecords,
             clientsWithOutdatedRecords,
             active: broker.active,

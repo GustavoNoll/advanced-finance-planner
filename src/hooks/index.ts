@@ -7,6 +7,7 @@ export { useFinancialRecords as useFinancialRecordsManagement, useFinancialRecor
 export { useCurrentUserProfile, useClientMutations, useClientsByBroker, useClientById, useBrokerAccess } from './useClientManagement'
 export { useProfileData, usePlanCreation, usePlanCalculations, useAgeOptions } from './usePlanCreation'
 export { useLinkedItems } from './useLinkedItems'
+export { useLastActive } from './useLastActive'
 
 export type { GoalsStats, EventsStats } from './useGoalsEventsManagement'
 export type { InvestmentPlanStats } from './useInvestmentPlan'
