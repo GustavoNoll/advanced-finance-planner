@@ -187,8 +187,6 @@ export const AdminDashboard = () => {
     name: string;
     clients: number;
     balance: number;
-    return: number;
-    returnFormatted: string;
     sharpe: number;
     sharpeFormatted: string;
     engagement: number;
@@ -201,6 +199,13 @@ export const AdminDashboard = () => {
     totalClients: number;
     efficiency: number;
     efficiencyFormatted: string;
+  }>>([]);
+  
+  // Age distribution data state
+  const [ageDistributionData, setAgeDistributionData] = useState<Array<{
+    ageRange: string;
+    count: number;
+    percentage: number;
   }>>([]);
   
   // Client access data states
@@ -312,46 +317,99 @@ export const AdminDashboard = () => {
 
   // Generate broker performance comparison data (limited to top 50 for performance)
   const generateBrokerPerformanceData = useCallback((brokers: BrokerMetrics[]) => {
-    // Sort by total clients and take top 50 for performance
-    const topBrokers = [...brokers]
-      .sort((a, b) => (Number(b.enhancedMetrics?.totalClients) || 0) - (Number(a.enhancedMetrics?.totalClients) || 0))
+    // Filter out inactive brokers and sort by comprehensive performance score
+    const activeBrokers = brokers.filter(broker => broker.active && broker.enhancedMetrics);
+    
+    // Calculate comprehensive performance score for sorting
+    const brokersWithScore = activeBrokers.map(broker => {
+      const metrics = broker.enhancedMetrics;
+      const totalClients = Number(metrics?.totalClients) || 0;
+      const totalBalance = Number(metrics?.totalBalance) || 0;
+      const averageSharpeRatio = Number(metrics?.averageSharpeRatio) || 0;
+      const averageEngagementScore = Number(metrics?.averageEngagementScore) || 0;
+      const clientsWithActiveRecords = Number(metrics?.clientsWithActiveRecords) || 0;
+      
+      // Calculate comprehensive performance score
+      const clientScore = totalClients * 0.3; // 30% weight for client count
+      const balanceScore = (totalBalance / 1000000) * 0.4; // 40% weight for total balance (in millions)
+      const sharpeScore = averageSharpeRatio * 0.2; // 20% weight for Sharpe ratio
+      const engagementScore = averageEngagementScore * 0.1; // 10% weight for engagement
+      
+      const performanceScore = clientScore + balanceScore + sharpeScore + engagementScore;
+      
+      return { ...broker, performanceScore };
+    });
+    
+    // Sort by performance score and take top 50
+    const topBrokers = brokersWithScore
+      .sort((a, b) => b.performanceScore - a.performanceScore)
       .slice(0, 50);
     
     return topBrokers.map(broker => {
       const metrics = broker.enhancedMetrics;
       const totalClients = Number(metrics?.totalClients) || 0;
       const activeClients = Number(metrics?.clientsWithActiveRecords) || 0;
-      const averageReturn = Number(metrics?.averageReturn) || 0;
       const averageSharpeRatio = Number(metrics?.averageSharpeRatio) || 0;
       const averageEngagementScore = Number(metrics?.averageEngagementScore) || 0;
       const averageVolatility = Number(metrics?.averageVolatility) || 0;
       const totalBalance = Number(metrics?.totalBalance) || 0;
+      const totalGrowth = Number(metrics?.totalGrowth) || 0;
+      const urgentClients = Number(metrics?.urgentClients) || 0;
+      const highPriorityClients = Number(metrics?.highPriorityClients) || 0;
+      const inactiveClients = Number(metrics?.inactiveClients) || 0;
       
-      // Ensure no NaN values
-      const safeReturn = isNaN(averageReturn) ? 0 : averageReturn;
+      // Enhanced data validation and safe calculations
       const safeSharpe = isNaN(averageSharpeRatio) ? 0 : averageSharpeRatio;
       const safeEngagement = isNaN(averageEngagementScore) ? 0 : averageEngagementScore;
       const safeVolatility = isNaN(averageVolatility) ? 0 : averageVolatility;
-      const safeGrowth = totalBalance > 0 ? (totalBalance / (totalClients || 1)) / 1000 : 0; // Growth based on average balance per client
+      
+      // Calculate growth rate based on total growth vs total balance
+      const growthRate = totalBalance > 0 ? (totalGrowth / totalBalance) * 100 : 0;
+      const safeGrowthRate = isNaN(growthRate) ? 0 : growthRate;
+      
+      // Calculate efficiency metrics
+      const clientEfficiency = totalClients > 0 ? (activeClients / totalClients) * 100 : 0;
+      const balancePerClient = totalClients > 0 ? totalBalance / totalClients : 0;
+      
+      
+      // Calculate client health score
+      const totalProblematicClients = urgentClients + highPriorityClients + inactiveClients;
+      const clientHealthScore = totalClients > 0 ? ((totalClients - totalProblematicClients) / totalClients) * 100 : 0;
       
       return {
         name: broker.name || 'Unknown Broker',
         clients: totalClients,
         balance: totalBalance,
-        return: Number(safeReturn * 100), // Keep as number for ScatterChart
-        returnFormatted: Number(safeReturn * 100).toFixed(1), // For display
         sharpe: Number(safeSharpe),
         sharpeFormatted: Number(safeSharpe).toFixed(2), // For display
         engagement: Number(safeEngagement),
         engagementFormatted: Number(safeEngagement).toFixed(1), // For display
-        growth: Number(safeGrowth), // Keep as number
-        growthFormatted: Number(safeGrowth).toFixed(1), // For display
+        growth: Number(safeGrowthRate), // Keep as number
+        growthFormatted: Number(safeGrowthRate).toFixed(1), // For display
         risk: Number(safeVolatility), // Keep as number for ScatterChart
         riskFormatted: Number(safeVolatility).toFixed(2), // For display
         activeClients: activeClients,
         totalClients: totalClients,
-        efficiency: totalClients > 0 ? Number((activeClients / totalClients) * 100) : 0, // Keep as number
-        efficiencyFormatted: totalClients > 0 ? Number((activeClients / totalClients) * 100).toFixed(1) : '0.0', // For display
+        efficiency: Number(clientEfficiency), // Keep as number
+        efficiencyFormatted: Number(clientEfficiency).toFixed(1), // For display
+        // Enhanced metrics
+        balancePerClient: Number(balancePerClient),
+        balancePerClientFormatted: Number(balancePerClient).toLocaleString('pt-BR', { 
+          style: 'currency', 
+          currency: 'BRL' 
+        }),
+        clientHealthScore: Number(clientHealthScore),
+        clientHealthScoreFormatted: Number(clientHealthScore).toFixed(1),
+        urgentClients: urgentClients,
+        highPriorityClients: highPriorityClients,
+        inactiveClients: inactiveClients,
+        totalGrowth: totalGrowth,
+        totalGrowthFormatted: Number(totalGrowth).toLocaleString('pt-BR', { 
+          style: 'currency', 
+          currency: 'BRL' 
+        }),
+        performanceScore: broker.performanceScore,
+        performanceScoreFormatted: Number(broker.performanceScore).toFixed(1)
       };
     });
   }, []);
@@ -376,7 +434,7 @@ export const AdminDashboard = () => {
     const usersWithEngagementData = users.filter(user => user.engagement_score !== null && user.engagement_score !== undefined);
     
     const averageReturn = usersWithReturnData.length > 0 
-      ? usersWithReturnData.reduce((sum, user) => sum + user.average_monthly_return_rate! / 100, 0) / usersWithReturnData.length 
+      ? usersWithReturnData.reduce((sum, user) => sum + user.average_monthly_return_rate!, 0) / usersWithReturnData.length 
       : 0;
 
     const averageVolatility = usersWithVolatilityData.length > 0 
@@ -518,6 +576,48 @@ export const AdminDashboard = () => {
       trends,
       actions
     };
+  }, []);
+
+  // Generate age distribution data
+  const generateAgeDistributionData = useCallback((brokers: BrokerMetrics[]) => {
+    // Collect all clients from all brokers
+    const allClients = brokers.flatMap(broker => broker.clients || []);
+    
+    // Filter clients with valid age data
+    const clientsWithAge = allClients.filter(client => 
+      client.current_age !== null && 
+      client.current_age !== undefined && 
+      client.current_age > 0
+    );
+    
+    // Define age ranges
+    const ageRanges = [
+      { min: 18, max: 25, label: '18-25' },
+      { min: 26, max: 35, label: '26-35' },
+      { min: 36, max: 45, label: '36-45' },
+      { min: 46, max: 55, label: '46-55' },
+      { min: 56, max: 65, label: '56-65' },
+      { min: 66, max: 100, label: '66+' }
+    ];
+    
+    // Count clients in each age range
+    const ageDistribution = ageRanges.map(range => {
+      const count = clientsWithAge.filter(client => 
+        client.current_age! >= range.min && client.current_age! <= range.max
+      ).length;
+      
+      const percentage = clientsWithAge.length > 0 
+        ? (count / clientsWithAge.length) * 100 
+        : 0;
+      
+      return {
+        ageRange: range.label,
+        count,
+        percentage: Number(percentage.toFixed(1))
+      };
+    });
+    
+    return ageDistribution;
   }, []);
 
   const fetchClientAccessData = async () => {
@@ -746,6 +846,10 @@ export const AdminDashboard = () => {
       // Generate broker performance data using only active brokers
       const performanceData = generateBrokerPerformanceData(activeBrokers);
       setBrokerPerformanceData(performanceData);
+
+      // Generate age distribution data
+      const ageData = generateAgeDistributionData(activeBrokers);
+      setAgeDistributionData(ageData);
 
       // Fetch client access data
       await fetchClientAccessData();
@@ -1988,17 +2092,17 @@ export const AdminDashboard = () => {
 
         {/* Advanced Performance Analytics */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-          {/* Broker Performance Scatter Plot */}
+          {/* Client Age Distribution Chart */}
           <Card className="hover:shadow-lg transition-all duration-300 border-0 bg-gradient-to-br from-white to-slate-50 dark:from-slate-900 dark:to-slate-800 shadow-xl">
             <CardHeader className="pb-4">
               <CardTitle className="flex items-center gap-3 text-xl">
                 <div className="p-2 rounded-lg bg-gradient-to-r from-blue-500 to-cyan-500">
-                  <BarChart3 className="h-6 w-6 text-white" />
+                  <Users className="h-6 w-6 text-white" />
                 </div>
                 <div>
-                  <span className="text-slate-900 dark:text-slate-100">Performance vs Risco</span>
+                  <span className="text-slate-900 dark:text-slate-100">Distribuição por Idade</span>
                   <p className="text-sm font-normal text-slate-600 dark:text-slate-400 mt-1">
-                    Análise de retorno vs volatilidade
+                    Faixas etárias dos clientes
                   </p>
                 </div>
               </CardTitle>
@@ -2006,57 +2110,39 @@ export const AdminDashboard = () => {
             <CardContent>
               <div className="h-[320px]">
                 <ResponsiveContainer width="100%" height="100%">
-                  <ScatterChart data={brokerPerformanceData.length > 0 ? brokerPerformanceData : [{ name: 'Nenhum dado', return: 0, risk: 0, sharpe: 0, clients: 0, returnFormatted: '0', riskFormatted: '0', sharpeFormatted: '0' }]}>
+                  <BarChart data={ageDistributionData}>
                     <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" opacity={0.3} />
                     <XAxis 
-                      type="number" 
-                      dataKey="risk" 
-                      name="Risco (Volatilidade)"
+                      dataKey="ageRange" 
                       tick={{ fontSize: 12, fill: '#64748b' }}
                       axisLine={false}
                       tickLine={false}
-                      domain={['dataMin - 0.1', 'dataMax + 0.1']}
                     />
                     <YAxis 
-                      type="number" 
-                      dataKey="return" 
-                      name="Retorno (%)"
                       tick={{ fontSize: 12, fill: '#64748b' }}
                       axisLine={false}
                       tickLine={false}
-                      domain={['dataMin - 0.5', 'dataMax + 0.5']}
                     />
                     <Tooltip 
-                      cursor={{ strokeDasharray: '3 3' }}
-                      content={({ active, payload }) => {
+                      content={({ active, payload, label }) => {
                         if (!active || !payload || !payload.length) return null;
                         const data = payload[0].payload;
                         return (
                           <div className="bg-white dark:bg-slate-800 p-4 rounded-xl shadow-xl border border-slate-200 dark:border-slate-700">
-                            <p className="text-sm font-semibold text-slate-900 dark:text-slate-100 mb-3">{data.name}</p>
-                            <div className="space-y-2">
-                              <div className="flex justify-between items-center">
-                                <span className="text-sm text-slate-600 dark:text-slate-400">Retorno:</span>
-                                <span className="text-sm font-semibold text-slate-900 dark:text-slate-100">
-                                  {data.returnFormatted}%
-                                </span>
-                              </div>
-                              <div className="flex justify-between items-center">
-                                <span className="text-sm text-slate-600 dark:text-slate-400">Risco:</span>
-                                <span className="text-sm font-semibold text-slate-900 dark:text-slate-100">
-                                  {data.riskFormatted}
-                                </span>
-                              </div>
-                              <div className="flex justify-between items-center">
-                                <span className="text-sm text-slate-600 dark:text-slate-400">Sharpe:</span>
-                                <span className="text-sm font-semibold text-slate-900 dark:text-slate-100">
-                                  {data.sharpeFormatted}
-                                </span>
-                              </div>
+                            <p className="text-sm font-semibold text-slate-900 dark:text-slate-100 mb-2">
+                              {label}
+                            </p>
+                            <div className="space-y-1">
                               <div className="flex justify-between items-center">
                                 <span className="text-sm text-slate-600 dark:text-slate-400">Clientes:</span>
                                 <span className="text-sm font-semibold text-slate-900 dark:text-slate-100">
-                                  {data.clients}
+                                  {data.count}
+                                </span>
+                              </div>
+                              <div className="flex justify-between items-center">
+                                <span className="text-sm text-slate-600 dark:text-slate-400">Percentual:</span>
+                                <span className="text-sm font-semibold text-slate-900 dark:text-slate-100">
+                                  {data.percentage}%
                                 </span>
                               </div>
                             </div>
@@ -2064,12 +2150,12 @@ export const AdminDashboard = () => {
                         );
                       }}
                     />
-                    <Scatter 
-                      dataKey="return" 
+                    <Bar 
+                      dataKey="count" 
                       fill={MODERN_COLORS.primary}
-                      r={8}
+                      radius={[4, 4, 0, 0]}
                     />
-                  </ScatterChart>
+                  </BarChart>
                 </ResponsiveContainer>
               </div>
             </CardContent>
@@ -2373,12 +2459,6 @@ export const AdminDashboard = () => {
                                 <span className="text-sm text-slate-600 dark:text-slate-400">Crescimento:</span>
                                 <span className="text-sm font-semibold text-slate-900 dark:text-slate-100">
                                   {data?.growthFormatted}%
-                                </span>
-                              </div>
-                              <div className="flex justify-between items-center">
-                                <span className="text-sm text-slate-600 dark:text-slate-400">Retorno:</span>
-                                <span className="text-sm font-semibold text-slate-900 dark:text-slate-100">
-                                  {data?.returnFormatted}%
                                 </span>
                               </div>
                               <div className="flex justify-between items-center">
