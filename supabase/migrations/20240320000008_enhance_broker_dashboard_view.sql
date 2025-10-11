@@ -173,6 +173,7 @@ SELECT
     p.broker_id,
     p.birth_date,
     p.created_at AS profile_created_at,
+    p.last_active_at,
     -- Investment plan data
     i.id AS investment_plan_id,
     amp.micro_plan_id,

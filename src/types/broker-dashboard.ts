@@ -12,6 +12,7 @@ export interface UserProfileInvestment {
   profile_name: string;
   birth_date: string;
   profile_created_at?: string;
+  last_active_at?: string;
   
   // Financial record data
   financial_created_at?: string;

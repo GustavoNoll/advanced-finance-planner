@@ -50,8 +50,13 @@ export const SmartAlerts = ({ clients, onClientSelect }: SmartAlertsProps) => {
       // Multiple urgent conditions - create specific alerts
       const urgentConditions = [];
       
-      // Urgent: No financial records
-      if (!client.total_records || client.total_records === 0) {
+      // Warning: No investment plan
+      if (!client.investment_plan_id) {
+        urgentConditions.push('no_plan');
+      }
+      
+      // Urgent: Has plan but no financial records
+      if (client.investment_plan_id && (!client.total_records || client.total_records === 0)) {
         urgentConditions.push('no_records');
       }
       
@@ -71,6 +76,21 @@ export const SmartAlerts = ({ clients, onClientSelect }: SmartAlertsProps) => {
       }
 
       // Create specific urgent alerts
+      if (urgentConditions.includes('no_plan')) {
+        alerts.push({
+          id: `warning-no-plan-${client.id}`,
+          type: 'warning',
+          title: t('brokerDashboard.alerts.urgentNoPlan'),
+          description: t('brokerDashboard.alerts.urgentNoPlanDescription', { 
+            name: client.profile_name
+          }),
+          clientId: client.id,
+          clientName: client.profile_name,
+          action: t('brokerDashboard.alerts.createPlan'),
+          timestamp: client.last_activity_date || client.profile_created_at || ''
+        });
+      }
+
       if (urgentConditions.includes('no_records')) {
         alerts.push({
           id: `urgent-no-records-${client.id}`,

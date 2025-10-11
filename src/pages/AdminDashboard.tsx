@@ -4,7 +4,7 @@ import { supabase } from '@/lib/supabase';
 import { useToast } from '@/components/ui/use-toast';
 import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui/button';
-import { LogOut, Search, Plus, UserX, UserCheck, Users, Wallet, Target, Activity, Eye, EyeOff, Key, TrendingUp, AlertTriangle, Clock, BarChart3, PieChart as PieChartIcon, LineChart as LineChartIcon, Zap, ArrowUpRight, ArrowDownRight, Percent } from 'lucide-react';
+import { LogOut, Search, Plus, UserX, UserCheck, Users, Wallet, Target, Activity, Eye, EyeOff, Key, TrendingUp, AlertTriangle, Clock, PieChart as PieChartIcon, LineChart as LineChartIcon, Zap, ArrowUpRight, ArrowDownRight, Percent } from 'lucide-react';
 import { Logo } from '@/components/ui/logo';
 import { Avatar } from '@/components/ui/avatar-initial';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -27,6 +27,8 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import { ClientAccessAnalysis } from '@/components/shared/ClientAccessAnalysis';
+import { useClientAccessData } from '@/hooks/useClientAccessData';
 
 interface BrokerMetrics {
   id: string;
@@ -208,25 +210,8 @@ export const AdminDashboard = () => {
     percentage: number;
   }>>([]);
   
-  // Client access data states
-  const [clientAccessData, setClientAccessData] = useState<Array<{
-    id: string;
-    name: string;
-    email: string;
-    lastLogin: string;
-    brokerName: string;
-    daysSinceLogin: number;
-  }>>([]);
-  
-  // All client access data for charts (no limit)
-  const [allClientAccessData, setAllClientAccessData] = useState<Array<{
-    id: string;
-    name: string;
-    email: string;
-    lastLogin: string;
-    brokerName: string;
-    daysSinceLogin: number;
-  }>>([]);
+  // Client access data using shared hook
+  const { clientAccessData, fetchClientAccessData } = useClientAccessData();
   
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -620,88 +605,6 @@ export const AdminDashboard = () => {
     return ageDistribution;
   }, []);
 
-  const fetchClientAccessData = async () => {
-    try {
-      // Get activity statistics using SQL aggregation
-      const { data: activityStats, error: statsError } = await supabase
-        .rpc('get_client_activity_stats');
-
-      if (statsError) {
-        console.error('Error fetching activity stats:', statsError);
-        // Fallback to empty data
-        setClientAccessData([]);
-        setAllClientAccessData([]);
-        return;
-      }
-
-      // Get recent 20 clients for table
-      const { data: recentClients, error: recentError } = await supabase
-        .rpc('get_recent_client_access', { limit_count: 20 });
-
-      if (recentError) {
-        console.error('Error fetching recent clients:', recentError);
-        // Fallback to empty data
-        setClientAccessData([]);
-        setAllClientAccessData([]);
-        return;
-      }
-
-      // Get emails for recent clients separately
-      const userIds = recentClients?.map((client: { id: string }) => client.id) || [];
-      const { data: userEmails, error: emailsError } = await supabase
-        .from('users')
-        .select('id, email')
-        .in('id', userIds);
-
-      if (emailsError) {
-        console.error('Error fetching emails:', emailsError);
-      }
-
-      const emailMap = userEmails?.reduce((acc: Record<string, string>, user: { id: string; email: string }) => {
-        acc[user.id] = user.email;
-        return acc;
-      }, {}) || {};
-
-      // Process activity stats for charts
-      const allAccessData = activityStats?.map((stat: {
-        id: string;
-        name: string;
-        last_active_at: string;
-        days_since_login: number;
-      }) => ({
-        id: stat.id,
-        name: stat.name || 'Nome não informado',
-        email: '', // Not needed for charts
-        lastLogin: stat.last_active_at || 'Nunca',
-        brokerName: '', // Not needed for charts
-        daysSinceLogin: stat.days_since_login || 999
-      })) || [];
-
-      // Process recent clients for table
-      const recentAccessData = recentClients?.map((client: {
-        id: string;
-        name: string;
-        email: string;
-        last_active_at: string;
-        broker_name: string;
-        days_since_login: number;
-      }) => ({
-        id: client.id,
-        name: client.name || 'Nome não informado',
-        email: emailMap[client.id] || 'Email não encontrado',
-        lastLogin: client.last_active_at || 'Nunca',
-        brokerName: client.broker_name || 'Broker não encontrado',
-        daysSinceLogin: client.days_since_login || 999
-      })) || [];
-
-      // Set both datasets
-      setClientAccessData(recentAccessData); // For table (20 users)
-      setAllClientAccessData(allAccessData); // For charts (all users)
-
-    } catch (error) {
-      console.error('Error fetching client access data:', error);
-    }
-  };
 
 
   const checkAdminStatus = async () => {
@@ -2492,223 +2395,7 @@ export const AdminDashboard = () => {
         </div>
 
         {/* Client Access Analysis */}
-        <div className="mb-8">
-          <h2 className="text-2xl font-bold text-foreground mb-6">{t('adminDashboard.clientAccessAnalysis.title')}</h2>
-          
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-            {/* Activity Status Distribution */}
-            <Card className="hover:shadow-lg transition-all duration-300 border-0 bg-gradient-to-br from-white to-slate-50 dark:from-slate-900 dark:to-slate-800 shadow-xl">
-              <CardHeader className="pb-4">
-                <CardTitle className="flex items-center gap-3 text-xl">
-                  <div className="p-2 rounded-lg bg-gradient-to-r from-indigo-500 to-purple-500">
-                    <BarChart3 className="h-6 w-6 text-white" />
-                  </div>
-                <div>
-                  <span className="text-slate-900 dark:text-slate-100">{t('adminDashboard.clientAccessAnalysis.activityStatus.title')}</span>
-                  <p className="text-sm font-normal text-slate-600 dark:text-slate-400 mt-1">
-                    {t('adminDashboard.clientAccessAnalysis.activityStatus.description')}
-                  </p>
-                </div>
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="h-[300px]">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <BarChart data={[
-                      { 
-                        status: t('adminDashboard.clientAccessAnalysis.activityStatus.today'), 
-                        count: allClientAccessData.filter(c => c.daysSinceLogin === 0).length,
-                        color: MODERN_COLORS.success
-                      },
-                      { 
-                        status: t('adminDashboard.clientAccessAnalysis.activityStatus.thisWeek'), 
-                        count: allClientAccessData.filter(c => c.daysSinceLogin > 0 && c.daysSinceLogin <= 7).length,
-                        color: MODERN_COLORS.info
-                      },
-                      { 
-                        status: t('adminDashboard.clientAccessAnalysis.activityStatus.thisMonth'), 
-                        count: allClientAccessData.filter(c => c.daysSinceLogin > 7 && c.daysSinceLogin <= 30).length,
-                        color: MODERN_COLORS.warning
-                      },
-                      { 
-                        status: t('adminDashboard.clientAccessAnalysis.activityStatus.inactive'), 
-                        count: allClientAccessData.filter(c => c.daysSinceLogin > 30).length,
-                        color: MODERN_COLORS.danger
-                      }
-                    ]}>
-                      <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" opacity={0.3} />
-                      <XAxis 
-                        dataKey="status" 
-                        tick={{ fontSize: 12, fill: '#64748b' }}
-                        axisLine={false}
-                        tickLine={false}
-                      />
-                      <YAxis 
-                        tick={{ fontSize: 12, fill: '#64748b' }}
-                        axisLine={false}
-                        tickLine={false}
-                      />
-                      <Tooltip 
-                        content={({ active, payload, label }) => {
-                          if (!active || !payload || !payload.length) return null;
-                          return (
-                            <div className="bg-white dark:bg-slate-800 p-4 rounded-xl shadow-xl border border-slate-200 dark:border-slate-700">
-                              <p className="text-sm font-semibold text-slate-900 dark:text-slate-100 mb-2">{label}</p>
-                              <div className="flex items-center gap-3">
-                                <div className="w-3 h-3 rounded-full" style={{ backgroundColor: payload[0].color }} />
-                                <p className="text-sm text-slate-600 dark:text-slate-400">
-                                  Clientes: <span className="font-semibold text-slate-900 dark:text-slate-100">{payload[0].value}</span>
-                                </p>
-                              </div>
-                            </div>
-                          );
-                        }}
-                      />
-                      <Bar 
-                        dataKey="count" 
-                        fill={MODERN_COLORS.primary}
-                        radius={[4, 4, 0, 0]}
-                      />
-                    </BarChart>
-                  </ResponsiveContainer>
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Recent Client Access Summary */}
-            <Card className="hover:shadow-lg transition-all duration-300 border-0 bg-gradient-to-br from-white to-slate-50 dark:from-slate-900 dark:to-slate-800 shadow-xl">
-              <CardHeader className="pb-4">
-                <CardTitle className="flex items-center gap-3 text-xl">
-                  <div className="p-2 rounded-lg bg-gradient-to-r from-emerald-500 to-teal-500">
-                    <Users className="h-6 w-6 text-white" />
-                  </div>
-                <div>
-                  <span className="text-slate-900 dark:text-slate-100">{t('adminDashboard.clientAccessAnalysis.accessSummary.title')}</span>
-                  <p className="text-sm font-normal text-slate-600 dark:text-slate-400 mt-1">
-                    {t('adminDashboard.clientAccessAnalysis.accessSummary.description')}
-                  </p>
-                </div>
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  <div className="flex justify-between items-center p-3 bg-slate-50 dark:bg-slate-800 rounded-lg">
-                    <span className="text-sm text-slate-600 dark:text-slate-400">{t('adminDashboard.clientAccessAnalysis.accessSummary.totalClients')}</span>
-                    <span className="text-lg font-semibold text-slate-900 dark:text-slate-100">
-                      {allClientAccessData.length}
-                    </span>
-                  </div>
-                  <div className="flex justify-between items-center p-3 bg-slate-50 dark:bg-slate-800 rounded-lg">
-                    <span className="text-sm text-slate-600 dark:text-slate-400">{t('adminDashboard.clientAccessAnalysis.accessSummary.accessedToday')}</span>
-                    <span className="text-lg font-semibold text-green-600">
-                      {allClientAccessData.filter(c => c.daysSinceLogin === 0).length}
-                    </span>
-                  </div>
-                  <div className="flex justify-between items-center p-3 bg-slate-50 dark:bg-slate-800 rounded-lg">
-                    <span className="text-sm text-slate-600 dark:text-slate-400">{t('adminDashboard.clientAccessAnalysis.accessSummary.accessedThisWeek')}</span>
-                    <span className="text-lg font-semibold text-blue-600">
-                      {allClientAccessData.filter(c => c.daysSinceLogin <= 7).length}
-                    </span>
-                  </div>
-                  <div className="flex justify-between items-center p-3 bg-slate-50 dark:bg-slate-800 rounded-lg">
-                    <span className="text-sm text-slate-600 dark:text-slate-400">{t('adminDashboard.clientAccessAnalysis.accessSummary.inactive30Days')}</span>
-                    <span className="text-lg font-semibold text-red-600">
-                      {allClientAccessData.filter(c => c.daysSinceLogin > 30).length}
-                    </span>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-
-          {/* Recent Client Access Table */}
-          <Card className="hover:shadow-lg transition-all duration-300 border-0 bg-gradient-to-br from-white to-slate-50 dark:from-slate-900 dark:to-slate-800 shadow-xl">
-            <CardHeader className="pb-4">
-              <CardTitle className="flex items-center gap-3 text-xl">
-                <div className="p-2 rounded-lg bg-gradient-to-r from-orange-500 to-red-500">
-                  <Clock className="h-6 w-6 text-white" />
-                </div>
-                <div>
-                  <span className="text-slate-900 dark:text-slate-100">{t('adminDashboard.clientAccessAnalysis.recentAccess.title')}</span>
-                  <p className="text-sm font-normal text-slate-600 dark:text-slate-400 mt-1">
-                    Últimos 20 clientes que acessaram a plataforma
-                  </p>
-                </div>
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="overflow-x-auto">
-                <table className="min-w-full divide-y divide-border">
-                  <thead className="bg-muted">
-                    <tr>
-                      <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                        {t('adminDashboard.clientAccessAnalysis.recentAccess.client')}
-                      </th>
-                      <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                        {t('adminDashboard.clientAccessAnalysis.recentAccess.broker')}
-                      </th>
-                      <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                        {t('adminDashboard.clientAccessAnalysis.recentAccess.lastAccess')}
-                      </th>
-                      <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                        {t('adminDashboard.clientAccessAnalysis.recentAccess.status')}
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody className="bg-card divide-y divide-border">
-                    {clientAccessData.slice(0, 20).map((client) => (
-                      <tr key={client.id} className="hover:bg-muted">
-                        <td className="px-4 py-4">
-                          <div className="flex items-center">
-                            <Avatar initial={client.name[0]} color="bluePrimary" />
-                            <div className="ml-3">
-                              <div className="text-sm font-medium text-foreground truncate max-w-[180px]">
-                                {client.name}
-                              </div>
-                              <div className="text-[10px] text-muted-foreground truncate max-w-[180px]">
-                                {client.email}
-                              </div>
-                            </div>
-                          </div>
-                        </td>
-                        <td className="px-4 py-4">
-                          <div className="text-sm text-foreground">{client.brokerName}</div>
-                        </td>
-                        <td className="px-4 py-4">
-                          <div className="text-sm text-foreground">
-                            {client.lastLogin === 'Nunca' ? t('adminDashboard.clientAccessAnalysis.recentAccess.never') : formatDate(client.lastLogin)}
-                          </div>
-                        </td>
-                        <td className="px-4 py-4">
-                          <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-                            client.daysSinceLogin === 0 
-                              ? 'bg-green-100 text-green-800' 
-                              : client.daysSinceLogin <= 7 
-                              ? 'bg-blue-100 text-blue-800'
-                              : client.daysSinceLogin <= 30
-                              ? 'bg-yellow-100 text-yellow-800'
-                              : 'bg-red-100 text-red-800'
-                          }`}>
-                            {client.daysSinceLogin === 0 
-                              ? t('adminDashboard.clientAccessAnalysis.recentAccess.today')
-                              : client.daysSinceLogin === 1
-                              ? t('adminDashboard.clientAccessAnalysis.recentAccess.yesterday')
-                              : client.daysSinceLogin <= 7
-                              ? `${client.daysSinceLogin} ${t('adminDashboard.clientAccessAnalysis.recentAccess.days')}`
-                              : client.daysSinceLogin <= 30
-                              ? `${client.daysSinceLogin} ${t('adminDashboard.clientAccessAnalysis.recentAccess.days')}`
-                              : t('adminDashboard.clientAccessAnalysis.recentAccess.inactive')
-                            }
-                          </span>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
+        <ClientAccessAnalysis clientAccessData={clientAccessData} />
       </div>
     </div>
   );

@@ -18,6 +18,8 @@ import { Logo } from '@/components/ui/logo';
 import { Avatar } from '@/components/ui/avatar-initial';
 import { useAuth } from '@/components/auth/AuthProvider';
 import { Spinner } from '@/components/ui/spinner';
+import { ClientAccessAnalysis } from '@/components/shared/ClientAccessAnalysis';
+import { useClientAccessData } from '@/hooks/useClientAccessData';
 
 interface WealthDistribution {
   range: string;
@@ -161,6 +163,9 @@ export const BrokerDashboard = () => {
     adequateContributors: number;
     percentage: number;
   }>>([]);
+
+  // Client access data using shared hook
+  const { clientAccessData, fetchClientAccessData, processClientData } = useClientAccessData();
 
 
 
@@ -363,7 +368,10 @@ export const BrokerDashboard = () => {
     
     // Calculate contribution trends
     await calculateContributionTrends(users);
-  }, [calculateContributionTrends]);
+    
+    // Process client access data
+    processClientData(users);
+  }, [calculateContributionTrends, processClientData]);
 
   const fetchInitialUsers = useCallback(async () => {
     if (!currentBroker) return;
@@ -823,6 +831,14 @@ export const BrokerDashboard = () => {
           <ContributionTrendChart data={contributionTrendData} />
         </div>
 
+        {/* Client Access Analysis */}
+        <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-xl border border-gray-100 dark:border-gray-800 overflow-hidden mb-8 p-8">
+          <ClientAccessAnalysis 
+            clientAccessData={clientAccessData} 
+            title={t('brokerDashboard.clientAccessAnalysis.title')}
+            showTitle={true}
+          />
+        </div>
 
         {/* Client List */}
         <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-xl border border-gray-100 dark:border-gray-800 overflow-hidden">
