@@ -199,9 +199,13 @@ export const ClientList = ({
                         <p className="text-sm text-gray-500 dark:text-gray-300 truncate">{client.email}</p>
                         <div className="flex items-center gap-2 mt-1">
                           <p className="text-xs text-gray-400">{t('brokerDashboard.client.id')}: {client.id}</p>
-                          {client.last_activity_date && (
+                          {client.last_active_at ? (
                             <p className="text-xs text-gray-400">
-                              {t('brokerDashboard.client.lastActivity')}: {new Date(client.last_activity_date).toLocaleDateString('pt-BR')}
+                              {t('brokerDashboard.client.lastLogin')}: {new Date(client.last_active_at).toLocaleDateString('pt-BR')}
+                            </p>
+                          ) : (
+                            <p className="text-xs text-gray-400">
+                              {t('brokerDashboard.client.lastLogin')}: {t('brokerDashboard.client.never')}
                             </p>
                           )}
                         </div>

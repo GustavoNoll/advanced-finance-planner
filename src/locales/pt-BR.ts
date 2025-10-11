@@ -371,6 +371,25 @@ export const ptBR = {
       logout: "Sair",
       search: "Buscar"
     },
+    clientAccessAnalysis: {
+      title: "Análise de Acessos dos Clientes",
+      activityStatus: {
+        title: "Status de Atividade",
+        description: "Distribuição por tempo de inatividade",
+        today: "Hoje",
+        thisWeek: "Esta Semana",
+        thisMonth: "Este Mês",
+        inactive: "Inativos"
+      },
+      accessSummary: {
+        title: "Resumo de Acessos",
+        description: "Métricas dos últimos acessos",
+        totalClients: "Total de Clientes",
+        accessedToday: "Acessaram Hoje",
+        accessedThisWeek: "Acessaram Esta Semana",
+        inactive30Days: "Inativos 30+ Dias"
+      }
+    },
     charts: {
       wealthDistribution: "Distribuição de Patrimônio",
       wealthDistributionDescription: "Análise da distribuição de patrimônio por faixas de valor",
@@ -441,6 +460,8 @@ export const ptBR = {
       urgentDescription: "{{name}} precisa de atenção imediata",
       urgentNoRecords: "Sem Registros Financeiros",
       urgentNoRecordsDescription: "{{name}} não possui registros financeiros cadastrados",
+      urgentNoPlan: "Cliente Sem Plano",
+      urgentNoPlanDescription: "{{name}} não possui um plano de investimento cadastrado",
       urgentBelowContribution: "Contribuição Insuficiente",
       urgentBelowContributionDescription: "{{name}} está contribuindo abaixo do valor necessário",
       urgentLowEngagement: "Engajamento Crítico",
@@ -449,6 +470,7 @@ export const ptBR = {
       urgentRetirementDescription: "{{name}} está próximo da aposentadoria ({{years}} anos) mas contribuindo abaixo do necessário",
       contactClient: "Contatar Cliente",
       setupRecords: "Configurar Registros",
+      createPlan: "Criar Plano",
       reviewContribution: "Revisar Contribuição",
       contactImmediately: "Contatar Imediatamente",
       reviewRetirementPlan: "Revisar Plano de Aposentadoria",
@@ -523,6 +545,8 @@ export const ptBR = {
       belowRequiredContribution: "Aportes Insuficientes",
       belowRequiredContributionTooltip: "Aportes abaixo do necessário",
       lastActivity: "Última Atividade",
+      lastLogin: "Último Login",
+      never: "Nunca",
       shareTooltip: "Compartilhar link de acesso do cliente",
       simulationTooltip: "Simular Projeção",
       simulationDescription: "Visualizar gráfico de projeção sem salvar",

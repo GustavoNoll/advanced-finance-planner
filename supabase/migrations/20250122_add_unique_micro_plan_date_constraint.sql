@@ -32,3 +32,4 @@ UNIQUE (life_investment_plan_id, effective_date);
 -- Add comment explaining the constraint
 COMMENT ON CONSTRAINT unique_micro_plan_per_date ON public.micro_investment_plans 
 IS 'Ensures that each investment plan can only have one micro plan per effective date';
+
