@@ -227,6 +227,10 @@ const Finances = ({
               data={projectionDataHook.planProgressData as PlanProgressData} 
               investmentPlan={investmentPlan}
               activeMicroPlan={activeMicroPlan}
+              onRefreshMicroPlans={onRefreshMicroPlans}
+              clientProfile={clientProfile}
+              clientId={clientId}
+              onPlanUpdated={handlePlanUpdated}
             />
           )}
           

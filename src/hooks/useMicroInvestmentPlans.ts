@@ -77,6 +77,33 @@ export function useMicroInvestmentPlans(lifeInvestmentPlanId: string): UseMicroI
     setHasFinancialRecordForActivePlan(hasRecord)
   }, [checkIfMicroPlanHasFinancialRecord])
 
+  // Função para reavaliar qual micro plano deveria estar ativo
+  const reevaluateActiveMicroPlan = useCallback(async (allPlans: MicroInvestmentPlan[], userId: string) => {
+    const today = new Date()
+    
+    // Ordenar planos por data de vigência (mais recente primeiro)
+    const eligiblePlans = allPlans
+      .filter(plan => new Date(plan.effective_date) <= today)
+      .sort((a, b) => new Date(b.effective_date).getTime() - new Date(a.effective_date).getTime())
+
+    // O micro plano ativo deve ser o mais recente que já deveria estar ativo (data <= hoje)
+    // Independente de ter registros financeiros ou não
+    let newActive = null
+    if (eligiblePlans.length > 0) {
+      newActive = eligiblePlans[0] // O mais recente que já deveria estar ativo
+    } else if (allPlans.length > 0) {
+      // Se nenhum plano deveria estar ativo ainda, usar o mais antigo (primeiro criado)
+      newActive = allPlans.sort((a, b) => new Date(a.created_at || a.effective_date).getTime() - new Date(b.created_at || b.effective_date).getTime())[0]
+    }
+
+    setActiveMicroPlan(newActive)
+    
+    // Verificar se o novo micro plano ativo tem financial record
+    if (newActive) {
+      await checkFinancialRecordForActivePlan(newActive, userId, allPlans)
+    }
+  }, [checkFinancialRecordForActivePlan])
+
   const fetchMicroPlans = useCallback(async () => {
     if (!lifeInvestmentPlanId) return
 
@@ -108,7 +135,7 @@ export function useMicroInvestmentPlans(lifeInvestmentPlanId: string): UseMicroI
     } finally {
       setIsLoading(false)
     }
-  }, [lifeInvestmentPlanId, checkFinancialRecordForActivePlan, checkIfMicroPlanHasFinancialRecord])
+  }, [lifeInvestmentPlanId, reevaluateActiveMicroPlan])
 
   const createMicroPlan = useCallback(async (data: CreateMicroInvestmentPlan): Promise<MicroInvestmentPlan | null> => {
     try {
@@ -134,38 +161,6 @@ export function useMicroInvestmentPlans(lifeInvestmentPlanId: string): UseMicroI
       return null
     }
   }, [activeMicroPlan])
-
-  // Função para reavaliar qual micro plano deveria estar ativo
-  const reevaluateActiveMicroPlan = useCallback(async (allPlans: MicroInvestmentPlan[], userId: string) => {
-    const today = new Date()
-    
-    // Ordenar planos por data de vigência (mais recente primeiro)
-    const eligiblePlans = allPlans
-      .filter(plan => new Date(plan.effective_date) <= today)
-      .sort((a, b) => new Date(b.effective_date).getTime() - new Date(a.effective_date).getTime())
-
-    // Verificar cada plano para encontrar um com registros financeiros
-    let newActive = null
-    for (const plan of eligiblePlans) {
-      const hasFinancialRecord = await checkIfMicroPlanHasFinancialRecord(plan, userId, allPlans)
-      if (hasFinancialRecord) {
-        newActive = plan
-        break
-      }
-    }
-
-    // Se nenhum plano tem registros financeiros, usar o mais antigo (primeiro criado)
-    if (!newActive && allPlans.length > 0) {
-      newActive = allPlans.sort((a, b) => new Date(a.created_at || a.effective_date).getTime() - new Date(b.created_at || b.effective_date).getTime())[0]
-    }
-
-    setActiveMicroPlan(newActive)
-    
-    // Verificar se o novo micro plano ativo tem financial record
-    if (newActive) {
-      await checkFinancialRecordForActivePlan(newActive, userId, allPlans)
-    }
-  }, [checkIfMicroPlanHasFinancialRecord, checkFinancialRecordForActivePlan])
 
   const updateMicroPlan = useCallback(async (id: string, data: UpdateMicroInvestmentPlan): Promise<MicroInvestmentPlan | null> => {
     try {
