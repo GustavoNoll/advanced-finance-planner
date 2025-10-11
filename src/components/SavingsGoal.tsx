@@ -59,7 +59,7 @@ export const SavingsGoal = ({ allFinancialRecords, investmentPlan, activeMicroPl
       const finalAgeDate = investmentPlan?.plan_end_accumulation_date ? createDateWithoutTimezone(investmentPlan.plan_end_accumulation_date) : null;
       if (!birthDateObj || !finalAgeDate) return 'ageNotAvailable';
       const monthsDifference = utils.calculateMonthsBetweenDates(planProgressData.projectedRetirementDate, finalAgeDate);
-      const isAheadOfSchedule = monthsDifference > 0;
+      const isAheadOfSchedule = monthsDifference >= 0;
       
       return {
         years: planProgressData.projectedAgeYears || 0,

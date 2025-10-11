@@ -33,7 +33,7 @@ export const InvestmentPlanShow = () => {
     deleteMicroPlan,
     hasFinancialRecordForActivePlan
   } = useMicroInvestmentPlans(id || '');
-  console.log(activeMicroPlan)
+
   // Memoize birthDate to prevent unnecessary re-renders
   const birthDate = useMemo(() => {
     return plan?.profiles?.birth_date ? new Date(plan.profiles.birth_date) : new Date();

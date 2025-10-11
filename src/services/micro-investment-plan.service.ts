@@ -7,6 +7,8 @@ export interface MicroInvestmentPlan {
   monthly_deposit: number
   desired_income: number
   expected_return: number
+  adjust_contribution_for_accumulated_inflation: boolean
+  adjust_income_for_accumulated_inflation: boolean
   inflation: number
   created_at?: string
   updated_at?: string
@@ -18,6 +20,8 @@ export interface CreateMicroInvestmentPlan {
   monthly_deposit: number
   desired_income: number
   expected_return: number
+  adjust_contribution_for_accumulated_inflation: boolean
+  adjust_income_for_accumulated_inflation: boolean
   inflation: number
 }
 
@@ -26,6 +30,8 @@ export interface UpdateMicroInvestmentPlan {
   monthly_deposit?: number
   desired_income?: number
   expected_return?: number
+  adjust_contribution_for_accumulated_inflation?: boolean
+  adjust_income_for_accumulated_inflation?: boolean
   inflation?: number
 }
 
@@ -110,6 +116,32 @@ export class MicroInvestmentPlanService {
     } catch (error) {
       console.error('Error in fetchActiveMicroPlan:', error)
       return null
+    }
+  }
+
+  /**
+   * Verifica se já existe um micro plano em uma data específica
+   */
+  static async checkMicroPlanExistsByDate(lifeInvestmentPlanId: string, effectiveDate: string): Promise<boolean> {
+    if (!lifeInvestmentPlanId || !effectiveDate) return false
+
+    try {
+      const { data, error } = await supabase
+        .from('micro_investment_plans')
+        .select('id')
+        .eq('life_investment_plan_id', lifeInvestmentPlanId)
+        .eq('effective_date', effectiveDate)
+        .single()
+
+      if (error && error.code !== 'PGRST116') { // PGRST116 = no rows returned
+        console.error('Error checking micro plan existence:', error)
+        return false
+      }
+
+      return !!data
+    } catch (error) {
+      console.error('Error in checkMicroPlanExistsByDate:', error)
+      return false
     }
   }
 

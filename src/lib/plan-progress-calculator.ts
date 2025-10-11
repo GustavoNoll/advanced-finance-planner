@@ -298,6 +298,7 @@ interface ProjectionResult {
   projectedRetirementDate: Date;
   plannedRetirementDate: Date;
   finalAgeDate: Date;
+  actualDate: Date;
 }
 
 export interface PlanProgressData {
@@ -321,6 +322,7 @@ export interface PlanProgressData {
   projectedAgeMonths: number;
   projectedAge: number;
   isAheadOfSchedule: boolean;
+  actualDate: Date;
 }
 
 /**
@@ -735,7 +737,6 @@ const financialCalculations = {
     
     // Calculate adjusted present and future values
     const currentBalance= (lastFinancialRecord?.ending_balance || investmentPlan.initial_amount) || 0;
-    console.log('ending balance', lastFinancialRecord?.ending_balance)
     const initialAmountWithPlannedGoals = (investmentPlan.initial_amount + plannedPreRetirementGoalsTotal);
     // Fator de inflação até a aposentadoria usando util de CPI por moeda
     const projectedPresentValue = projectedFuturePresentValue / inflationFactorAtRetirement;
@@ -871,7 +872,8 @@ const financialCalculations = {
       referenceDate: initialDate,
       projectedRetirementDate,
       plannedRetirementDate,
-      finalAgeDate
+      finalAgeDate,
+      actualDate
     };
   }
 };
@@ -962,6 +964,7 @@ export function processPlanProgressData(
     plannedAgeYears,
     plannedAgeMonths,
     projectedAge: projectedAgeYears + projectedAgeMonths / 12,
-    isAheadOfSchedule: projections.monthsDifference > 0
+    isAheadOfSchedule: projections.monthsDifference > 0,
+    actualDate: projections.actualDate
   };
 } 
