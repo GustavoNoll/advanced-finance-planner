@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/components/ui/use-toast";
 import { supabase } from "@/lib/supabase";
@@ -46,6 +47,15 @@ export function EditPlanModal({
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
   
+  // Ordenação e seleção de micro planos
+  const sortedMicroPlans = [...microPlans].sort((a, b) => 
+    new Date(a.effective_date).getTime() - new Date(b.effective_date).getTime()
+  );
+  const [selectedMicroPlanId, setSelectedMicroPlanId] = useState<string | null>(activeMicroPlan?.id || sortedMicroPlans[0]?.id || null);
+  const selectedMicroPlan = selectedMicroPlanId
+    ? sortedMicroPlans.find(mp => mp.id === selectedMicroPlanId) || null
+    : null;
+  
   // Verificar se existem registros financeiros para bloquear a edição do valor inicial
   const hasFinancialRecords = financialRecords.length > 0;
   
@@ -79,14 +89,27 @@ export function EditPlanModal({
 
   // Form data for active micro plan
   const [microPlanFormData, setMicroPlanFormData] = useState({
-    monthlyDeposit: activeMicroPlan?.monthly_deposit.toString() || '',
-    desiredIncome: activeMicroPlan?.desired_income.toString() || '',
-    expectedReturn: activeMicroPlan?.expected_return.toFixed(1) || '',
-    inflation: activeMicroPlan?.inflation.toString() || '',
-    effectiveDate: activeMicroPlan?.effective_date || '',
-    adjustContributionForAccumulatedInflation: activeMicroPlan?.adjust_contribution_for_accumulated_inflation ?? true,
-    adjustIncomeForAccumulatedInflation: activeMicroPlan?.adjust_income_for_accumulated_inflation ?? true,
+    monthlyDeposit: selectedMicroPlan?.monthly_deposit.toString() || '',
+    desiredIncome: selectedMicroPlan?.desired_income.toString() || '',
+    expectedReturn: selectedMicroPlan?.expected_return.toFixed(1) || '',
+    inflation: selectedMicroPlan?.inflation.toString() || '',
+    effectiveDate: selectedMicroPlan?.effective_date || '',
+    adjustContributionForAccumulatedInflation: selectedMicroPlan?.adjust_contribution_for_accumulated_inflation ?? true,
+    adjustIncomeForAccumulatedInflation: selectedMicroPlan?.adjust_income_for_accumulated_inflation ?? true,
   });
+
+  // Atualizar o formulário quando o micro plano selecionado mudar
+  useEffect(() => {
+    setMicroPlanFormData({
+      monthlyDeposit: selectedMicroPlan?.monthly_deposit?.toString() || '',
+      desiredIncome: selectedMicroPlan?.desired_income?.toString() || '',
+      expectedReturn: selectedMicroPlan?.expected_return !== undefined ? selectedMicroPlan.expected_return.toFixed(1) : '',
+      inflation: selectedMicroPlan?.inflation?.toString() || '',
+      effectiveDate: selectedMicroPlan?.effective_date || '',
+      adjustContributionForAccumulatedInflation: selectedMicroPlan?.adjust_contribution_for_accumulated_inflation ?? true,
+      adjustIncomeForAccumulatedInflation: selectedMicroPlan?.adjust_income_for_accumulated_inflation ?? true,
+    })
+  }, [selectedMicroPlan])
 
   const [calculations, setCalculations] = useState<InvestmentCalculations | null>(null);
   const { t } = useTranslation();
@@ -216,8 +239,8 @@ export function EditPlanModal({
     setLoading(true);
 
     try {
-      if (!activeMicroPlan) {
-        throw new Error('No active micro plan found');
+      if (!selectedMicroPlan) {
+        throw new Error('No micro plan selected');
       }
 
       const { error } = await supabase
@@ -230,7 +253,7 @@ export function EditPlanModal({
           adjust_contribution_for_accumulated_inflation: microPlanFormData.adjustContributionForAccumulatedInflation,
           adjust_income_for_accumulated_inflation: microPlanFormData.adjustIncomeForAccumulatedInflation,
         })
-        .eq('id', activeMicroPlan.id);
+        .eq('id', selectedMicroPlan.id);
 
       if (error) throw error;
 
@@ -608,12 +631,43 @@ export function EditPlanModal({
               </TabsContent>
               
               <TabsContent value="micro-plan" className="mt-6">
-                {activeMicroPlan ? (
+                {sortedMicroPlans.length > 0 ? (
                   <form onSubmit={handleMicroPlanSubmit} className="space-y-6">
                     <div className="space-y-4">
                       <div className="space-y-2">
                         <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                          {t('investmentPlan.edit.selectMicroPlan')}
+                        </label>
+                        <Select
+                          value={selectedMicroPlanId || ''}
+                          onValueChange={(value) => setSelectedMicroPlanId(value)}
+                        >
+                          <SelectTrigger className="h-10">
+                            <SelectValue placeholder={t('investmentPlan.edit.selectMicroPlan')} />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {sortedMicroPlans.map((mp, i) => {
+                              const date = new Date(mp.effective_date)
+                              const label = `#${i + 1} - ${date.toLocaleDateString('pt-BR', { month: '2-digit', year: 'numeric' })}${activeMicroPlan?.id === mp.id ? ' - ' + t('investmentPlan.microPlans.active') : ''}`
+                              return (
+                                <SelectItem key={mp.id} value={mp.id}>
+                                  {label}
+                                </SelectItem>
+                              )
+                            })}
+                          </SelectContent>
+                        </Select>
+                      </div>
+
+                      <div className="space-y-2">
+                        <label className="text-sm font-medium text-gray-700 dark:text-gray-300 flex items-center gap-2">
                           {t('investmentPlan.form.effectiveDate')}
+                          {(() => {
+                            const idx = selectedMicroPlan ? sortedMicroPlans.findIndex(p => p.id === selectedMicroPlan.id) : -1;
+                            return idx >= 0 ? (
+                              <Badge variant="outline" className="text-xs">#{idx + 1}</Badge>
+                            ) : null;
+                          })()}
                         </label>
                         <Input
                           type="date"
@@ -720,15 +774,12 @@ export function EditPlanModal({
                       </div>
                     </div>
 
-                    {microPlans.length > 1 && activeMicroPlan && (() => {
+                    {sortedMicroPlans.length > 1 && selectedMicroPlan && (() => {
                       // Encontrar o micro plano mais antigo (base)
-                      const sortedPlans = [...microPlans].sort((a, b) => 
-                        new Date(a.effective_date).getTime() - new Date(b.effective_date).getTime()
-                      );
-                      const baseMicroPlan = sortedPlans[0];
+                      const baseMicroPlan = sortedMicroPlans[0];
                       
                       // Mostrar campos apenas se o micro plano atual não for o base
-                      return activeMicroPlan.id !== baseMicroPlan.id;
+                      return selectedMicroPlan.id !== baseMicroPlan.id;
                     })() && (
                       <div className="space-y-4">
                         <div className="flex items-center space-x-2">

@@ -20,6 +20,7 @@ export const ptBR = {
       microPlanError: "Erro ao atualizar micro plano",
       noActiveMicroPlan: "Nenhum micro plano ativo encontrado",
       saveMicroPlan: "Salvar Micro Plano",
+      selectMicroPlan: "Selecione o micro plano",
       lifePlanInfo: {
         title: "Informações do Plano de Vida"
       }
@@ -741,6 +742,9 @@ export const ptBR = {
       completedDescription: 'O item não será mais considerado nas projeções financeiras futuras.'
     },
     allowNegativeValues: 'Use valores negativos para despesas/saídas',
+    goalsAlwaysNegative: 'Objetivos são sempre despesas: o valor é negativo por padrão.',
+    paidAmount: 'Valor pago',
+    paidAmountHelp: 'Valor pago referente a este {{type}} vinculado. Ajuste conforme o que foi efetivamente pago neste mês.',
     linkedItems: 'Itens Vinculados',
     completed: 'Concluído',
     remove: 'Remover',
@@ -1035,7 +1039,8 @@ export const ptBR = {
     },
     success: {
       updated: "Registro financeiro atualizado com sucesso",
-      created: "Registro financeiro criado com sucesso"
+      created: "Registro financeiro criado com sucesso",
+      linkConflictResolved: "Link existente atualizado com sucesso"
     },
     importButton: "Importar CSV",
     chooseFile: 'Escolher arquivo CSV',

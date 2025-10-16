@@ -84,30 +84,32 @@ const SelectedItemCard = ({ item, onUpdate, onRemove, currency }: SelectedItemCa
             name="allocatedAmount"
             render={({ field }) => (
               <FormItem>
-                <FormLabel className="text-sm font-medium text-muted-foreground">{t('common.value')}</FormLabel>
+                <FormLabel className="text-sm font-medium text-muted-foreground">{t('common.paidAmount')}</FormLabel>
                 <FormControl>
                   <CurrencyInput
                     id="allocated-amount"
-                    className={`flex h-9 w-full rounded-lg border border-input bg-background text-foreground px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 transition-colors dark:[color-scheme:dark] ${item.allocatedAmount < 0 ? 'text-red-600' : item.allocatedAmount > 0 ? 'text-green-600' : ''}`}
+                    className={`flex h-9 w-full rounded-lg border border-input bg-background text-foreground px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 transition-colors dark:[color-scheme:dark] ${(() => { const displayed = item.type === 'goal' ? -Math.abs(Number(field.value || 0)) : Number(field.value || 0); return displayed < 0 ? 'text-red-600' : displayed > 0 ? 'text-green-600' : '' })()}`}
                     prefix={getCurrencySymbol(currency)}
                     groupSeparator="."
-                    decimalSeparator=","
+                    decimalSeparator="," 
                     decimalsLimit={2}
                     allowNegativeValue={true}
-                    value={field.value}
+                    value={item.type === 'goal' ? -Math.abs(Number(field.value || 0)) : Number(field.value || 0)}
                     onValueChange={(value) => {
-                      const numericValue = value ? parseFloat(value.replace(/\./g, '').replace(',', '.')) : 0;
-                      field.onChange(numericValue);
-                      onUpdate({ allocatedAmount: numericValue });
+                      const raw = value ? parseFloat(value.replace(/\./g, '').replace(',', '.')) : 0;
+                      const coerced = item.type === 'goal' ? -Math.abs(raw) : raw;
+                      field.onChange(coerced);
+                      onUpdate({ allocatedAmount: coerced });
                     }}
                   />
                 </FormControl>
+                <p className="text-xs text-muted-foreground mt-1">
+                  {t('common.paidAmountHelp', { type: item.type === 'goal' ? t('common.goal').toLowerCase() : t('events.title_single').toLowerCase() })}
+                </p>
               </FormItem>
             )}
           />
-          <p className="text-xs text-muted-foreground mt-1">
-            {t('common.allowNegativeValues')}
-          </p>
+          <p className="text-xs text-muted-foreground mt-1">{item.type === 'goal' ? t('common.goalsAlwaysNegative') : t('common.allowNegativeValues')}</p>
         </div>
         
         <div className="flex items-center space-x-2">

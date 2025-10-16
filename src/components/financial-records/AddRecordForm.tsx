@@ -265,7 +265,6 @@ export const AddRecordForm = ({ clientId, onSuccess, editingRecord, investmentPl
   const processSelectedItems = async (selectedItems: LinkedItem[], recordId: string, recordMonth: number, recordYear: number) => {
     if (selectedItems.length === 0) return;
 
-    console.log(selectedItems)
     const itemsWithRealIds = await Promise.all(selectedItems.map(async (item) => {
       if (!item.id.startsWith('temp-')) return item
 
@@ -273,7 +272,7 @@ export const AddRecordForm = ({ clientId, onSuccess, editingRecord, investmentPl
         profile_id: clientId,
         name: item.name,
         icon: item.icon,
-        asset_value: item.allocatedAmount,
+        asset_value: item.type === 'goal' ? Math.abs(item.allocatedAmount) : item.allocatedAmount,
         month: item.month ?? recordMonth,
         year: item.year ?? recordYear,
         payment_mode: item.payment_mode ?? 'none',
@@ -285,27 +284,81 @@ export const AddRecordForm = ({ clientId, onSuccess, editingRecord, investmentPl
       return { ...item, id: created.id as string }
     }))
 
-    const linkData = itemsWithRealIds.map(item => ({
-      financial_record_id: recordId,
-      item_id: item.id,
-      item_type: item.type,
-      allocated_amount: item.allocatedAmount,
-      is_completing: item.isCompleting
-    }))
+    let hadConflictsResolved = false
 
-    if (linkData.length > 0) {
-      const { error: linksError } = await supabase
-        .from('financial_record_links')
-        .insert(linkData)
-      if (linksError) console.error('Error creating links:', linksError)
-
-      const completingItems = itemsWithRealIds.filter(item => item.isCompleting)
-      if (completingItems.length > 0) {
-        await processCompletingItems(completingItems, recordMonth, recordYear)
+    for (const item of itemsWithRealIds) {
+      const row = {
+        financial_record_id: recordId,
+        item_id: item.id,
+        item_type: item.type,
+        allocated_amount: item.type === 'goal' ? Math.abs(item.allocatedAmount) : item.allocatedAmount,
+        is_completing: item.isCompleting
       }
 
-      if (onLinksUpdated) onLinksUpdated()
+      // Tentar upsert pelo índice único (financial_record_id,item_id,item_type)
+      const { error: upsertError } = await supabase
+        .from('financial_record_links')
+        .upsert(row, { onConflict: 'financial_record_id,item_id,item_type' })
+
+      if (upsertError) {
+        // Em alguns casos o onConflict pode não estar configurado no banco.
+        // Se houver conflito, apagar o link existente e recriar (especialmente ao marcar como concluído).
+        const pgError = upsertError as unknown as { code?: string }
+        if (pgError.code === '23505') {
+          const { error: deleteError } = await supabase
+            .from('financial_record_links')
+            .delete()
+            .eq('financial_record_id', recordId)
+            .eq('item_id', item.id)
+            .eq('item_type', item.type)
+
+          if (deleteError) {
+            console.error('Erro ao resolver conflito de link (delete):', deleteError)
+            toast({
+              title: t('financialRecords.errors.createFailed'),
+              description: t('common.errors.tryAgain'),
+              variant: 'destructive',
+            })
+            continue
+          }
+
+          const { error: insertError } = await supabase
+            .from('financial_record_links')
+            .insert(row)
+
+          if (insertError) {
+            console.error('Erro ao recriar link após conflito:', insertError)
+            toast({
+              title: t('financialRecords.errors.createFailed'),
+              description: t('common.errors.tryAgain'),
+              variant: 'destructive',
+            })
+            continue
+          }
+
+          hadConflictsResolved = true
+        } else {
+          console.error('Erro ao criar/atualizar link:', upsertError)
+          toast({
+            title: t('financialRecords.errors.createFailed'),
+            description: t('common.errors.tryAgain'),
+            variant: 'destructive',
+          })
+          continue
+        }
+      }
     }
+
+    const completingItems = itemsWithRealIds.filter(item => item.isCompleting)
+    if (completingItems.length > 0) {
+      await processCompletingItems(completingItems, recordMonth, recordYear)
+    }
+
+    if (hadConflictsResolved) {
+      toast({ title: t('financialRecords.success.linkConflictResolved') })
+    }
+
+    if (onLinksUpdated) onLinksUpdated()
   };
 
   // Função para processar itens finalizados
