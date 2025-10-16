@@ -576,6 +576,8 @@ const financialCalculations = {
     
 
     // Usar constantes importadas para controle de processamento
+    const pendingGoals = allGoals.filter(goal => goal.financial_links.length === 0);
+    const pendingEvents = allEvents.filter(event => event.financial_links.length === 0);
 
     // Generate hash for planned calculations (all goals/events, ignoring financial_links)
     const { preRetirementHash: plannedPreRetirementHash, postRetirementHash: plannedPostRetirementHash } = financialCalculations.generatePreCalculationHash({
@@ -590,6 +592,24 @@ const financialCalculations = {
       actualDate
     });
 
+    const { preRetirementHash: projectedPreRetirementHash, postRetirementHash: projectedPostRetirementHash } = financialCalculations.generatePreCalculationHash({
+      startDate,
+      endDate,
+      goals: pendingGoals,
+      events: pendingEvents,
+      monthsToRetirement,
+      currency,
+      microPlans,
+      ignoreFinancialLinks: CONSIDER_FINANCIAL_LINKS,
+      actualDate
+    });
+
+    const projectedPreRetirementGoalsTotal = Object.values(projectedPreRetirementHash)
+      .reduce((sum, monthlyValues) => sum + monthlyValues.adjustedValues.total, 0);
+
+    const projectedPostRetirementGoalsTotal = Object.values(projectedPostRetirementHash)
+      .reduce((sum, monthlyValues) => sum + monthlyValues.adjustedValues.total, 0);
+
     // Sum of pre/post retirement goals for planned calculations (all goals/events)
     const plannedPreRetirementGoalsTotal = Object.values(plannedPreRetirementHash)
       .reduce((sum, monthlyValues) => sum + monthlyValues.adjustedValues.total, 0);
@@ -601,8 +621,8 @@ const financialCalculations = {
     return {
       plannedPreRetirementGoalsTotal,
       plannedPostRetirementGoalsTotal,
-      projectedPreRetirementGoalsTotal: plannedPreRetirementGoalsTotal, // Usar os mesmos valores para projected
-      projectedPostRetirementGoalsTotal: plannedPostRetirementGoalsTotal
+      projectedPreRetirementGoalsTotal,
+      projectedPostRetirementGoalsTotal
     };
   },
 

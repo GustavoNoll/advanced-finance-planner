@@ -1,4 +1,5 @@
 import { supabase } from '@/lib/supabase'
+import type { PostgrestError } from '@supabase/supabase-js'
 import { FinancialRecord, InvestmentPlan, MicroInvestmentPlan } from '@/types/financial'
 import { CurrencyCode } from '@/utils/currency'
 import { fetchIPCARates, fetchUSCPIRates, fetchEuroCPIRates } from '@/lib/bcb-api'
@@ -93,21 +94,17 @@ export class FinancialRecordsManagementService {
    * Cria um novo registro financeiro
    */
   static async createRecord(recordData: Partial<FinancialRecord>): Promise<FinancialRecord> {
-    try {
-      const { data, error } = await supabase
-        .from('user_financial_records')
-        .insert([recordData])
-        .select()
-        .single()
+    const { data, error } = await supabase
+      .from('user_financial_records')
+      .insert([recordData])
+      .select()
+      .single()
 
-      if (error) {
-        throw new Error('Failed to create financial record')
-      }
-
-      return data
-    } catch (error) {
-      throw error
+    if (error) {
+      throw new Error('Failed to create financial record')
     }
+
+    return data
   }
 
   /**
@@ -116,22 +113,18 @@ export class FinancialRecordsManagementService {
   static async updateRecord(recordId: string, recordData: Partial<FinancialRecord>): Promise<FinancialRecord> {
     if (!recordId) throw new Error('Record ID is required')
 
-    try {
-      const { data, error } = await supabase
-        .from('user_financial_records')
-        .update(recordData)
-        .eq('id', recordId)
-        .select()
-        .single()
+    const { data, error } = await supabase
+      .from('user_financial_records')
+      .update(recordData)
+      .eq('id', recordId)
+      .select()
+      .single()
 
-      if (error) {
-        throw new Error('Failed to update financial record')
-      }
-
-      return data
-    } catch (error) {
-      throw error
+    if (error) {
+      throw new Error('Failed to update financial record')
     }
+
+    return data
   }
 
   /**
@@ -140,17 +133,13 @@ export class FinancialRecordsManagementService {
   static async deleteRecord(recordId: string): Promise<void> {
     if (!recordId) throw new Error('Record ID is required')
 
-    try {
-      const { error } = await supabase
-        .from('user_financial_records')
-        .delete()
-        .eq('id', recordId)
+    const { error } = await supabase
+      .from('user_financial_records')
+      .delete()
+      .eq('id', recordId)
 
-      if (error) {
-        throw new Error('Failed to delete financial record')
-      }
-    } catch (error) {
-      throw error
+    if (error) {
+      throw new Error('Failed to delete financial record')
     }
   }
 
@@ -160,17 +149,13 @@ export class FinancialRecordsManagementService {
   static async deleteAllRecordsByUserId(userId: string): Promise<void> {
     if (!userId) throw new Error('User ID is required')
 
-    try {
-      const { error } = await supabase
-        .from('user_financial_records')
-        .delete()
-        .eq('user_id', userId)
+    const { error } = await supabase
+      .from('user_financial_records')
+      .delete()
+      .eq('user_id', userId)
 
-      if (error) {
-        throw new Error('Failed to delete all financial records')
-      }
-    } catch (error) {
-      throw error
+    if (error) {
+      throw new Error('Failed to delete all financial records')
     }
   }
 
@@ -184,8 +169,7 @@ export class FinancialRecordsManagementService {
   ): Promise<ImportResult> {
     if (!userId) throw new Error('User ID is required')
 
-    try {
-      const result: ImportResult = { success: 0, failed: 0, errors: [] }
+    const result: ImportResult = { success: 0, failed: 0, errors: [] }
 
       // Buscar registros existentes para verificar duplicatas
       const { data: existingRecords } = await supabase
@@ -292,26 +276,23 @@ export class FinancialRecordsManagementService {
           })
         })
 
-      if (validRecords.length > 0) {
-        const { data: insertedRecords, error } = await supabase
-          .from('user_financial_records')
-          .insert(validRecords)
-          .select()
+    if (validRecords.length > 0) {
+      const { data: insertedRecords, error } = await supabase
+        .from('user_financial_records')
+        .insert(validRecords)
+        .select()
 
-        if (error) {
-          throw error
-        }
-
-        result.success = validRecords.length
-
-        // Processar eventos do CSV e criar links
-        await this.processCSVEvents(insertedRecords, records, userId)
+      if (error) {
+        throw error
       }
 
-      return result
-    } catch (error) {
-      throw error
+      result.success = validRecords.length
+
+      // Processar eventos do CSV e criar links
+      await this.processCSVEvents(insertedRecords, records, userId)
     }
+
+    return result
   }
 
   /**
@@ -325,96 +306,91 @@ export class FinancialRecordsManagementService {
     if (!records?.length || !investmentPlan) {
       return { count: 0, updates: [] }
     }
-
-    try {
-      // Encontrar a data do registro mais antigo
-      const sortedRecords = [...records].sort((a, b) => {
-        if (a.record_year !== b.record_year) {
-          return a.record_year - b.record_year
-        }
-        return a.record_month - b.record_month
-      })
-
-      const oldestRecord = sortedRecords[0]
-      const startDate = `01/${oldestRecord.record_month.toString().padStart(2, '0')}/${oldestRecord.record_year}`
-
-      // Buscar taxas de inflação apropriadas baseadas na moeda
-      let response
-      if (investmentPlan.currency === 'USD') {
-        response = fetchUSCPIRates(startDate, createDateWithoutTimezone(new Date()).toLocaleDateString('pt-BR', {
-          day: '2-digit',
-          month: '2-digit',
-          year: 'numeric'
-        }))
-      } else if (investmentPlan.currency === 'EUR') {
-        response = fetchEuroCPIRates(startDate, createDateWithoutTimezone(new Date()).toLocaleDateString('pt-BR', {
-          day: '2-digit',
-          month: '2-digit',
-          year: 'numeric'
-        }))
-      } else {
-        response = fetchIPCARates(startDate, createDateWithoutTimezone(new Date()).toLocaleDateString('pt-BR', {
-          day: '2-digit',
-          month: '2-digit',
-          year: 'numeric'
-        }))
+    // Encontrar a data do registro mais antigo
+    const sortedRecords = [...records].sort((a, b) => {
+      if (a.record_year !== b.record_year) {
+        return a.record_year - b.record_year
       }
+      return a.record_month - b.record_month
+    })
 
-      // Criar um mapa de taxas de inflação por mês/ano para busca mais fácil
-      const cpiRateMap = new Map()
-      response.forEach(item => {
-        const date = createDateWithoutTimezone(item.date)
-        const year = date.getFullYear()
-        const month = date.getMonth() + 1 // JavaScript months are 0-indexed
-        const key = `${year}-${month}`
-        cpiRateMap.set(key, Number(item.monthlyRate))
-      })
+    const oldestRecord = sortedRecords[0]
+    const startDate = `01/${oldestRecord.record_month.toString().padStart(2, '0')}/${oldestRecord.record_year}`
 
-      // Preparar atualizações em lote para cada registro que tem uma taxa de inflação correspondente
-      const updates = []
-      let updatedCount = 0
+    // Buscar taxas de inflação apropriadas baseadas na moeda
+    let response
+    if (investmentPlan.currency === 'USD') {
+      response = fetchUSCPIRates(startDate, createDateWithoutTimezone(new Date()).toLocaleDateString('pt-BR', {
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric'
+      }))
+    } else if (investmentPlan.currency === 'EUR') {
+      response = fetchEuroCPIRates(startDate, createDateWithoutTimezone(new Date()).toLocaleDateString('pt-BR', {
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric'
+      }))
+    } else {
+      response = fetchIPCARates(startDate, createDateWithoutTimezone(new Date()).toLocaleDateString('pt-BR', {
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric'
+      }))
+    }
 
-      for (const record of records) {
-        const recordKey = `${record.record_year}-${record.record_month}`
-        if (cpiRateMap.has(recordKey)) {
-          const cpiRate = cpiRateMap.get(recordKey)
-          const parsedCpiRate = cpiRate
-          const expectedReturn = activeMicroPlan?.expected_return || 8; // Default 8% se não houver micro plano
-          const cpiRateConverted = parseFloat((calculateCompoundedRates([parsedCpiRate/100, yearlyReturnRateToMonthlyReturnRate(expectedReturn/100)]) * 100).toFixed(2))
-          const parsedTargetRentability = parseFloat(record.target_rentability?.toFixed(2) || '0')
-          if (parsedTargetRentability !== cpiRateConverted) {
-            updates.push({
-              id: record.id,
-              target_rentability: cpiRateConverted
-            })
-            updatedCount++
-          }
+    // Criar um mapa de taxas de inflação por mês/ano para busca mais fácil
+    const cpiRateMap = new Map()
+    response.forEach(item => {
+      const date = createDateWithoutTimezone(item.date)
+      const year = date.getFullYear()
+      const month = date.getMonth() + 1 // JavaScript months are 0-indexed
+      const key = `${year}-${month}`
+      cpiRateMap.set(key, Number(item.monthlyRate))
+    })
+
+    // Preparar atualizações em lote para cada registro que tem uma taxa de inflação correspondente
+    const updates = []
+    let updatedCount = 0
+
+    for (const record of records) {
+      const recordKey = `${record.record_year}-${record.record_month}`
+      if (cpiRateMap.has(recordKey)) {
+        const cpiRate = cpiRateMap.get(recordKey)
+        const parsedCpiRate = cpiRate
+        const expectedReturn = activeMicroPlan?.expected_return || 8; // Default 8% se não houver micro plano
+        const cpiRateConverted = parseFloat((calculateCompoundedRates([parsedCpiRate/100, yearlyReturnRateToMonthlyReturnRate(expectedReturn/100)]) * 100).toFixed(2))
+        const parsedTargetRentability = parseFloat(record.target_rentability?.toFixed(2) || '0')
+        if (parsedTargetRentability !== cpiRateConverted) {
+          updates.push({
+            id: record.id,
+            target_rentability: cpiRateConverted
+          })
+          updatedCount++
         }
       }
+    }
 
-      // Atualizar registros com taxas de inflação correspondentes
-      if (updates.length > 0) {
-        const updatedIds: string[] = []
-        // Processar cada atualização individualmente para garantir que são apenas atualizações
-        for (const update of updates) {
-          const { error } = await supabase
-            .from('user_financial_records')
-            .update({ target_rentability: update.target_rentability })
-            .eq('id', update.id)
+    // Atualizar registros com taxas de inflação correspondentes
+    if (updates.length > 0) {
+      const updatedIds: string[] = []
+      // Processar cada atualização individualmente para garantir que são apenas atualizações
+      for (const update of updates) {
+        const { error } = await supabase
+          .from('user_financial_records')
+          .update({ target_rentability: update.target_rentability })
+          .eq('id', update.id)
 
-          if (error) {
-            throw error
-          }
-          updatedIds.push(update.id)
+        if (error) {
+          throw error
         }
+        updatedIds.push(update.id)
       }
+    }
 
-      return {
-        count: updatedCount,
-        updates
-      }
-    } catch (error) {
-      throw error
+    return {
+      count: updatedCount,
+      updates
     }
   }
 
@@ -525,19 +501,36 @@ export class FinancialRecordsManagementService {
             // Erro ao atualizar valor do evento
           }
 
-          // Criar o link entre o evento e o registro financeiro
-          const { error: linkError } = await supabase
-            .from('financial_record_links')
-            .insert([{
-              financial_record_id: record.id,
-              item_id: createdEvent.id,
-              item_type: 'event',
-              allocated_amount: eventValue,
-              is_completing: true // Marcar como completo pois é um evento histórico
-            }])
+          // Criar o link entre o evento e o registro financeiro (resiliente a duplicatas)
+          const linkRow = {
+            financial_record_id: record.id,
+            item_id: createdEvent.id,
+            item_type: 'event' as const,
+            allocated_amount: eventValue,
+            is_completing: true // Marcar como completo pois é um evento histórico
+          }
 
-          if (linkError) {
-            // Erro ao criar link do evento
+          const { error: linkUpsertError } = await supabase
+            .from('financial_record_links')
+            .upsert(linkRow, { onConflict: 'financial_record_id,item_id,item_type' })
+
+          if (linkUpsertError) {
+            if ((linkUpsertError as PostgrestError).code === '23505') {
+              const { error: delErr } = await supabase
+                .from('financial_record_links')
+                .delete()
+                .eq('financial_record_id', record.id)
+                .eq('item_id', createdEvent.id)
+                .eq('item_type', 'event')
+
+              if (!delErr) {
+                await supabase
+                  .from('financial_record_links')
+                  .insert([linkRow])
+              }
+            } else {
+              // manter silencioso no processamento CSV para não interromper lote
+            }
           }
         }
       }

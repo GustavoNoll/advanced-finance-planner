@@ -91,7 +91,11 @@ const LinkedItemsDisplay = ({ financialRecordId, currency, refreshKey }: LinkedI
     );
   }
 
-  const totalAllocated = linkedItems.reduce((sum, item) => sum + item.allocated_amount, 0);
+  const totalAllocated = linkedItems.reduce((sum, item) => {
+    // Goals are stored as positive in DB but should be treated as negative for display/totals
+    const displayAmount = item.item_type === 'goal' ? -Math.abs(item.allocated_amount) : item.allocated_amount;
+    return sum + displayAmount;
+  }, 0);
 
   return (
     <div className="mt-4 pt-4 border-t border-border" data-record-id={financialRecordId}>
@@ -141,12 +145,21 @@ const LinkedItemsDisplay = ({ financialRecordId, currency, refreshKey }: LinkedI
                 </div>
                 <div className="flex items-center gap-2">
                   <span className={`text-sm font-medium ${
-                    item.allocated_amount < 0 ? 'text-red-600' : 'text-green-600'
+                    (() => {
+                      const displayAmount = item.item_type === 'goal' ? -Math.abs(item.allocated_amount) : item.allocated_amount;
+                      return displayAmount < 0 ? 'text-red-600' : 'text-green-600';
+                    })()
                   }`}>
-                    {item.allocated_amount >= 0 ? '+' : ''}{item.allocated_amount.toLocaleString('pt-BR', { 
-                      style: 'currency', 
-                      currency: currency || 'BRL' 
-                    })}
+                    {(() => {
+                      const displayAmount = item.item_type === 'goal' ? -Math.abs(item.allocated_amount) : item.allocated_amount;
+                      return displayAmount >= 0 ? '+' : '';
+                    })()}{(() => {
+                      const displayAmount = item.item_type === 'goal' ? -Math.abs(item.allocated_amount) : item.allocated_amount;
+                      return displayAmount.toLocaleString('pt-BR', { 
+                        style: 'currency', 
+                        currency: currency || 'BRL' 
+                      });
+                    })()}
                   </span>
                   {item.is_completing && (
                     <Badge variant="default" className="text-xs bg-green-600">

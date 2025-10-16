@@ -43,7 +43,6 @@ const FinancialRecords = () => {
   // Hooks para dados
   const { records, isLoading: recordsLoading } = useFinancialRecords(clientId || '', initialRecords);
   const { plan: investmentPlan, isLoading: planLoading } = useInvestmentPlanByUserId(clientId || '');
-  console.log(investmentPlan);
   const { activeMicroPlan } = useMicroInvestmentPlans(investmentPlan?.id || '');
   const { 
     createRecord, 

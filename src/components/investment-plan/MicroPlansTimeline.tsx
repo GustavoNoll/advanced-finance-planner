@@ -280,6 +280,7 @@ export function MicroPlansTimeline({
                   {/* Content */}
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 mb-2">
+                      <Badge variant="outline" className="text-xs">#{index + 1}</Badge>
                       <h4 className="font-medium text-sm">
                         {effectiveDate.toLocaleDateString('pt-BR', { 
                           month: 'long', 
