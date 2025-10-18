@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
+        xmlns:xhtml="http://www.w3.org/1999/xhtml"
+        xmlns:image="http://www.google.com/schemas/sitemap-image/1.1">
+  
+  <!-- Homepage -->
+  <url>
+    <loc>https://foundationhub.vercel.app/</loc>
+    <lastmod>2024-10-18</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>1.0</priority>
+    <xhtml:link rel="alternate" hreflang="pt-br" href="https://foundationhub.vercel.app/?lang=pt" />
+    <xhtml:link rel="alternate" hreflang="en" href="https://foundationhub.vercel.app/?lang=en" />
+    <image:image>
+      <image:loc>https://foundationhub.vercel.app/images/image.png</image:loc>
+      <image:title>Foundation - Planejamento Financeiro</image:title>
+      <image:caption>Plataforma de planejamento financeiro e gestão de investimentos</image:caption>
+    </image:image>
+  </url>
+  
+  <!-- Login Page -->
+  <url>
+    <loc>https://foundationhub.vercel.app/login</loc>
+    <lastmod>2024-10-18</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+    <xhtml:link rel="alternate" hreflang="pt-br" href="https://foundationhub.vercel.app/login?lang=pt" />
+    <xhtml:link rel="alternate" hreflang="en" href="https://foundationhub.vercel.app/login?lang=en" />
+  </url>
+  
+  <!-- Register Page -->
+  <url>
+    <loc>https://foundationhub.vercel.app/register</loc>
+    <lastmod>2024-10-18</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+    <xhtml:link rel="alternate" hreflang="pt-br" href="https://foundationhub.vercel.app/register?lang=pt" />
+    <xhtml:link rel="alternate" hreflang="en" href="https://foundationhub.vercel.app/register?lang=en" />
+  </url>
+  
+</urlset>
+

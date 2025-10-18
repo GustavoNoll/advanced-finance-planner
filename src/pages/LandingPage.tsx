@@ -34,6 +34,7 @@ import type { Profile, InvestmentPlan, FinancialRecord, Goal, ProjectedEvent } f
 import { useTranslation } from "react-i18next"
 import { formatCurrency } from "@/utils/currency"
 import { detectCurrency } from "@/lib/locale-detection"
+import { SEOHead, generateStructuredData, useStructuredData } from "@/components/seo/seo-head"
 
 interface MetricCardProps {
   label: string
@@ -83,7 +84,7 @@ function FeatureCard({ icon: Icon, title, description }: FeatureCardProps) {
 }
 
 export default function LandingPage() {
-  const { t } = useTranslation()
+  const { t, i18n } = useTranslation()
   const [name, setName] = useState("")
   const [email, setEmail] = useState("")
   const [message, setMessage] = useState("")
@@ -93,6 +94,58 @@ export default function LandingPage() {
   
   // Detecta a moeda automaticamente baseada no locale do navegador
   const currency = useMemo(() => detectCurrency(), [])
+  
+  // SEO: Structured Data for Landing Page
+  const structuredData = useMemo(() => generateStructuredData('WebPage', {
+    name: t('landingPage.hero.title') + ' ' + t('landingPage.hero.titleHighlight'),
+    description: t('landingPage.hero.description'),
+    url: 'https://foundationhub.vercel.app/',
+    inLanguage: i18n.language === 'pt' ? 'pt-BR' : 'en-US',
+    publisher: {
+      '@type': 'Organization',
+      name: 'Foundation',
+      logo: {
+        '@type': 'ImageObject',
+        url: 'https://foundationhub.vercel.app/images/logoFoundation.png'
+      }
+    },
+    mainEntity: {
+      '@type': 'Service',
+      serviceType: 'Financial Planning',
+      provider: {
+        '@type': 'Organization',
+        name: 'Foundation'
+      },
+      areaServed: {
+        '@type': 'Country',
+        name: i18n.language === 'pt' ? 'Brasil' : 'United States'
+      },
+      hasOfferCatalog: {
+        '@type': 'OfferCatalog',
+        name: 'Financial Planning Services',
+        itemListElement: [
+          {
+            '@type': 'Offer',
+            itemOffered: {
+              '@type': 'Service',
+              name: t('landingPage.features.feature1.title'),
+              description: t('landingPage.features.feature1.description')
+            }
+          },
+          {
+            '@type': 'Offer',
+            itemOffered: {
+              '@type': 'Service',
+              name: t('landingPage.features.feature2.title'),
+              description: t('landingPage.features.feature2.description')
+            }
+          }
+        ]
+      }
+    }
+  }), [t, i18n.language])
+  
+  useStructuredData(structuredData)
 
   // Mock data usando i18n
   const mockProfile: Profile = useMemo(() => ({
@@ -136,7 +189,7 @@ export default function LandingPage() {
         created_at: '2023-07-01',
       }
     ],
-  }), [])
+  }), [currency])
 
   const mockFinancialRecords: FinancialRecord[] = useMemo(() => [
     { id: '1', user_id: 'demo-user', record_year: 2023, record_month: 7, starting_balance: 80000, monthly_contribution: 4500, monthly_return: 400, ending_balance: 84900, monthly_return_rate: 0.5, target_rentability: 0.5, created_at: '2023-07-01' },
@@ -427,8 +480,18 @@ export default function LandingPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-blue-50 dark:from-slate-900 dark:via-gray-950 dark:to-slate-900">
-      {/* Header */}
+    <>
+      <SEOHead
+        title={t('landingPage.hero.title') + ' ' + t('landingPage.hero.titleHighlight') + ' | Foundation'}
+        description={t('landingPage.hero.description')}
+        keywords="planejamento financeiro, gestão de investimentos, aposentadoria, patrimônio, investimentos, finanças pessoais, planejador financeiro, consultoria financeira, wealth management, IPCA, CDB, renda fixa, renda variável"
+        image="https://foundationhub.vercel.app/images/image.png"
+        url="https://foundationhub.vercel.app/"
+        type="website"
+      />
+      
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-blue-50 dark:from-slate-900 dark:via-gray-950 dark:to-slate-900">
+        {/* Header */}
       <header className="sticky top-0 z-50 bg-white/80 dark:bg-gray-900/80 backdrop-blur-lg border-b border-gray-200 dark:border-gray-800">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
@@ -994,5 +1057,6 @@ export default function LandingPage() {
         </div>
       </footer>
     </div>
+    </>
   )
 }
