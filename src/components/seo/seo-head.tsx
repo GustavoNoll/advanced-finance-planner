@@ -1,5 +1,6 @@
 import { useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
+import { generateStructuredData, injectStructuredData } from '@/lib/seo-utils'
 
 interface SEOHeadProps {
   title?: string
@@ -52,7 +53,7 @@ export function SEOHead({
         element.setAttribute(attribute, content)
       } else {
         element = document.createElement('meta')
-        const [type, name] = selector.replace(/[\[\]]/g, '').split('=')
+        const [type, name] = selector.replace(/[[\]]/g, '').split('=')
         element.setAttribute(type.trim(), name.replace(/['"]/g, ''))
         element.setAttribute(attribute, content)
         document.head.appendChild(element)
@@ -110,39 +111,12 @@ export function SEOHead({
 }
 
 /**
- * Generate Structured Data (JSON-LD) for SEO
- */
-export function generateStructuredData(type: 'WebPage' | 'FAQPage' | 'HowTo' | 'Article', data: Record<string, any>) {
-  const baseStructure = {
-    '@context': 'https://schema.org',
-    '@type': type,
-    ...data,
-  }
-  
-  return JSON.stringify(baseStructure, null, 2)
-}
-
-/**
- * Inject Structured Data into the page
+ * Hook to inject Structured Data into the page
  */
 export function useStructuredData(structuredData: string) {
   useEffect(() => {
-    const script = document.createElement('script')
-    script.type = 'application/ld+json'
-    script.text = structuredData
-    script.id = 'structured-data-custom'
-    
-    // Remove previous structured data if exists
-    const existing = document.getElementById('structured-data-custom')
-    if (existing) {
-      existing.remove()
-    }
-    
-    document.head.appendChild(script)
-    
-    return () => {
-      script.remove()
-    }
+    const cleanup = injectStructuredData(structuredData)
+    return cleanup
   }, [structuredData])
 }
 

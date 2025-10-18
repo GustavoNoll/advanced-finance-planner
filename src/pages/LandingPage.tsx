@@ -34,7 +34,8 @@ import type { Profile, InvestmentPlan, FinancialRecord, Goal, ProjectedEvent } f
 import { useTranslation } from "react-i18next"
 import { formatCurrency } from "@/utils/currency"
 import { detectCurrency } from "@/lib/locale-detection"
-import { SEOHead, generateStructuredData, useStructuredData } from "@/components/seo/seo-head"
+import { SEOHead, useStructuredData } from "@/components/seo/seo-head"
+import { generateStructuredData } from "@/lib/seo-utils"
 
 interface MetricCardProps {
   label: string
