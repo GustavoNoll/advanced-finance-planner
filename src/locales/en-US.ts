@@ -615,6 +615,12 @@ export const enUS = {
         totalGrowthThisMonth: "Growth (Month)",
         averageMonthlyGrowth: "Average Monthly Growth",
         inactiveClients: "Inactive Clients",
+        chartLabels: {
+          newClients: "New Clients",
+          totalGrowth: "Total Growth",
+          averageGrowth: "Average Growth",
+          inactiveClients: "Inactive Clients"
+        },
         tooltip: {
           newClients: "Clients who started this month",
           totalGrowth: "Total growth in current month",
@@ -1953,6 +1959,33 @@ export const enUS = {
     cep_error: 'Error fetching ZIP Code',
   },
   landingPage: {
+    mocks: {
+      profile: {
+        name: 'Demo Client',
+        simulationName: 'Simulation Client'
+      },
+      goals: {
+        europeTrip: 'Europe Trip',
+        newCar: 'New Car',
+        ownHome: 'Own Home',
+        childrenEducation: 'Children Education',
+        hobbyEquipment: 'Hobby Equipment',
+        retirementAbroad: 'Retirement Abroad'
+      },
+      events: {
+        annualBonus: 'Annual Bonus',
+        homeRenovation: 'Home Renovation',
+        inheritance: 'Inheritance',
+        carChange: 'Car Change',
+        propertySale: 'Property Sale'
+      },
+      allocation: {
+        fixedIncome: 'Fixed Income',
+        multimarket: 'Multimarket',
+        stocks: 'Stocks',
+        foreign: 'Foreign'
+      }
+    },
     header: {
       login: 'Login',
       requestDemo: 'Quick Contact'

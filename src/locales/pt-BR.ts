@@ -615,6 +615,12 @@ export const ptBR = {
         totalGrowthThisMonth: "Crescimento (Mês)",
         averageMonthlyGrowth: "Crescimento Médio Mensal",
         inactiveClients: "Clientes Inativos",
+        chartLabels: {
+          newClients: "Novos Clientes",
+          totalGrowth: "Crescimento Total",
+          averageGrowth: "Crescimento Médio",
+          inactiveClients: "Clientes Inativos"
+        },
         tooltip: {
           newClients: "Clientes que iniciaram neste mês",
           totalGrowth: "Crescimento total no mês atual",
@@ -1953,6 +1959,33 @@ export const ptBR = {
     cep_error: 'Erro ao buscar CEP',
   },
   landingPage: {
+    mocks: {
+      profile: {
+        name: 'Cliente Demo',
+        simulationName: 'Cliente Simulação'
+      },
+      goals: {
+        europeTrip: 'Viagem Europa',
+        newCar: 'Carro Novo',
+        ownHome: 'Casa Própria',
+        childrenEducation: 'Educação dos Filhos',
+        hobbyEquipment: 'Equipamento Hobby',
+        retirementAbroad: 'Aposentadoria no Exterior'
+      },
+      events: {
+        annualBonus: 'Bônus Anual',
+        homeRenovation: 'Reforma Casa',
+        inheritance: 'Herança',
+        carChange: 'Troca de Carro',
+        propertySale: 'Venda de Imóvel'
+      },
+      allocation: {
+        fixedIncome: 'Renda Fixa',
+        multimarket: 'Multimercado',
+        stocks: 'Ações',
+        foreign: 'Exterior'
+      }
+    },
     header: {
       login: 'Login',
       requestDemo: 'Contato Rápido'

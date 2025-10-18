@@ -35,237 +35,6 @@ import { useTranslation } from "react-i18next"
 import { formatCurrency } from "@/utils/currency"
 import { detectCurrency } from "@/lib/locale-detection"
 
-// Mock data para demonstração do SimulationChart
-const mockProfile: Profile = {
-  id: 'demo-user',
-  user_id: 'demo-user',
-  name: 'Cliente Demo',
-  birth_date: '1988-07-15',
-  email: 'demo@foundation.com',
-  is_broker: false,
-  created_at: '2023-07-01',
-}
-
-const mockInvestmentPlan: InvestmentPlan = {
-  id: 'demo-plan',
-  user_id: 'demo-user',
-  plan_initial_date: '2023-07-01',
-  plan_end_accumulation_date: '2053-07-01',
-  initial_amount: 80000,
-  final_age: 65,
-  plan_type: '1',
-  currency: 'BRL' as const,
-  adjust_contribution_for_inflation: true,
-  adjust_income_for_inflation: true,
-  old_portfolio_profitability: 3,
-  legacy_amount: 0,
-  limit_age: 90,
-  status: 'active' as const,
-  created_at: '2023-07-01',
-  updated_at: '2024-10-01',
-  micro_investment_plans: [
-    {
-      id: 'demo-micro-plan',
-      life_investment_plan_id: 'demo-plan',
-      effective_date: '2023-07-01',
-      monthly_deposit: 5000,
-      desired_income: 15000,
-      expected_return: 6.0,
-      adjust_contribution_for_accumulated_inflation: false,
-      adjust_income_for_accumulated_inflation: false,
-      inflation: 4.5,
-      created_at: '2023-07-01',
-    }
-  ],
-}
-
-const mockFinancialRecords: FinancialRecord[] = [
-  { id: '1', user_id: 'demo-user', record_year: 2023, record_month: 7, starting_balance: 80000, monthly_contribution: 4500, monthly_return: 400, ending_balance: 84900, monthly_return_rate: 0.5, target_rentability: 0.5, created_at: '2023-07-01' },
-  { id: '2', user_id: 'demo-user', record_year: 2023, record_month: 8, starting_balance: 84900, monthly_contribution: 4500, monthly_return: 446, ending_balance: 89846, monthly_return_rate: 0.52, target_rentability: 0.5, created_at: '2023-08-01' },
-  { id: '3', user_id: 'demo-user', record_year: 2023, record_month: 9, starting_balance: 89846, monthly_contribution: 4500, monthly_return: 471, ending_balance: 94817, monthly_return_rate: 0.52, target_rentability: 0.5, created_at: '2023-09-01' },
-  { id: '4', user_id: 'demo-user', record_year: 2023, record_month: 10, starting_balance: 94817, monthly_contribution: 4500, monthly_return: 496, ending_balance: 99813, monthly_return_rate: 0.52, target_rentability: 0.5, created_at: '2023-10-01' },
-  { id: '5', user_id: 'demo-user', record_year: 2023, record_month: 11, starting_balance: 99813, monthly_contribution: 5000, monthly_return: 524, ending_balance: 105337, monthly_return_rate: 0.52, target_rentability: 0.5, created_at: '2023-11-01' },
-  { id: '6', user_id: 'demo-user', record_year: 2023, record_month: 12, starting_balance: 105337, monthly_contribution: 5000, monthly_return: 551, ending_balance: 110888, monthly_return_rate: 0.52, target_rentability: 0.5, created_at: '2023-12-01' },
-  { id: '7', user_id: 'demo-user', record_year: 2024, record_month: 1, starting_balance: 110888, monthly_contribution: 5000, monthly_return: 604, ending_balance: 116492, monthly_return_rate: 0.54, target_rentability: 0.5, created_at: '2024-01-01' },
-  { id: '8', user_id: 'demo-user', record_year: 2024, record_month: 2, starting_balance: 116492, monthly_contribution: 5000, monthly_return: 636, ending_balance: 122128, monthly_return_rate: 0.54, target_rentability: 0.5, created_at: '2024-02-01' },
-  { id: '9', user_id: 'demo-user', record_year: 2024, record_month: 3, starting_balance: 122128, monthly_contribution: 5000, monthly_return: 686, ending_balance: 127814, monthly_return_rate: 0.56, target_rentability: 0.5, created_at: '2024-03-01' },
-  { id: '10', user_id: 'demo-user', record_year: 2024, record_month: 4, starting_balance: 127814, monthly_contribution: 5000, monthly_return: 739, ending_balance: 133553, monthly_return_rate: 0.58, target_rentability: 0.5, created_at: '2024-04-01' },
-  { id: '11', user_id: 'demo-user', record_year: 2024, record_month: 5, starting_balance: 133553, monthly_contribution: 5000, monthly_return: 775, ending_balance: 139328, monthly_return_rate: 0.58, target_rentability: 0.5, created_at: '2024-05-01' },
-  { id: '12', user_id: 'demo-user', record_year: 2024, record_month: 6, starting_balance: 139328, monthly_contribution: 5000, monthly_return: 804, ending_balance: 145132, monthly_return_rate: 0.58, target_rentability: 0.5, created_at: '2024-06-01' },
-  { id: '13', user_id: 'demo-user', record_year: 2024, record_month: 7, starting_balance: 145132, monthly_contribution: 5000, monthly_return: 841, ending_balance: 150973, monthly_return_rate: 0.58, target_rentability: 0.5, created_at: '2024-07-01' },
-  { id: '14', user_id: 'demo-user', record_year: 2024, record_month: 8, starting_balance: 150973, monthly_contribution: 5000, monthly_return: 876, ending_balance: 156849, monthly_return_rate: 0.58, target_rentability: 0.5, created_at: '2024-08-01' },
-  { id: '15', user_id: 'demo-user', record_year: 2024, record_month: 9, starting_balance: 156849, monthly_contribution: 5000, monthly_return: 910, ending_balance: 162759, monthly_return_rate: 0.58, target_rentability: 0.5, created_at: '2024-09-01' },
-  { id: '16', user_id: 'demo-user', record_year: 2024, record_month: 10, starting_balance: 162759, monthly_contribution: 5000, monthly_return: 944, ending_balance: 168703, monthly_return_rate: 0.58, target_rentability: 0.5, created_at: '2024-10-01' },
-]
-
-const mockGoals: Goal[] = [
-  {
-    id: 'goal-1',
-    type: 'goal',
-    profile_id: 'demo-user',
-    icon: 'travel',
-    asset_value: 50000,
-    month: 6,
-    year: 2026,
-    payment_mode: 'none',
-    name: 'Viagem Europa',
-    status: 'pending',
-    created_at: '2024-01-01'
-  },
-  {
-    id: 'goal-2',
-    type: 'goal',
-    profile_id: 'demo-user',
-    icon: 'car',
-    asset_value: 150000,
-    month: 3,
-    year: 2033,
-    payment_mode: 'installment',
-    installment_count: 36,
-    installment_interval: 1,
-    name: 'Carro Novo',
-    status: 'pending',
-    created_at: '2024-01-01'
-  },
-  {
-    id: 'goal-3',
-    type: 'goal',
-    profile_id: 'demo-user',
-    icon: 'house',
-    asset_value: 800000,
-    month: 9,
-    year: 2041,
-    payment_mode: 'none',
-    name: 'Casa Própria',
-    status: 'pending',
-    created_at: '2024-01-01'
-  },
-  {
-    id: 'goal-4',
-    type: 'goal',
-    profile_id: 'demo-user',
-    icon: 'education',
-    asset_value: 300000,
-    month: 2,
-    year: 2048,
-    payment_mode: 'installment',
-    installment_count: 48,
-    installment_interval: 1,
-    name: 'Educação dos Filhos',
-    status: 'pending',
-    created_at: '2024-01-01'
-  },
-  {
-    id: 'goal-5',
-    type: 'goal',
-    profile_id: 'demo-user',
-    icon: 'hobby',
-    asset_value: 30000,
-    month: 11,
-    year: 2029,
-    payment_mode: 'none',
-    name: 'Equipamento Hobby',
-    status: 'pending',
-    created_at: '2024-01-01'
-  },
-  {
-    id: 'goal-6',
-    type: 'goal',
-    profile_id: 'demo-user',
-    icon: 'travel',
-    asset_value: 120000,
-    month: 7,
-    year: 2054,
-    payment_mode: 'none',
-    name: 'Aposentadoria no Exterior',
-    status: 'pending',
-    created_at: '2024-01-01'
-  }
-]
-
-const mockEvents: ProjectedEvent[] = [
-  {
-    id: 'event-1',
-    type: 'event',
-    profile_id: 'demo-user',
-    name: 'Bônus Anual',
-    asset_value: 35000,
-    payment_mode: 'repeat',
-    installment_count: 20,
-    installment_interval: 12,
-    icon: 'contribution',
-    status: 'pending',
-    month: 12,
-    year: 2025,
-    created_at: '2024-01-01'
-  },
-  {
-    id: 'event-2',
-    type: 'event',
-    profile_id: 'demo-user',
-    name: 'Reforma Casa',
-    asset_value: -120000,
-    payment_mode: 'installment',
-    installment_count: 12,
-    installment_interval: 1,
-    icon: 'renovation',
-    status: 'pending',
-    month: 6,
-    year: 2031,
-    created_at: '2024-01-01'
-  },
-  {
-    id: 'event-3',
-    type: 'event',
-    profile_id: 'demo-user',
-    name: 'Herança',
-    asset_value: 500000,
-    payment_mode: 'none',
-    icon: 'other',
-    status: 'pending',
-    month: 4,
-    year: 2038,
-    created_at: '2024-01-01'
-  },
-  {
-    id: 'event-4',
-    type: 'event',
-    profile_id: 'demo-user',
-    name: 'Troca de Carro',
-    asset_value: -90000,
-    payment_mode: 'none',
-    icon: 'car',
-    status: 'pending',
-    month: 8,
-    year: 2044,
-    created_at: '2024-01-01'
-  },
-  {
-    id: 'event-5',
-    type: 'event',
-    profile_id: 'demo-user',
-    name: 'Venda de Imóvel',
-    asset_value: 600000,
-    payment_mode: 'none',
-    icon: 'other',
-    status: 'pending',
-    month: 3,
-    year: 2051,
-    created_at: '2024-01-01'
-  }
-]
-
-const allocationData = [
-  { name: 'Renda Fixa', value: 45, color: '#3b82f6' },
-  { name: 'Multimercado', value: 20, color: '#8b5cf6' },
-  { name: 'Ações', value: 25, color: '#06b6d4' },
-  { name: 'Exterior', value: 10, color: '#10b981' },
-]
-
-// Moved inside component to use currency state
-
-
-
 interface MetricCardProps {
   label: string
   value: string
@@ -324,6 +93,233 @@ export default function LandingPage() {
   
   // Detecta a moeda automaticamente baseada no locale do navegador
   const currency = useMemo(() => detectCurrency(), [])
+
+  // Mock data usando i18n
+  const mockProfile: Profile = useMemo(() => ({
+    id: 'demo-user',
+    user_id: 'demo-user',
+    name: t('landingPage.mocks.profile.name'),
+    birth_date: '1988-07-15',
+    email: 'demo@foundation.com',
+    is_broker: false,
+    created_at: '2023-07-01',
+  }), [t])
+
+  const mockInvestmentPlan: InvestmentPlan = useMemo(() => ({
+    id: 'demo-plan',
+    user_id: 'demo-user',
+    plan_initial_date: '2023-07-01',
+    plan_end_accumulation_date: '2053-07-01',
+    initial_amount: 80000,
+    final_age: 65,
+    plan_type: '1',
+    currency: currency,
+    adjust_contribution_for_inflation: true,
+    adjust_income_for_inflation: true,
+    old_portfolio_profitability: 3,
+    legacy_amount: 0,
+    limit_age: 90,
+    status: 'active' as const,
+    created_at: '2023-07-01',
+    updated_at: '2024-10-01',
+    micro_investment_plans: [
+      {
+        id: 'demo-micro-plan',
+        life_investment_plan_id: 'demo-plan',
+        effective_date: '2023-07-01',
+        monthly_deposit: 5000,
+        desired_income: 15000,
+        expected_return: 6.0,
+        adjust_contribution_for_accumulated_inflation: false,
+        adjust_income_for_accumulated_inflation: false,
+        inflation: 4.5,
+        created_at: '2023-07-01',
+      }
+    ],
+  }), [])
+
+  const mockFinancialRecords: FinancialRecord[] = useMemo(() => [
+    { id: '1', user_id: 'demo-user', record_year: 2023, record_month: 7, starting_balance: 80000, monthly_contribution: 4500, monthly_return: 400, ending_balance: 84900, monthly_return_rate: 0.5, target_rentability: 0.5, created_at: '2023-07-01' },
+    { id: '2', user_id: 'demo-user', record_year: 2023, record_month: 8, starting_balance: 84900, monthly_contribution: 4500, monthly_return: 446, ending_balance: 89846, monthly_return_rate: 0.52, target_rentability: 0.5, created_at: '2023-08-01' },
+    { id: '3', user_id: 'demo-user', record_year: 2023, record_month: 9, starting_balance: 89846, monthly_contribution: 4500, monthly_return: 471, ending_balance: 94817, monthly_return_rate: 0.52, target_rentability: 0.5, created_at: '2023-09-01' },
+    { id: '4', user_id: 'demo-user', record_year: 2023, record_month: 10, starting_balance: 94817, monthly_contribution: 4500, monthly_return: 496, ending_balance: 99813, monthly_return_rate: 0.52, target_rentability: 0.5, created_at: '2023-10-01' },
+    { id: '5', user_id: 'demo-user', record_year: 2023, record_month: 11, starting_balance: 99813, monthly_contribution: 5000, monthly_return: 524, ending_balance: 105337, monthly_return_rate: 0.52, target_rentability: 0.5, created_at: '2023-11-01' },
+    { id: '6', user_id: 'demo-user', record_year: 2023, record_month: 12, starting_balance: 105337, monthly_contribution: 5000, monthly_return: 551, ending_balance: 110888, monthly_return_rate: 0.52, target_rentability: 0.5, created_at: '2023-12-01' },
+    { id: '7', user_id: 'demo-user', record_year: 2024, record_month: 1, starting_balance: 110888, monthly_contribution: 5000, monthly_return: 604, ending_balance: 116492, monthly_return_rate: 0.54, target_rentability: 0.5, created_at: '2024-01-01' },
+    { id: '8', user_id: 'demo-user', record_year: 2024, record_month: 2, starting_balance: 116492, monthly_contribution: 5000, monthly_return: 636, ending_balance: 122128, monthly_return_rate: 0.54, target_rentability: 0.5, created_at: '2024-02-01' },
+    { id: '9', user_id: 'demo-user', record_year: 2024, record_month: 3, starting_balance: 122128, monthly_contribution: 5000, monthly_return: 686, ending_balance: 127814, monthly_return_rate: 0.56, target_rentability: 0.5, created_at: '2024-03-01' },
+    { id: '10', user_id: 'demo-user', record_year: 2024, record_month: 4, starting_balance: 127814, monthly_contribution: 5000, monthly_return: 739, ending_balance: 133553, monthly_return_rate: 0.58, target_rentability: 0.5, created_at: '2024-04-01' },
+    { id: '11', user_id: 'demo-user', record_year: 2024, record_month: 5, starting_balance: 133553, monthly_contribution: 5000, monthly_return: 775, ending_balance: 139328, monthly_return_rate: 0.58, target_rentability: 0.5, created_at: '2024-05-01' },
+    { id: '12', user_id: 'demo-user', record_year: 2024, record_month: 6, starting_balance: 139328, monthly_contribution: 5000, monthly_return: 804, ending_balance: 145132, monthly_return_rate: 0.58, target_rentability: 0.5, created_at: '2024-06-01' },
+    { id: '13', user_id: 'demo-user', record_year: 2024, record_month: 7, starting_balance: 145132, monthly_contribution: 5000, monthly_return: 841, ending_balance: 150973, monthly_return_rate: 0.58, target_rentability: 0.5, created_at: '2024-07-01' },
+    { id: '14', user_id: 'demo-user', record_year: 2024, record_month: 8, starting_balance: 150973, monthly_contribution: 5000, monthly_return: 876, ending_balance: 156849, monthly_return_rate: 0.58, target_rentability: 0.5, created_at: '2024-08-01' },
+    { id: '15', user_id: 'demo-user', record_year: 2024, record_month: 9, starting_balance: 156849, monthly_contribution: 5000, monthly_return: 910, ending_balance: 162759, monthly_return_rate: 0.58, target_rentability: 0.5, created_at: '2024-09-01' },
+    { id: '16', user_id: 'demo-user', record_year: 2024, record_month: 10, starting_balance: 162759, monthly_contribution: 5000, monthly_return: 944, ending_balance: 168703, monthly_return_rate: 0.58, target_rentability: 0.5, created_at: '2024-10-01' },
+  ], [])
+
+  const mockGoals: Goal[] = useMemo(() => [
+    {
+      id: 'goal-1',
+      type: 'goal',
+      profile_id: 'demo-user',
+      icon: 'travel',
+      asset_value: 50000,
+      month: 6,
+      year: 2026,
+      payment_mode: 'none',
+      name: t('landingPage.mocks.goals.europeTrip'),
+      status: 'pending',
+      created_at: '2024-01-01'
+    },
+    {
+      id: 'goal-2',
+      type: 'goal',
+      profile_id: 'demo-user',
+      icon: 'car',
+      asset_value: 150000,
+      month: 3,
+      year: 2033,
+      payment_mode: 'installment',
+      installment_count: 36,
+      installment_interval: 1,
+      name: t('landingPage.mocks.goals.newCar'),
+      status: 'pending',
+      created_at: '2024-01-01'
+    },
+    {
+      id: 'goal-3',
+      type: 'goal',
+      profile_id: 'demo-user',
+      icon: 'house',
+      asset_value: 800000,
+      month: 9,
+      year: 2041,
+      payment_mode: 'none',
+      name: t('landingPage.mocks.goals.ownHome'),
+      status: 'pending',
+      created_at: '2024-01-01'
+    },
+    {
+      id: 'goal-4',
+      type: 'goal',
+      profile_id: 'demo-user',
+      icon: 'education',
+      asset_value: 300000,
+      month: 2,
+      year: 2048,
+      payment_mode: 'installment',
+      installment_count: 48,
+      installment_interval: 1,
+      name: t('landingPage.mocks.goals.childrenEducation'),
+      status: 'pending',
+      created_at: '2024-01-01'
+    },
+    {
+      id: 'goal-5',
+      type: 'goal',
+      profile_id: 'demo-user',
+      icon: 'hobby',
+      asset_value: 30000,
+      month: 11,
+      year: 2029,
+      payment_mode: 'none',
+      name: t('landingPage.mocks.goals.hobbyEquipment'),
+      status: 'pending',
+      created_at: '2024-01-01'
+    },
+    {
+      id: 'goal-6',
+      type: 'goal',
+      profile_id: 'demo-user',
+      icon: 'travel',
+      asset_value: 120000,
+      month: 7,
+      year: 2054,
+      payment_mode: 'none',
+      name: t('landingPage.mocks.goals.retirementAbroad'),
+      status: 'pending',
+      created_at: '2024-01-01'
+    }
+  ], [t])
+
+  const mockEvents: ProjectedEvent[] = useMemo(() => [
+    {
+      id: 'event-1',
+      type: 'event',
+      profile_id: 'demo-user',
+      name: t('landingPage.mocks.events.annualBonus'),
+      asset_value: 35000,
+      payment_mode: 'repeat',
+      installment_count: 20,
+      installment_interval: 12,
+      icon: 'contribution',
+      status: 'pending',
+      month: 12,
+      year: 2025,
+      created_at: '2024-01-01'
+    },
+    {
+      id: 'event-2',
+      type: 'event',
+      profile_id: 'demo-user',
+      name: t('landingPage.mocks.events.homeRenovation'),
+      asset_value: -120000,
+      payment_mode: 'installment',
+      installment_count: 12,
+      installment_interval: 1,
+      icon: 'renovation',
+      status: 'pending',
+      month: 6,
+      year: 2031,
+      created_at: '2024-01-01'
+    },
+    {
+      id: 'event-3',
+      type: 'event',
+      profile_id: 'demo-user',
+      name: t('landingPage.mocks.events.inheritance'),
+      asset_value: 500000,
+      payment_mode: 'none',
+      icon: 'other',
+      status: 'pending',
+      month: 4,
+      year: 2038,
+      created_at: '2024-01-01'
+    },
+    {
+      id: 'event-4',
+      type: 'event',
+      profile_id: 'demo-user',
+      name: t('landingPage.mocks.events.carChange'),
+      asset_value: -90000,
+      payment_mode: 'none',
+      icon: 'car',
+      status: 'pending',
+      month: 8,
+      year: 2044,
+      created_at: '2024-01-01'
+    },
+    {
+      id: 'event-5',
+      type: 'event',
+      profile_id: 'demo-user',
+      name: t('landingPage.mocks.events.propertySale'),
+      asset_value: 600000,
+      payment_mode: 'none',
+      icon: 'other',
+      status: 'pending',
+      month: 3,
+      year: 2051,
+      created_at: '2024-01-01'
+    }
+  ], [t])
+
+  const allocationData = useMemo(() => [
+    { name: t('landingPage.mocks.allocation.fixedIncome'), value: 45, color: '#3b82f6' },
+    { name: t('landingPage.mocks.allocation.multimarket'), value: 20, color: '#8b5cf6' },
+    { name: t('landingPage.mocks.allocation.stocks'), value: 25, color: '#06b6d4' },
+    { name: t('landingPage.mocks.allocation.foreign'), value: 10, color: '#10b981' },
+  ], [t])
 
   const metrics = [
     { label: t('landingPage.metrics.clients'), value: "47", change: `+12% ${t('landingPage.stats.vsPreviousMonth')}`, icon: Users },
@@ -388,7 +384,7 @@ export default function LandingPage() {
       },
       mockInvestmentPlan.micro_investment_plans || [] // microPlans
     )
-  }, [])
+  }, [mockProfile, mockInvestmentPlan, mockFinancialRecords, mockGoals, mockEvents])
 
   const handleContactSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
