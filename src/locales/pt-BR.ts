@@ -242,7 +242,7 @@ export const ptBR = {
       },
       totalReturns: {
         title: "Rendimento",
-        subtitle: "",
+        subtitle: "Ganhos totais",
         amount: "R$ {{value}}",
         percentage: "+{{value}}%",
         tooltip: "Rendimentos do portfólio."
@@ -1951,5 +1951,192 @@ export const ptBR = {
     state: 'Estado',
     cep_not_found: 'CEP não encontrado',
     cep_error: 'Erro ao buscar CEP',
+  },
+  landingPage: {
+    header: {
+      login: 'Login',
+      requestDemo: 'Contato Rápido'
+    },
+    hero: {
+      badge: 'Tecnologia de Ponta para Consultores Financeiros',
+      title: 'Gerencie seus clientes com',
+      titleHighlight: 'Inteligência Artificial',
+      description: 'A plataforma completa de planejamento financeiro que transforma a forma como você atende seus clientes. Projeções precisas, insights automáticos e gestão profissional em um só lugar.',
+      requestDemo: 'Solicitar Demonstração',
+      viewDemo: 'Ver Demo'
+    },
+    metrics: {
+      clients: 'Clientes Ativos',
+      patrimony: 'Patrimônio Gerenciado',
+      growth: 'Crescimento Médio',
+      satisfaction: 'Satisfação'
+    },
+    chart: {
+      title: 'Projeção Patrimonial em Tempo Real',
+      description: 'Acompanhe a evolução do patrimônio dos seus clientes com precisão matemática',
+      growth: '+33.5% no período'
+    },
+    interface: {
+      badge: 'Tecnologia de Ponta',
+      title: 'Interface Profissional e Intuitiva',
+      description: 'Dashboards poderosos que facilitam o acompanhamento e a tomada de decisão',
+      dashboard: {
+        title: 'Dashboard Completo',
+        description: 'Visualização em tempo real de todos os clientes',
+        patrimony: 'Patrimônio Total',
+        avgReturn: 'Retorno Médio',
+        activeClients: 'Clientes Ativos'
+      },
+      alerts: {
+        title: 'Alertas Inteligentes',
+        description: 'Notificações automáticas sobre eventos importantes',
+        alert1: {
+          title: 'Revisão Necessária',
+          description: 'Cliente atingiu meta de patrimônio'
+        },
+        alert2: {
+          title: 'Baixo Engajamento',
+          description: 'Cliente sem acesso há 30 dias'
+        },
+        alert3: {
+          title: 'Meta Próxima',
+          description: 'Cliente a 6 meses da aposentadoria'
+        }
+      }
+    },
+    features: {
+      title: 'Recursos que Transformam sua Gestão',
+      feature1: {
+        title: 'Projeções Financeiras Avançadas',
+        description: 'Algoritmos proprietários que calculam cenários de aposentadoria, metas e patrimônio com precisão matemática'
+      },
+      feature2: {
+        title: 'Dashboard Inteligente',
+        description: 'Visualize todos os seus clientes, métricas de performance e alertas importantes em uma única tela'
+      },
+      feature3: {
+        title: 'Gestão de Objetivos',
+        description: 'Acompanhe metas financeiras, eventos e marcos importantes de cada cliente automaticamente'
+      },
+      feature4: {
+        title: 'Relatórios Profissionais',
+        description: 'Gere relatórios detalhados e apresentações para seus clientes com poucos cliques'
+      },
+      feature5: {
+        title: 'Multi-Moeda',
+        description: 'Suporte completo para Real, Dólar e Euro com taxas de câmbio atualizadas'
+      },
+      feature6: {
+        title: 'Segurança Bancária',
+        description: 'Seus dados e dos seus clientes protegidos com criptografia de nível bancário'
+      }
+    },
+    comparison: {
+      title: 'Resultados Comprovados',
+      description: 'Veja como a Foundation transforma a gestão de carteiras',
+      metric1: {
+        value: '94%',
+        description: 'dos clientes atingem suas metas'
+      },
+      metric2: {
+        value: '3.2x',
+        description: 'mais eficiência na gestão'
+      },
+      metric3: {
+        value: '87%',
+        description: 'acessam mensalmente a plataforma'
+      }
+    },
+    contact: {
+      badge: 'Entre em Contato',
+      title: 'Pronto para Transformar sua Gestão?',
+      description: 'Preencha o formulário abaixo e nossa equipe entrará em contato para uma demonstração personalizada.',
+      form: {
+        name: 'Nome',
+        namePlaceholder: 'Seu nome completo',
+        email: 'Email',
+        emailPlaceholder: 'seu@email.com',
+        company: 'Empresa',
+        companyPlaceholder: 'Nome da sua empresa',
+        message: 'Mensagem',
+        messagePlaceholder: 'Conte-nos sobre suas necessidades...',
+        submit: 'Enviar Mensagem',
+        sending: 'Enviando...'
+      },
+      success: {
+        title: 'Mensagem Enviada!',
+        description: 'Obrigado pelo interesse. Entraremos em contato em breve.'
+      }
+    },
+    footer: {
+      description: 'A plataforma completa de planejamento financeiro para consultores profissionais.',
+      product: 'Produto',
+      features: 'Recursos',
+      pricing: 'Preços',
+      docs: 'Documentação',
+      company: 'Empresa',
+      about: 'Sobre',
+      blog: 'Blog',
+      contact: 'Contato',
+      rights: 'Todos os direitos reservados.',
+      copyright: '© 2025 Foundation. Plataforma profissional de planejamento financeiro.'
+    },
+    stats: {
+      vsPreviousMonth: 'vs mês anterior'
+    },
+    demo: {
+      clientDashboard: {
+        title: 'Dashboard de Clientes',
+        client1: 'João da Silva',
+        client1Patrimony: '{{value}} patrimônio',
+        client2: 'Maria Santos',
+        client2Patrimony: '{{value}} patrimônio',
+        client3: 'Pedro Costa',
+        client3Patrimony: '{{value}} patrimônio',
+        onTrack: 'No prazo',
+        attention: 'Atenção',
+        excellent: 'Excelente'
+      },
+      alerts: {
+        title: 'Alertas Inteligentes',
+        lateContribution: 'Contribuição Atrasada',
+        lateContributionDesc: 'João Silva não fez aporte há 2 meses',
+        goalAchieved: 'Meta Alcançada',
+        goalAchievedDesc: 'Maria Santos atingiu 100% do objetivo',
+        abovePerformance: 'Performance Acima',
+        abovePerformanceDesc: 'Pedro Costa: +15% vs meta'
+      }
+    },
+    optimization: {
+      title: 'Otimização Automática de Planos',
+      description: 'A IA analisa continuamente o progresso e sugere ajustes para manter seus clientes no caminho certo',
+      planned: 'Planejado',
+      projected: 'Projetado',
+      allocation: {
+        title: 'Alocação de Ativos Sugerida',
+        description: 'Distribuição otimizada baseada no perfil de risco'
+      }
+    },
+    metricsSection: {
+      title: 'Métricas que Importam',
+      description: 'Acompanhe KPIs essenciais para o sucesso dos seus clientes',
+      successRate: 'Taxa de Sucesso',
+      successRateDesc: 'dos clientes atingem suas metas',
+      engagement: 'Engajamento',
+      engagementDesc: 'acessam mensalmente a plataforma',
+      avgReturn: 'Retorno Médio',
+      avgReturnDesc: 'performance acima da meta',
+      vsPreviousYear: 'vs ano anterior'
+    },
+    resources: {
+      title: 'Recursos que Transformam Sua Consultoria',
+      description: 'Tudo que você precisa para oferecer um serviço de excelência aos seus clientes'
+    },
+    contactDirect: 'Ou entre em contato diretamente:',
+    guarantees: {
+      secure: '100% Seguro',
+      fastResponse: 'Resposta em 24h',
+      noCommitment: 'Sem Compromisso'
+    }
   },
 };

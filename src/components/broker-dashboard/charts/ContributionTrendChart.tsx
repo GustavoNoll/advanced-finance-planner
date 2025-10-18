@@ -30,7 +30,7 @@ export const ContributionTrendChart = ({ data }: ContributionTrendChartProps) =>
       maximumFractionDigits: 1
     }).format(value);
 
-  const CustomTooltip = ({ active, payload, label }: any) => {
+  const CustomTooltip = ({ active, payload, label }: { active?: boolean; payload?: Array<{ payload: Record<string, number | string> }>; label?: string }) => {
     if (active && payload && payload.length) {
       const data = payload[0].payload;
       return (
@@ -46,7 +46,7 @@ export const ContributionTrendChart = ({ data }: ContributionTrendChartProps) =>
             <div className="flex items-center gap-2">
               <div className="h-3 w-3 rounded-full bg-blue-500" />
               <span className="text-sm text-gray-600 dark:text-gray-400">
-                {t('brokerDashboard.charts.adequacyRate')}: {formatPercentage(data.percentage)}
+                {t('brokerDashboard.charts.adequacyRate')}: {formatPercentage(Number(data.percentage))}
               </span>
             </div>
           </div>

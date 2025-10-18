@@ -36,7 +36,7 @@ export function ActionButtons({
       skipEmptyLines: true,
       complete: async (results) => {
         const records = results.data
-          .map((row: any) => {
+          .map((row: Record<string, string>) => {
             if (Object.keys(row).length >= 6) {
               const record: CSVRecord = {
                 Data: row.Data,

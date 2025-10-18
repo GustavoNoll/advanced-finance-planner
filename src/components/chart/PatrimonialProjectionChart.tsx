@@ -673,6 +673,8 @@ export default function PatrimonialProjectionChart({
             pointerEvents: 'none',
             zIndex: 20,
             position: 'absolute',
+            maxWidth: '320px',
+            transform: tooltipLeft && tooltipLeft > chartTotalWidth / 2 ? 'translateX(-100%)' : 'translateX(0)',
           }}
         >
           <div className="mb-2">

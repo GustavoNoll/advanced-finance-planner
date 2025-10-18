@@ -1,5 +1,7 @@
 # Foundation
 
+![Tests](https://github.com/YOUR_USERNAME/YOUR_REPO/actions/workflows/test.yml/badge.svg)
+
 A modern financial planning application built with React, TypeScript, and Vite.
 
 ## Technologies Used
@@ -62,6 +64,9 @@ npm run server
 - `npm run preview` - Preview the production build
 - `npm run server` - Start the backend server
 - `npm run vercel-build` - Build for Vercel deployment
+- `npm test` - Run tests
+- `npm run test:watch` - Run tests in watch mode
+- `npm run test:ui` - Run tests with UI
 
 ## Project Structure
 
@@ -79,6 +84,36 @@ The project uses:
 - shadcn/ui for UI components
 - React Query for server state management
 - React Router for navigation
+
+## Testing
+
+The project uses Vitest for testing. Tests are located in the `/tests` directory.
+
+### Running Tests
+
+```sh
+# Run all tests
+npm test
+
+# Run tests in watch mode
+npm run test:watch
+
+# Run tests with UI
+npm run test:ui
+```
+
+### i18n Translation Validation
+
+The project includes automated tests to ensure translation consistency between languages:
+
+- Validates that all keys in `pt-BR` exist in `en-US`
+- Validates that all keys in `en-US` exist in `pt-BR`
+- Ensures no empty translation values
+- Checks for the same number of keys across languages
+
+These tests run automatically on every push and pull request via GitHub Actions.
+
+For more details, see [`tests/README.md`](tests/README.md).
 
 ## Deployment
 

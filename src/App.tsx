@@ -28,6 +28,7 @@ import { Suspense, lazy } from 'react'
 import { ThemeToggle } from '@/components/ui/theme-toggle'
 const AdminDashboard = lazy(() => import('./pages/AdminDashboard').then(m => ({ default: m.AdminDashboard })))
 const BrokerDashboard = lazy(() => import('./pages/BrokerDashboard').then(m => ({ default: m.BrokerDashboard })))
+const LandingPage = lazy(() => import('./pages/LandingPage'))
 const queryClient = new QueryClient();
 
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
@@ -50,6 +51,16 @@ function AppRoutes() {
   return (
     <AnimatePresence mode="wait" initial={false}>
       <Routes location={location} key={location.pathname}>
+        <Route 
+          path="/" 
+          element={
+            <PageTransition>
+              <Suspense fallback={<LoadingScreen />}>
+                <LandingPage />
+              </Suspense>
+            </PageTransition>
+          } 
+        />
         <Route path="/login" element={<PageTransition><LoginForm /></PageTransition>} />
         <Route path="/client-login/:clientId" element={<PageTransition><ClientLoginForm /></PageTransition>} />
         <Route
@@ -65,7 +76,7 @@ function AppRoutes() {
           }
         />
         <Route
-          path="/"
+          path="/dashboard"
           element={
             <ProtectedRoute>
               <PageTransition>
@@ -108,6 +119,16 @@ function AppRoutes() {
         />
         <Route
           path="/client/:id"
+          element={
+            <ProtectedRoute>
+              <PageTransition>
+                <Index />
+              </PageTransition>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/dashboard/:id"
           element={
             <ProtectedRoute>
               <PageTransition>
