@@ -1,5 +1,5 @@
 import { useTranslation } from "react-i18next";
-import { ChartDataPoint, FinancialRecord, InvestmentPlan, Profile } from '@/types/financial';
+import { ChartDataPoint, FinancialRecord, Goal, InvestmentPlan, Profile, ProjectedEvent } from '@/types/financial';
 import { ChartOptions, generateChartProjections } from '@/lib/chart-projections';
 import { useState, useEffect } from "react";
 import PatrimonialProjectionChart from "@/components/chart/PatrimonialProjectionChart";
@@ -31,6 +31,8 @@ interface SimulationChartProps {
   onFormDataChange: (field: keyof SimulationFormData, value: string | boolean) => void;
   rawChartData: ChartDataPoint[];
   chartOptions: ChartOptions;
+  goals?: Goal[];
+  events?: ProjectedEvent[];
 }
 
 // Update the zoom level type to include custom
@@ -217,7 +219,9 @@ export const SimulationChart = ({
   formData,
   onFormDataChange,
   rawChartData,
-  chartOptions: externalChartOptions
+  chartOptions: externalChartOptions,
+  goals = [],
+  events = []
 }: SimulationChartProps) => {
   const { t } = useTranslation();
   const [zoomLevel, setZoomLevel] = useState<ZoomLevel>('all');
@@ -391,7 +395,10 @@ export const SimulationChart = ({
             oldPortfolioValue: d.oldPortfolioValue,
             realDataPoint: false, // No real data points in simulation
           }))}
-          objectives={[]} // No objectives for simulation
+          objectives={[
+            ...goals.map(g => ({ ...g, created_at: createDateFromYearMonth(g.year, g.month).toISOString(), type: 'goal' as const, installment_count: g.installment_count || 0, installment_interval: g.installment_interval || 0 })),
+            ...events.map(e => ({ ...e, created_at: createDateFromYearMonth(e.year, e.month).toISOString(), type: 'event' as const, installment_count: e.installment_count || 0, installment_interval: e.installment_interval || 0 }))
+          ]}
           selectedYears={Array.from(new Set(chartData.map(d => d.year)))}
           showNominalValues={!showRealValues}
           hideNegativeValues={!showNegativeValues}
