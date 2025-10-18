@@ -321,12 +321,14 @@ export default function LandingPage() {
     { name: t('landingPage.mocks.allocation.foreign'), value: 10, color: '#10b981' },
   ], [t])
 
-  const metrics = [
+  const inflationIndex = useMemo(() => currency === 'BRL' ? 'IPCA' : 'CPI', [currency]);
+  
+  const metrics = useMemo(() => [
     { label: t('landingPage.metrics.clients'), value: "47", change: `+12% ${t('landingPage.stats.vsPreviousMonth')}`, icon: Users },
     { label: t('landingPage.metrics.patrimony'), value: formatCurrency(8700000, currency), change: `+23% ${t('landingPage.stats.vsPreviousMonth')}`, icon: TrendingUp },
-    { label: t('landingPage.metrics.growth'), value: "IPCA+6.8%", change: `+1.2% ${t('landingPage.stats.vsPreviousMonth')}`, icon: Target },
+    { label: t('landingPage.metrics.growth'), value: `${inflationIndex}+6.8%`, change: `+1.2% ${t('landingPage.stats.vsPreviousMonth')}`, icon: Target },
     { label: t('landingPage.metrics.satisfaction'), value: "94%", change: `+5% ${t('landingPage.stats.vsPreviousMonth')}`, icon: Shield },
-  ]
+  ], [t, currency, inflationIndex])
 
   const comparisonData = [
     { metric: 'Tempo até Aposentadoria', planned: 240, projected: 228, unit: 'meses', isCurrency: false },
@@ -838,7 +840,7 @@ export default function LandingPage() {
                 </div>
               </CardHeader>
               <CardContent>
-                <div className="text-5xl font-bold text-purple-600 mb-2">IPCA+6.8%</div>
+                <div className="text-5xl font-bold text-purple-600 mb-2">{inflationIndex}+6.8%</div>
                 <p className="text-gray-600 dark:text-gray-400">{t('landingPage.metricsSection.avgReturnDesc')}</p>
                 <div className="mt-4 flex items-center gap-2 text-sm text-green-600">
                   <TrendingUp className="h-4 w-4" />
