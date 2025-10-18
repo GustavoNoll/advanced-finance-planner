@@ -31,7 +31,7 @@ export const AdvancedWealthChart = ({ data }: AdvancedWealthChartProps) => {
       maximumFractionDigits: 1
     }).format(value);
 
-  const CustomTooltip = ({ active, payload, label }: { active?: boolean; payload?: Array<{ payload: Record<string, number | string> }>; label?: string }) => {
+  const CustomTooltip = ({ active, payload, label }: { active?: boolean; payload?: Array<{ payload: Record<string, number | string>; fill?: string }>; label?: string }) => {
     if (active && payload && payload.length) {
       const data = payload[0].payload;
       return (
@@ -39,7 +39,7 @@ export const AdvancedWealthChart = ({ data }: AdvancedWealthChartProps) => {
           <p className="font-semibold text-gray-900 dark:text-gray-100 mb-2">{label}</p>
           <div className="space-y-1">
             <div className="flex items-center gap-2">
-              <div className="h-3 w-3 rounded-full" style={{ backgroundColor: payload[0].color }} />
+              <div className="h-3 w-3 rounded-full" style={{ backgroundColor: payload[0].fill }} />
               <span className="text-sm text-gray-600 dark:text-gray-400">
                 {t('brokerDashboard.charts.clients')}: {data.count}
               </span>
