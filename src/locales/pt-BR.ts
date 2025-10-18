@@ -242,7 +242,7 @@ export const ptBR = {
       },
       totalReturns: {
         title: "Rendimento",
-        subtitle: "",
+        subtitle: "Ganhos totais",
         amount: "R$ {{value}}",
         percentage: "+{{value}}%",
         tooltip: "Rendimentos do portfólio."

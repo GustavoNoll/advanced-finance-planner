@@ -242,7 +242,7 @@ export const enUS = {
       },
       totalReturns: {
         title: "Returns",
-        subtitle: "",
+        subtitle: "Total gains",
         amount: "$ {{value}}",
         percentage: "+{{value}}%",
         tooltip: "Portfolio returns."
