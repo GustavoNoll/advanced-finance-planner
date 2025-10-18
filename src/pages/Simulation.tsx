@@ -40,19 +40,6 @@ interface SimulationFormData {
   oldPortfolioProfitability: string;
 }
 
-// Mock profile for simulation
-const mockProfile = {
-  id: 'simulation-profile',
-  user_id: 'simulation-user',
-  name: 'Cliente Simulação',
-  email: 'simulacao@example.com',
-  birth_date: new Date(new Date().getFullYear() - 35, 0, 1).toISOString().split('T')[0], // 35 anos atrás sempre
-  created_at: new Date().toISOString(),
-  updated_at: new Date().toISOString(),
-  broker_id: null,
-  is_active: true
-};
-
 export const Simulation = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
@@ -61,6 +48,19 @@ export const Simulation = () => {
   
   // Get client ID from URL params
   const clientId = searchParams.get('client_id');
+
+  // Mock profile for simulation using i18n
+  const mockProfile = useMemo(() => ({
+    id: 'simulation-profile',
+    user_id: 'simulation-user',
+    name: t('landingPage.mocks.profile.simulationName'),
+    email: 'simulacao@example.com',
+    birth_date: new Date(new Date().getFullYear() - 35, 0, 1).toISOString().split('T')[0], // 35 anos atrás sempre
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
+    broker_id: null,
+    is_active: true
+  }), [t]);
 
   const [formData, setFormData] = useState<SimulationFormData>({
     initialAmount: "100000",
@@ -292,6 +292,8 @@ export const Simulation = () => {
           desired_income: parseFloat(formData.desiredIncome.replace(/[^\d.,]/g, '').replace(',', '.') || '0'),
           expected_return: parseFloat(formData.expectedReturn),
           inflation: parseFloat(formData.inflation),
+          adjust_contribution_for_accumulated_inflation: formData.adjustContributionForInflation,
+          adjust_income_for_accumulated_inflation: formData.adjustIncomeForInflation,
         };
         
         // Importar o serviço de micro planos

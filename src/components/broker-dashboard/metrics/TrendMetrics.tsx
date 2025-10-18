@@ -17,17 +17,22 @@ export const TrendMetrics = ({ metrics }: TrendMetricsProps) => {
   const { t } = useTranslation();
 
   // Mock data for the area chart - in a real app, this would come from your API
+  const newClientsLabel = t('brokerDashboard.metrics.trends.chartLabels.newClients');
+  const totalGrowthLabel = t('brokerDashboard.metrics.trends.chartLabels.totalGrowth');
+  const averageGrowthLabel = t('brokerDashboard.metrics.trends.chartLabels.averageGrowth');
+  const inactiveClientsLabel = t('brokerDashboard.metrics.trends.chartLabels.inactiveClients');
+
   const trendData = [
     {
       date: 'Jan',
-      'Novos Clientes': metrics.trends.newClientsThisMonth,
-      'Crescimento Total': metrics.trends.totalGrowthThisMonth,
-      'Crescimento Médio': metrics.trends.averageMonthlyGrowth,
-      'Clientes Inativos': metrics.trends.inactiveClients
+      [newClientsLabel]: metrics.trends.newClientsThisMonth,
+      [totalGrowthLabel]: metrics.trends.totalGrowthThisMonth,
+      [averageGrowthLabel]: metrics.trends.averageMonthlyGrowth,
+      [inactiveClientsLabel]: metrics.trends.inactiveClients
     }
   ];
 
-  const trendCategories = ['Novos Clientes', 'Crescimento Total', 'Crescimento Médio', 'Clientes Inativos'];
+  const trendCategories = [newClientsLabel, totalGrowthLabel, averageGrowthLabel, inactiveClientsLabel];
   const trendColors: AvailableChartColorsKeys[] = ['emerald', 'blue', 'lime', 'orange'];
 
   return (
