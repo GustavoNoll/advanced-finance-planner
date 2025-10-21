@@ -98,6 +98,7 @@ interface ProjectionContext {
   monthlyOldPortfolioExpectedReturnRate: number;
   ipcaRatesMap: Map<string, number>;
   historicalRecordsMap: Map<string, FinancialRecord>;
+  firstHistoricalRecordDate: Date | null;
   changeDepositDate: Date | null;
   changeWithdrawDate: Date | null;
   limitAgeDate: Date | null;
@@ -245,6 +246,7 @@ function createProjectionContext(
     ? createDateWithoutTimezone(chartOptions.changeMonthlyWithdraw.date) 
     : null;
 
+  const firstHistoricalRecordDate = initialRecords.sort((a, b) => a.record_year - b.record_year || a.record_month - b.record_month)[0] ? createDateFromYearMonth(initialRecords.sort((a, b) => a.record_year - b.record_year || a.record_month - b.record_month)[0].record_year, initialRecords.sort((a, b) => a.record_year - b.record_year || a.record_month - b.record_month)[0].record_month) : null;
   return {
     investmentPlan,
     profile,
@@ -268,6 +270,7 @@ function createProjectionContext(
     monthlyOldPortfolioExpectedReturnRate,
     ipcaRatesMap,
     historicalRecordsMap,
+    firstHistoricalRecordDate,
     changeDepositDate,
     changeWithdrawDate,
     limitAgeDate
@@ -617,7 +620,6 @@ export function generateProjectionData(
   let currentNominalMonthlyWithdrawal = initialMicroPlan?.desired_income || 0; // Default 0 se não houver micro plano
   let currentRealMonthlyWithdrawal = initialMicroPlan?.desired_income || 0;
   let accumulatedInflation = 1;
-  let lastHistoricalRecord: Date | null = null;
 
   // Inicializar data atual como a data de início do plano
   const startDate = new Date(context.planStartDate);
@@ -725,7 +727,7 @@ export function generateProjectionData(
     plannedBalance = handleMonthlyGoalsAndEvents(
       plannedBalance,
       year,
-      month - 1,
+      month,
       accumulatedInflation,
       allGoalsForChart,
       allEventsForChart,
@@ -736,7 +738,7 @@ export function generateProjectionData(
       oldPortfolioBalance = handleMonthlyGoalsAndEvents(
         oldPortfolioBalance!,
         year,
-        month - 1,
+        month,
         accumulatedInflation,
         allGoalsForChart,
         allEventsForChart,
@@ -747,14 +749,10 @@ export function generateProjectionData(
     // Check for historical record
     const historicalKey = `${year}-${month}`;
     const historicalRecord = context.historicalRecordsMap.get(historicalKey);
-    const isInPast = lastHistoricalRecord 
-      ? lastHistoricalRecord > createDateFromYearMonth(year, month) 
-      : false;
+    const isInPast = context.firstHistoricalRecordDate ? context.firstHistoricalRecordDate > createDateFromYearMonth(year, month) : false;
     let monthlyData: MonthlyProjectionData;
 
     if (historicalRecord) {
-      lastHistoricalRecord = createDateFromYearMonth(year, month);
-      
       // Apply returns and contribution (if applicable)
       const contribution = chartOptions?.showRealValues ? currentRealMonthlyDeposit : currentNominalMonthlyDeposit;
       
@@ -802,18 +800,6 @@ export function generateProjectionData(
       );
     } else {
       // Future month
-      const previousBalance = projectedBalance;
-      projectedBalance = handleMonthlyGoalsAndEvents(
-        projectedBalance,
-        year,
-        month - 1,
-        accumulatedInflation,
-        pendingGoalsForChart,
-        pendingEventsForChart,
-        chartOptions?.showRealValues || false
-      );
-      const goalsEventsImpact = projectedBalance - previousBalance;
-
       if (isRetirementAge) {
         const withdrawal = chartOptions?.showRealValues ? currentRealMonthlyWithdrawal : currentNominalMonthlyWithdrawal;
         
@@ -822,6 +808,21 @@ export function generateProjectionData(
         if (context.oldPortfolioProfitability) {
           oldPortfolioBalance = (oldPortfolioBalance! * (1 + monthlyOldPortfolioReturnRate)) - withdrawal;
         }
+        
+        // Apply goals/events after returns and withdrawals
+        const balanceBeforeGoalsEvents = projectedBalance;
+        projectedBalance = handleMonthlyGoalsAndEvents(
+          projectedBalance,
+          year,
+          month,
+          accumulatedInflation,
+          pendingGoalsForChart,
+          pendingEventsForChart,
+          chartOptions?.showRealValues || false
+        );
+        
+        const goalsEventsImpact = projectedBalance - balanceBeforeGoalsEvents;
+        
         monthlyData = createRetirementMonthData(
           month,
           year,
@@ -846,10 +847,25 @@ export function generateProjectionData(
         if (context.oldPortfolioProfitability) {
           oldPortfolioBalance = oldPortfolioBalance! * (1 + monthlyOldPortfolioReturnRate) + contribution;
         }
+        
+        // Apply goals/events after returns and contributions
+        const balanceBeforeGoalsEvents = projectedBalance;
+        const projectedBalanceAfterGoalsEvents = handleMonthlyGoalsAndEvents(
+          projectedBalance,
+          year,
+          month,
+          accumulatedInflation,
+          pendingGoalsForChart,
+          pendingEventsForChart,
+          chartOptions?.showRealValues || false
+        );
+        
+        const goalsEventsImpact = projectedBalanceAfterGoalsEvents - balanceBeforeGoalsEvents;
+        projectedBalance = projectedBalanceAfterGoalsEvents;
         monthlyData = createFutureMonthData(
           month,
           year,
-          projectedBalance,
+          projectedBalanceAfterGoalsEvents,
           plannedBalance,
           oldPortfolioBalance,
           monthlyReturnRate,
@@ -1056,9 +1072,8 @@ export function handleMonthlyGoalsAndEvents(
   
   // Handle goals (gastos - reduzem o saldo)
   const currentGoals = goals?.filter(goal => 
-    goal.year === year && goal.month === (month + 1)
+    goal.year === year && goal.month === (month)
   );
-
   if (currentGoals?.length) {
     const totalGoalWithdrawal = currentGoals.reduce((sum, goal) => {
       // Only apply accumulated inflation adjustment when showRealValues is false
@@ -1070,7 +1085,7 @@ export function handleMonthlyGoalsAndEvents(
 
   // Handle events (podem ser receitas ou despesas)
   const currentEvents = events?.filter(event => 
-    event.year === year && event.month === (month + 1)
+    event.year === year && event.month === (month)
   );
 
   if (currentEvents?.length) {
