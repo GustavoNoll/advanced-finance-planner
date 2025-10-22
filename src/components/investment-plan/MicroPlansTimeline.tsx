@@ -38,7 +38,6 @@ export function MicroPlansTimeline({
   const { t } = useTranslation()
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false)
   const [editingMicroPlan, setEditingMicroPlan] = useState<MicroInvestmentPlan | null>(null)
-
   const handleCreateMicroPlan = async (data: CreateMicroInvestmentPlan) => {
     const result = await onCreateMicroPlan(data)
     if (result) {
@@ -261,6 +260,12 @@ export function MicroPlansTimeline({
                 previousMicroPlan?.inflation || null
               )
               
+              // Verificar mudanças nos campos de ajuste de inflação
+              const contributionAdjustmentChanged = previousMicroPlan && 
+                microPlan.adjust_contribution_for_accumulated_inflation !== previousMicroPlan.adjust_contribution_for_accumulated_inflation
+              const incomeAdjustmentChanged = previousMicroPlan && 
+                microPlan.adjust_income_for_accumulated_inflation !== previousMicroPlan.adjust_income_for_accumulated_inflation
+              
               return (
                 <div key={microPlan.id} className="relative flex items-start gap-4">
                   {/* Timeline dot */}
@@ -392,6 +397,36 @@ export function MicroPlansTimeline({
                           </div>
                         </div>
                       </div>
+                      
+                      {/* Inflation Adjustment Toggles - Always show */}
+                      <div className="mt-4 pt-3 border-t border-border/50">
+                          <div className="space-y-2">
+                            <div className="flex items-center justify-between">
+                              <span className="text-xs text-muted-foreground">
+                                {t('investmentPlan.microPlans.timeline.inflationAdjustment.contributionToggle')}
+                              </span>
+                              <div className={`px-3 py-1 rounded-full text-xs font-medium ${
+                                microPlan.adjust_contribution_for_accumulated_inflation
+                                  ? 'bg-primary text-primary-foreground'
+                                  : 'bg-muted text-muted-foreground'
+                              }`}>
+                                {microPlan.adjust_contribution_for_accumulated_inflation ? t('common.yes') : t('common.no')}
+                              </div>
+                            </div>
+                            <div className="flex items-center justify-between">
+                              <span className="text-xs text-muted-foreground">
+                                {t('investmentPlan.microPlans.timeline.inflationAdjustment.withdrawalToggle')}
+                              </span>
+                              <div className={`px-3 py-1 rounded-full text-xs font-medium ${
+                                microPlan.adjust_income_for_accumulated_inflation
+                                  ? 'bg-primary text-primary-foreground'
+                                  : 'bg-muted text-muted-foreground'
+                              }`}>
+                                {microPlan.adjust_income_for_accumulated_inflation ? t('common.yes') : t('common.no')}
+                              </div>
+                            </div>
+                          </div>
+                        </div>
                     </div>
 
                     {/* Action buttons */}

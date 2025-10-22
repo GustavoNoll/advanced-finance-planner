@@ -54,6 +54,10 @@ export const enUS = {
           title: "Attention",
           message: "There is a micro plan with an effective date prior to the current date that is not active. This may occur when there are no financial records to automatically activate the micro plan. Consider checking financial records or manually activating the appropriate micro plan.",
           showDetails: "Show details"
+        },
+        inflationAdjustment: {
+          contributionToggle: "Inflation-adjusted contribution",
+          withdrawalToggle: "Inflation-adjusted withdrawal"
         }
       },
       form: {
