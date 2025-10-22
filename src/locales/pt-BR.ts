@@ -54,6 +54,10 @@ export const ptBR = {
           title: "Atenção",
           message: "Existe um micro plano com data de vigência anterior à data atual que não está ativo. Isso pode ocorrer quando não há registros financeiros para ativar automaticamente o micro plano. Considere verificar os registros financeiros ou ativar manualmente o micro plano apropriado.",
           showDetails: "Ver detalhes"
+        },
+        inflationAdjustment: {
+          contributionToggle: "Contribuição ajustada pela inflação",
+          withdrawalToggle: "Saque ajustado pela inflação"
         }
       },
       form: {
