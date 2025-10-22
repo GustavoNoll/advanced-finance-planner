@@ -431,7 +431,6 @@ function createPastMonthData(
   accumulatedInflation: number,
   expectedReturn: number,
   planned_contribution: number,
-  birthYear: number
 ): MonthlyProjectionData {
   return {
     month: month as MonthNumber,
@@ -788,7 +787,6 @@ export function generateProjectionData(
       monthlyData = createPastMonthData(
         month,
         year,
-        contribution,
         plannedBalance,
         projectedBalance,
         oldPortfolioBalance,
@@ -796,7 +794,7 @@ export function generateProjectionData(
         monthlyInflationRate,
         accumulatedInflation,
         activeMicroPlanForRates?.expected_return || 8, // Default 8% se não houver micro plano
-        context.birthYear
+        contribution,
       );
     } else {
       // Future month
