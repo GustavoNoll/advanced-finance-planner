@@ -458,7 +458,7 @@ export const Calculator = ({ data, investmentPlan, activeMicroPlan, onRefreshMic
             projectedAgeMonths={data.projectedAgeMonths}
             showOptimizerButton={true}
             onOptimizeClick={() => handleOptimizeClick('timeToRetirement')}
-            currentValue={data.plannedMonths}
+            currentValue={data.investmentPlanMonthsToRetirement}
           />
 
           <div className="space-y-4">

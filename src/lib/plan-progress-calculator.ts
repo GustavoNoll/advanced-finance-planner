@@ -323,6 +323,7 @@ export interface PlanProgressData {
   projectedAge: number;
   isAheadOfSchedule: boolean;
   actualDate: Date;
+  investmentPlanMonthsToRetirement: number;
 }
 
 /**
@@ -966,6 +967,12 @@ export function processPlanProgressData(
   }
 
   return {
+    investmentPlanMonthsToRetirement: (() => {
+      const planEnd = createDateWithoutTimezone(investmentPlan.plan_end_accumulation_date);
+      const nextMonthFromActualDate = createDateWithoutTimezone(projections.actualDate);
+      nextMonthFromActualDate.setMonth(nextMonthFromActualDate.getMonth() + 1);
+      return Math.max(0, utils.calculateMonthsBetweenDates(nextMonthFromActualDate, planEnd) || 0);
+    })(),
     projectedPresentValue: projections.projectedPresentValue,
     plannedPresentValue: projections.plannedPresentValue,
     plannedFuturePresentValue: projections.plannedFuturePresentValue,
