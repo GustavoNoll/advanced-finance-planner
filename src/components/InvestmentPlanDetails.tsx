@@ -8,7 +8,7 @@ import { Button } from './ui/button';
 import { createDateWithoutTimezone, createDateFromYearMonth } from '@/utils/dateUtils';
 import { ChartOptions, YearlyProjectionData } from "@/lib/chart-projections";
 import { ProjectionService } from "@/services/projection.service";
-import { utils } from "@/lib/plan-progress-calculator";
+import { utils, PlanProgressData } from "@/lib/plan-progress-calculator";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from './ui/tooltip';
 
 interface InvestmentPlanDetailsProps {
@@ -25,6 +25,7 @@ interface InvestmentPlanDetailsProps {
   financialRecords?: FinancialRecord[];
   projectionData?: YearlyProjectionData[];
   chartOptions: ChartOptions;
+  planProgressData?: PlanProgressData | null;
 }
 
 interface PlanMetricProps {
@@ -83,7 +84,8 @@ export function InvestmentPlanDetails(
     isBroker = false,
     financialRecords = [],
     projectionData,
-    chartOptions }: InvestmentPlanDetailsProps) {
+    chartOptions,
+    planProgressData }: InvestmentPlanDetailsProps) {
   const { t } = useTranslation();
   
   if (!investmentPlan || !birthDate) {
@@ -185,7 +187,12 @@ export function InvestmentPlanDetails(
   const planStartDate = parseLocalDate(investmentPlan.plan_initial_date);
   const planEndDate = parseLocalDate(investmentPlan.plan_end_accumulation_date);
 
-  const { duration, tooltip: durationTooltip } = getDurationInfo();
+  const { duration, tooltip: durationTooltip } = (() => {
+    if (planProgressData && typeof planProgressData.investmentPlanMonthsToRetirement === 'number') {
+      return { duration: planProgressData.investmentPlanMonthsToRetirement, tooltip: undefined };
+    }
+    return getDurationInfo();
+  })();
 
   const timelineMetrics: PlanMetricProps[] = [
     {

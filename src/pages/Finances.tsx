@@ -270,6 +270,7 @@ const Finances = ({
               financialRecords={allFinancialRecords}
               projectionData={projectionDataWithoutOptions}
               chartOptions={chartOptions}
+              planProgressData={projectionDataHook.planProgressData as PlanProgressData}
             />
           </DashboardCard>
         </div>
