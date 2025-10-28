@@ -675,7 +675,7 @@ const financialCalculations = {
     projectedFuturePresentValue: number,
     monthlyProjectionData: MonthlyProjectionData | null
   ): ProjectionResult => {
-    const lastFinancialRecord = allFinancialRecords[0];
+    const lastFinancialRecord = allFinancialRecords.sort((a, b) => b.record_year - a.record_year || b.record_month - a.record_month)[0];
     const currentMonth = lastFinancialRecord?.record_month || 0;
     const currentYear = lastFinancialRecord?.record_year || 0;
     // Effective monthly expected return rate from actualDate to planEnd will be computed below using records + micro plans
@@ -688,7 +688,6 @@ const financialCalculations = {
     const finalAgeDate = planEndDate;
     const totalPlannedMonths = utils.calculateMonthsBetweenDates(planStartDate, planEndDate) + 1;
     const plannedMonths = totalPlannedMonths;
-    // if (currentMonth === 0 && currentYear === 0) {
     const initialDate = createDateWithoutTimezone(investmentPlan.plan_initial_date);
     const inflationFactorAtRetirement = utils.computeInflationFactor({
       startDate: initialDate,
@@ -702,7 +701,7 @@ const financialCalculations = {
     }else {
       actualDate = initialDate;
     }
-
+    console.log('actualDate', actualDate)
     // Meses restantes até a aposentadoria a partir da actualDate
     const totalMonthsToRetirement = Math.max(0, utils.calculateMonthsBetweenDates(initialDate, planEndDate) || 0);
 
@@ -768,6 +767,8 @@ const financialCalculations = {
     const plannedPresentValue = plannedFuturePresentValue / inflationFactorAtRetirement;
     const goalPlannedPresentValue = calculations.presentFutureValue * (shouldAdjustContributionForInflation ? 1 : inflationFactorAtRetirement);
     const adjustedGoalPlannedFutureValue = (goalPlannedPresentValue - plannedPostRetirementGoalsTotal * (shouldAdjustContributionForInflation ? 1 : inflationFactorAtRetirement));
+    console.log('planStartDate', planStartDate)
+    console.log('actualDate', actualDate)
     const monthsElapsed = Math.max(0, utils.calculateMonthsBetweenDates(planStartDate, actualDate) + 1 || 1);
     // Calculate projections
 
