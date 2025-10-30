@@ -144,12 +144,17 @@ const Index = () => {
         return;
       }
 
-      // Set active view based on URL
-      const path = window.location.pathname;
-      if (path.includes('investment-policy')) {
-        setActiveView('policies');
+      // Set active view based on URL (query param has priority, then path)
+      const searchParams = new URLSearchParams(window.location.search)
+      const viewParam = searchParams.get('view')
+
+      if (viewParam === 'policies' || viewParam === 'finances' || viewParam === 'portfolio-performance') {
+        setActiveView(viewParam)
       } else {
-        setActiveView('finances');
+        const path = window.location.pathname
+        if (path.includes('investment-policy')) setActiveView('policies')
+        else if (path.includes('portfolio-performance')) setActiveView('portfolio-performance')
+        else setActiveView('finances')
       }
     }
   }, [investmentPlan, brokerProfile, clientProfile, isInvestmentPlanLoading, isProfilesLoading, params.id, handleLogout, t, user?.id, clientId, navigate]);

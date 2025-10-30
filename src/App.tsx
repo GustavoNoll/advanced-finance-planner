@@ -169,7 +169,7 @@ function AppRoutes() {
           }
         />
         <Route
-          path="/portfolio-data-management/:client?"
+          path="/portfolio-data-management/:id"
           element={
             <ProtectedRoute>
               <PageTransition>

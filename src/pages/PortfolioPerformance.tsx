@@ -38,8 +38,7 @@ function PortfolioPerformance({
   const navigate = useNavigate()
   
   const openDataManagement = () => {
-    const clientPath = profile?.name ? `/${encodeURIComponent(profile.name)}` : ''
-    navigate(`/portfolio-data-management${clientPath}`)
+    navigate(`/portfolio-data-management/${profile?.id}`)
   }
   
   const handleFilterChange = useCallback((inicioCompetencia: string, fimCompetencia: string) => {
@@ -89,6 +88,11 @@ function PortfolioPerformance({
   return (
     <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-8">
       <div className="space-y-6">
+        <div className="flex justify-end">
+          <Button variant="default" onClick={openDataManagement}>
+            Gerenciar dados
+          </Button>
+        </div>
         {/* KPI Cards - estilo próximo ao InvestmentDashboard */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
           <Card className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 shadow-sm">

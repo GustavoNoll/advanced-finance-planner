@@ -42,10 +42,8 @@ interface PerformanceRow {
 }
 
 export default function PortfolioDataManagement() {
-  const params = useParams<{ client?: string }>()
+  const { id: profileId } = useParams<{ id: string }>()
   const navigate = useNavigate()
-  const [profileId, setProfileId] = useState<string | null>(null)
-  const [clientName, setClientName] = useState<string>(params.client ? decodeURIComponent(params.client) : "")
 
   const [tab, setTab] = useState<'consolidated' | 'detailed'>('consolidated')
   const [isLoading, setIsLoading] = useState(false)
@@ -57,26 +55,6 @@ export default function PortfolioDataManagement() {
   const [editItem, setEditItem] = useState<Partial<ConsolidatedRow & PerformanceRow>>({})
 
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
-
-  // Resolve profile_id by client name (fallback allows direct use if route receives the id)
-  useEffect(() => {
-    const resolveProfile = async () => {
-      if (!clientName) return
-      // Try match exactly by name first
-      const { data: profilesByName } = await supabase
-        .from('profiles')
-        .select('id, name')
-        .eq('name', clientName)
-        .limit(1)
-      if (profilesByName && profilesByName.length > 0) {
-        setProfileId(profilesByName[0].id)
-        return
-      }
-      // If not found, try assume the param is the id itself
-      if (/^[0-9a-fA-F-]{36}$/.test(clientName)) setProfileId(clientName)
-    }
-    resolveProfile()
-  }, [clientName])
 
   const fetchData = useCallback(async () => {
     if (!profileId) return
@@ -171,12 +149,11 @@ export default function PortfolioDataManagement() {
     <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-8">
       <div className="flex justify-between items-center mb-6">
         <div className="flex items-center gap-3">
-          <Button variant="outline" onClick={() => navigate(-1)}>
+          <Button variant="outline" onClick={() => navigate(`/client/${profileId}?view=portfolio-performance`)}>
             <ArrowLeft className="mr-2 h-4 w-4" /> Voltar
           </Button>
           <div>
             <h1 className="text-2xl font-bold">Gerenciar Dados de Portfólio</h1>
-            <p className="text-sm text-gray-500">Cliente: {clientName || '—'}</p>
           </div>
         </div>
       </div>
