@@ -1,4 +1,5 @@
 import { ArrowLeft, LogOut, Share2, User, Key } from "lucide-react";
+import { Menu } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { useAuth } from "@/components/auth/AuthProvider";
@@ -11,7 +12,9 @@ import { Spinner } from "@/components/ui/spinner";
 import { Logo } from '@/components/ui/logo';
 import Finances from './Finances';
 import InvestmentPolicy from './InvestmentPolicy';
+import PortfolioPerformance from './PortfolioPerformance';
 import { useMicroInvestmentPlans } from '@/hooks/useMicroInvestmentPlans';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 
 const Index = () => {
   const { user } = useAuth();
@@ -19,7 +22,7 @@ const Index = () => {
   const params = useParams();
   const clientId = params.id || user?.id;
   const { t } = useTranslation();
-  const [activeView, setActiveView] = useState<'finances' | 'policies'>('policies');
+  const [activeView, setActiveView] = useState<'finances' | 'policies' | 'portfolio-performance'>('policies');
 
   const handleLogout = useCallback(async () => {
     try {
@@ -173,7 +176,7 @@ const Index = () => {
       <header className="bg-white/95 dark:bg-gray-900/80 backdrop-blur-md border-b dark:border-gray-800 sticky top-0 z-50 shadow-lg">
         <div className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8 py-4">
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
+            <div className="flex items-center gap-3 min-w-0">
               {brokerProfile && (
                 <Button 
                   variant="ghost" 
@@ -183,14 +186,15 @@ const Index = () => {
                   <ArrowLeft className="h-4 w-4" />
                 </Button>
               )}
-              <Logo variant="minimal" className="h-6" />
+              <Logo variant="minimal" className="h-6 shrink-0" />
               {clientProfile && (
-                <p className="text-sm text-gray-700 dark:text-gray-300 font-medium hidden sm:block">{clientProfile.name}</p>
+                <p className="text-sm text-gray-700 dark:text-gray-300 font-medium hidden xs:block truncate max-w-[140px] sm:max-w-none">{clientProfile.name}</p>
               )}
             </div>
 
             <div className="flex items-center gap-4">
-              <div className="flex space-x-1 bg-gray-100 dark:bg-gray-800 p-1 rounded-lg">
+              {/* Desktop tabs */}
+              <div className="hidden md:flex space-x-1 bg-gray-100 dark:bg-gray-800 p-1 rounded-lg">
                 <Button
                   variant="ghost"
                   className={`px-3 py-1 text-sm font-medium rounded-md ${
@@ -217,7 +221,40 @@ const Index = () => {
                 >
                   {t('dashboard.navigation.planning')}
                 </Button>
+                <Button
+                  variant="ghost"
+                  className={`px-3 py-1 text-sm font-medium rounded-md ${
+                    activeView === 'portfolio-performance'
+                      ? 'text-blue-600 dark:text-blue-400 bg-white dark:bg-gray-900 shadow-sm'
+                      : 'text-gray-500 dark:text-gray-300 hover:text-gray-700 dark:hover:text-gray-100'
+                  }`}
+                  onClick={() => {
+                    setActiveView('portfolio-performance');
+                  }}
+                >
+                  {t('dashboard.navigation.portfolioPerformance')}
+                </Button>
               </div>
+
+              {/* Mobile menu */}
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" className="md:hidden">
+                    <Menu className="h-5 w-5" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="center" className="w-56">
+                  <DropdownMenuItem onClick={() => setActiveView('policies')}>
+                    {t('dashboard.navigation.investmentPolicy')}
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => setActiveView('finances')}>
+                    {t('dashboard.navigation.planning')}
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => setActiveView('portfolio-performance')}>
+                    {t('dashboard.navigation.portfolioPerformance')}
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             </div>
 
             <div className="flex items-center gap-2">
@@ -226,26 +263,29 @@ const Index = () => {
                   variant="ghost" 
                   size="sm"
                   onClick={handleShareClient}
-                  className="flex items-center gap-1 text-gray-600 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
+                  className="text-gray-600 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
+                  aria-label={t('brokerDashboard.shareWithClient')}
                 >
                   <Share2 className="h-4 w-4" />
-                  <span className="hidden sm:inline">{t('brokerDashboard.shareWithClient')}</span>
+                  <span className="hidden md:inline ml-1">{t('brokerDashboard.shareWithClient')}</span>
                 </Button>
               )}
               <Button 
                 variant="ghost" 
                 size="sm"
                 onClick={() => navigate(`/client-profile/${clientId}`)}
-                className="flex items-center gap-1 text-gray-600 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
+                className="text-gray-600 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
+                aria-label={t('clientProfile.buttons.changePassword')}
               >
                 <Key className="h-4 w-4" />
-                <span className="hidden sm:inline">{t('clientProfile.buttons.changePassword')}</span>
+                <span className="hidden md:inline ml-1">{t('clientProfile.buttons.changePassword')}</span>
               </Button>
               <Button 
                 variant="ghost" 
                 size="sm"
                 onClick={handleLogout}
                 className="text-gray-600 dark:text-gray-300 hover:text-red-600 dark:hover:text-red-500 transition-colors"
+                aria-label={t('common.logout')}
               >
                 <LogOut className="h-4 w-4" />
               </Button>
@@ -275,6 +315,16 @@ const Index = () => {
           clientProfile={clientProfile}
           brokerProfile={brokerProfile}
           investmentPlan={investmentPlan}
+        />
+      )}
+
+      {activeView === 'portfolio-performance' && (
+        <PortfolioPerformance
+          clientId={clientId}
+          profile={clientProfile}
+          broker={brokerProfile}
+          onLogout={handleLogout}
+          onShareClient={handleShareClient}
         />
       )}
     </div>

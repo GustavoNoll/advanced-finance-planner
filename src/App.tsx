@@ -13,6 +13,7 @@ import { EditPlan } from "./pages/EditPlan";
 import { CreateClient } from "./pages/CreateClient";
 import { InvestmentPlanShow } from "./pages/InvestmentPlan";
 import { Simulation } from "./pages/Simulation";
+import PortfolioDataManagement from "@/pages/PortfolioDataManagement";
 import FinancialRecords from "@/pages/FinancialRecords";
 import ClientProfile from "@/pages/ClientProfile";
 import FinancialGoals from "@/pages/FinancialGoals";
@@ -163,6 +164,16 @@ function AppRoutes() {
             <ProtectedRoute>
               <PageTransition>
                 <FinancialRecords />
+              </PageTransition>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/portfolio-data-management/:client?"
+          element={
+            <ProtectedRoute>
+              <PageTransition>
+                <PortfolioDataManagement />
               </PageTransition>
             </ProtectedRoute>
           }

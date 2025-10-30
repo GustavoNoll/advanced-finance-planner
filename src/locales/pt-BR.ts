@@ -206,7 +206,8 @@ export const ptBR = {
     title: "Portfólio de Investimentos",
     navigation: {
       planning: "Planejamento",
-      investmentPolicy: "Política de Investimento"
+      investmentPolicy: "Política de Investimento",
+      portfolioPerformance: "Performance"
     },
     highlights: {
       startToInvest: "Você já deveria estar investindo!",

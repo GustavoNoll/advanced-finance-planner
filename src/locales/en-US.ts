@@ -206,7 +206,8 @@ export const enUS = {
     title: "Investment Portfolio",
     navigation: {
       planning: "Planning",
-      investmentPolicy: "Investment Policy"
+      investmentPolicy: "Investment Policy",
+      portfolioPerformance: "Performance"
     },
     highlights: {
       startToInvest: "You should start investing now!",
