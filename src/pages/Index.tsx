@@ -193,7 +193,12 @@ const Index = () => {
               )}
               <Logo variant="minimal" className="h-6 shrink-0" />
               {clientProfile && (
-                <p className="text-sm text-gray-700 dark:text-gray-300 font-medium hidden xs:block truncate max-w-[140px] sm:max-w-none">{clientProfile.name}</p>
+                <p
+                  className="text-sm text-gray-700 dark:text-gray-300 font-medium hidden sm:block truncate max-w-[120px] sm:max-w-[180px] md:max-w-[240px] lg:max-w-none"
+                  title={clientProfile.name}
+                >
+                  {clientProfile.name}
+                </p>
               )}
             </div>
 
