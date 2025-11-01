@@ -1,12 +1,15 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts'
-import { useMemo, useState } from 'react'
+import { useMemo, useState, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { PerformanceData } from "@/types/financial"
+import { formatCurrency, getCurrencySymbol } from "@/utils/currency"
+import { CurrencyCode } from "@/utils/currency"
 
 interface MaturityTimelineProps {
   performanceData: PerformanceData[]
+  currency?: CurrencyCode
 }
 
 interface MaturityYearDataItem {
@@ -17,32 +20,57 @@ interface MaturityYearDataItem {
   totalInvestments: number
 }
 
-export function MaturityTimeline({ performanceData }: MaturityTimelineProps) {
+interface AssetClassOption {
+  key: string
+  label: string
+}
+
+export function MaturityTimeline({ performanceData, currency = 'BRL' }: MaturityTimelineProps) {
   const { t } = useTranslation()
-  const [selectedAssetClass, setSelectedAssetClass] = useState<string>('Pós fixado')
+  
+  // Extract unique asset classes with maturity dates from performance data
+  const assetClassOptions = useMemo<AssetClassOption[]>(() => {
+    const now = new Date()
+    
+    // Get all unique asset classes that have maturity dates in the future
+    const uniqueClasses = Array.from(new Set(
+      performanceData
+        .filter(item => item.maturity_date)
+        .filter(item => new Date(item.maturity_date as string) >= now)
+        .map(item => item.asset_class)
+        .filter((assetClass): assetClass is string => !!assetClass)
+    ))
+    
+    // Create options using the class name directly
+    return uniqueClasses.map((className) => ({
+      key: className,
+      label: className
+    })).sort((a, b) => a.label.localeCompare(b.label))
+  }, [performanceData])
 
-  // Fixed options to mirror referenced component
-  const assetClassOptions = [
-    { key: 'Pós fixado', label: 'Pós fixado' },
-    { key: 'Inflação', label: 'Inflação' },
-    { key: 'Pré fixado', label: 'Pré fixado' }
-  ]
+  const [selectedAssetClass, setSelectedAssetClass] = useState<string>(() => {
+    // Initialize with first option key, or empty string if no options
+    return assetClassOptions.length > 0 ? assetClassOptions[0].key : ''
+  })
 
-  // Mapping from UI labels to data labels
-  const assetClassMapping = useMemo<Record<string, string>>(() => ({
-    'Pós fixado': 'CDI - Titulos',
-    'Inflação': 'Inflação - Titulos',
-    'Pré fixado': 'Pré Fixado - Titulos'
-  }), [])
+  // Update selected asset class when options change
+  useEffect(() => {
+    if (assetClassOptions.length > 0 && (!selectedAssetClass || !assetClassOptions.find(opt => opt.key === selectedAssetClass))) {
+      setSelectedAssetClass(assetClassOptions[0].key)
+    }
+  }, [assetClassOptions, selectedAssetClass])
 
   const filteredData = useMemo(() => {
+    if (!selectedAssetClass || assetClassOptions.length === 0) return []
+    
     const now = new Date()
-    const actualAssetClass = assetClassMapping[selectedAssetClass] || selectedAssetClass
+    
+    // Filter by exact asset_class name
     return performanceData
       .filter(item => item.maturity_date)
       .filter(item => new Date(item.maturity_date as string) >= now)
-      .filter(item => item.asset_class === actualAssetClass)
-  }, [performanceData, selectedAssetClass, assetClassMapping])
+      .filter(item => item.asset_class === selectedAssetClass)
+  }, [performanceData, selectedAssetClass, assetClassOptions])
 
   const maturityData = useMemo(() => {
     const grouped = filteredData
@@ -102,14 +130,14 @@ export function MaturityTimeline({ performanceData }: MaturityTimelineProps) {
       const data = payload[0].payload as MaturityYearDataItem
       return (
         <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-lg p-3 shadow-lg">
-          <p className="text-foreground font-medium">{t('portfolio.maturityTimeline.year', 'Ano')}: {data.year}</p>
-          <p className="text-primary">{t('portfolio.maturityTimeline.total', 'Valor Total')}: {new Intl.NumberFormat('pt-BR',{ style:'currency', currency:'BRL' }).format(data.totalAmount)}</p>
-          <p className="text-muted-foreground">{t('portfolio.maturityTimeline.avgRate', 'Taxa Média')}: {data.avgRate}</p>
+          <p className="text-foreground font-medium">{t('portfolioPerformance.kpi.maturityTimeline.year', 'Ano')}: {data.year}</p>
+          <p className="text-primary">{t('portfolioPerformance.kpi.maturityTimeline.total', 'Valor Total')}: {formatCurrency(data.totalAmount, currency)}</p>
+          <p className="text-muted-foreground">{t('portfolioPerformance.kpi.maturityTimeline.avgRate', 'Taxa Média')}: {data.avgRate}</p>
           <div className="mt-2">
-            <p className="text-sm font-medium text-foreground">{t('portfolio.maturityTimeline.byStrategy', 'Por Estratégia')}:</p>
+            <p className="text-sm font-medium text-foreground">{t('portfolioPerformance.kpi.maturityTimeline.byStrategy', 'Por Estratégia')}:</p>
             {Object.entries(data.strategies).map(([strategy, s]) => (
               <div key={strategy} className="text-xs text-muted-foreground ml-2">
-                {strategy}: {new Intl.NumberFormat('pt-BR',{ style:'currency', currency:'BRL' }).format(s.amount)}
+                {strategy}: {formatCurrency(s.amount, currency)}
               </div>
             ))}
           </div>
@@ -124,28 +152,37 @@ export function MaturityTimeline({ performanceData }: MaturityTimelineProps) {
       <CardHeader>
         <div className="flex items-center justify-between">
           <div>
-            <CardTitle className="text-foreground">{t('portfolio.maturityTimeline.title', 'Vencimentos por Estratégia')}</CardTitle>
-            <p className="text-sm text-muted-foreground">{t('portfolio.maturityTimeline.subtitle', 'Distribuição por data de vencimento')}</p>
+            <CardTitle className="text-foreground">{t('portfolioPerformance.kpi.maturityTimeline.title', 'Vencimentos por Estratégia')}</CardTitle>
+            <p className="text-sm text-muted-foreground">{t('portfolioPerformance.kpi.maturityTimeline.subtitle', 'Distribuição por data de vencimento')}</p>
           </div>
-          <div className="flex items-center gap-1">
-            {assetClassOptions.map(option => (
-              <Button
-                key={option.key}
-                variant={selectedAssetClass === option.key ? 'default' : 'ghost'}
-                size="sm"
-                onClick={() => setSelectedAssetClass(option.key)}
-                className="text-xs px-3 py-1 h-8"
-              >
-                {option.label}
-              </Button>
-            ))}
+          <div className="flex items-center gap-1 flex-wrap">
+            {assetClassOptions.length > 0 ? (
+              assetClassOptions.map(option => (
+                <Button
+                  key={option.key}
+                  variant={selectedAssetClass === option.key ? 'default' : 'ghost'}
+                  size="sm"
+                  onClick={() => setSelectedAssetClass(option.key)}
+                  className="text-xs px-3 py-1 h-8"
+                >
+                  {option.label}
+                </Button>
+              ))
+            ) : (
+              <p className="text-sm text-muted-foreground">
+                {t('portfolioPerformance.kpi.maturityTimeline.emptyFor', 'Nenhum dado de vencimento disponível')}
+              </p>
+            )}
           </div>
         </div>
       </CardHeader>
       <CardContent>
         {maturityData.length === 0 ? (
           <div className="flex items-center justify-center h-[400px] text-muted-foreground">
-            <p>{t('portfolio.maturityTimeline.emptyFor', 'Nenhum dado de vencimento disponível para')} {selectedAssetClass}</p>
+            <p>
+              {t('portfolioPerformance.kpi.maturityTimeline.emptyFor', 'Nenhum dado de vencimento disponível para')}{' '}
+              {assetClassOptions.find(opt => opt.key === selectedAssetClass)?.label || selectedAssetClass}
+            </p>
           </div>
         ) : (
           <ResponsiveContainer width="100%" height={400}>
@@ -162,7 +199,7 @@ export function MaturityTimeline({ performanceData }: MaturityTimelineProps) {
                 tick={{ fontSize: 12, fill: '#6B7280' }}
                 axisLine={{ stroke: '#E5E7EB' }}
                 tickLine={{ stroke: '#E5E7EB' }}
-                tickFormatter={value => `R$ ${Number(value) / 1000}k`}
+                tickFormatter={value => `${getCurrencySymbol(currency)} ${Number(value) / 1000}k`}
               />
               <Tooltip content={<CustomTooltip />} />
               <Bar 

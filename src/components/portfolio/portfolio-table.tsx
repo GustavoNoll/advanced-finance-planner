@@ -3,6 +3,10 @@ import { ChevronDown, ChevronUp, Trophy } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import type { ConsolidatedPerformance } from "@/types/financial"
+import { formatCurrency } from "@/utils/currency"
+import { CurrencyCode } from "@/utils/currency"
+import { calculateCompoundedRates } from "@/lib/financial-math"
+import { useTranslation } from "react-i18next"
 
 interface MarketPoint { competencia: string; clientTarget: number }
 
@@ -11,9 +15,11 @@ interface PortfolioTableProps {
   filteredRange?: { inicio: string; fim: string }
   onYearTotalsChange?: (totals: { totalPatrimonio: number; totalRendimento: number } | null) => void
   marketData?: MarketPoint[]
+  currency?: CurrencyCode
 }
 
-export function PortfolioTable({ consolidatedData, filteredRange, onYearTotalsChange, marketData }: PortfolioTableProps) {
+export function PortfolioTable({ consolidatedData, filteredRange, onYearTotalsChange, marketData, currency = 'BRL' }: PortfolioTableProps) {
+  const { t } = useTranslation()
   const toDate = (comp?: string | null) => {
     if (!comp) return 0
     const [m, y] = comp.split('/')
@@ -45,7 +51,7 @@ export function PortfolioTable({ consolidatedData, filteredRange, onYearTotalsCh
       const movement = rows.reduce((s, r) => s + Number(r.movement || 0), 0)
       const taxes = rows.reduce((s, r) => s + Number(r.taxes || 0), 0)
       const gain = rows.reduce((s, r) => s + Number(r.financial_gain || 0), 0)
-      const compound = sorted.reduce((acc, r) => (1 + acc) * (1 + Number(r.yield || 0)) - 1, 0)
+      const compound = calculateCompoundedRates(sorted.map(r => Number(r.yield || 0)))
       // Target compose
       let ppAbove: string | null = null
       if (marketData && marketData.length > 0) {
@@ -53,7 +59,7 @@ export function PortfolioTable({ consolidatedData, filteredRange, onYearTotalsCh
         const pts = marketData
           .filter(m => toDate(m.competencia) >= toDate(first) && toDate(m.competencia) <= toDate(last))
           .sort((a, b) => toDate(a.competencia) - toDate(b.competencia))
-        const targetCompound = pts.reduce((acc, p) => (1 + acc) * (1 + (p.clientTarget || 0)) - 1, 0)
+        const targetCompound = calculateCompoundedRates(pts.map(p => p.clientTarget || 0))
         ppAbove = `${((compound - targetCompound) * 100).toFixed(2)}pp`
       }
       const best = rows.reduce((best, cur) => (Number(cur.yield || 0) > Number(best.yield || 0) ? cur : best), rows[0])
@@ -122,7 +128,7 @@ export function PortfolioTable({ consolidatedData, filteredRange, onYearTotalsCh
     const taxes = byYear.reduce((s, y) => s + y.taxes, 0)
     const gain = byYear.reduce((s, y) => s + y.gain, 0)
     const final = byYear[0].final
-    const compound = byYear.reduce((acc, y) => (1 + acc) * (1 + y.compound) - 1, 0)
+    const compound = calculateCompoundedRates(byYear.map(y => y.compound))
     return { initial, movement, taxes, final, gain, compound }
   }, [byYear])
 
@@ -132,14 +138,14 @@ export function PortfolioTable({ consolidatedData, filteredRange, onYearTotalsCh
     else onYearTotalsChange(null)
   }, [totals, onYearTotalsChange])
 
-  const currency = (v: number) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL', minimumFractionDigits: 2 }).format(v || 0)
+  const formatCurrencyValue = (v: number) => formatCurrency(v || 0, currency)
 
   const monthShort = (period?: string | null) => {
     if (!period) return '-'
     const [m] = period.split('/')
-    const map = ['JAN','FEV','MAR','ABR','MAI','JUN','JUL','AGO','SET','OUT','NOV','DEZ']
+    const monthNames = t('portfolioPerformance.months.short', { returnObjects: true }) as string[]
     const idx = Math.max(1, Math.min(12, parseInt(m))) - 1
-    return map[idx]
+    return monthNames[idx] || '-'
   }
 
   const [expandedYears, setExpandedYears] = useState<Set<string>>(new Set())
@@ -153,8 +159,8 @@ export function PortfolioTable({ consolidatedData, filteredRange, onYearTotalsCh
   return (
     <Card className="bg-gradient-card border-border/50 shadow-elegant-md">
       <CardHeader>
-        <CardTitle className="text-foreground">Resumo do Patrimônio</CardTitle>
-        <p className="text-sm text-muted-foreground">Evolução patrimonial consolidada com retornos acumulados</p>
+        <CardTitle className="text-foreground">{t('portfolioPerformance.kpi.table.title')}</CardTitle>
+        <p className="text-sm text-muted-foreground">{t('portfolioPerformance.kpi.table.description')}</p>
       </CardHeader>
       <CardContent>
         <div className="overflow-x-auto">
@@ -162,14 +168,14 @@ export function PortfolioTable({ consolidatedData, filteredRange, onYearTotalsCh
             <TableHeader>
               <TableRow className="border-border/50">
                 <TableHead className="text-muted-foreground w-8"></TableHead>
-                <TableHead className="text-muted-foreground">Competência</TableHead>
-                <TableHead className="text-muted-foreground">Patrimônio Inicial</TableHead>
-                <TableHead className="text-muted-foreground">Movimentações</TableHead>
-                <TableHead className="text-muted-foreground">Imposto</TableHead>
-                <TableHead className="text-muted-foreground">Patrimônio Final</TableHead>
-                <TableHead className="text-muted-foreground">Rendimento</TableHead>
-                <TableHead className="text-muted-foreground">Rentabilidade</TableHead>
-                <TableHead className="text-muted-foreground">Rentabilidade (pp acima da meta)</TableHead>
+                <TableHead className="text-muted-foreground">{t('portfolioPerformance.kpi.table.period')}</TableHead>
+                <TableHead className="text-muted-foreground">{t('portfolioPerformance.kpi.table.initialAssets')}</TableHead>
+                <TableHead className="text-muted-foreground">{t('portfolioPerformance.kpi.table.movement')}</TableHead>
+                <TableHead className="text-muted-foreground">{t('portfolioPerformance.kpi.table.taxes')}</TableHead>
+                <TableHead className="text-muted-foreground">{t('portfolioPerformance.kpi.table.finalAssets')}</TableHead>
+                <TableHead className="text-muted-foreground">{t('portfolioPerformance.kpi.table.gain')}</TableHead>
+                <TableHead className="text-muted-foreground">{t('portfolioPerformance.kpi.rentability')}</TableHead>
+                <TableHead className="text-muted-foreground">{t('portfolioPerformance.kpi.rentabilityVsTarget')}</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -187,11 +193,11 @@ export function PortfolioTable({ consolidatedData, filteredRange, onYearTotalsCh
                       </button>
                     </TableCell>
                     <TableCell className="text-foreground font-semibold">{y.year}</TableCell>
-                    <TableCell className="text-foreground">{currency(y.initial)}</TableCell>
-                    <TableCell className="text-destructive">{currency(y.movement)}</TableCell>
-                    <TableCell className="text-destructive">{currency(y.taxes)}</TableCell>
-                    <TableCell className="text-foreground">{currency(y.final)}</TableCell>
-                    <TableCell className="text-success">{currency(y.gain)}</TableCell>
+                    <TableCell className="text-foreground">{formatCurrencyValue(y.initial)}</TableCell>
+                    <TableCell className="text-destructive">{formatCurrencyValue(y.movement)}</TableCell>
+                    <TableCell className="text-destructive">{formatCurrencyValue(y.taxes)}</TableCell>
+                    <TableCell className="text-foreground">{formatCurrencyValue(y.final)}</TableCell>
+                    <TableCell className="text-success">{formatCurrencyValue(y.gain)}</TableCell>
                     <TableCell>
                       <span className={`px-2 py-1 rounded-full text-sm font-medium ${y.compound >= 0 ? 'bg-success/20 text-success' : 'bg-destructive/20 text-destructive'}`}>{(y.compound * 100).toFixed(2)}%</span>
                     </TableCell>
@@ -206,11 +212,11 @@ export function PortfolioTable({ consolidatedData, filteredRange, onYearTotalsCh
                         {y.bestMonth === m.period && <Trophy className="h-4 w-4 text-yellow-600" />}
                       </TableCell>
                       <TableCell className="text-foreground">{monthShort(m.period)}</TableCell>
-                      <TableCell className="text-foreground">{currency(m.initial)}</TableCell>
-                      <TableCell className="text-destructive">{currency(m.movement)}</TableCell>
-                      <TableCell className="text-destructive">{currency(m.taxes)}</TableCell>
-                      <TableCell className="text-foreground">{currency(m.final)}</TableCell>
-                      <TableCell className="text-success">{currency(m.gain)}</TableCell>
+                      <TableCell className="text-foreground">{formatCurrencyValue(m.initial)}</TableCell>
+                      <TableCell className="text-destructive">{formatCurrencyValue(m.movement)}</TableCell>
+                      <TableCell className="text-destructive">{formatCurrencyValue(m.taxes)}</TableCell>
+                      <TableCell className="text-foreground">{formatCurrencyValue(m.final)}</TableCell>
+                      <TableCell className="text-success">{formatCurrencyValue(m.gain)}</TableCell>
                       <TableCell>
                         <span className={`px-2 py-1 rounded-full text-sm font-medium ${m.yield >= 0 ? 'bg-success/20 text-success' : 'bg-destructive/20 text-destructive'}`}>{(m.yield * 100).toFixed(2)}%</span>
                       </TableCell>
@@ -227,12 +233,12 @@ export function PortfolioTable({ consolidatedData, filteredRange, onYearTotalsCh
                   <TableCell className="text-foreground flex items-center gap-2">
                     <span className="inline-block w-3 h-3 rounded-full bg-orange-500"></span>
                   </TableCell>
-                  <TableCell className="text-foreground font-semibold">Total</TableCell>
-                  <TableCell className="text-foreground">{currency(totals.initial)}</TableCell>
-                  <TableCell className="text-destructive">{currency(totals.movement)}</TableCell>
-                  <TableCell className="text-destructive">{currency(totals.taxes)}</TableCell>
-                  <TableCell className="text-foreground">{currency(totals.final)}</TableCell>
-                  <TableCell className="text-success">{currency(totals.gain)}</TableCell>
+                  <TableCell className="text-foreground font-semibold">{t('portfolioPerformance.kpi.table.total')}</TableCell>
+                  <TableCell className="text-foreground">{formatCurrencyValue(totals.initial)}</TableCell>
+                  <TableCell className="text-destructive">{formatCurrencyValue(totals.movement)}</TableCell>
+                  <TableCell className="text-destructive">{formatCurrencyValue(totals.taxes)}</TableCell>
+                  <TableCell className="text-foreground">{formatCurrencyValue(totals.final)}</TableCell>
+                  <TableCell className="text-success">{formatCurrencyValue(totals.gain)}</TableCell>
                   <TableCell>
                     <span className={`px-2 py-1 rounded-full text-sm font-medium ${totals.compound >= 0 ? 'bg-success/20 text-success' : 'bg-destructive/20 text-destructive'}`}>{(totals.compound * 100).toFixed(2)}%</span>
                   </TableCell>
@@ -244,7 +250,7 @@ export function PortfolioTable({ consolidatedData, filteredRange, onYearTotalsCh
         </div>
 
         {byYear.length > 0 && (
-          <div className="mt-4 text-sm text-muted-foreground">🏆 Mês com melhor rentabilidade do ano</div>
+          <div className="mt-4 text-sm text-muted-foreground">🏆 {t('portfolioPerformance.kpi.bestMonthRentability')}</div>
         )}
       </CardContent>
     </Card>

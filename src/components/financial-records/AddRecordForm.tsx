@@ -11,11 +11,11 @@ import { useTranslation } from "react-i18next";
 import { z } from "zod";
 import { useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
-import CurrencyInput from 'react-currency-input-field';
+import { CurrencyInput } from "@/components/ui/currency-input";
 import { useProfileData } from "@/hooks/usePlanCreation";
 import { FinancialRecord, MonthNumber } from '@/types/financial';
 import { InvestmentPlan } from '@/types/financial';
-import { CurrencyCode, getCurrencySymbol } from "@/utils/currency";
+import { CurrencyCode } from "@/utils/currency";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Link, Plus } from "lucide-react";
 import SelectExistingItems from "./SelectExistingItems";
@@ -600,13 +600,11 @@ export const AddRecordForm = ({ clientId, onSuccess, editingRecord, investmentPl
                     <CurrencyInput
                       id={'starting_balance'}
                       className="flex h-12 w-full rounded-lg border border-input bg-background text-foreground px-4 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 transition-colors dark:[color-scheme:dark]"
-                      prefix={getCurrencySymbol(investmentPlan?.currency as CurrencyCode)}
-                      groupSeparator="."
-                      decimalSeparator=","
-                      decimalsLimit={2}
-                      value={field.value}
-                      onValueChange={(value) => {
-                        field.onChange(value ? parseFloat(value.replace(/\./g, '').replace(',', '.')) : 0);
+                      currency={investmentPlan?.currency as CurrencyCode}
+                      defaultValue={field.value}
+                      onValueChange={(value, _name, values) => {
+                        const numValue = values?.float ?? 0;
+                        field.onChange(numValue);
                       }}
                     />
                   </FormControl>
@@ -625,13 +623,11 @@ export const AddRecordForm = ({ clientId, onSuccess, editingRecord, investmentPl
                     <CurrencyInput
                       id={'ending_balance'}
                       className="flex h-12 w-full rounded-lg border border-input bg-background text-foreground px-4 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 transition-colors dark:[color-scheme:dark]"
-                      prefix={getCurrencySymbol(investmentPlan?.currency as CurrencyCode)}
-                      groupSeparator="."
-                      decimalSeparator=","
-                      decimalsLimit={2}
-                      value={field.value}
-                      onValueChange={(value) => {
-                        field.onChange(value ? parseFloat(value.replace(/\./g, '').replace(',', '.')) : 0);
+                      currency={investmentPlan?.currency as CurrencyCode}
+                      defaultValue={field.value}
+                      onValueChange={(value, _name, values) => {
+                        const numValue = values?.float ?? 0;
+                        field.onChange(numValue);
                       }}
                     />
                   </FormControl>
@@ -657,13 +653,11 @@ export const AddRecordForm = ({ clientId, onSuccess, editingRecord, investmentPl
                     <CurrencyInput
                       id="monthly_contribution"
                       className="flex h-12 w-full rounded-lg border border-input bg-background text-foreground px-4 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 transition-colors dark:[color-scheme:dark]"
-                      prefix={getCurrencySymbol(investmentPlan?.currency as CurrencyCode)}
-                      groupSeparator="."
-                      decimalSeparator=","
-                      decimalsLimit={2}
+                      currency={investmentPlan?.currency as CurrencyCode}
                       defaultValue={field.value}
-                      onValueChange={(value) => {
-                        field.onChange(value ? parseFloat(value.replace(/\./g, '').replace(',', '.')) : 0);
+                      onValueChange={(value, _name, values) => {
+                        const numValue = values?.float ?? 0;
+                        field.onChange(numValue);
                       }}
                     />
                   </FormControl>
@@ -711,13 +705,11 @@ export const AddRecordForm = ({ clientId, onSuccess, editingRecord, investmentPl
                     <CurrencyInput
                       id="monthly_return"
                       className="flex h-12 w-full rounded-lg border border-input bg-background text-foreground px-4 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 transition-colors dark:[color-scheme:dark]"
-                      prefix={getCurrencySymbol(investmentPlan?.currency as CurrencyCode)}
-                      groupSeparator="."
-                      decimalSeparator=","
-                      decimalsLimit={2}
+                      currency={investmentPlan?.currency as CurrencyCode}
                       defaultValue={field.value}
-                      onValueChange={(value) => {
-                        field.onChange(value ? parseFloat(value.replace(/\./g, '').replace(',', '.')) : 0);
+                      onValueChange={(value, _name, values) => {
+                        const numValue = values?.float ?? 0;
+                        field.onChange(numValue);
                       }}
                     />
                   </FormControl>

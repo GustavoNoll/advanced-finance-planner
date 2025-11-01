@@ -6,7 +6,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import CurrencyInput from 'react-currency-input-field';
+import { CurrencyInput } from '@/components/ui/currency-input';
 import { supabase } from '@/lib/supabase';
 import { toast } from '@/components/ui/use-toast';
 import { Plus, Trash2, Pencil, Info } from 'lucide-react';
@@ -297,10 +297,13 @@ export const PatrimonialForm = ({
                       <FormLabel className={`text-${color}-600 dark:text-slate-300`}>{t(`patrimonial.form.${title}.value`)}</FormLabel>
                       <FormControl>
                         <CurrencyInput
-                          value={formField.value as number}
-                          onValueChange={(value) => formField.onChange(value ? parseFloat(value) : 0)}
+                          defaultValue={formField.value as number}
+                          onValueChange={(value, _name, values) => {
+                            const numValue = values?.float ?? 0;
+                            formField.onChange(numValue);
+                          }}
                           disabled={!isEditing}
-                          intlConfig={{ locale: 'pt-BR', currency: 'BRL' }}
+                          currency="BRL"
                           className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
                         />
                       </FormControl>

@@ -2,10 +2,15 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
 import type { PerformanceData } from "@/types/financial"
+import { CurrencyCode } from "@/utils/currency"
+import { calculateCompoundedRates } from "@/lib/financial-math"
+import { useTranslation } from "react-i18next"
 
 interface InvestmentDetailsTableProps {
   performanceData: PerformanceData[]
+  currency?: CurrencyCode
 }
+
 
 const COLORS = [
   'hsl(210 16% 82%)',
@@ -75,12 +80,11 @@ function getStrategyColor(strategyName: string) {
 
 function calculateCompoundReturn(monthlyReturns: number[]): number {
   if (monthlyReturns.length === 0) return 0
-  return monthlyReturns.reduce((acc, monthReturn) => {
-    return (1 + acc) * (1 + monthReturn) - 1
-  }, 0)
+  return calculateCompoundedRates(monthlyReturns)
 }
 
-export function InvestmentDetailsTable({ performanceData }: InvestmentDetailsTableProps) {
+export function InvestmentDetailsTable({ performanceData, currency = 'BRL' }: InvestmentDetailsTableProps) {
+  const { t } = useTranslation()
   const uniquePeriods = [...new Set(performanceData.map(d => d.period).filter(Boolean) as string[])]
   const sortedPeriods = uniquePeriods.sort((a, b) => toDate(a) - toDate(b))
   const mostRecent = [...sortedPeriods].sort((a, b) => toDate(b) - toDate(a))[0]
@@ -193,28 +197,28 @@ export function InvestmentDetailsTable({ performanceData }: InvestmentDetailsTab
   }
 
   function performanceBadge(v: number) {
-    if (v > 2) return <Badge className="bg-success/20 text-success border-success/30">Excelente</Badge>
-    if (v > 0.5) return <Badge className="bg-info/20 text-info border-info/30">Bom</Badge>
-    if (v > 0) return <Badge className="bg-warning/20 text-warning border-warning/30">Regular</Badge>
-    return <Badge className="bg-destructive/20 text-destructive border-destructive/30">Negativo</Badge>
+    if (v > 2) return <Badge className="bg-success/20 text-success border-success/30">{t('portfolioPerformance.kpi.investmentDetails.performance.excellent')}</Badge>
+    if (v > 0.5) return <Badge className="bg-info/20 text-info border-info/30">{t('portfolioPerformance.kpi.investmentDetails.performance.good')}</Badge>
+    if (v > 0) return <Badge className="bg-warning/20 text-warning border-warning/30">{t('portfolioPerformance.kpi.investmentDetails.performance.regular')}</Badge>
+    return <Badge className="bg-destructive/20 text-destructive border-destructive/30">{t('portfolioPerformance.kpi.investmentDetails.performance.negative')}</Badge>
   }
 
   return (
     <Card className="bg-white dark:bg-gray-900 rounded-xl shadow-lg border border-gray-100 dark:border-gray-800">
       <CardHeader>
-        <CardTitle className="text-foreground">Detalhamento dos Investimentos</CardTitle>
+        <CardTitle className="text-foreground">{t('portfolioPerformance.kpi.investmentDetails.title')}</CardTitle>
       </CardHeader>
       <CardContent>
         <div className="overflow-x-auto">
           <Table>
             <TableHeader>
               <TableRow className="border-border/50">
-                <TableHead className="text-muted-foreground">Estratégia</TableHead>
-                <TableHead className="text-muted-foreground text-center">Mês</TableHead>
-                <TableHead className="text-muted-foreground text-center">Ano</TableHead>
-                <TableHead className="text-muted-foreground text-center">6 Meses</TableHead>
-                <TableHead className="text-muted-foreground text-center">12 Meses</TableHead>
-                <TableHead className="text-muted-foreground text-center">Início</TableHead>
+                <TableHead className="text-muted-foreground">{t('portfolioPerformance.kpi.investmentDetails.strategy')}</TableHead>
+                <TableHead className="text-muted-foreground text-center">{t('portfolioPerformance.kpi.investmentDetails.month')}</TableHead>
+                <TableHead className="text-muted-foreground text-center">{t('portfolioPerformance.kpi.investmentDetails.year')}</TableHead>
+                <TableHead className="text-muted-foreground text-center">{t('portfolioPerformance.kpi.investmentDetails.sixMonths')}</TableHead>
+                <TableHead className="text-muted-foreground text-center">{t('portfolioPerformance.kpi.investmentDetails.twelveMonths')}</TableHead>
+                <TableHead className="text-muted-foreground text-center">{t('portfolioPerformance.kpi.investmentDetails.inception')}</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -256,7 +260,7 @@ export function InvestmentDetailsTable({ performanceData }: InvestmentDetailsTab
                 ))
               ) : (
                 <TableRow className="border-border/50">
-                  <TableCell colSpan={6} className="text-center text-muted-foreground py-8">Nenhum dado disponível</TableCell>
+                  <TableCell colSpan={6} className="text-center text-muted-foreground py-8">{t('portfolioPerformance.kpi.investmentDetails.noData')}</TableCell>
                 </TableRow>
               )}
             </TableBody>

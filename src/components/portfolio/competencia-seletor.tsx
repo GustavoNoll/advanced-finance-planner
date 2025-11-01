@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react"
 import { Card, CardContent } from "@/components/ui/card"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Calendar, Filter } from "lucide-react"
+import { useTranslation } from "react-i18next"
 import type { ConsolidatedPerformance, PerformanceData } from "@/types/financial"
 
 interface CompetenciaSeletorProps {
@@ -11,6 +12,7 @@ interface CompetenciaSeletorProps {
 }
 
 export function CompetenciaSeletor({ consolidatedData, performanceData, onFilterChange }: CompetenciaSeletorProps) {
+  const { t } = useTranslation()
   const [inicioCompetencia, setInicioCompetencia] = useState<string>("")
   const [fimCompetencia, setFimCompetencia] = useState<string>("")
 
@@ -47,7 +49,7 @@ export function CompetenciaSeletor({ consolidatedData, performanceData, onFilter
 
   const formatCompetenciaDisplay = (competencia: string) => {
     const [month, year] = competencia.split('/')
-    const monthNames = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez']
+    const monthNames = t('portfolioPerformance.months.short', { returnObjects: true }) as string[]
     return `${monthNames[parseInt(month) - 1]}/${year}`
   }
 
@@ -58,21 +60,21 @@ export function CompetenciaSeletor({ consolidatedData, performanceData, onFilter
           <div className="flex items-center space-x-4">
             <div className="flex items-center space-x-2">
               <Filter className="h-4 w-4 text-muted-foreground" />
-              <span className="text-sm text-muted-foreground">Nenhuma competência encontrada</span>
+              <span className="text-sm text-muted-foreground">{t('portfolioPerformance.competenceSelector.noCompetenceFound')}</span>
             </div>
           </div>
         ) : (
           <div className="flex items-center space-x-4">
             <div className="flex items-center space-x-2">
               <Filter className="h-4 w-4 text-primary" />
-              <span className="text-sm font-medium text-foreground">Filtrar por Período:</span>
+              <span className="text-sm font-medium text-foreground">{t('portfolioPerformance.competenceSelector.filterByPeriod')}</span>
             </div>
             <div className="flex items-center space-x-2">
               <Calendar className="h-4 w-4 text-muted-foreground" />
-              <span className="text-sm text-muted-foreground">De:</span>
+              <span className="text-sm text-muted-foreground">{t('portfolioPerformance.competenceSelector.from')}</span>
               <Select value={inicioCompetencia} onValueChange={handleInicioChange}>
                 <SelectTrigger className="w-32 bg-background/50">
-                  <SelectValue placeholder="Início" />
+                  <SelectValue placeholder={t('portfolioPerformance.competenceSelector.start')} />
                 </SelectTrigger>
                 <SelectContent>
                   {competencias.map(c => (
@@ -82,10 +84,10 @@ export function CompetenciaSeletor({ consolidatedData, performanceData, onFilter
               </Select>
             </div>
             <div className="flex items-center space-x-2">
-              <span className="text-sm text-muted-foreground">Até:</span>
+              <span className="text-sm text-muted-foreground">{t('portfolioPerformance.competenceSelector.to')}</span>
               <Select value={fimCompetencia} onValueChange={handleFimChange}>
                 <SelectTrigger className="w-32 bg-background/50">
-                  <SelectValue placeholder="Fim" />
+                  <SelectValue placeholder={t('portfolioPerformance.competenceSelector.end')} />
                 </SelectTrigger>
                 <SelectContent>
                   {competencias.map(c => (

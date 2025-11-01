@@ -3,12 +3,16 @@ import { InstitutionAllocationCard } from "@/components/portfolio/institution-al
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
 import type { ConsolidatedPerformance, PerformanceData } from "@/types/financial"
+import { formatCurrency } from "@/utils/currency"
+import { CurrencyCode } from "@/utils/currency"
+import { useTranslation } from "react-i18next"
 
 interface ClientDataDisplayProps {
   consolidatedData: ConsolidatedPerformance[]
   performanceData: PerformanceData[]
   loading: boolean
   clientName: string
+  currency?: CurrencyCode
   portfolioTableComponent?: React.ReactNode
   institutionCardData?: {
     institutionData: Array<{
@@ -24,7 +28,9 @@ interface ClientDataDisplayProps {
   onInstitutionClick?: (institution: string) => void
 }
 
-export function ClientDataDisplay({ consolidatedData, performanceData, loading, clientName, portfolioTableComponent, institutionCardData, selectedInstitution, onInstitutionClick }: ClientDataDisplayProps) {
+export function ClientDataDisplay({ consolidatedData, performanceData, loading, clientName, currency = 'BRL', portfolioTableComponent, institutionCardData, selectedInstitution, onInstitutionClick }: ClientDataDisplayProps) {
+  const { t } = useTranslation()
+  
   if (!clientName) return null
 
   const toDate = (competencia?: string | null) => {
@@ -43,7 +49,7 @@ export function ClientDataDisplay({ consolidatedData, performanceData, loading, 
       <div className="grid grid-cols-1 gap-6 mb-8">
         <Card className="bg-gradient-card border-border/50 shadow-elegant-md">
           <CardHeader>
-            <CardTitle className="text-sm text-muted-foreground">Carregando dados...</CardTitle>
+            <CardTitle className="text-sm text-muted-foreground">{t('portfolioPerformance.kpi.clientDataDisplay.loading')}</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="animate-pulse space-y-3">
@@ -62,30 +68,30 @@ export function ClientDataDisplay({ consolidatedData, performanceData, loading, 
       {latestRows.length > 0 && (
         <Card className="bg-gradient-card border-border/50 shadow-elegant-md">
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">Performance Consolidada - Competência Mais Recente</CardTitle>
+            <CardTitle className="flex items-center gap-2">{t('portfolioPerformance.kpi.clientDataDisplay.title')}</CardTitle>
           </CardHeader>
           <CardContent>
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Instituição</TableHead>
-                  <TableHead>Patrimônio Inicial</TableHead>
-                  <TableHead>Movimentação</TableHead>
-                  <TableHead>Impostos</TableHead>
-                  <TableHead>Ganho Financeiro</TableHead>
-                  <TableHead>Patrimônio Final</TableHead>
-                  <TableHead>Rendimento</TableHead>
+                  <TableHead>{t('portfolioPerformance.kpi.clientDataDisplay.table.institution')}</TableHead>
+                  <TableHead>{t('portfolioPerformance.kpi.clientDataDisplay.table.initialAssets')}</TableHead>
+                  <TableHead>{t('portfolioPerformance.kpi.clientDataDisplay.table.movement')}</TableHead>
+                  <TableHead>{t('portfolioPerformance.kpi.clientDataDisplay.table.taxes')}</TableHead>
+                  <TableHead>{t('portfolioPerformance.kpi.clientDataDisplay.table.financialGain')}</TableHead>
+                  <TableHead>{t('portfolioPerformance.kpi.clientDataDisplay.table.finalAssets')}</TableHead>
+                  <TableHead>{t('portfolioPerformance.kpi.clientDataDisplay.table.yield')}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {latestRows.map(r => (
                   <TableRow key={r.id}>
                     <TableCell className="font-medium">{r.institution || '-'}</TableCell>
-                    <TableCell>{new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL',minimumFractionDigits:2}).format(Number(r.initial_assets || 0))}</TableCell>
-                    <TableCell className={Number(r.movement || 0) >= 0 ? "text-success" : "text-destructive"}>{new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL',minimumFractionDigits:2}).format(Number(r.movement || 0))}</TableCell>
-                    <TableCell className={Number(r.taxes || 0) >= 0 ? "text-muted-foreground" : "text-destructive"}>{new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL',minimumFractionDigits:2}).format(Number(r.taxes || 0))}</TableCell>
-                    <TableCell className={Number(r.financial_gain || 0) >= 0 ? "text-success" : "text-destructive"}>{new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL',minimumFractionDigits:2}).format(Number(r.financial_gain || 0))}</TableCell>
-                    <TableCell className="font-semibold">{new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL',minimumFractionDigits:2}).format(Number(r.final_assets || 0))}</TableCell>
+                    <TableCell>{formatCurrency(Number(r.initial_assets || 0), currency)}</TableCell>
+                    <TableCell className={Number(r.movement || 0) >= 0 ? "text-success" : "text-destructive"}>{formatCurrency(Number(r.movement || 0), currency)}</TableCell>
+                    <TableCell className={Number(r.taxes || 0) >= 0 ? "text-muted-foreground" : "text-destructive"}>{formatCurrency(Number(r.taxes || 0), currency)}</TableCell>
+                    <TableCell className={Number(r.financial_gain || 0) >= 0 ? "text-success" : "text-destructive"}>{formatCurrency(Number(r.financial_gain || 0), currency)}</TableCell>
+                    <TableCell className="font-semibold">{formatCurrency(Number(r.final_assets || 0), currency)}</TableCell>
                     <TableCell>
                       <Badge variant={Number(r.yield || 0) >= 0 ? "default" : "destructive"}>{((Number(r.yield || 0)) * 100).toFixed(2)}%</Badge>
                     </TableCell>
@@ -105,16 +111,17 @@ export function ClientDataDisplay({ consolidatedData, performanceData, loading, 
           totalPatrimonio={institutionCardData.totalPatrimonio}
           selectedInstitution={selectedInstitution}
           onInstitutionClick={onInstitutionClick}
+          currency={currency}
         />
       )}
 
       {consolidatedData.length === 0 && performanceData.length === 0 && (
         <Card className="bg-gradient-card border-border/50 shadow-elegant-md">
           <CardHeader>
-            <CardTitle className="text-sm text-muted-foreground">Nenhum dado encontrado</CardTitle>
+            <CardTitle className="text-sm text-muted-foreground">{t('portfolioPerformance.kpi.clientDataDisplay.noData.title')}</CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-muted-foreground">Não foram encontrados dados para o cliente "{clientName}".</p>
+            <p className="text-muted-foreground">{t('portfolioPerformance.kpi.clientDataDisplay.noData.message', { clientName })}</p>
           </CardContent>
         </Card>
       )}

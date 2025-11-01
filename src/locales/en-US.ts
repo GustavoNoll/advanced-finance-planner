@@ -1728,6 +1728,236 @@ export const enUS = {
       error: 'Failed to update life information'
     }
   },
+  portfolioPerformance: {
+    selectAll: "Select All",
+    newRecord: "New Record",
+    filters: {
+      all: "All",
+      allPeriods: "All periods",
+      allInstitutions: "All institutions",
+      allClasses: "All classes",
+      allIssuers: "All issuers"
+    },
+    importCSV: {
+      title: "Import CSV",
+      consolidatedDescription: "Import consolidated performance data in CSV format",
+      detailedDescription: "Import detailed performance data in CSV format",
+      expectedFormat: "Expected Format",
+      importFile: "Import File",
+      requiredColumns: "Required Columns",
+      exampleData: "Example Data",
+      notes: {
+        title: "Notes",
+        dateFormat: "Date must be in DD/MM/YYYY format",
+        periodFormat: "Period must be in MM/YYYY format",
+        currencyFormat: "Currency values can be in $ with dots and commas (e.g., $ 1,234.56)",
+        percentageFormat: "Percentages can be with comma (e.g., 1.24%)",
+        duplicates: "If there are duplicate records, they will be inserted as new records"
+      },
+      importing: "Importing...",
+      selectFile: "Select CSV File",
+      fileHint: "Click to select a CSV file",
+      successTitle: "Import Successful",
+      partialSuccessTitle: "Partial Import",
+      successMessage: "{{success}} records imported successfully",
+      partialSuccessMessage: "{{success}} records imported successfully, {{failed}} failures",
+      errorRow: "Row {{row}}: {{reason}}",
+      moreErrors: "... and {{count}} more error(s)",
+      button: "Import CSV"
+    },
+    validation: {
+      duplicateTitle: "Duplicate Record",
+      consolidatedDuplicate: "A record with the same Profile, Institution, and Period already exists.",
+      detailedDuplicate: "A record with the same Profile, Institution, Asset, Position, and Period already exists.",
+      invalidData: "Invalid Data",
+      assetAndPositionRequired: "Asset and Position are required.",
+      updateSuccess: "Record updated successfully",
+      createSuccess: "Record created successfully",
+      saveError: "Error saving",
+      unknownError: "Unknown error",
+      invalidPeriod: "Invalid period",
+      periodFormat: "Format must be MM/YYYY",
+      invalidMonth: "Month must be between 01 and 12",
+      invalidYear: "Invalid year"
+    },
+    competenceSelector: {
+      noCompetenceFound: "No period found",
+      filterByPeriod: "Filter by Period:",
+      from: "From:",
+      to: "To:",
+      start: "Start",
+      end: "End"
+    },
+    months: {
+      short: ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
+    },
+    dataManagement: {
+      title: "Manage Portfolio Data",
+      back: "Back",
+      filters: "Filters",
+      filterLabels: {
+        periods: "Periods",
+        institutions: "Institutions",
+        assetClasses: "Asset Classes",
+        issuers: "Issuers"
+      },
+      tabs: {
+        consolidated: "Consolidated Data",
+        detailed: "Detailed Data"
+      },
+      selected: "selected",
+      clear: "Clear",
+      loading: "Loading...",
+      noData: "No data",
+      table: {
+        period: "Period",
+        institution: "Institution",
+        initialAssets: "Initial Assets",
+        movement: "Movement",
+        taxes: "Taxes",
+        financialGain: "Financial Gain",
+        finalAssets: "Final Assets",
+        yield: "Yield %",
+        actions: "Actions",
+        asset: "Asset",
+        issuer: "Issuer",
+        assetClass: "Class",
+        position: "Position",
+        rate: "Rate",
+        maturity: "Maturity"
+      },
+      editDialog: {
+        edit: "Edit",
+        create: "Create",
+        consolidatedData: "Consolidated Data",
+        detailedData: "Detailed Data",
+        periodLabel: "Period (MM/YYYY)",
+        institutionLabel: "Institution",
+        initialAssetsLabel: "Initial Assets",
+        movementLabel: "Movement",
+        taxesLabel: "Taxes",
+        financialGainLabel: "Financial Gain",
+        finalAssetsLabel: "Final Assets",
+        yieldLabel: "Yield (%)",
+        assetLabel: "Asset",
+        issuerLabel: "Issuer",
+        assetClassLabel: "Asset Class",
+        positionLabel: "Position",
+        rateLabel: "Rate",
+        maturityLabel: "Maturity",
+        cancel: "Cancel",
+        save: "Save",
+        invalidMonth: "Invalid month (01-12)",
+        invalidYear: "Invalid year"
+      },
+      delete: {
+        confirmTitle: "Confirm Deletion",
+        confirmMessage: "Are you sure you want to delete this record? This action cannot be undone.",
+        confirmDeleteMultiple: "Confirm Deletion",
+        confirmDeleteMultipleMessage: "Are you sure you want to delete {{count}} selected record(s)? This action cannot be undone.",
+        deleteButton: "Delete",
+        deleteSelected: "Delete Selected",
+        cancel: "Cancel",
+        success: "Record deleted successfully",
+        successMultiple: "{{count}} record(s) deleted successfully"
+      }
+    },
+    kpi: {
+      manageData: "Manage Data",
+      totalAssets: "Total Assets",
+      noPreviousMonth: "No previous month to compare",
+      vsPreviousMonth: "vs previous month",
+      monthlyYield: "Monthly Yield",
+      vsTarget: "vs Target: --",
+      diversification: "Diversification",
+      assetsInPortfolio: "Assets in portfolio",
+      nextMaturity: "Next Maturity",
+      waitingData: "Waiting for data",
+      noInstitution: "No Institution",
+      sixMonthsReturn: "6 Months Return",
+      twelveMonthsReturn: "12 Months Return",
+      yearReturn: "Year Return",
+      inceptionReturn: "Return since inception",
+      rentability: "Return Rate",
+      rentabilityVsTarget: "Return Rate (pp above target)",
+      bestMonthRentability: "Month with best return rate of the year",
+      table: {
+        title: "Wealth Summary",
+        description: "Consolidated wealth evolution with accumulated returns",
+        period: "Period",
+        initialAssets: "Initial Assets",
+        movement: "Movements",
+        taxes: "Taxes",
+        finalAssets: "Final Assets",
+        gain: "Gain",
+        total: "Total"
+      },
+      investmentDetails: {
+        title: "Investment Details",
+        strategy: "Strategy",
+        month: "Month",
+        year: "Year",
+        sixMonths: "6 Months",
+        twelveMonths: "12 Months",
+        inception: "Inception",
+        noData: "No data available",
+        performance: {
+          excellent: "Excellent",
+          good: "Good",
+          regular: "Regular",
+          negative: "Negative"
+        }
+      },
+      clientDataDisplay: {
+        loading: "Loading data...",
+        title: "Consolidated Performance - Most Recent Period",
+        table: {
+          institution: "Institution",
+          initialAssets: "Initial Assets",
+          movement: "Movement",
+          taxes: "Taxes",
+          financialGain: "Financial Gain",
+          finalAssets: "Final Assets",
+          yield: "Yield"
+        },
+        noData: {
+          title: "No data found",
+          message: "No data found for client \"{{clientName}}\"."
+        }
+      },
+      institutionAllocation: {
+        title: "Institution Allocation",
+        grossAssets: "Gross Assets",
+        noData: "No data",
+        total: "Total"
+      },
+      maturityTimeline: {
+        title: "Maturities by Strategy",
+        subtitle: "Distribution by maturity date",
+        year: "Year",
+        total: "Total Value",
+        avgRate: "Average Rate",
+        byStrategy: "By Strategy",
+        emptyFor: "No maturity data available for",
+        assetClasses: {
+          postFixed: "Post Fixed",
+          inflation: "Inflation",
+          preFixed: "Pre Fixed",
+          postFixedLiquidity: "Post Fixed - Liquidity",
+          multimarket: "Multimarket",
+          realEstate: "Real Estate",
+          stocks: "Stocks",
+          stocksLongBias: "Stocks - Long Bias",
+          privateEquity: "Private Equity",
+          foreignFixedIncome: "Foreign - Fixed Income",
+          foreignStocks: "Foreign - Stocks",
+          coe: "COE",
+          gold: "Gold",
+          crypto: "Crypto Assets"
+        }
+      }
+    }
+  },
   investmentPreferences: {
     title: 'Investment Preferences',
     messages: {

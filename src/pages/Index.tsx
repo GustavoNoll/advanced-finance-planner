@@ -333,6 +333,7 @@ const Index = () => {
           clientId={clientId}
           profile={clientProfile}
           broker={brokerProfile}
+          investmentPlan={investmentPlan}
           onLogout={handleLogout}
           onShareClient={handleShareClient}
         />

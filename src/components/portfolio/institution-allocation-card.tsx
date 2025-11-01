@@ -1,6 +1,9 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart"
 import { Pie, PieChart, Cell, Label } from "recharts"
+import { formatCurrency } from "@/utils/currency"
+import { CurrencyCode } from "@/utils/currency"
+import { useTranslation } from "react-i18next"
 
 export interface InstitutionAllocationItem {
   institution: string
@@ -15,15 +18,17 @@ interface InstitutionAllocationCardProps {
   totalPatrimonio: number
   selectedInstitution?: string | null
   onInstitutionClick?: (institution: string) => void
+  currency?: CurrencyCode
 }
 
-export function InstitutionAllocationCard({ institutionData, totalPatrimonio, selectedInstitution, onInstitutionClick }: InstitutionAllocationCardProps) {
-  const currency = (v: number) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL', minimumFractionDigits: 2 }).format(v || 0)
+export function InstitutionAllocationCard({ institutionData, totalPatrimonio, selectedInstitution, onInstitutionClick, currency = 'BRL' }: InstitutionAllocationCardProps) {
+  const { t } = useTranslation()
+  const formatCurrencyValue = (v: number) => formatCurrency(v || 0, currency)
 
   return (
     <Card className="bg-gradient-card border-border/50 shadow-elegant-md">
       <CardHeader>
-        <CardTitle className="text-foreground">Alocação por Instituição</CardTitle>
+        <CardTitle className="text-foreground">{t('portfolioPerformance.kpi.institutionAllocation.title')}</CardTitle>
       </CardHeader>
       <CardContent>
         {/* Donut chart on top */}
@@ -57,8 +62,8 @@ export function InstitutionAllocationCard({ institutionData, totalPatrimonio, se
                       return (
                         <foreignObject x={cx - 120} y={cy - 60} width={240} height={120}>
                           <div className="flex h-full w-full flex-col items-center justify-center">
-                            <span className="text-sm text-muted-foreground">Patrimônio Bruto</span>
-                            <span className="text-2xl font-bold text-foreground">{currency(totalPatrimonio)}</span>
+                            <span className="text-sm text-muted-foreground">{t('portfolioPerformance.kpi.institutionAllocation.grossAssets')}</span>
+                            <span className="text-2xl font-bold text-foreground">{formatCurrencyValue(totalPatrimonio)}</span>
                           </div>
                         </foreignObject>
                       )
@@ -84,14 +89,14 @@ export function InstitutionAllocationCard({ institutionData, totalPatrimonio, se
               </div>
               <div className="flex items-center gap-4 text-sm">
                 <div className="text-muted-foreground">{item.percentage.toFixed(2)}%</div>
-                <div className="text-foreground font-semibold">{currency(item.patrimonio)}</div>
+                <div className="text-foreground font-semibold">{formatCurrencyValue(item.patrimonio)}</div>
               </div>
             </button>
           ))}
           {institutionData.length === 0 && (
-            <div className="text-sm text-muted-foreground text-center py-4">Sem dados</div>
+            <div className="text-sm text-muted-foreground text-center py-4">{t('portfolioPerformance.kpi.institutionAllocation.noData')}</div>
           )}
-          <div className="text-right text-sm text-muted-foreground">Total: {currency(totalPatrimonio)}</div>
+          <div className="text-right text-sm text-muted-foreground">{t('portfolioPerformance.kpi.institutionAllocation.total')}: {formatCurrencyValue(totalPatrimonio)}</div>
         </div>
       </CardContent>
     </Card>

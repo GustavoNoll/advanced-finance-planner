@@ -8,6 +8,7 @@ export { InvestmentPolicyService } from './investment-policy.service'
 export { FinancialRecordsManagementService } from './financial-records-management.service'
 export { ClientManagementService } from './client-management.service'
 export { PlanCreationService } from './plan-creation.service'
+export { PortfolioPerformanceService } from './portfolio-performance.service'
 
 export type { ProcessedFinancialRecords, FinancialRecordsFilters } from './financial-records.service'
 export type { GoalsAndEvents, Counters } from './goals-events.service'
@@ -19,3 +20,4 @@ export type { InvestmentPolicyData, PolicySectionData } from './investment-polic
 export type { CSVRecord, ImportResult, SyncResult } from './financial-records-management.service'
 export type { CreateClientData, ClientProfile } from './client-management.service'
 export type { PlanCreationData, ProfileData } from './plan-creation.service'
+export type { CreateConsolidatedData, UpdateConsolidatedData, CreateDetailedData, UpdateDetailedData } from './portfolio-performance.service'

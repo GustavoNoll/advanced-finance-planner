@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
-import CurrencyInput from 'react-currency-input-field';
+import { CurrencyInput } from '@/components/ui/currency-input';
 import { supabase } from '@/lib/supabase';
 import { useToast } from '@/components/ui/use-toast';
 import { Plus, Trash2, Pencil, Info } from 'lucide-react';
@@ -321,10 +321,13 @@ export const BudgetForm = ({
                             <FormLabel className="text-green-600">{t('budget.incomes.amount')}</FormLabel>
                             <FormControl>
                               <CurrencyInput
-                                value={field.value}
-                                onValueChange={(value) => field.onChange(value ? parseFloat(value) : 0)}
+                                defaultValue={field.value}
+                                onValueChange={(value, _name, values) => {
+                                  const numValue = values?.float ?? 0;
+                                  field.onChange(numValue);
+                                }}
                                 disabled={!isEditing}
-                                intlConfig={{ locale: 'pt-BR', currency: 'BRL' }}
+                                currency="BRL"
                                 className="flex h-10 w-full rounded-md border border-green-200 bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-green-500 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
                               />
                             </FormControl>
@@ -398,10 +401,13 @@ export const BudgetForm = ({
                             <FormLabel className="text-red-600">{t('budget.expenses.amount')}</FormLabel>
                             <FormControl>
                               <CurrencyInput
-                                value={field.value}
-                                onValueChange={(value) => field.onChange(value ? parseFloat(value) : 0)}
+                                defaultValue={field.value}
+                                onValueChange={(value, _name, values) => {
+                                  const numValue = values?.float ?? 0;
+                                  field.onChange(numValue);
+                                }}
                                 disabled={!isEditing}
-                                intlConfig={{ locale: 'pt-BR', currency: 'BRL' }}
+                                currency="BRL"
                                 className="flex h-10 w-full rounded-md border border-red-200 bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
                               />
                             </FormControl>
