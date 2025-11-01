@@ -1910,6 +1910,14 @@ export const enUS = {
           negative: "Negative"
         }
       },
+      strategyBreakdown: {
+        title: "Classes",
+        name: "Name",
+        allocation: "Allocation",
+        grossBalance: "Gross Balance",
+        grossPatrimony: "Gross Patrimony",
+        ofPatrimony: "of patrimony"
+      },
       clientDataDisplay: {
         loading: "Loading data...",
         title: "Consolidated Performance - Most Recent Period",

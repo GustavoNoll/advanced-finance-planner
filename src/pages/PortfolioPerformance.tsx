@@ -15,6 +15,7 @@ import { MaturityDialog } from "@/components/portfolio/maturity-dialog";
 import { IssuerExposure } from "@/components/portfolio/issuer-exposure";
 import { MaturityTimeline } from "@/components/portfolio/maturity-timeline";
 import { InvestmentDetailsTable } from "@/components/portfolio/investment-details-table";
+import { StrategyBreakdown } from "@/components/portfolio/strategy-breakdown";
 import { formatMaturityDate } from "@/utils/dateUtils";
 import {
   calculateInstitutionCardData,
@@ -203,6 +204,7 @@ function PortfolioPerformance({
 
         {/* Charts/Breakdowns similar to InvestmentDashboard */}
         <div className="space-y-6">
+          <StrategyBreakdown performanceData={performanceData} currency={currency} />
           <InvestmentDetailsTable performanceData={performanceData} currency={currency} />
           <MaturityTimeline performanceData={performanceData} currency={currency} />
           <IssuerExposure performanceData={performanceData} currency={currency} />

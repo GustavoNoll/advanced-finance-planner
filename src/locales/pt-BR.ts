@@ -1910,6 +1910,14 @@ export const ptBR = {
           negative: "Negativo"
         }
       },
+      strategyBreakdown: {
+        title: "Classes",
+        name: "Nome",
+        allocation: "Alocação",
+        grossBalance: "Saldo Bruto",
+        grossPatrimony: "Patrimônio Bruto",
+        ofPatrimony: "do patrimônio"
+      },
       clientDataDisplay: {
         loading: "Carregando dados...",
         title: "Performance Consolidada - Competência Mais Recente",

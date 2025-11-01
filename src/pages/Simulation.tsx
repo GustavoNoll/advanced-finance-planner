@@ -10,7 +10,7 @@ import { TrendingUp, ArrowLeft, Settings, Calculator, Plus } from "lucide-react"
 import { SimulationChart } from "@/components/broker-dashboard/SimulationChart";
 import { FutureProjectionTab } from "@/components/monthly-view";
 import { InvestmentPlan, MicroInvestmentPlan } from "@/types/financial";
-import { formatCurrency, CurrencyCode } from "@/utils/currency";
+import { formatCurrency, CurrencyCode, getCurrencySymbol } from "@/utils/currency";
 import { RISK_PROFILES } from '@/constants/riskProfiles';
 import { CurrencyInput } from "@/components/ui/currency-input";
 import { usePlanCalculations, usePlanCreation } from "@/hooks/usePlanCreation";
@@ -409,7 +409,7 @@ export const Simulation = () => {
                         defaultValue={formData.initialAmount}
                         onValueChange={(value) => handleFormChange('initialAmount', value || '')}
                         placeholder="10000"
-                        currency={currency}
+                        currency={formData.currency as CurrencyCode}
                         className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
                       />
                     </div>
@@ -421,7 +421,7 @@ export const Simulation = () => {
                         defaultValue={formData.monthlyDeposit}
                         onValueChange={(value) => handleFormChange('monthlyDeposit', value || '')}
                         placeholder="1000"
-                        currency={currency}
+                        currency={formData.currency as CurrencyCode}
                         className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
                       />
                     </div>
@@ -433,7 +433,7 @@ export const Simulation = () => {
                         defaultValue={formData.desiredIncome}
                         onValueChange={(value) => handleFormChange('desiredIncome', value || '')}
                         placeholder="5000"
-                        currency={currency}
+                        currency={formData.currency as CurrencyCode}
                         className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
                       />
                     </div>
