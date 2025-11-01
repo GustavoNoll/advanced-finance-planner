@@ -9,8 +9,6 @@ import {
   fetchIBOVRates,
   fetchGoldPrices,
   fetchBTCPrices,
-  fetchIRFMRates,
-  fetchIFIXRates,
 } from '@/lib/bcb-api'
 import { calculateCompoundedRates } from '@/lib/financial-math'
 
@@ -329,20 +327,11 @@ function fetchBenchmarkData(
         return: item.monthlyRate / 100, // Gold já vem em percentual
       }))
     }
-    
-    case 'IRF-M': {
-      // IRF-M já vem como variação mensal percentual (calculada ao salvar)
-      return fetchIRFMRates(startDate, endDate).map(item => ({
+
+    case "BTC": {
+      return fetchBTCPrices(startDate, endDate).map(item => ({
         date: item.date,
-        return: item.monthlyRate / 100, // IRF-M já vem em percentual
-      }))
-    }
-    
-    case 'IFIX': {
-      // IFIX já vem como variação mensal percentual (calculada ao salvar)
-      return fetchIFIXRates(startDate, endDate).map(item => ({
-        date: item.date,
-        return: item.monthlyRate / 100, // IFIX já vem em percentual
+        return: item.monthlyRate / 100, // BTC já vem em percentual
       }))
     }
     

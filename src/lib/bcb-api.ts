@@ -7,8 +7,6 @@ import tBondData from '../data/t-bond-historical.json';
 import ibovData from '../data/ibov-historical.json';
 import goldData from '../data/gold-historical.json';
 import btcData from '../data/btc-historical.json';
-import irfmData from '../data/irfm-historical.json';
-import ifixData from '../data/ifix-historical.json';
 
 interface RateData {
   data: string;
@@ -132,33 +130,6 @@ export const fetchBTCPrices = (startDate: string, endDate: string) => {
     return filterDataByDateRange(btcData, startDate, endDate);
   } catch (error) {
     console.error('Error fetching BTC prices:', error);
-    return [];
-  }
-};
-
-/**
- * Fetches IRF-M (Índice de Referência Fiscal Mensal) rates within a date range
- * IRF-M data is already filtered to include only the first day of each month
- */
-export const fetchIRFMRates = (startDate: string, endDate: string) => {
-  try {
-    // Os dados já vêm filtrados com apenas o primeiro dia de cada mês
-    return filterDataByDateRange(irfmData, startDate, endDate);
-  } catch (error) {
-    console.error('Error fetching IRF-M rates:', error);
-    return [];
-  }
-};
-
-/**
- * Fetches IFIX (Índice de Fundos Imobiliários) monthly variation rates within a date range
- * Data is already stored as monthly percentage variations
- */
-export const fetchIFIXRates = (startDate: string, endDate: string) => {
-  try {
-    return filterDataByDateRange(ifixData, startDate, endDate);
-  } catch (error) {
-    console.error('Error fetching IFIX rates:', error);
     return [];
   }
 };
