@@ -2,6 +2,11 @@ import ipcaData from '../data/ipca-historical.json';
 import cdiData from '../data/cdi-historical.json';
 import usCpiData from '../data/us-cpi-historical.json';
 import euroCpiData from '../data/euro-cpi-historical.json';
+import sp500Data from '../data/sp500-historical.json';
+import tBondData from '../data/t-bond-historical.json';
+import ibovData from '../data/ibov-historical.json';
+import goldData from '../data/gold-historical.json';
+import btcData from '../data/btc-historical.json';
 
 interface RateData {
   data: string;
@@ -64,6 +69,67 @@ export const fetchEuroCPIRates = (startDate: string, endDate: string) => {
     return filterDataByDateRange(euroCpiData, startDate, endDate);
   } catch (error) {
     console.error('Error fetching Euro CPI rates:', error);
+    return [];
+  }
+};
+
+/**
+ * Fetches S&P 500 price data within a date range
+ */
+export const fetchSP500Prices = (startDate: string, endDate: string) => {
+  try {
+    return filterDataByDateRange(sp500Data, startDate, endDate);
+  } catch (error) {
+    console.error('Error fetching S&P 500 prices:', error);
+    return [];
+  }
+};
+
+/**
+ * Fetches 10-Year Treasury Bond yield data within a date range
+ */
+export const fetchTBondPrices = (startDate: string, endDate: string) => {
+  try {
+    return filterDataByDateRange(tBondData, startDate, endDate);
+  } catch (error) {
+    console.error('Error fetching T-Bond prices:', error);
+    return [];
+  }
+};
+
+/**
+ * Fetches IBOVESPA monthly variation rates within a date range
+ * Data is already stored as monthly percentage variations
+ */
+export const fetchIBOVRates = (startDate: string, endDate: string) => {
+  try {
+    return filterDataByDateRange(ibovData, startDate, endDate);
+  } catch (error) {
+    console.error('Error fetching IBOV rates:', error);
+    return [];
+  }
+};
+
+/**
+ * Fetches Gold price data within a date range
+ */
+export const fetchGoldPrices = (startDate: string, endDate: string) => {
+  try {
+    return filterDataByDateRange(goldData, startDate, endDate);
+  } catch (error) {
+    console.error('Error fetching Gold prices:', error);
+    return [];
+  }
+};
+
+/**
+ * Fetches Bitcoin price data within a date range
+ */
+export const fetchBTCPrices = (startDate: string, endDate: string) => {
+  try {
+    return filterDataByDateRange(btcData, startDate, endDate);
+  } catch (error) {
+    console.error('Error fetching BTC prices:', error);
     return [];
   }
 };

@@ -22,6 +22,7 @@ interface MicroPlansTimelineProps {
   onCreateMicroPlan: (data: CreateMicroInvestmentPlan) => Promise<MicroInvestmentPlan | null>
   onUpdateMicroPlan: (id: string, data: UpdateMicroInvestmentPlan) => Promise<MicroInvestmentPlan | null>
   onDeleteMicroPlan: (id: string) => Promise<boolean>
+  isBroker?: boolean
 }
 
 export function MicroPlansTimeline({ 
@@ -33,7 +34,8 @@ export function MicroPlansTimeline({
   planLimitAge,
   onCreateMicroPlan,
   onUpdateMicroPlan,
-  onDeleteMicroPlan
+  onDeleteMicroPlan,
+  isBroker = false
 }: MicroPlansTimelineProps) {
   const { t } = useTranslation()
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false)
@@ -125,13 +127,14 @@ export function MicroPlansTimeline({
               <Target className="h-5 w-5" />
               {t('investmentPlan.microPlans.timeline.title')}
             </CardTitle>
-            <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
-              <DialogTrigger asChild>
-                <Button size="sm">
-                  <Plus className="h-4 w-4 mr-2" />
-                  {t('investmentPlan.microPlans.createFirst')}
-                </Button>
-              </DialogTrigger>
+            {isBroker && (
+              <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
+                <DialogTrigger asChild>
+                  <Button size="sm">
+                    <Plus className="h-4 w-4 mr-2" />
+                    {t('investmentPlan.microPlans.createFirst')}
+                  </Button>
+                </DialogTrigger>
               <DialogContent className="max-w-2xl">
                 <DialogHeader>
                   <DialogTitle>{t('investmentPlan.microPlans.createNew')}</DialogTitle>
@@ -150,6 +153,7 @@ export function MicroPlansTimeline({
                 </Suspense>
               </DialogContent>
             </Dialog>
+            )}
           </div>
         </CardHeader>
         <CardContent>
@@ -183,13 +187,14 @@ export function MicroPlansTimeline({
             <Target className="h-5 w-5" />
             {t('investmentPlan.microPlans.timeline.title')}
           </CardTitle>
-          <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
-            <DialogTrigger asChild>
-              <Button size="sm">
-                <Plus className="h-4 w-4 mr-2" />
-                {t('investmentPlan.microPlans.createNew')}
-              </Button>
-            </DialogTrigger>
+          {isBroker && (
+            <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
+              <DialogTrigger asChild>
+                <Button size="sm">
+                  <Plus className="h-4 w-4 mr-2" />
+                  {t('investmentPlan.microPlans.createNew')}
+                </Button>
+              </DialogTrigger>
             <DialogContent className="max-w-2xl">
               <DialogHeader>
                 <DialogTitle>{t('investmentPlan.microPlans.createNew')}</DialogTitle>
@@ -210,6 +215,7 @@ export function MicroPlansTimeline({
               </Suspense>
             </DialogContent>
           </Dialog>
+          )}
         </div>
       </CardHeader>
       
@@ -430,28 +436,30 @@ export function MicroPlansTimeline({
                     </div>
 
                     {/* Action buttons */}
-                    <div className="flex items-center gap-2 mt-3">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => setEditingMicroPlan(microPlan)}
-                        className="h-8 px-2"
-                      >
-                        <Edit className="h-4 w-4 mr-1" />
-                        {t('common.edit')}
-                      </Button>
-                      {microPlans.length > 1 && !isBase && (
+                    {isBroker && (
+                      <div className="flex items-center gap-2 mt-3">
                         <Button
                           variant="ghost"
                           size="sm"
-                          onClick={() => handleDeleteMicroPlan(microPlan.id)}
-                          className="h-8 px-2 text-red-600 hover:text-red-700 hover:bg-red-50 dark:text-red-400 dark:hover:text-red-300 dark:hover:bg-red-950/20"
+                          onClick={() => setEditingMicroPlan(microPlan)}
+                          className="h-8 px-2"
                         >
-                          <Trash2 className="h-4 w-4 mr-1" />
-                          {t('common.delete')}
+                          <Edit className="h-4 w-4 mr-1" />
+                          {t('common.edit')}
                         </Button>
-                      )}
-                    </div>
+                        {microPlans.length > 1 && !isBase && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleDeleteMicroPlan(microPlan.id)}
+                            className="h-8 px-2 text-red-600 hover:text-red-700 hover:bg-red-50 dark:text-red-400 dark:hover:text-red-300 dark:hover:bg-red-950/20"
+                          >
+                            <Trash2 className="h-4 w-4 mr-1" />
+                            {t('common.delete')}
+                          </Button>
+                        )}
+                      </div>
+                    )}
                   </div>
                 </div>
               )

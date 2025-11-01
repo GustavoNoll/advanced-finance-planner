@@ -12,11 +12,13 @@ if [ ! -d "node_modules" ]; then
 fi
 
 # Executa o script TypeScript
-echo "🔄 Buscando dados do BCB..."
+echo "🔄 Buscando dados do BCB (IPCA, CDI, IBOV)..."
 npx tsx fetch-indicators.ts
 echo "🔄 Buscando dados do FRED..."
 npx tsx fetch-us-indicators.ts
 echo "🔄 Buscando dados do ECB..."
 npx tsx fetch-euro-indicators.ts
+echo "🔄 Buscando dados do Yahoo Finance (Ouro, Bitcoin)..."
+npx tsx fetch-yahoo-finance.ts
 
 echo "✅ Dados atualizados com sucesso!" 

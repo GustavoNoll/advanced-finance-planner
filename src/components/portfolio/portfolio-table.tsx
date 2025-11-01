@@ -116,11 +116,6 @@ export function PortfolioTable({ consolidatedData, filteredRange, onYearTotalsCh
     return yearToMonths
   }, [filtered])
 
-  const mostRecentMonthRow = useMemo(() => {
-    if (filtered.length === 0) return null
-    return filtered.reduce((latest, cur) => (toDate(cur.period) > toDate(latest.period) ? cur : latest), filtered[0])
-  }, [filtered])
-
   const totals = useMemo(() => {
     if (byYear.length === 0) return null
     const initial = byYear[byYear.length - 1].initial

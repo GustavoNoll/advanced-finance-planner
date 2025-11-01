@@ -1,10 +1,10 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { Badge } from "@/components/ui/badge"
 import type { PerformanceData } from "@/types/financial"
 import { CurrencyCode } from "@/utils/currency"
 import { calculateCompoundedRates } from "@/lib/financial-math"
 import { useTranslation } from "react-i18next"
+import { calculateBenchmarkReturns } from "@/utils/benchmark-calculator"
 
 interface InvestmentDetailsTableProps {
   performanceData: PerformanceData[]
@@ -35,47 +35,8 @@ function toDate(competencia?: string | null) {
   return new Date(parseInt(y), parseInt(m) - 1).getTime()
 }
 
-function groupStrategy(strategy?: string | null): string {
-  const strategyLower = (strategy || 'Outros').toLowerCase()
-
-  if (strategyLower.includes('cdi - liquidez')) return 'Pós Fixado - Liquidez'
-  if (strategyLower.includes('cdi - fundos') || strategyLower.includes('cdi - titulos')) return 'Pós Fixado'
-  if (strategyLower.includes('inflação')) return 'Inflação'
-  if (strategyLower.includes('pré fixado')) return 'Pré Fixado'
-  if (strategyLower.includes('multimercado')) return 'Multimercado'
-  if (strategyLower.includes('imobili')) return 'Imobiliário'
-  if (strategyLower.includes('ações')) return 'Ações'
-  if (strategyLower.includes('long bias')) return 'Ações - Long Bias'
-  if (strategyLower.includes('private equity') || strategyLower.includes('venture capital') || strategyLower.includes('special sits')) return 'Private Equity'
-  if (strategyLower.includes('exterior') && strategyLower.includes('renda fixa')) return 'Exterior - Renda Fixa'
-  if (strategyLower.includes('exterior') && (strategyLower.includes('ações') || strategyLower.includes('acoes'))) return 'Exterior - Ações'
-  if (strategyLower.includes('coe')) return 'COE'
-  if (strategyLower.includes('ouro')) return 'Ouro'
-  if (strategyLower.includes('cripto')) return 'Criptoativos'
-
-  return strategy || 'Outros'
-}
-
-const strategyOrder = [
-  'Pós Fixado - Liquidez',
-  'Pós Fixado',
-  'Inflação',
-  'Pré Fixado',
-  'Multimercado',
-  'Imobiliário',
-  'Ações',
-  'Ações - Long Bias',
-  'Private Equity',
-  'Exterior - Renda Fixa',
-  'Exterior - Ações',
-  'COE',
-  'Ouro',
-  'Criptoativos',
-]
-
-function getStrategyColor(strategyName: string) {
-  const index = strategyOrder.indexOf(strategyName)
-  return index !== -1 ? COLORS[index] : COLORS[0]
+function getStrategyColor(strategyName: string, index: number) {
+  return COLORS[index % COLORS.length]
 }
 
 function calculateCompoundReturn(monthlyReturns: number[]): number {
@@ -85,6 +46,7 @@ function calculateCompoundReturn(monthlyReturns: number[]): number {
 
 export function InvestmentDetailsTable({ performanceData, currency = 'BRL' }: InvestmentDetailsTableProps) {
   const { t } = useTranslation()
+  const currentLocale = currency === 'BRL' ? 'pt-BR' : 'en-US'
   const uniquePeriods = [...new Set(performanceData.map(d => d.period).filter(Boolean) as string[])]
   const sortedPeriods = uniquePeriods.sort((a, b) => toDate(a) - toDate(b))
   const mostRecent = [...sortedPeriods].sort((a, b) => toDate(b) - toDate(a))[0]
@@ -93,17 +55,17 @@ export function InvestmentDetailsTable({ performanceData, currency = 'BRL' }: In
   const mostRecentData = performanceData.filter(d => d.period === mostRecent)
 
   const strategySnapshot = mostRecentData.reduce((acc, item) => {
-    const grouped = groupStrategy(item.asset_class)
-    if (!acc[grouped]) acc[grouped] = { name: grouped, value: 0, count: 0 }
-    acc[grouped].value += Number(item.position || 0)
-    acc[grouped].count += 1
+    const assetClass = item.asset_class || "Outros"
+    if (!acc[assetClass]) acc[assetClass] = { name: assetClass, value: 0, count: 0 }
+    acc[assetClass].value += Number(item.position || 0)
+    acc[assetClass].count += 1
     return acc
   }, {} as Record<string, { name: string; value: number; count: number }>)
 
   const totalPatrimonio = Object.values(strategySnapshot).reduce((sum, item) => sum + item.value, 0)
 
   function calculateStrategyReturns(strategy: string) {
-    const allStrategyData = performanceData.filter(p => groupStrategy(p.asset_class) === strategy)
+    const allStrategyData = performanceData.filter(p => (p.asset_class || "Outros") === strategy)
     if (allStrategyData.length === 0) return { month: 0, year: 0, sixMonths: 0, twelveMonths: 0, inception: 0 }
 
     // group by period -> weighted average return per period
@@ -145,8 +107,25 @@ export function InvestmentDetailsTable({ performanceData, currency = 'BRL' }: In
   }
 
   const consolidated = Object.values(strategySnapshot)
-    .map(item => {
+    .map((item, index) => {
       const perf = calculateStrategyReturns(item.name)
+      
+      // Calcula os períodos únicos para esta estratégia
+      const strategyPeriods = [...new Set(
+        performanceData
+          .filter(p => (p.asset_class || "Outros") === item.name)
+          .map(p => p.period)
+          .filter(Boolean) as string[]
+      )]
+      
+      // Calcula benchmark para esta estratégia
+      const benchmark = calculateBenchmarkReturns(
+        item.name,
+        currency,
+        strategyPeriods,
+        currentLocale
+      )
+      
       return {
         ...item,
         percentage: totalPatrimonio > 0 ? (item.value / totalPatrimonio) * 100 : 0,
@@ -155,53 +134,32 @@ export function InvestmentDetailsTable({ performanceData, currency = 'BRL' }: In
         sixMonthsReturn: perf.sixMonths * 100,
         twelveMonthsReturn: perf.twelveMonths * 100,
         inceptionReturn: perf.inception * 100,
+        index,
+        benchmark,
       }
     })
-    .sort((a, b) => {
-      const ia = strategyOrder.indexOf(a.name)
-      const ib = strategyOrder.indexOf(b.name)
-      if (ia !== -1 && ib !== -1) return ia - ib
-      if (ia !== -1) return -1
-      if (ib !== -1) return 1
-      return 0
-    })
+    .sort((a, b) => a.name.localeCompare(b.name))
 
-  function getBenchmark(strategyName: string) {
-    switch (strategyName) {
-      case 'Pós Fixado - Liquidez':
-      case 'Pós Fixado':
-      case 'Multimercado':
-      case 'Private Equity':
-      case 'COE':
-        return '± CDI'
-      case 'Inflação':
-        return '± IPCA'
-      case 'Pré Fixado':
-        return '± IRF-M'
-      case 'Imobiliário':
-        return '± IFIX'
-      case 'Ações':
-      case 'Ações - Long Bias':
-        return '± IBOV'
-      case 'Exterior - Renda Fixa':
-        return '± T-Bond'
-      case 'Exterior - Ações':
-        return '± S&P500'
-      case 'Ouro':
-        return '± Gold'
-      case 'Criptoativos':
-        return '± BTC'
-      default:
-        return '± CDI'
+  function getPerformanceColor(v: number): string {
+    if (v > 2) return 'text-green-600 dark:text-green-500'
+    if (v > 0.5) return 'text-black-600 dark:text-black-500'
+    if (v > 0) return 'text-yellow-600 dark:text-yellow-500'
+    return 'text-red-600 dark:text-red-500'
+  }
+
+  function getStrategyColorComparedToBenchmark(strategyReturn: number, benchmarkReturn: number | null): string {
+    if (benchmarkReturn === null) {
+      // Se não há benchmark, usa a cor padrão baseada no valor
+      return getPerformanceColor(strategyReturn)
     }
+    // Verde se maior que benchmark, vermelho se menor
+    return strategyReturn >= benchmarkReturn
+      ? 'text-green-600 dark:text-green-500'
+      : 'text-red-600 dark:text-red-500'
   }
 
-  function performanceBadge(v: number) {
-    if (v > 2) return <Badge className="bg-success/20 text-success border-success/30">{t('portfolioPerformance.kpi.investmentDetails.performance.excellent')}</Badge>
-    if (v > 0.5) return <Badge className="bg-info/20 text-info border-info/30">{t('portfolioPerformance.kpi.investmentDetails.performance.good')}</Badge>
-    if (v > 0) return <Badge className="bg-warning/20 text-warning border-warning/30">{t('portfolioPerformance.kpi.investmentDetails.performance.regular')}</Badge>
-    return <Badge className="bg-destructive/20 text-destructive border-destructive/30">{t('portfolioPerformance.kpi.investmentDetails.performance.negative')}</Badge>
-  }
+  // Cor do benchmark sempre em preto
+  const benchmarkColor = 'text-foreground'
 
   return (
     <Card className="bg-white dark:bg-gray-900 rounded-xl shadow-lg border border-gray-100 dark:border-gray-800">
@@ -227,34 +185,77 @@ export function InvestmentDetailsTable({ performanceData, currency = 'BRL' }: In
                   <>
                     <TableRow key={item.name} className="border-border/50">
                       <TableCell className="font-medium text-foreground flex items-center gap-2 py-2">
-                        <div className="w-3 h-3 rounded-full" style={{ backgroundColor: getStrategyColor(item.name) }} />
+                        <div className="w-3 h-3 rounded-full" style={{ backgroundColor: getStrategyColor(item.name, item.index) }} />
                         {item.name}
                       </TableCell>
-                      <TableCell className={`text-center py-2 ${item.monthReturn >= 0 ? 'text-success' : 'text-destructive'}`}>
-                        {item.monthReturn >= 0 ? '+' : ''}{item.monthReturn.toFixed(2)}%
+                      <TableCell className="text-center py-2">
+                        <span className={getStrategyColorComparedToBenchmark(item.monthReturn, item.benchmark?.monthReturn ?? null)}>
+                          {item.monthReturn >= 0 ? '+' : ''}{item.monthReturn.toFixed(2)}%
+                        </span>
                       </TableCell>
-                      <TableCell className={`text-center py-2 ${item.yearReturn >= 0 ? 'text-success' : 'text-destructive'}`}>
-                        {item.yearReturn >= 0 ? '+' : ''}{item.yearReturn.toFixed(2)}%
+                      <TableCell className="text-center py-2">
+                        <span className={getStrategyColorComparedToBenchmark(item.yearReturn, item.benchmark?.yearReturn ?? null)}>
+                          {item.yearReturn >= 0 ? '+' : ''}{item.yearReturn.toFixed(2)}%
+                        </span>
                       </TableCell>
-                      <TableCell className={`text-center py-2 ${item.sixMonthsReturn >= 0 ? 'text-success' : 'text-destructive'}`}>
-                        {item.sixMonthsReturn >= 0 ? '+' : ''}{item.sixMonthsReturn.toFixed(2)}%
+                      <TableCell className="text-center py-2">
+                        <span className={getStrategyColorComparedToBenchmark(item.sixMonthsReturn, item.benchmark?.sixMonthsReturn ?? null)}>
+                          {item.sixMonthsReturn >= 0 ? '+' : ''}{item.sixMonthsReturn.toFixed(2)}%
+                        </span>
                       </TableCell>
-                      <TableCell className={`text-center py-2 ${item.twelveMonthsReturn >= 0 ? 'text-success' : 'text-destructive'}`}>
-                        {item.twelveMonthsReturn >= 0 ? '+' : ''}{item.twelveMonthsReturn.toFixed(2)}%
+                      <TableCell className="text-center py-2">
+                        <span className={getStrategyColorComparedToBenchmark(item.twelveMonthsReturn, item.benchmark?.twelveMonthsReturn ?? null)}>
+                          {item.twelveMonthsReturn >= 0 ? '+' : ''}{item.twelveMonthsReturn.toFixed(2)}%
+                        </span>
                       </TableCell>
-                      <TableCell className={`text-center py-2 ${item.inceptionReturn >= 0 ? 'text-success' : 'text-destructive'}`}>
-                        {item.inceptionReturn >= 0 ? '+' : ''}{item.inceptionReturn.toFixed(2)}%
+                      <TableCell className="text-center py-2">
+                        <span className={getStrategyColorComparedToBenchmark(item.inceptionReturn, item.benchmark?.inceptionReturn ?? null)}>
+                          {item.inceptionReturn >= 0 ? '+' : ''}{item.inceptionReturn.toFixed(2)}%
+                        </span>
                       </TableCell>
                     </TableRow>
                     <TableRow key={`${item.name}-benchmark`} className="border-border/50 bg-muted/20">
                       <TableCell className="font-medium text-muted-foreground pl-8 py-1">
-                        {getBenchmark(item.name)}
+                        {item.benchmark 
+                          ? (currentLocale === 'pt-BR' ? item.benchmark.name : item.benchmark.nameEn)
+                          : '-'
+                        }
                       </TableCell>
-                      <TableCell className="text-center text-muted-foreground py-1">-</TableCell>
-                      <TableCell className="text-center text-muted-foreground py-1">-</TableCell>
-                      <TableCell className="text-center text-muted-foreground py-1">-</TableCell>
-                      <TableCell className="text-center text-muted-foreground py-1">-</TableCell>
-                      <TableCell className="text-center text-muted-foreground py-1 text-xs">0</TableCell>
+                      <TableCell className="text-center text-muted-foreground py-1">
+                        {item.benchmark ? (
+                          <span className={benchmarkColor}>
+                            {item.benchmark.monthReturn >= 0 ? '+' : ''}{item.benchmark.monthReturn.toFixed(2)}%
+                          </span>
+                        ) : '-'}
+                      </TableCell>
+                      <TableCell className="text-center text-muted-foreground py-1">
+                        {item.benchmark ? (
+                          <span className={benchmarkColor}>
+                            {item.benchmark.yearReturn >= 0 ? '+' : ''}{item.benchmark.yearReturn.toFixed(2)}%
+                          </span>
+                        ) : '-'}
+                      </TableCell>
+                      <TableCell className="text-center text-muted-foreground py-1">
+                        {item.benchmark ? (
+                          <span className={benchmarkColor}>
+                            {item.benchmark.sixMonthsReturn >= 0 ? '+' : ''}{item.benchmark.sixMonthsReturn.toFixed(2)}%
+                          </span>
+                        ) : '-'}
+                      </TableCell>
+                      <TableCell className="text-center text-muted-foreground py-1">
+                        {item.benchmark ? (
+                          <span className={benchmarkColor}>
+                            {item.benchmark.twelveMonthsReturn >= 0 ? '+' : ''}{item.benchmark.twelveMonthsReturn.toFixed(2)}%
+                          </span>
+                        ) : '-'}
+                      </TableCell>
+                      <TableCell className="text-center text-muted-foreground py-1">
+                        {item.benchmark ? (
+                          <span className={benchmarkColor}>
+                            {item.benchmark.inceptionReturn >= 0 ? '+' : ''}{item.benchmark.inceptionReturn.toFixed(2)}%
+                          </span>
+                        ) : '-'}
+                      </TableCell>
                     </TableRow>
                   </>
                 ))

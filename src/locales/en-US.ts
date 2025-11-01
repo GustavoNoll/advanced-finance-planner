@@ -1082,7 +1082,8 @@ export const enUS = {
       passwordUpdateError: 'Error changing password',
       passwordMismatch: 'Passwords do not match',
       fillPasswords: 'Please fill in both password fields',
-      passwordTooShort: 'Password must be at least 6 characters'
+      passwordTooShort: 'Password must be at least 6 characters',
+      samePassword: 'New password should be different from the old password'
     }
   },
   settings: {
@@ -1376,7 +1377,8 @@ export const enUS = {
     brokers: 'brokers',
     errors: {
       unauthorized: 'You are not authorized to access this page',
-      emailExists: 'This email is already in use. Please use another email.'
+      emailExists: 'This email is already in use. Please use another email.',
+      samePassword: 'New password should be different from the old password'
     },
     showing: 'Showing',
     of: 'of',
@@ -1908,6 +1910,14 @@ export const enUS = {
           negative: "Negative"
         }
       },
+      strategyBreakdown: {
+        title: "Classes",
+        name: "Name",
+        allocation: "Allocation",
+        grossBalance: "Gross Balance",
+        grossPatrimony: "Gross Patrimony",
+        ofPatrimony: "of patrimony"
+      },
       clientDataDisplay: {
         loading: "Loading data...",
         title: "Consolidated Performance - Most Recent Period",
@@ -2223,7 +2233,8 @@ export const enUS = {
     },
     header: {
       login: 'Login',
-      requestDemo: 'Quick Contact'
+      requestDemo: 'Quick Contact',
+      viewDashboard: 'View Dashboard'
     },
     hero: {
       badge: 'Cutting-Edge Technology for Financial Advisors',

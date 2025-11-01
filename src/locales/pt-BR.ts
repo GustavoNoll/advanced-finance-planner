@@ -1082,7 +1082,8 @@ export const ptBR = {
       passwordUpdateError: 'Erro ao alterar senha',
       passwordMismatch: 'As senhas não coincidem',
       fillPasswords: 'Por favor, preencha ambos os campos de senha',
-      passwordTooShort: 'A senha deve ter pelo menos 6 caracteres'
+      passwordTooShort: 'A senha deve ter pelo menos 6 caracteres',
+      samePassword: 'A nova senha deve ser diferente da senha atual'
     }
   },
   settings: {
@@ -1376,7 +1377,8 @@ export const ptBR = {
     brokers: 'corretoras',
     errors: {
       unauthorized: 'Você não está autorizado a acessar esta página',
-      emailExists: 'Este email já está em uso. Por favor, use outro email.'
+      emailExists: 'Este email já está em uso. Por favor, use outro email.',
+      samePassword: 'A nova senha deve ser diferente da senha atual'
     },
     showing: 'Mostrando',
     of: 'de',
@@ -1908,6 +1910,14 @@ export const ptBR = {
           negative: "Negativo"
         }
       },
+      strategyBreakdown: {
+        title: "Classes",
+        name: "Nome",
+        allocation: "Alocação",
+        grossBalance: "Saldo Bruto",
+        grossPatrimony: "Patrimônio Bruto",
+        ofPatrimony: "do patrimônio"
+      },
       clientDataDisplay: {
         loading: "Carregando dados...",
         title: "Performance Consolidada - Competência Mais Recente",
@@ -2223,7 +2233,8 @@ export const ptBR = {
     },
     header: {
       login: 'Login',
-      requestDemo: 'Contato Rápido'
+      requestDemo: 'Contato Rápido',
+      viewDashboard: 'Ver sua dash'
     },
     hero: {
       badge: 'Tecnologia de Ponta para Consultores Financeiros',

@@ -18,7 +18,7 @@ import { ArrowLeft } from "lucide-react";
 export const InvestmentPlanShow = () => {
   const { id } = useParams();
   const { t } = useTranslation();
-  const { user } = useAuth();
+  const { user, isBroker } = useAuth();
 
   // Hook para dados do plano
   const { plan, isLoading, hasAccess } = useInvestmentPlan(id || '');
@@ -109,6 +109,7 @@ export const InvestmentPlanShow = () => {
               onCreateMicroPlan={createMicroPlan}
               onUpdateMicroPlan={updateMicroPlan}
               onDeleteMicroPlan={deleteMicroPlan}
+              isBroker={isBroker}
             />
           </div>
         </div>

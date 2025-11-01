@@ -7,6 +7,7 @@ type AuthContextType = {
   user: User | null;
   loading: boolean;
   isBroker: boolean;
+  isAdmin: boolean;
   updateLastActive: () => Promise<void>;
 };
 
@@ -14,6 +15,7 @@ const AuthContext = createContext<AuthContextType>({
   user: null,
   loading: true,
   isBroker: false,
+  isAdmin: false,
   updateLastActive: async () => {},
 });
 
@@ -21,7 +23,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [isBroker, setIsBroker] = useState(false);
-
+  const [isAdmin, setIsAdmin] = useState(false);
   const updateLastActive = async () => {
     if (!user) return;
 
@@ -44,20 +46,22 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         // First check if profile exists
         const { data: profiles } = await supabase
           .from('profiles')
-          .select('is_broker')
+          .select('is_broker, is_admin')
           .eq('id', user.id);
         
         // If no profile exists, create one
         if (!profiles || profiles.length === 0) {
           const { data: newProfile } = await supabase
             .from('profiles')
-            .insert([{ id: user.id, is_broker: false }])
-            .select('is_broker')
+            .insert([{ id: user.id, is_broker: false, is_admin: false }])
+            .select('is_broker, is_admin')
             .single();
           
           setIsBroker(newProfile?.is_broker || false);
+          setIsAdmin(newProfile?.is_admin || false);
         } else {
           setIsBroker(profiles[0]?.is_broker || false);
+          setIsAdmin(profiles[0]?.is_admin || false);
         }
       }
       
@@ -74,7 +78,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   }, []);
 
   return (
-    <AuthContext.Provider value={{ user, loading, isBroker, updateLastActive }}>
+    <AuthContext.Provider value={{ user, loading, isBroker, isAdmin, updateLastActive }}>
       {children}
     </AuthContext.Provider>
   );
