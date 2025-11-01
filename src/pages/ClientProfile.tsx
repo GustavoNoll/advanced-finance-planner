@@ -124,12 +124,31 @@ const ClientProfile = () => {
       
       setNewPassword('');
       setConfirmPassword('');
+
+      // Redirect broker to broker dashboard after successfully changing password
+      if (brokerProfile && clientId !== user?.id) {
+        navigate('/broker-dashboard');
+      }else{
+        navigate(`/client/${clientId}`);
+      }
+
     } catch (error) {
       console.error('Error updating password:', error);
-      toast({
-        title: t('clientProfile.messages.passwordUpdateError'),
-        variant: "destructive",
-      });
+      
+      // Check if error is same_password
+      const supabaseError = error as { code?: string; message?: string };
+      if (supabaseError.code === 'same_password') {
+        toast({
+          title: t('clientProfile.messages.samePassword'),
+          variant: "destructive",
+        });
+      } else {
+        toast({
+          title: t('clientProfile.messages.passwordUpdateError'),
+          description: supabaseError.message || '',
+          variant: "destructive",
+        });
+      }
     }
   };
 

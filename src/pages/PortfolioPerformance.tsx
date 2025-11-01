@@ -7,6 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { DollarSign, Target, Building2, Calendar } from "lucide-react";
 import { usePerformanceData } from "@/hooks";
 import { Button } from "@/components/ui/button";
+import { useAuth } from "@/components/auth/AuthProvider";
 import { CompetenciaSeletor } from "@/components/portfolio/competencia-seletor";
 import { ClientDataDisplay } from "@/components/portfolio/client-data-display";
 import { PortfolioTable } from "@/components/portfolio/portfolio-table";
@@ -42,6 +43,7 @@ function PortfolioPerformance({
   onShareClient
 }: PortfolioPerformanceProps) {
   const { t } = useTranslation();
+  const { isBroker } = useAuth();
   const { consolidatedData, performanceData, loading, error, totalAssets, totalYield, previousAssets, assetsChangePercent, hasData, refetch } = usePerformanceData(profile?.id || null)
   const [filteredRange, setFilteredRange] = useState<{ inicio: string; fim: string }>({ inicio: "", fim: "" })
   const [yearTotals, setYearTotals] = useState<{ totalPatrimonio: number; totalRendimento: number } | null>(null)
@@ -79,11 +81,13 @@ function PortfolioPerformance({
   return (
     <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-8">
       <div className="space-y-6">
-        <div className="flex justify-end">
-          <Button variant="default" onClick={openDataManagement}>
-            {t('portfolioPerformance.kpi.manageData')}
-          </Button>
-        </div>
+        {isBroker && (
+          <div className="flex justify-end">
+            <Button variant="default" onClick={openDataManagement}>
+              {t('portfolioPerformance.kpi.manageData')}
+            </Button>
+          </div>
+        )}
         {/* KPI Cards - estilo próximo ao InvestmentDashboard */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
           <Card className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 shadow-sm">
@@ -195,7 +199,7 @@ function PortfolioPerformance({
         )}
 
         {/* Maturity Dialog trigger placeholder (can be wired to a button later) */}
-        <MaturityDialog open={maturityDialogOpen} onOpenChange={setMaturityDialogOpen} performanceData={performanceData} currency={currency} />
+        <MaturityDialog open={maturityDialogOpen} onOpenChange={setMaturityDialogOpen} performanceData={performanceData} />
 
         {/* Charts/Breakdowns similar to InvestmentDashboard */}
         <div className="space-y-6">

@@ -946,11 +946,22 @@ export const AdminDashboard = () => {
       setConfirmPassword('');
     } catch (error) {
       console.error('Error changing password:', error);
-      toast({
-        title: t('common.error'),
-        description: error instanceof Error ? error.message : String(error),
-        variant: "destructive",
-      });
+      
+      // Check if error is same_password
+      const supabaseError = error as { code?: string; message?: string };
+      if (supabaseError.code === 'same_password') {
+        toast({
+          title: t('common.error'),
+          description: t('adminDashboard.errors.samePassword'),
+          variant: "destructive",
+        });
+      } else {
+        toast({
+          title: t('common.error'),
+          description: supabaseError.message || (error instanceof Error ? error.message : String(error)),
+          variant: "destructive",
+        });
+      }
     }
   };
 

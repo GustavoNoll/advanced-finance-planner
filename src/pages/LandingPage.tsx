@@ -28,6 +28,7 @@ import { Textarea } from "@/components/ui/textarea"
 import { useState, useMemo } from "react"
 import { useToast } from "@/components/ui/use-toast"
 import { useNavigate } from "react-router-dom"
+import { useAuth } from "@/components/auth/AuthProvider"
 import { SimulationChart } from "@/components/broker-dashboard/SimulationChart"
 import { generateChartProjections } from "@/lib/chart-projections"
 import type { Profile, InvestmentPlan, FinancialRecord, Goal, ProjectedEvent } from "@/types/financial"
@@ -92,6 +93,7 @@ export default function LandingPage() {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const { toast } = useToast()
   const navigate = useNavigate()
+  const { user, isBroker, isAdmin } = useAuth()
   
   // Detecta a moeda automaticamente baseada no locale do navegador
   const currency = useMemo(() => detectCurrency(), [])
@@ -500,19 +502,40 @@ export default function LandingPage() {
               <Logo variant="full" className="h-6 sm:h-7" />
             </div>
             <div className="flex items-center gap-2 sm:gap-3">
-              <Button 
-                onClick={() => navigate('/login')} 
-                variant="outline" 
-                size="default"
-                className="hidden sm:flex"
-              >
-                <LogIn className="h-4 w-4 mr-2" />
-                {t('landingPage.header.login')}
-              </Button>
-              <Button onClick={handleQuickContact} size="default" className="bg-blue-600 hover:bg-blue-700">
-                <Mail className="h-4 w-4 mr-2" />
-                {t('landingPage.header.requestDemo')}
-              </Button>
+              {user ? (
+                <Button 
+                  onClick={() => {
+                    if (isBroker) {
+                      navigate('/broker-dashboard')
+                    } else if (isAdmin) {
+                      navigate('/admin-dashboard')
+                    } else {
+                      navigate(`/client/${user.id}`)
+                    }
+                  }}
+                  size="default"
+                  className="bg-blue-600 hover:bg-blue-700"
+                >
+                  <Gauge className="h-4 w-4 mr-2" />
+                  {t('landingPage.header.viewDashboard')}
+                </Button>
+              ) : (
+                <>
+                  <Button 
+                    onClick={() => navigate('/login')} 
+                    variant="outline" 
+                    size="default"
+                    className="hidden sm:flex"
+                  >
+                    <LogIn className="h-4 w-4 mr-2" />
+                    {t('landingPage.header.login')}
+                  </Button>
+                  <Button onClick={handleQuickContact} size="default" className="bg-blue-600 hover:bg-blue-700">
+                    <Mail className="h-4 w-4 mr-2" />
+                    {t('landingPage.header.requestDemo')}
+                  </Button>
+                </>
+              )}
             </div>
           </div>
         </div>
