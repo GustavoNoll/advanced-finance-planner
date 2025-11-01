@@ -139,4 +139,27 @@ export function parseDateByLocale(dateStr: string, formatStr: string = 'dd/MM/yy
   } catch (error) {
     return null;
   }
+}
+
+/**
+ * Formats a maturity date: shows day/month if it's in the current year, otherwise shows month/year
+ * @param date - The date to format (Date, string, or null)
+ * @returns The formatted date string
+ */
+export function formatMaturityDate(date: Date | string | null | undefined): string {
+  if (!date) return '-';
+  
+  const dateObj = typeof date === 'string' ? new Date(date) : date;
+  if (!(dateObj instanceof Date) || isNaN(dateObj.getTime())) return '-';
+  
+  const currentYear = new Date().getFullYear();
+  const dateYear = dateObj.getFullYear();
+  
+  if (dateYear === currentYear) {
+    // Same year: show day/month
+    return format(dateObj, 'dd/MM', { locale: ptBR });
+  } else {
+    // Different year: show month/year
+    return format(dateObj, 'MM/yyyy', { locale: ptBR });
+  }
 } 

@@ -206,7 +206,8 @@ export const ptBR = {
     title: "Portfólio de Investimentos",
     navigation: {
       planning: "Planejamento",
-      investmentPolicy: "Política de Investimento"
+      investmentPolicy: "Política de Investimento",
+      portfolioPerformance: "Performance"
     },
     highlights: {
       startToInvest: "Você já deveria estar investindo!",
@@ -1725,6 +1726,236 @@ export const ptBR = {
     messages: {
       success: 'Informações de vida atualizadas com sucesso',
       error: 'Falha ao atualizar informações de vida'
+    }
+  },
+  portfolioPerformance: {
+    selectAll: "Selecionar Todos",
+    newRecord: "Novo Registro",
+    filters: {
+      all: "Todos",
+      allPeriods: "Todas competências",
+      allInstitutions: "Todas instituições",
+      allClasses: "Todas classes",
+      allIssuers: "Todos emissores"
+    },
+    importCSV: {
+      title: "Importar CSV",
+      consolidatedDescription: "Importe dados consolidados de performance em formato CSV",
+      detailedDescription: "Importe dados detalhados de performance em formato CSV",
+      expectedFormat: "Formato Esperado",
+      importFile: "Importar Arquivo",
+      requiredColumns: "Colunas Obrigatórias",
+      exampleData: "Exemplo de Dados",
+      notes: {
+        title: "Observações",
+        dateFormat: "Data deve estar no formato DD/MM/YYYY",
+        periodFormat: "Competência deve estar no formato MM/YYYY",
+        currencyFormat: "Valores monetários podem estar em R$ com pontos e vírgulas (ex: R$ 1.234,56)",
+        percentageFormat: "Percentuais podem estar com vírgula (ex: 1,24%)",
+        duplicates: "Se houver registros duplicados, eles serão inseridos como novos registros"
+      },
+      importing: "Importando...",
+      selectFile: "Selecionar Arquivo CSV",
+      fileHint: "Clique para selecionar um arquivo CSV",
+      successTitle: "Importação Bem-sucedida",
+      partialSuccessTitle: "Importação Parcial",
+      successMessage: "{{success}} registros importados com sucesso",
+      partialSuccessMessage: "{{success}} registros importados com sucesso, {{failed}} falhas",
+      errorRow: "Linha {{row}}: {{reason}}",
+      moreErrors: "... e mais {{count}} erro(s)",
+      button: "Importar CSV"
+    },
+    validation: {
+      duplicateTitle: "Registro Duplicado",
+      consolidatedDuplicate: "Já existe um registro com o mesmo Cliente, Instituição e Competência.",
+      detailedDuplicate: "Já existe um registro com o mesmo Cliente, Instituição, Ativo, Posição e Competência.",
+      invalidData: "Dados Inválidos",
+      assetAndPositionRequired: "Ativo e Posição são obrigatórios.",
+      updateSuccess: "Registro atualizado com sucesso",
+      createSuccess: "Registro criado com sucesso",
+      saveError: "Erro ao salvar",
+      unknownError: "Erro desconhecido",
+      invalidPeriod: "Período inválido",
+      periodFormat: "Formato deve ser MM/YYYY",
+      invalidMonth: "Mês deve estar entre 01 e 12",
+      invalidYear: "Ano inválido"
+    },
+    competenceSelector: {
+      noCompetenceFound: "Nenhuma competência encontrada",
+      filterByPeriod: "Filtrar por Período:",
+      from: "De:",
+      to: "Até:",
+      start: "Início",
+      end: "Fim"
+    },
+    months: {
+      short: ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"]
+    },
+    dataManagement: {
+      title: "Gerenciar Dados de Portfólio",
+      back: "Voltar",
+      filters: "Filtros",
+      filterLabels: {
+        periods: "Competências",
+        institutions: "Instituições",
+        assetClasses: "Classes de Ativo",
+        issuers: "Emissores"
+      },
+      tabs: {
+        consolidated: "Dados Consolidados",
+        detailed: "Dados Detalhados"
+      },
+      selected: "selecionado(s)",
+      clear: "Limpar",
+      loading: "Carregando...",
+      noData: "Nenhum dado",
+      table: {
+        period: "Competência",
+        institution: "Instituição",
+        initialAssets: "Patrimônio Inicial",
+        movement: "Movimentação",
+        taxes: "Impostos",
+        financialGain: "Ganho Financeiro",
+        finalAssets: "Patrimônio Final",
+        yield: "Rendimento %",
+        actions: "Ações",
+        asset: "Ativo",
+        issuer: "Emissor",
+        assetClass: "Classe",
+        position: "Posição",
+        rate: "Taxa",
+        maturity: "Vencimento"
+      },
+      editDialog: {
+        edit: "Editar",
+        create: "Criar",
+        consolidatedData: "Dado Consolidado",
+        detailedData: "Dado Detalhado",
+        periodLabel: "Competência (MM/YYYY)",
+        institutionLabel: "Instituição",
+        initialAssetsLabel: "Patrimônio Inicial",
+        movementLabel: "Movimentação",
+        taxesLabel: "Impostos",
+        financialGainLabel: "Ganho Financeiro",
+        finalAssetsLabel: "Patrimônio Final",
+        yieldLabel: "Rendimento (%)",
+        assetLabel: "Ativo",
+        issuerLabel: "Emissor",
+        assetClassLabel: "Classe do Ativo",
+        positionLabel: "Posição",
+        rateLabel: "Taxa",
+        maturityLabel: "Vencimento",
+        cancel: "Cancelar",
+        save: "Salvar",
+        invalidMonth: "Mês inválido (01-12)",
+        invalidYear: "Ano inválido"
+      },
+      delete: {
+        confirmTitle: "Confirmar Exclusão",
+        confirmMessage: "Tem certeza que deseja excluir este registro? Esta ação não pode ser desfeita.",
+        confirmDeleteMultiple: "Confirmar Exclusão",
+        confirmDeleteMultipleMessage: "Tem certeza que deseja excluir {{count}} registro(s) selecionado(s)? Esta ação não pode ser desfeita.",
+        deleteButton: "Excluir",
+        deleteSelected: "Excluir Selecionados",
+        cancel: "Cancelar",
+        success: "Registro excluído com sucesso",
+        successMultiple: "{{count}} registro(s) excluído(s) com sucesso"
+      }
+    },
+    kpi: {
+      manageData: "Gerenciar dados",
+      totalAssets: "Patrimônio Total",
+      noPreviousMonth: "Sem mês anterior para comparar",
+      vsPreviousMonth: "vs mês anterior",
+      monthlyYield: "Rentabilidade no mês",
+      vsTarget: "vs Meta: --",
+      diversification: "Diversificação",
+      assetsInPortfolio: "Ativos na carteira",
+      nextMaturity: "Próximo Vencimento",
+      waitingData: "Aguardando dados",
+      noInstitution: "Sem Instituição",
+      sixMonthsReturn: "Rentabilidade de 6 meses",
+      twelveMonthsReturn: "Rentabilidade de 12 meses",
+      yearReturn: "Rentabilidade do ano",
+      inceptionReturn: "Rentabilidade desde o início",
+      rentability: "Rentabilidade",
+      rentabilityVsTarget: "Rentabilidade (pp acima da meta)",
+      bestMonthRentability: "Mês com melhor rentabilidade do ano",
+      table: {
+        title: "Resumo do Patrimônio",
+        description: "Evolução patrimonial consolidada com retornos acumulados",
+        period: "Competência",
+        initialAssets: "Patrimônio Inicial",
+        movement: "Movimentações",
+        taxes: "Imposto",
+        finalAssets: "Patrimônio Final",
+        gain: "Rendimento",
+        total: "Total"
+      },
+      investmentDetails: {
+        title: "Detalhamento dos Investimentos",
+        strategy: "Estratégia",
+        month: "Mês",
+        year: "Ano",
+        sixMonths: "6 Meses",
+        twelveMonths: "12 Meses",
+        inception: "Início",
+        noData: "Nenhum dado disponível",
+        performance: {
+          excellent: "Excelente",
+          good: "Bom",
+          regular: "Regular",
+          negative: "Negativo"
+        }
+      },
+      clientDataDisplay: {
+        loading: "Carregando dados...",
+        title: "Performance Consolidada - Competência Mais Recente",
+        table: {
+          institution: "Instituição",
+          initialAssets: "Patrimônio Inicial",
+          movement: "Movimentação",
+          taxes: "Impostos",
+          financialGain: "Ganho Financeiro",
+          finalAssets: "Patrimônio Final",
+          yield: "Rendimento"
+        },
+        noData: {
+          title: "Nenhum dado encontrado",
+          message: "Não foram encontrados dados para o cliente \"{{clientName}}\"."
+        }
+      },
+      institutionAllocation: {
+        title: "Alocação por Instituição",
+        grossAssets: "Patrimônio Bruto",
+        noData: "Sem dados",
+        total: "Total"
+      },
+      maturityTimeline: {
+        title: "Vencimentos por Estratégia",
+        subtitle: "Distribuição por data de vencimento",
+        year: "Ano",
+        total: "Valor Total",
+        avgRate: "Taxa Média",
+        byStrategy: "Por Estratégia",
+        emptyFor: "Nenhum dado de vencimento disponível para",
+        assetClasses: {
+          postFixed: "Pós Fixado",
+          inflation: "Inflação",
+          preFixed: "Pré Fixado",
+          postFixedLiquidity: "Pós Fixado - Liquidez",
+          multimarket: "Multimercado",
+          realEstate: "Imobiliário",
+          stocks: "Ações",
+          stocksLongBias: "Ações - Long Bias",
+          privateEquity: "Private Equity",
+          foreignFixedIncome: "Exterior - Renda Fixa",
+          foreignStocks: "Exterior - Ações",
+          coe: "COE",
+          gold: "Ouro",
+          crypto: "Criptoativos"
+        }
+      }
     }
   },
   investmentPreferences: {

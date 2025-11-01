@@ -12,7 +12,7 @@ export type CurrencyCode = keyof typeof CURRENCY_SYMBOLS;
 /**
  * Maps currency codes to their respective locales
  */
-const CURRENCY_LOCALES = {
+export const CURRENCY_LOCALES = {
   BRL: 'pt-BR',
   USD: 'en-US',
   EUR: 'de-DE'

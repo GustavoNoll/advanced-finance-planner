@@ -12,8 +12,7 @@ import { FutureProjectionTab } from "@/components/monthly-view";
 import { InvestmentPlan, MicroInvestmentPlan } from "@/types/financial";
 import { formatCurrency, CurrencyCode } from "@/utils/currency";
 import { RISK_PROFILES } from '@/constants/riskProfiles';
-import CurrencyInput from 'react-currency-input-field';
-import { getCurrencySymbol } from "@/utils/currency";
+import { CurrencyInput } from "@/components/ui/currency-input";
 import { usePlanCalculations, usePlanCreation } from "@/hooks/usePlanCreation";
 import { FormData } from "@/utils/investmentPlanCalculations";
 import { Switch } from "@/components/ui/switch";
@@ -407,13 +406,10 @@ export const Simulation = () => {
                     <div className="space-y-2">
                       <Label>{t('investmentPlan.form.initialAmount')}</Label>
                       <CurrencyInput
-                        value={formData.initialAmount}
+                        defaultValue={formData.initialAmount}
                         onValueChange={(value) => handleFormChange('initialAmount', value || '')}
                         placeholder="10000"
-                        prefix={prefix}
-                        decimalsLimit={2}
-                        decimalSeparator=","
-                        groupSeparator="."
+                        currency={currency}
                         className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
                       />
                     </div>
@@ -422,13 +418,10 @@ export const Simulation = () => {
                     <div className="space-y-2">
                       <Label>{t('investmentPlan.form.monthlyDeposit')}</Label>
                       <CurrencyInput
-                        value={formData.monthlyDeposit}
+                        defaultValue={formData.monthlyDeposit}
                         onValueChange={(value) => handleFormChange('monthlyDeposit', value || '')}
                         placeholder="1000"
-                        prefix={prefix}
-                        decimalsLimit={2}
-                        decimalSeparator=","
-                        groupSeparator="."
+                        currency={currency}
                         className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
                       />
                     </div>
@@ -437,13 +430,10 @@ export const Simulation = () => {
                     <div className="space-y-2">
                       <Label>{t('investmentPlan.form.desiredIncome')}</Label>
                       <CurrencyInput
-                        value={formData.desiredIncome}
+                        defaultValue={formData.desiredIncome}
                         onValueChange={(value) => handleFormChange('desiredIncome', value || '')}
                         placeholder="5000"
-                        prefix={prefix}
-                        decimalsLimit={2}
-                        decimalSeparator=","
-                        groupSeparator="."
+                        currency={currency}
                         className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
                       />
                     </div>

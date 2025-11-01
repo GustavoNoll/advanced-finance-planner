@@ -5,10 +5,10 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Target, Calendar, Info, Minus } from "lucide-react";
 import { useTranslation } from "react-i18next";
-import CurrencyInput from 'react-currency-input-field';
+import { CurrencyInput } from '@/components/ui/currency-input';
 import { FormField, FormItem, FormLabel, FormControl } from "@/components/ui/form";
 import { useForm } from "react-hook-form";
-import { CurrencyCode, getCurrencySymbol } from "@/utils/currency";
+import { CurrencyCode } from "@/utils/currency";
 
 interface LinkedItem {
   id: string;
@@ -89,14 +89,11 @@ const SelectedItemCard = ({ item, onUpdate, onRemove, currency }: SelectedItemCa
                   <CurrencyInput
                     id="allocated-amount"
                     className={`flex h-9 w-full rounded-lg border border-input bg-background text-foreground px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 transition-colors dark:[color-scheme:dark] ${(() => { const displayed = item.type === 'goal' ? -Math.abs(Number(field.value || 0)) : Number(field.value || 0); return displayed < 0 ? 'text-red-600' : displayed > 0 ? 'text-green-600' : '' })()}`}
-                    prefix={getCurrencySymbol(currency)}
-                    groupSeparator="."
-                    decimalSeparator="," 
-                    decimalsLimit={2}
+                    currency={currency}
                     allowNegativeValue={true}
-                    value={item.type === 'goal' ? -Math.abs(Number(field.value || 0)) : Number(field.value || 0)}
-                    onValueChange={(value) => {
-                      const raw = value ? parseFloat(value.replace(/\./g, '').replace(',', '.')) : 0;
+                    defaultValue={item.type === 'goal' ? -Math.abs(Number(field.value || 0)) : Number(field.value || 0)}
+                    onValueChange={(value, _name, values) => {
+                      const raw = values?.float ?? 0;
                       const coerced = item.type === 'goal' ? -Math.abs(raw) : raw;
                       field.onChange(coerced);
                       onUpdate({ allocatedAmount: coerced });

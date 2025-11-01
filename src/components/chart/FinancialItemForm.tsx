@@ -12,10 +12,10 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
-import CurrencyInput from 'react-currency-input-field';
+import { CurrencyInput } from "@/components/ui/currency-input";
 import { goalIcons } from "@/constants/goals";
 import { eventIcons } from "@/constants/events";
-import { CurrencyCode, getCurrencySymbol, formatCurrency } from "@/utils/currency";
+import { CurrencyCode, formatCurrency } from "@/utils/currency";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
 import { Input } from "@/components/ui/input";
@@ -203,12 +203,9 @@ export const FinancialItemForm = ({
                       "flex h-9 w-full rounded-lg border border-input bg-background px-3 py-1 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 transition-colors",
                       form.formState.errors.asset_value && "border-destructive focus-visible:ring-destructive"
                     )}
-                    value={field.value}
+                    currency={currency as CurrencyCode}
+                    defaultValue={field.value}
                     onValueChange={(value) => field.onChange(value)}
-                    prefix={getCurrencySymbol(currency as CurrencyCode)}
-                    groupSeparator="."
-                    decimalSeparator=","
-                    decimalsLimit={2}
                   />
                 </FormControl>
                 <FormMessage className="text-destructive text-xs mt-1" />

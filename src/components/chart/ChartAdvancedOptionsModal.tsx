@@ -5,9 +5,10 @@ import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogClose } from "@/components/ui/dialog";
 import { HoverCard, HoverCardContent, HoverCardTrigger } from "@/components/ui/hover-card";
 import { HelpCircle } from "lucide-react";
-import { formatCurrency, getCurrencySymbol } from "@/utils/currency";
-import CurrencyInput from 'react-currency-input-field';
+import { formatCurrency } from "@/utils/currency";
+import { CurrencyInput } from "@/components/ui/currency-input";
 import { InvestmentPlan, MicroInvestmentPlan } from "@/types/financial";
+import { CurrencyCode } from "@/utils/currency";
 
 interface ChartAdvancedOptionsModalProps {
   open: boolean;
@@ -217,16 +218,14 @@ export const ChartAdvancedOptionsModal = ({
                     <CurrencyInput
                       id="monthly-deposit"
                       className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 mt-1"
-                      prefix={getCurrencySymbol(investmentPlan.currency)}
-                      groupSeparator="."
-                      decimalSeparator=","
-                      decimalsLimit={2}
+                      currency={investmentPlan.currency as CurrencyCode}
                       placeholder="Ex: 5.000,00"
-                      value={changeMonthlyDeposit.value}
-                      onValueChange={(value) => {
+                      defaultValue={changeMonthlyDeposit.value}
+                      onValueChange={(value, _name, values) => {
+                        const numValue = values?.float ?? 0;
                         setChangeMonthlyDeposit({ 
                           ...changeMonthlyDeposit, 
-                          value: value ? parseFloat(value.replace(/\./g, '').replace(',', '.')) : 0
+                          value: numValue
                         });
                       }}
                     />
@@ -266,16 +265,14 @@ export const ChartAdvancedOptionsModal = ({
                     <CurrencyInput
                       id="monthly-withdraw"
                       className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 mt-1"
-                      prefix={getCurrencySymbol(investmentPlan.currency)}
-                      groupSeparator="."
-                      decimalSeparator=","
-                      decimalsLimit={2}
+                      currency={investmentPlan.currency as CurrencyCode}
                       placeholder="Ex: 3.000,00"
-                      value={changeMonthlyWithdraw.value}
-                      onValueChange={(value) => {
+                      defaultValue={changeMonthlyWithdraw.value}
+                      onValueChange={(value, _name, values) => {
+                        const numValue = values?.float ?? 0;
                         setChangeMonthlyWithdraw({ 
                           ...changeMonthlyWithdraw, 
-                          value: value ? parseFloat(value.replace(/\./g, '').replace(',', '.')) : 0
+                          value: numValue
                         });
                       }}
                     />

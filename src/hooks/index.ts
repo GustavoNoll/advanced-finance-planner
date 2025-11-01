@@ -8,6 +8,7 @@ export { useCurrentUserProfile, useClientMutations, useClientsByBroker, useClien
 export { useProfileData, usePlanCreation, usePlanCalculations, useAgeOptions } from './usePlanCreation'
 export { useLinkedItems } from './useLinkedItems'
 export { useLastActive } from './useLastActive'
+export { usePerformanceData } from './usePerformanceData'
 
 export type { GoalsStats, EventsStats } from './useGoalsEventsManagement'
 export type { InvestmentPlanStats } from './useInvestmentPlan'

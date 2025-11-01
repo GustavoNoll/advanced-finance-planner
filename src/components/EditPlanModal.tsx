@@ -14,8 +14,8 @@ import {
   type Calculations as InvestmentCalculations
 } from '@/utils/investmentPlanCalculations';
 import { useTranslation } from "react-i18next";
-import CurrencyInput from 'react-currency-input-field';
-import { CurrencyCode, getCurrencySymbol } from "@/utils/currency";
+import { CurrencyInput } from "@/components/ui/currency-input";
+import { CurrencyCode } from "@/utils/currency";
 import { InvestmentPlan, MicroInvestmentPlan, FinancialRecord } from "@/types/financial";
 import { calculateAge, calculateEndDate, calculateFinalAge } from '@/utils/dateUtils';
 import { handleAgeDateSync, handleFormChange, type Currency } from '@/utils/formUtils';
@@ -275,7 +275,6 @@ export function EditPlanModal({
     }
   };
 
-  const prefix = getCurrencySymbol(investmentPlanFormData.currency as CurrencyCode);
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm">
@@ -335,8 +334,8 @@ export function EditPlanModal({
                     )}
                   </label>
                   <CurrencyInput
-                    name="initialAmount"
-                    value={investmentPlanFormData.initialAmount}
+                    id="initialAmount"
+                    defaultValue={investmentPlanFormData.initialAmount}
                     onValueChange={(value) => {
                       setInvestmentPlanFormData(prev => ({
                         ...prev,
@@ -344,10 +343,7 @@ export function EditPlanModal({
                       }))
                     }}
                     placeholder="1000"
-                    prefix={prefix}
-                    decimalsLimit={2}
-                    decimalSeparator=","
-                    groupSeparator="."
+                    currency={investmentPlanFormData.currency as CurrencyCode}
                     className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
                     required
                     disabled={hasFinancialRecords}
@@ -547,8 +543,8 @@ export function EditPlanModal({
                     {t('investmentPlan.form.legacyAmount')}
                   </label>
                   <CurrencyInput
-                    name="legacyAmount"
-                    value={investmentPlanFormData.legacyAmount}
+                    id="legacyAmount"
+                    defaultValue={investmentPlanFormData.legacyAmount}
                     onValueChange={(value) => {
                       setInvestmentPlanFormData(prev => ({
                         ...prev,
@@ -556,10 +552,7 @@ export function EditPlanModal({
                       }))
                     }}
                     placeholder="1000000"
-                    prefix={prefix}
-                    decimalsLimit={2}
-                    decimalSeparator=","
-                    groupSeparator="."
+                    currency={investmentPlanFormData.currency as CurrencyCode}
                     className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
                     required
                   />
@@ -687,8 +680,8 @@ export function EditPlanModal({
                           {t('investmentPlan.form.monthlyDeposit')}
                         </label>
                         <CurrencyInput
-                          name="monthlyDeposit"
-                          value={microPlanFormData.monthlyDeposit}
+                          id="monthlyDeposit"
+                          defaultValue={microPlanFormData.monthlyDeposit}
                           onValueChange={(value) => {
                             setMicroPlanFormData(prev => ({
                               ...prev,
@@ -696,10 +689,7 @@ export function EditPlanModal({
                             }))
                           }}
                           placeholder="1000"
-                          prefix={prefix}
-                          decimalsLimit={2}
-                          decimalSeparator=","
-                          groupSeparator="."
+                          currency={investmentPlanFormData.currency as CurrencyCode}
                           className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
                           required
                         />
@@ -710,8 +700,8 @@ export function EditPlanModal({
                           {t('investmentPlan.form.desiredIncome')}
                         </label>
                         <CurrencyInput
-                          name="desiredIncome"
-                          value={microPlanFormData.desiredIncome}
+                          id="desiredIncome"
+                          defaultValue={microPlanFormData.desiredIncome}
                           onValueChange={(value) => {
                             setMicroPlanFormData(prev => ({
                               ...prev,
@@ -719,10 +709,7 @@ export function EditPlanModal({
                             }))
                           }}
                           placeholder="5000"
-                          prefix={prefix}
-                          decimalsLimit={2}
-                          decimalSeparator=","
-                          groupSeparator="."
+                          currency={investmentPlanFormData.currency as CurrencyCode}
                           className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
                           required
                         />
