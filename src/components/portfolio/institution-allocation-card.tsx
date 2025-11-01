@@ -94,9 +94,9 @@ export function InstitutionAllocationCard({ institutionData, totalPatrimonio, se
             </button>
           ))}
           {institutionData.length === 0 && (
-            <div className="text-sm text-muted-foreground text-center py-4">{t('portfolioPerformance.institutionAllocation.noData')}</div>
+            <div className="text-sm text-muted-foreground text-center py-4">{t('portfolioPerformance.kpi.institutionAllocation.noData')}</div>
           )}
-          <div className="text-right text-sm text-muted-foreground">{t('portfolioPerformance.institutionAllocation.total')}: {formatCurrencyValue(totalPatrimonio)}</div>
+          <div className="text-right text-sm text-muted-foreground">{t('portfolioPerformance.kpi.institutionAllocation.total')}: {formatCurrencyValue(totalPatrimonio)}</div>
         </div>
       </CardContent>
     </Card>
