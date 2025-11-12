@@ -188,6 +188,9 @@ export class PerformanceImportService {
           throw new Error('Duplicate record: Record with same Profile, Institution, and Period already exists')
         }
 
+        const currency = (row.Moeda || row.Currency || 'BRL').toUpperCase()
+        const accountName = row['Conta Adicional'] || row['Additional Account'] || null
+
         return {
           profile_id: profileId,
           institution: institution || null,
@@ -198,7 +201,9 @@ export class PerformanceImportService {
           taxes: taxes,
           financial_gain: financialGain,
           final_assets: finalAssets,
-          yield: yieldValue
+          yield: yieldValue,
+          currency: currency || 'BRL',
+          account_name: accountName
         }
       } catch (error) {
         result.failed++
@@ -229,14 +234,16 @@ export class PerformanceImportService {
     institution: string | null,
     asset: string | null,
     position: number,
-    period: string | null
+    period: string | null,
+    accountName: string | null
   ): Promise<boolean> {
     return PortfolioPerformanceService.checkDetailedDuplicate(
       profileId,
       institution,
       asset,
       position,
-      period
+      period,
+      accountName
     )
   }
 
@@ -255,7 +262,7 @@ export class PerformanceImportService {
 
     const existingSet = new Set(
       existingRecords.map(r => 
-        `${r.profile_id}|${r.institution || ''}|${r.asset || ''}|${r.position || 0}|${r.period || ''}`
+        `${r.profile_id}|${r.institution || ''}|${r.asset || ''}|${r.position || 0}|${r.period || ''}|${r.account_name || ''}`
       )
     )
 
@@ -281,12 +288,15 @@ export class PerformanceImportService {
         }
 
         const parsedPeriod = parsePeriod(period)
-        const recordKey = `${profileId}|${institution || ''}|${asset || ''}|${position}|${parsedPeriod || ''}`
+        const accountName = row['Conta Adicional'] || row['Additional Account'] || null
+        const recordKey = `${profileId}|${institution || ''}|${asset || ''}|${position}|${parsedPeriod || ''}|${accountName || ''}`
 
         // Check for duplicate
         if (existingSet.has(recordKey)) {
-          throw new Error('Duplicate record: Record with same Profile, Institution, Asset, Position, and Period already exists')
+          throw new Error('Duplicate record: Record with same Profile, Institution, Asset, Position, Period, and Account Name already exists')
         }
+
+        const currency = (row.Moeda || row.Currency || 'BRL').toUpperCase()
 
         return {
           profile_id: profileId,
@@ -299,7 +309,9 @@ export class PerformanceImportService {
           rate: rate || null,
           maturity_date: maturityDate,
           issuer: issuer || null,
-          yield: yieldValue
+          yield: yieldValue,
+          currency: currency || 'BRL',
+          account_name: accountName
         }
       } catch (error) {
         result.failed++
@@ -313,7 +325,7 @@ export class PerformanceImportService {
 
     // Add new records to existing set to avoid duplicates within the same batch
     records.forEach(r => {
-      const key = `${r.profile_id}|${r.institution || ''}|${r.asset || ''}|${r.position}|${r.period || ''}`
+      const key = `${r.profile_id}|${r.institution || ''}|${r.asset || ''}|${r.position}|${r.period || ''}|${r.account_name || ''}`
       existingSet.add(key)
     })
 

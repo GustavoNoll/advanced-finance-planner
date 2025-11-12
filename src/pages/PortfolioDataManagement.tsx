@@ -387,6 +387,8 @@ export default function PortfolioDataManagement() {
                       <TableHead className="w-10"></TableHead>
                       <TableHead>{t('portfolioPerformance.dataManagement.table.period')}</TableHead>
                       <TableHead>{t('portfolioPerformance.dataManagement.table.institution')}</TableHead>
+                      <TableHead>{t('portfolioPerformance.dataManagement.table.currency')}</TableHead>
+                      <TableHead>{t('portfolioPerformance.dataManagement.table.accountName')}</TableHead>
                       <TableHead>{t('portfolioPerformance.dataManagement.table.initialAssets')}</TableHead>
                       <TableHead>{t('portfolioPerformance.dataManagement.table.movement')}</TableHead>
                       <TableHead>{t('portfolioPerformance.dataManagement.table.taxes')}</TableHead>
@@ -398,9 +400,9 @@ export default function PortfolioDataManagement() {
                   </TableHeader>
                   <TableBody>
                     {isLoading ? (
-                      <TableRow><TableCell colSpan={10}>{t('portfolioPerformance.dataManagement.loading')}</TableCell></TableRow>
+                      <TableRow><TableCell colSpan={12}>{t('portfolioPerformance.dataManagement.loading')}</TableCell></TableRow>
                     ) : filteredConsolidated.length === 0 ? (
-                      <TableRow><TableCell colSpan={10}>{t('portfolioPerformance.dataManagement.noData')}</TableCell></TableRow>
+                      <TableRow><TableCell colSpan={12}>{t('portfolioPerformance.dataManagement.noData')}</TableCell></TableRow>
                     ) : filteredConsolidated.map(r => (
                       <TableRow key={r.id}>
                         <TableCell>
@@ -408,6 +410,8 @@ export default function PortfolioDataManagement() {
                         </TableCell>
                         <TableCell>{r.period}</TableCell>
                         <TableCell>{r.institution}</TableCell>
+                        <TableCell>{r.currency || 'BRL'}</TableCell>
+                        <TableCell>{r.account_name || '-'}</TableCell>
                         <TableCell>{formatCurrency(r.initial_assets)}</TableCell>
                         <TableCell>{formatCurrency(r.movement)}</TableCell>
                         <TableCell>{formatCurrency(r.taxes)}</TableCell>
@@ -466,6 +470,8 @@ export default function PortfolioDataManagement() {
                       <TableHead className="w-10"></TableHead>
                       <TableHead>{t('portfolioPerformance.dataManagement.table.period')}</TableHead>
                       <TableHead>{t('portfolioPerformance.dataManagement.table.institution')}</TableHead>
+                      <TableHead>{t('portfolioPerformance.dataManagement.table.currency')}</TableHead>
+                      <TableHead>{t('portfolioPerformance.dataManagement.table.accountName')}</TableHead>
                       <TableHead>{t('portfolioPerformance.dataManagement.table.asset')}</TableHead>
                       <TableHead>{t('portfolioPerformance.dataManagement.table.issuer')}</TableHead>
                       <TableHead>{t('portfolioPerformance.dataManagement.table.assetClass')}</TableHead>
@@ -478,9 +484,9 @@ export default function PortfolioDataManagement() {
                   </TableHeader>
                   <TableBody>
                     {isLoading ? (
-                      <TableRow><TableCell colSpan={11}>{t('portfolioPerformance.dataManagement.loading')}</TableCell></TableRow>
+                      <TableRow><TableCell colSpan={13}>{t('portfolioPerformance.dataManagement.loading')}</TableCell></TableRow>
                     ) : filteredDetailed.length === 0 ? (
-                      <TableRow><TableCell colSpan={11}>{t('portfolioPerformance.dataManagement.noData')}</TableCell></TableRow>
+                      <TableRow><TableCell colSpan={13}>{t('portfolioPerformance.dataManagement.noData')}</TableCell></TableRow>
                     ) : filteredDetailed.map(r => (
                       <TableRow key={r.id}>
                         <TableCell>
@@ -488,6 +494,8 @@ export default function PortfolioDataManagement() {
                         </TableCell>
                         <TableCell>{r.period}</TableCell>
                         <TableCell>{r.institution}</TableCell>
+                        <TableCell>{r.currency || 'BRL'}</TableCell>
+                        <TableCell>{r.account_name || '-'}</TableCell>
                         <TableCell>{r.asset}</TableCell>
                         <TableCell>{r.issuer}</TableCell>
                         <TableCell>{r.asset_class}</TableCell>
@@ -538,6 +546,31 @@ export default function PortfolioDataManagement() {
               <div>
                 <Label>{t('portfolioPerformance.dataManagement.editDialog.institutionLabel')}</Label>
                 <Input value={editItem.institution || ''} onChange={(e) => setEditItem(prev => ({ ...prev, institution: e.target.value }))} className="h-12" />
+              </div>
+              <div>
+                <Label>{t('portfolioPerformance.dataManagement.editDialog.currencyLabel')}</Label>
+                <Select 
+                  value={editItem.currency || currency} 
+                  onValueChange={(value) => setEditItem(prev => ({ ...prev, currency: value }))}
+                >
+                  <SelectTrigger className="h-12">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="BRL">BRL</SelectItem>
+                    <SelectItem value="USD">USD</SelectItem>
+                    <SelectItem value="EUR">EUR</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label>{t('portfolioPerformance.dataManagement.editDialog.accountNameLabel')}</Label>
+                <Input 
+                  value={editItem.account_name || ''} 
+                  onChange={(e) => setEditItem(prev => ({ ...prev, account_name: e.target.value || null }))} 
+                  className="h-12" 
+                  placeholder={t('portfolioPerformance.dataManagement.editDialog.accountNamePlaceholder')}
+                />
               </div>
             </div>
 

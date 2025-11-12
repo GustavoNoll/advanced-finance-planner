@@ -1814,6 +1814,8 @@ export const ptBR = {
       table: {
         period: "Competência",
         institution: "Instituição",
+        currency: "Moeda",
+        accountName: "Nome da Conta",
         initialAssets: "Patrimônio Inicial",
         movement: "Movimentação",
         taxes: "Impostos",
@@ -1835,6 +1837,9 @@ export const ptBR = {
         detailedData: "Dado Detalhado",
         periodLabel: "Competência (MM/YYYY)",
         institutionLabel: "Instituição",
+        currencyLabel: "Moeda",
+        accountNameLabel: "Nome da Conta",
+        accountNamePlaceholder: "Opcional - Nome da conta para diferenciar múltiplas contas",
         initialAssetsLabel: "Patrimônio Inicial",
         movementLabel: "Movimentação",
         taxesLabel: "Impostos",
@@ -1940,6 +1945,10 @@ export const ptBR = {
         grossAssets: "Patrimônio Bruto",
         noData: "Sem dados",
         total: "Total"
+      },
+      imports: {
+        history: "Histórico de Importações",
+        neverImported: "Nunca foi importado"
       },
       maturityTimeline: {
         title: "Vencimentos por Estratégia",
@@ -2416,6 +2425,31 @@ export const ptBR = {
       secure: '100% Seguro',
       fastResponse: 'Resposta em 24h',
       noCommitment: 'Sem Compromisso'
+    }
+  },
+  statementImports: {
+    title: 'Histórico de Importações',
+    description: 'Histórico de importações de extratos via n8n',
+    noImports: 'Nenhuma importação encontrada',
+    status: {
+      success: 'Sucesso',
+      failed: 'Falha',
+      running: 'Em Execução',
+      created: 'Criado'
+    },
+    type: {
+      consolidated: 'Consolidado',
+      detailed: 'Detalhado'
+    },
+    table: {
+      title: 'Importações',
+      status: 'Status',
+      type: 'Tipo',
+      n8nId: 'ID n8n',
+      createdAt: 'Criado em',
+      startedAt: 'Iniciado em',
+      completedAt: 'Concluído em',
+      error: 'Erro'
     }
   },
 };

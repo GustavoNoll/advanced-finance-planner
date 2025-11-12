@@ -14,6 +14,7 @@ import { CreateClient } from "./pages/CreateClient";
 import { InvestmentPlanShow } from "./pages/InvestmentPlan";
 import { Simulation } from "./pages/Simulation";
 import PortfolioDataManagement from "@/pages/PortfolioDataManagement";
+import StatementImportsHistory from "@/pages/StatementImportsHistory";
 import FinancialRecords from "@/pages/FinancialRecords";
 import ClientProfile from "@/pages/ClientProfile";
 import FinancialGoals from "@/pages/FinancialGoals";
@@ -174,6 +175,16 @@ function AppRoutes() {
             <ProtectedRoute>
               <PageTransition>
                 <PortfolioDataManagement />
+              </PageTransition>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/statement-imports-history/:id"
+          element={
+            <ProtectedRoute>
+              <PageTransition>
+                <StatementImportsHistory />
               </PageTransition>
             </ProtectedRoute>
           }

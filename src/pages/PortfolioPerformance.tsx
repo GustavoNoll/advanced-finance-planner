@@ -4,8 +4,9 @@ import { useNavigate } from "react-router-dom";
 import { InvestmentPlan, Profile } from "@/types/financial";
 import { Spinner } from "@/components/ui/spinner";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { DollarSign, Target, Building2, Calendar } from "lucide-react";
+import { DollarSign, Target, Building2, Calendar, CheckCircle2, XCircle, Clock, Loader2, History } from "lucide-react";
 import { usePerformanceData } from "@/hooks";
+import { useStatementImports } from "@/hooks/useStatementImports";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/components/auth/AuthProvider";
 import { CompetenciaSeletor } from "@/components/portfolio/competencia-seletor";
@@ -46,6 +47,7 @@ function PortfolioPerformance({
   const { t } = useTranslation();
   const { isBroker } = useAuth();
   const { consolidatedData, performanceData, loading, error, totalAssets, totalYield, previousAssets, assetsChangePercent, hasData, refetch } = usePerformanceData(profile?.id || null)
+  const { latestImport } = useStatementImports(profile?.id || null)
   const [filteredRange, setFilteredRange] = useState<{ inicio: string; fim: string }>({ inicio: "", fim: "" })
   const [yearTotals, setYearTotals] = useState<{ totalPatrimonio: number; totalRendimento: number } | null>(null)
   const [maturityDialogOpen, setMaturityDialogOpen] = useState(false)
@@ -55,6 +57,26 @@ function PortfolioPerformance({
   
   const openDataManagement = () => {
     navigate(`/portfolio-data-management/${profile?.id}`)
+  }
+
+  const openImportsHistory = () => {
+    navigate(`/statement-imports-history/${profile?.id}`)
+  }
+
+  const getStatusIcon = (status: string | null) => {
+    if (!status) return null
+    switch (status) {
+      case 'success':
+        return <CheckCircle2 className="h-4 w-4 text-green-500" />
+      case 'failed':
+        return <XCircle className="h-4 w-4 text-red-500" />
+      case 'running':
+        return <Loader2 className="h-4 w-4 text-blue-500 animate-spin" />
+      case 'created':
+        return <Clock className="h-4 w-4 text-gray-500" />
+      default:
+        return <Clock className="h-4 w-4 text-gray-500" />
+    }
   }
   
   const handleFilterChange = useCallback((inicioCompetencia: string, fimCompetencia: string) => {
@@ -83,7 +105,26 @@ function PortfolioPerformance({
     <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-8">
       <div className="space-y-6">
         {isBroker && (
-          <div className="flex justify-end">
+          <div className="flex justify-end gap-2">
+            <Button 
+              variant="outline" 
+              onClick={openImportsHistory}
+              className="flex items-center gap-2"
+            >
+              {latestImport ? (
+                <>
+                  {getStatusIcon(latestImport.status)}
+                  <History className="h-4 w-4" />
+                  {t('portfolioPerformance.kpi.imports.history')}
+                </>
+              ) : (
+                <>
+                  <Clock className="h-4 w-4 text-gray-500" />
+                  <History className="h-4 w-4" />
+                  {t('portfolioPerformance.kpi.imports.neverImported')}
+                </>
+              )}
+            </Button>
             <Button variant="default" onClick={openDataManagement}>
               {t('portfolioPerformance.kpi.manageData')}
             </Button>

@@ -1814,6 +1814,8 @@ export const enUS = {
       table: {
         period: "Period",
         institution: "Institution",
+        currency: "Currency",
+        accountName: "Account Name",
         initialAssets: "Initial Assets",
         movement: "Movement",
         taxes: "Taxes",
@@ -1835,6 +1837,9 @@ export const enUS = {
         detailedData: "Detailed Data",
         periodLabel: "Period (MM/YYYY)",
         institutionLabel: "Institution",
+        currencyLabel: "Currency",
+        accountNameLabel: "Account Name",
+        accountNamePlaceholder: "Optional - Account name to differentiate multiple accounts",
         initialAssetsLabel: "Initial Assets",
         movementLabel: "Movement",
         taxesLabel: "Taxes",
@@ -1940,6 +1945,10 @@ export const enUS = {
         grossAssets: "Gross Assets",
         noData: "No data",
         total: "Total"
+      },
+      imports: {
+        history: "Import History",
+        neverImported: "Never imported"
       },
       maturityTimeline: {
         title: "Maturities by Strategy",
@@ -2416,6 +2425,31 @@ export const enUS = {
       secure: '100% Secure',
       fastResponse: '24h Response',
       noCommitment: 'No Commitment'
+    }
+  },
+  statementImports: {
+    title: 'Import History',
+    description: 'History of statement imports via n8n',
+    noImports: 'No imports found',
+    status: {
+      success: 'Success',
+      failed: 'Failed',
+      running: 'Running',
+      created: 'Created'
+    },
+    type: {
+      consolidated: 'Consolidated',
+      detailed: 'Detailed'
+    },
+    table: {
+      title: 'Imports',
+      status: 'Status',
+      type: 'Type',
+      n8nId: 'n8n ID',
+      createdAt: 'Created at',
+      startedAt: 'Started at',
+      completedAt: 'Completed at',
+      error: 'Error'
     }
   },
 };
