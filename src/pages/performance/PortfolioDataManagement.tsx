@@ -275,7 +275,7 @@ export default function PortfolioDataManagement() {
           variant="outline" 
           onClick={() => navigate(`/market-data-audit/${profileId}`)}
         >
-          {t('portfolioPerformance.dataManagement.provaReal')}
+          {t('portfolioPerformance.dataManagement.marketDataAudit')}
         </Button>
       </div>
 
