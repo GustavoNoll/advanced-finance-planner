@@ -24,6 +24,13 @@ interface YahooFinanceResponse {
   }
 }
 
+interface PTAXResponse {
+  value: Array<{
+    cotacaoVenda: number
+    dataHoraCotacao: string
+  }>
+}
+
 /**
  * Formata data para formato brasileiro (dd/mm/yyyy)
  * Usa métodos UTC para garantir consistência independente do fuso horário local
@@ -33,6 +40,16 @@ function formatBrazilianDate(date: Date): string {
   const month = String(date.getUTCMonth() + 1).padStart(2, '0')
   const year = date.getUTCFullYear()
   return `${day}/${month}/${year}`
+}
+
+/**
+ * Formata data para API do Banco Central (MM-DD-YYYY)
+ */
+function formatDateForAPI(date: Date): string {
+  const month = String(date.getMonth() + 1).padStart(2, '0')
+  const day = String(date.getDate()).padStart(2, '0')
+  const year = date.getFullYear()
+  return `${month}-${day}-${year}`
 }
 
 /**
@@ -80,11 +97,6 @@ async function fetchYahooFinanceData(
 /**
  * Converte dados diários para mensais (último dia útil de cada mês)
  * E calcula variação mensal em percentual entre meses consecutivos
- * 
- * Nota: O Yahoo Finance às vezes retorna buracos nos finais de semana,
- * mesmo para ativos que negociam 24h/dia (como BTC-USD). A lógica abaixo
- * garante que sempre pegamos o último dia disponível no dataset para cada mês,
- * mesmo que não seja tecnicamente o último dia do mês no calendário.
  */
 function calculateMonthlyVariation(
   dailyData: YahooFinanceHistoricalData[]
@@ -95,20 +107,11 @@ function calculateMonthlyVariation(
   const sortedData = [...dailyData].sort((a, b) => a.timestamp - b.timestamp)
 
   // Agrupa por mês e pega sempre o último dia disponível no dataset de cada mês
-  // Isso lida automaticamente com buracos nos finais de semana do Yahoo Finance
   const monthlyPrices = new Map<string, YahooFinanceHistoricalData>()
   
   sortedData.forEach(item => {
-    // Usa métodos UTC para evitar problemas com fuso horário local
-    // O Yahoo Finance retorna timestamps em UTC, então devemos trabalhar em UTC
     const date = new Date(item.timestamp)
-    // Chave no formato YYYY-MM para agrupar por mês (usando componentes UTC)
     const monthKey = `${date.getUTCFullYear()}-${String(date.getUTCMonth() + 1).padStart(2, '0')}`
-    
-    // Sempre sobrescreve para manter o último dia disponível no dataset (fechamento do mês)
-    // Como iteramos dados ordenados cronologicamente, o último registro encontrado
-    // para cada mês será mantido — o que corresponde ao último preço disponível no mês,
-    // mesmo que haja buracos nos finais de semana.
     monthlyPrices.set(monthKey, item)
   })
 
@@ -117,21 +120,16 @@ function calculateMonthlyVariation(
     .sort((a, b) => a[1].timestamp - b[1].timestamp)
     .map(entry => entry[1])
 
-  // Calcula variação mensal: compara o último dia útil de cada mês com o último dia útil do mês anterior
+  // Calcula variação mensal
   const variations: BCBResponse[] = []
   
   for (let i = 1; i < sortedMonthly.length; i++) {
     const currentMonth = sortedMonthly[i]
     const previousMonth = sortedMonthly[i - 1]
     
-    // Valida que ambos têm preços válidos
     if (previousMonth.close > 0 && currentMonth.close > 0) {
-      // Calcula variação percentual: (valor_atual - valor_anterior) / valor_anterior * 100
       const variation = ((currentMonth.close - previousMonth.close) / previousMonth.close) * 100
       
-      // Usa sempre dia 01/MM/YYYY para manter consistência com outros indicadores
-      // A variação já foi calculada usando os últimos dias úteis reais
-      // Usa métodos UTC para evitar problemas com fuso horário
       const currentDate = new Date(currentMonth.timestamp)
       const formattedDate = formatBrazilianDate(new Date(Date.UTC(
         currentDate.getUTCFullYear(),
@@ -151,6 +149,122 @@ function calculateMonthlyVariation(
 }
 
 /**
+ * Busca dados históricos de PTAX da API do Banco Central
+ */
+async function fetchPTAXData(startYear: number = 1995): Promise<BCBResponse[]> {
+  try {
+    console.log(`📥 Buscando dados de PTAX (Dólar) desde ${startYear}...`)
+    
+    const endDate = new Date()
+    const startDate = new Date(startYear, 0, 1)
+    
+    const apiUrl = `https://olinda.bcb.gov.br/olinda/servico/PTAX/versao/v1/odata/CotacaoMoedaPeriodo(moeda=@moeda,dataInicial=@dataInicial,dataFinalCotacao=@dataFinalCotacao)?@moeda='USD'&@dataInicial='${formatDateForAPI(startDate)}'&@dataFinalCotacao='${formatDateForAPI(endDate)}'&$top=10000&$filter=tipoBoletim%20eq%20'Fechamento'&$format=json&$select=cotacaoVenda,dataHoraCotacao`
+    
+    console.log(`   URL: ${apiUrl}`)
+    
+    const response = await fetch(apiUrl)
+    
+    if (!response.ok) {
+      throw new Error(`Erro ao buscar dados PTAX: ${response.status}`)
+    }
+
+    const data: PTAXResponse = await response.json()
+    
+    if (!data.value || data.value.length === 0) {
+      throw new Error('Nenhum dado PTAX retornado pela API')
+    }
+
+    console.log(`   ✅ ${data.value.length} registros encontrados`)
+
+    // Agrupar cotações por competência (MM/YYYY) e pegar o último dia útil do mês
+    const competenciaMap = new Map<string, { cotacao: number; data: Date }>()
+
+    data.value.forEach((item) => {
+      const dataHora = new Date(item.dataHoraCotacao)
+      const month = String(dataHora.getMonth() + 1).padStart(2, '0')
+      const year = dataHora.getFullYear()
+      const competencia = `${month}/${year}`
+      
+      const cotacao = Number(item.cotacaoVenda) || 0
+      
+      // Guardar apenas se não existe ou se a data é mais recente (último dia do mês)
+      if (!competenciaMap.has(competencia) || dataHora > competenciaMap.get(competencia)!.data) {
+        competenciaMap.set(competencia, {
+          cotacao,
+          data: dataHora
+        })
+      }
+    })
+
+    // Converter para formato BCBResponse (data no formato 01/MM/YYYY)
+    const ptaxArray: BCBResponse[] = Array.from(competenciaMap.entries())
+      .map(([competencia, { cotacao }]) => {
+        const [month, year] = competencia.split('/').map(Number)
+        return {
+          data: `01/${String(month).padStart(2, '0')}/${year}`,
+          valor: cotacao.toFixed(4)
+        }
+      })
+      .sort((a, b) => {
+        const dateA = new Date(a.data.split('/').reverse().join('-'))
+        const dateB = new Date(b.data.split('/').reverse().join('-'))
+        return dateA.getTime() - dateB.getTime()
+      })
+
+    console.log(`   ✅ ${ptaxArray.length} competências processadas`)
+    console.log(`   Período: ${ptaxArray[0]?.data} até ${ptaxArray[ptaxArray.length - 1]?.data}`)
+
+    return ptaxArray
+  } catch (error) {
+    console.error(`❌ Erro ao buscar PTAX:`, error)
+    throw error
+  }
+}
+
+/**
+ * Converte dados diários para mensais (último dia útil de cada mês)
+ * Retorna os valores raw (preços/índices) sem calcular variação
+ */
+function getMonthlyRawValues(
+  dailyData: YahooFinanceHistoricalData[]
+): BCBResponse[] {
+  if (dailyData.length === 0) return []
+
+  // Ordena dados por data (timestamp)
+  const sortedData = [...dailyData].sort((a, b) => a.timestamp - b.timestamp)
+
+  // Agrupa por mês e pega sempre o último dia disponível no dataset de cada mês
+  const monthlyPrices = new Map<string, YahooFinanceHistoricalData>()
+  
+  sortedData.forEach(item => {
+    const date = new Date(item.timestamp)
+    const monthKey = `${date.getUTCFullYear()}-${String(date.getUTCMonth() + 1).padStart(2, '0')}`
+    monthlyPrices.set(monthKey, item)
+  })
+
+  // Converte para array ordenado cronologicamente
+  const sortedMonthly = Array.from(monthlyPrices.entries())
+    .sort((a, b) => a[1].timestamp - b[1].timestamp)
+    .map(entry => entry[1])
+
+  // Retorna valores raw formatados
+  return sortedMonthly.map(item => {
+    const currentDate = new Date(item.timestamp)
+    const formattedDate = formatBrazilianDate(new Date(Date.UTC(
+      currentDate.getUTCFullYear(),
+      currentDate.getUTCMonth(),
+      1,
+      0, 0, 0, 0
+    )))
+    
+    return {
+      data: formattedDate,
+      valor: item.close.toFixed(2)
+    }
+  })
+}
+
+/**
  * Busca e salva dados históricos de um ativo do Yahoo Finance
  */
 async function saveYahooFinanceIndicator(
@@ -162,14 +276,12 @@ async function saveYahooFinanceIndicator(
   try {
     console.log(`📥 Buscando dados de ${indicatorName} (${symbol})...`)
     
-    // Calcula timestamps para início e fim
     const startDate = new Date(startYear, 0, 1)
     const endDate = new Date()
     
-    const period1 = Math.floor(startDate.getTime() / 1000) // Unix timestamp em segundos
+    const period1 = Math.floor(startDate.getTime() / 1000)
     const period2 = Math.floor(endDate.getTime() / 1000)
 
-    // Busca dados diários
     const dailyData = await fetchYahooFinanceData(symbol, period1, period2)
     
     if (dailyData.length === 0) {
@@ -179,19 +291,26 @@ async function saveYahooFinanceIndicator(
     console.log(`   ✅ ${dailyData.length} registros diários encontrados`)
     console.log(`   Período: ${formatBrazilianDate(startDate)} até ${formatBrazilianDate(endDate)}`)
 
-    // Converte para variação mensal
     const monthlyVariations = calculateMonthlyVariation(dailyData)
+    const monthlyRawValues = getMonthlyRawValues(dailyData)
 
     if (monthlyVariations.length === 0) {
       throw new Error('Unable to calculate monthly variations')
     }
 
-    // Salva arquivo JSON
-    const filePath = path.join(process.cwd(), 'src', 'data', `${fileName}-historical.json`)
-    await writeFile(filePath, JSON.stringify(monthlyVariations, null, 2))
+    // Salvar arquivo de variações
+    const variationFilePath = path.join(process.cwd(), 'src', 'data', `${fileName}-historical.json`)
+    await writeFile(variationFilePath, JSON.stringify(monthlyVariations, null, 2))
     
-    console.log(`✅ Dados de ${indicatorName} salvos em ${filePath}`)
+    // Salvar arquivo raw
+    const rawFilePath = path.join(process.cwd(), 'src', 'data', `${fileName}-raw-historical.json`)
+    await writeFile(rawFilePath, JSON.stringify(monthlyRawValues, null, 2))
+    
+    console.log(`✅ Dados de ${indicatorName} salvos:`)
+    console.log(`   Variações: ${variationFilePath}`)
+    console.log(`   Valores raw: ${rawFilePath}`)
     console.log(`   Total de variações mensais: ${monthlyVariations.length}`)
+    console.log(`   Total de valores raw: ${monthlyRawValues.length}`)
     console.log(`   Período: ${monthlyVariations[0]?.data} até ${monthlyVariations[monthlyVariations.length - 1]?.data}\n`)
   } catch (error) {
     console.error(`❌ Erro ao salvar ${indicatorName}:`, error)
@@ -199,15 +318,72 @@ async function saveYahooFinanceIndicator(
   }
 }
 
-async function main() {
-  console.log('📥 Buscando dados do Yahoo Finance...\n')
+/**
+ * Calcula variação mensal para PTAX
+ */
+function calculatePTAXMonthlyVariation(ptaxData: BCBResponse[]): BCBResponse[] {
+  if (ptaxData.length < 2) return []
   
-  // Ouro: GC=F (Gold Futures) é mais confiável que XAUUSD
-  // Bitcoin: BTC-USD
+  const variations: BCBResponse[] = []
+  
+  for (let i = 1; i < ptaxData.length; i++) {
+    const current = parseFloat(ptaxData[i].valor)
+    const previous = parseFloat(ptaxData[i - 1].valor)
+    
+    if (previous > 0) {
+      const variation = ((current - previous) / previous) * 100
+      variations.push({
+        data: ptaxData[i].data,
+        valor: variation.toFixed(2)
+      })
+    }
+  }
+  
+  return variations
+}
+
+/**
+ * Salva dados de PTAX em arquivo JSON
+ */
+async function savePTAXIndicator(startYear: number = 1995): Promise<void> {
+  try {
+    const ptaxRawData = await fetchPTAXData(startYear)
+    
+    // Calcular variações mensais
+    const ptaxVariations = calculatePTAXMonthlyVariation(ptaxRawData)
+    
+    // Salvar arquivo raw
+    const rawFilePath = path.join(process.cwd(), 'src', 'data', 'ptax-raw-historical.json')
+    await writeFile(rawFilePath, JSON.stringify(ptaxRawData, null, 2))
+    
+    // Salvar arquivo de variações
+    const variationFilePath = path.join(process.cwd(), 'src', 'data', 'ptax-historical.json')
+    await writeFile(variationFilePath, JSON.stringify(ptaxVariations, null, 2))
+    
+    console.log(`✅ Dados de PTAX salvos:`)
+    console.log(`   Valores raw: ${rawFilePath}`)
+    console.log(`   Variações: ${variationFilePath}`)
+    console.log(`   Total de competências raw: ${ptaxRawData.length}`)
+    console.log(`   Total de variações mensais: ${ptaxVariations.length}`)
+    console.log(`   Período: ${ptaxRawData[0]?.data} até ${ptaxRawData[ptaxRawData.length - 1]?.data}\n`)
+  } catch (error) {
+    console.error(`❌ Erro ao salvar PTAX:`, error)
+    throw error
+  }
+}
+
+async function main() {
+  console.log('📥 Buscando dados do Yahoo Finance e PTAX...\n')
+  
+  // PTAX (Dólar) - API do Banco Central
+  await savePTAXIndicator(1995)
+  
+  // Ouro: GC=F (Gold Futures)
   await saveYahooFinanceIndicator('GC=F', 'Ouro (Gold)', 'gold', 1970)
+  
+  // Bitcoin: BTC-USD
   await saveYahooFinanceIndicator('BTC-USD', 'Bitcoin', 'btc', 2010)
   
-  // Índices brasileiros
   // IBOV: ^BVSP (Ibovespa)
   await saveYahooFinanceIndicator('^BVSP', 'IBOVESPA', 'ibov', 1968)
   

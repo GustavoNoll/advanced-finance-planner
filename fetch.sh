@@ -18,7 +18,7 @@ echo "🔄 Buscando dados do FRED..."
 npx tsx fetch-us-indicators.ts
 echo "🔄 Buscando dados do ECB..."
 npx tsx fetch-euro-indicators.ts
-echo "🔄 Buscando dados do Yahoo Finance (Ouro, Bitcoin)..."
+echo "🔄 Buscando dados do Yahoo Finance (PTAX)..."
 npx tsx fetch-yahoo-finance.ts
 
 echo "✅ Dados atualizados com sucesso!" 

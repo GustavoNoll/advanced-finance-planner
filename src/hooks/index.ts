@@ -9,6 +9,7 @@ export { useProfileData, usePlanCreation, usePlanCalculations, useAgeOptions } f
 export { useLinkedItems } from './useLinkedItems'
 export { useLastActive } from './useLastActive'
 export { usePerformanceData } from './usePerformanceData'
+export { useStatementImports, useStatementImportsHistory } from './useStatementImports'
 
 export type { GoalsStats, EventsStats } from './useGoalsEventsManagement'
 export type { InvestmentPlanStats } from './useInvestmentPlan'

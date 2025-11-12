@@ -1814,6 +1814,8 @@ export const enUS = {
       table: {
         period: "Period",
         institution: "Institution",
+        currency: "Currency",
+        accountName: "Account Name",
         initialAssets: "Initial Assets",
         movement: "Movement",
         taxes: "Taxes",
@@ -1835,6 +1837,9 @@ export const enUS = {
         detailedData: "Detailed Data",
         periodLabel: "Period (MM/YYYY)",
         institutionLabel: "Institution",
+        currencyLabel: "Currency",
+        accountNameLabel: "Account Name",
+        accountNamePlaceholder: "Optional - Account name to differentiate multiple accounts",
         initialAssetsLabel: "Initial Assets",
         movementLabel: "Movement",
         taxesLabel: "Taxes",
@@ -1862,6 +1867,57 @@ export const enUS = {
         cancel: "Cancel",
         success: "Record deleted successfully",
         successMultiple: "{{count}} record(s) deleted successfully"
+      },
+      marketDataAudit: "Real Proof"
+    },
+    marketDataAudit: {
+      title: "Real Proof - API Data",
+      subtitle: "Market data audit by competency",
+      back: "Back to Manage Data",
+      ptax: "PTAX (Dollar)",
+      cdi: "CDI",
+      ipca: "IPCA",
+      ibov: "IBOV",
+      marketIndicators: "Other Indicators",
+      competencesLoaded: "competencies loaded",
+      consolidatedTableTitle: "Consolidated Data by Competency",
+      competence: "Competency",
+      ptaxRate: "PTAX (R$/USD)",
+      ptaxDate: "PTAX Date",
+      cdiMonthly: "Monthly CDI",
+      cdiAccumulated: "Accumulated CDI",
+      ipcaMonthly: "Monthly IPCA",
+      ipcaAccumulated: "Accumulated IPCA",
+      ibovMonthly: "Monthly IBOV",
+      sp500Monthly: "Monthly S&P 500",
+      tBondMonthly: "Monthly T-Bond",
+      goldMonthly: "Monthly Gold",
+      btcMonthly: "Monthly Bitcoin",
+      usCpiMonthly: "Monthly US CPI",
+      euroCpiMonthly: "Monthly Euro CPI",
+      loading: "Loading...",
+      noData: "No data available",
+      loadPtax: "Load PTAX",
+      filters: "Filters and Controls",
+      filterStartPeriod: "Start Period",
+      filterEndPeriod: "End Period",
+      filterStartYear: "Start Year",
+      filterEndYear: "End Year",
+      allPeriods: "All periods",
+      allYears: "All years",
+      itemsPerPage: "Items per page",
+      clearFilters: "Clear Filters",
+      selectColumns: "Select Columns",
+      visibleColumns: "Visible Columns",
+      showingItems: "Showing {{from}} to {{to}} of {{total}} items",
+      previous: "Previous",
+      next: "Next",
+      page: "Page",
+      of: "of",
+      apiInfo: {
+        title: "API Information",
+        source: "Source",
+        endpoint: "Endpoint"
       }
     },
     kpi: {
@@ -1940,6 +1996,10 @@ export const enUS = {
         grossAssets: "Gross Assets",
         noData: "No data",
         total: "Total"
+      },
+      imports: {
+        history: "Import History",
+        neverImported: "Never imported"
       },
       maturityTimeline: {
         title: "Maturities by Strategy",
@@ -2416,6 +2476,31 @@ export const enUS = {
       secure: '100% Secure',
       fastResponse: '24h Response',
       noCommitment: 'No Commitment'
+    }
+  },
+  statementImports: {
+    title: 'Import History',
+    description: 'History of statement imports via n8n',
+    noImports: 'No imports found',
+    status: {
+      success: 'Success',
+      failed: 'Failed',
+      running: 'Running',
+      created: 'Created'
+    },
+    type: {
+      consolidated: 'Consolidated',
+      detailed: 'Detailed'
+    },
+    table: {
+      title: 'Imports',
+      status: 'Status',
+      type: 'Type',
+      n8nId: 'n8n ID',
+      createdAt: 'Created at',
+      startedAt: 'Started at',
+      completedAt: 'Completed at',
+      error: 'Error'
     }
   },
 };

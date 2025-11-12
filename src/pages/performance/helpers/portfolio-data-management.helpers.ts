@@ -60,6 +60,7 @@ export async function handleSaveEdit({
         editItem.asset || null,
         editItem.position || 0,
         editItem.period || null,
+        editItem.account_name || null,
         editItem.id // Excluir o registro atual da verificação quando estiver editando
       )
 
@@ -86,7 +87,9 @@ export async function handleSaveEdit({
             taxes: editItem.taxes !== undefined && editItem.taxes !== null ? editItem.taxes : null,
             financial_gain: editItem.financial_gain !== undefined && editItem.financial_gain !== null ? editItem.financial_gain : null,
             final_assets: editItem.final_assets !== undefined && editItem.final_assets !== null ? editItem.final_assets : null,
-            yield: editItem.yield || null
+            yield: editItem.yield || null,
+            currency: editItem.currency || null,
+            account_name: editItem.account_name || null
           }
         )
         toast({
@@ -103,7 +106,9 @@ export async function handleSaveEdit({
           taxes: editItem.taxes || null,
           financial_gain: editItem.financial_gain || null,
           final_assets: editItem.final_assets || null,
-          yield: editItem.yield || null
+          yield: editItem.yield || null,
+          currency: editItem.currency || null,
+          account_name: editItem.account_name || null
         })
         toast({
           title: t('portfolioPerformance.validation.createSuccess'),
@@ -123,7 +128,9 @@ export async function handleSaveEdit({
             position: editItem.position !== undefined && editItem.position !== null ? editItem.position : null,
             rate: editItem.rate || null,
             maturity_date: editItem.maturity_date || null,
-            yield: editItem.yield || null
+            yield: editItem.yield || null,
+            currency: editItem.currency || null,
+            account_name: editItem.account_name || null
           }
         )
         toast({
@@ -141,7 +148,9 @@ export async function handleSaveEdit({
           position: editItem.position || null,
           rate: editItem.rate || null,
           maturity_date: editItem.maturity_date || null,
-          yield: editItem.yield || null
+          yield: editItem.yield || null,
+          currency: editItem.currency || null,
+          account_name: editItem.account_name || null
         })
         toast({
           title: t('portfolioPerformance.validation.createSuccess'),

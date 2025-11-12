@@ -1814,6 +1814,8 @@ export const ptBR = {
       table: {
         period: "Competência",
         institution: "Instituição",
+        currency: "Moeda",
+        accountName: "Nome da Conta",
         initialAssets: "Patrimônio Inicial",
         movement: "Movimentação",
         taxes: "Impostos",
@@ -1835,6 +1837,9 @@ export const ptBR = {
         detailedData: "Dado Detalhado",
         periodLabel: "Competência (MM/YYYY)",
         institutionLabel: "Instituição",
+        currencyLabel: "Moeda",
+        accountNameLabel: "Nome da Conta",
+        accountNamePlaceholder: "Opcional - Nome da conta para diferenciar múltiplas contas",
         initialAssetsLabel: "Patrimônio Inicial",
         movementLabel: "Movimentação",
         taxesLabel: "Impostos",
@@ -1862,6 +1867,57 @@ export const ptBR = {
         cancel: "Cancelar",
         success: "Registro excluído com sucesso",
         successMultiple: "{{count}} registro(s) excluído(s) com sucesso"
+      },
+      marketDataAudit: "Auditoria de Dados de Mercado"
+    },
+    marketDataAudit: {
+      title: "Auditoria de Dados de Mercado",
+      subtitle: "Auditoria de dados de mercado por competência",
+      back: "Voltar para Gerenciar Dados",
+      ptax: "PTAX (Dólar)",
+      cdi: "CDI",
+      ipca: "IPCA",
+      ibov: "IBOV",
+      marketIndicators: "Outros Indicadores",
+      competencesLoaded: "competências carregadas",
+      consolidatedTableTitle: "Dados Consolidados por Competência",
+      competence: "Competência",
+      ptaxRate: "PTAX (R$/USD)",
+      ptaxDate: "Data PTAX",
+      cdiMonthly: "CDI Mensal",
+      cdiAccumulated: "CDI Acumulado",
+      ipcaMonthly: "IPCA Mensal",
+      ipcaAccumulated: "IPCA Acumulado",
+      ibovMonthly: "IBOV Mensal",
+      sp500Monthly: "S&P 500 Mensal",
+      tBondMonthly: "T-Bond Mensal",
+      goldMonthly: "Ouro Mensal",
+      btcMonthly: "Bitcoin Mensal",
+      usCpiMonthly: "US CPI Mensal",
+      euroCpiMonthly: "Euro CPI Mensal",
+      loading: "Carregando...",
+      noData: "Nenhum dado disponível",
+      loadPtax: "Carregar PTAX",
+      filters: "Filtros e Controles",
+      filterStartPeriod: "Período Inicial",
+      filterEndPeriod: "Período Final",
+      filterStartYear: "Ano Inicial",
+      filterEndYear: "Ano Final",
+      allPeriods: "Todos os períodos",
+      allYears: "Todos os anos",
+      itemsPerPage: "Itens por página",
+      clearFilters: "Limpar Filtros",
+      selectColumns: "Selecionar Colunas",
+      visibleColumns: "Colunas Visíveis",
+      showingItems: "Mostrando {{from}} a {{to}} de {{total}} itens",
+      previous: "Anterior",
+      next: "Próximo",
+      page: "Página",
+      of: "de",
+      apiInfo: {
+        title: "Informações sobre as APIs",
+        source: "Fonte",
+        endpoint: "Endpoint"
       }
     },
     kpi: {
@@ -1940,6 +1996,10 @@ export const ptBR = {
         grossAssets: "Patrimônio Bruto",
         noData: "Sem dados",
         total: "Total"
+      },
+      imports: {
+        history: "Histórico de Importações",
+        neverImported: "Nunca foi importado"
       },
       maturityTimeline: {
         title: "Vencimentos por Estratégia",
@@ -2416,6 +2476,31 @@ export const ptBR = {
       secure: '100% Seguro',
       fastResponse: 'Resposta em 24h',
       noCommitment: 'Sem Compromisso'
+    }
+  },
+  statementImports: {
+    title: 'Histórico de Importações',
+    description: 'Histórico de importações de extratos via n8n',
+    noImports: 'Nenhuma importação encontrada',
+    status: {
+      success: 'Sucesso',
+      failed: 'Falha',
+      running: 'Em Execução',
+      created: 'Criado'
+    },
+    type: {
+      consolidated: 'Consolidado',
+      detailed: 'Detalhado'
+    },
+    table: {
+      title: 'Importações',
+      status: 'Status',
+      type: 'Tipo',
+      n8nId: 'ID n8n',
+      createdAt: 'Criado em',
+      startedAt: 'Iniciado em',
+      completedAt: 'Concluído em',
+      error: 'Erro'
     }
   },
 };

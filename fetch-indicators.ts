@@ -63,9 +63,15 @@ async function saveIndicator(
   if (options?.calculateVariation) {
     // Filtra para pegar apenas o primeiro dia de cada mês (caso seja diário)
     const monthlyData = getFirstDayOfEachMonth(data);
+    
+    // Salvar arquivo raw antes de calcular variação
+    const rawFilePath = path.join(process.cwd(), 'src', 'data', `${indicator}-raw-historical.json`);
+    await writeFile(rawFilePath, JSON.stringify(monthlyData, null, 2));
+    
     // Calcula a variação mensal
     dataToSave = calculateMonthlyVariation(monthlyData);
     console.log(`✅ Dados de ${indicator} (variação mensal em %) calculados e salvos`);
+    console.log(`   Valores raw salvos em ${rawFilePath}`);
   }
   
   const filePath = path.join(process.cwd(), 'src', 'data', `${indicator}-historical.json`);
@@ -201,6 +207,8 @@ async function main() {
   // IPCA e CDI já vêm como taxas percentuais mensais
   await saveIndicator('ipca', 'https://api.bcb.gov.br/dados/serie/bcdata.sgs.433/dados?formato=json');
   await saveIndicator('cdi', 'https://api.bcb.gov.br/dados/serie/bcdata.sgs.4391/dados?formato=json');
+  // IBOV precisa calcular variação e salvar raw
+  await saveIndicator('ibov', 'https://api.bcb.gov.br/dados/serie/bcdata.sgs.7832/dados?formato=json', { calculateVariation: true });
 }
 
 main().catch(console.error); 

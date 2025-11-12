@@ -12,6 +12,8 @@ export interface CreateConsolidatedData {
   financial_gain?: number | null
   final_assets?: number | null
   yield?: number | null
+  currency?: string | null
+  account_name?: string | null
 }
 
 export interface UpdateConsolidatedData {
@@ -24,6 +26,8 @@ export interface UpdateConsolidatedData {
   financial_gain?: number | null
   final_assets?: number | null
   yield?: number | null
+  currency?: string | null
+  account_name?: string | null
 }
 
 export interface CreateDetailedData {
@@ -38,6 +42,8 @@ export interface CreateDetailedData {
   rate?: string | null
   maturity_date?: string | null
   yield?: number | null
+  currency?: string | null
+  account_name?: string | null
 }
 
 export interface UpdateDetailedData {
@@ -51,6 +57,8 @@ export interface UpdateDetailedData {
   rate?: string | null
   maturity_date?: string | null
   yield?: number | null
+  currency?: string | null
+  account_name?: string | null
 }
 
 export class PortfolioPerformanceService {
@@ -347,17 +355,17 @@ export class PortfolioPerformanceService {
     asset: string | null,
     position: number,
     period: string | null,
+    accountName: string | null,
     excludeId?: string
   ): Promise<boolean> {
     if (!period || !asset) return false
 
     let query = supabase
       .from('performance_data')
-      .select('id, institution')
+      .select('id, institution, account_name')
       .eq('profile_id', profileId)
       .eq('period', period)
       .eq('asset', asset)
-      .eq('position', position)
 
     // Excluir o registro atual da verificação quando estiver editando
     if (excludeId) {
@@ -372,10 +380,11 @@ export class PortfolioPerformanceService {
 
     if (!data || data.length === 0) return false
 
-    // Check if any record matches institution (handling null)
+    // Check if any record matches institution and account_name (handling null)
     return data.some(r => {
       const existingInst = r.institution
-      return existingInst === institution
+      const existingAccount = r.account_name
+      return existingInst === institution && existingAccount === accountName
     })
   }
 
@@ -408,10 +417,11 @@ export class PortfolioPerformanceService {
     asset: string | null
     position: number | null
     period: string | null
+    account_name: string | null
   }>> {
     const { data, error } = await supabase
       .from('performance_data')
-      .select('profile_id, institution, asset, position, period')
+      .select('profile_id, institution, asset, position, period, account_name')
       .eq('profile_id', profileId)
 
     if (error) {
