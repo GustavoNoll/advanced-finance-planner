@@ -11,14 +11,15 @@ import { LoginForm } from "./components/auth/LoginForm";
 import { ClientLoginForm } from "./components/auth/ClientLoginForm";
 import { EditPlan } from "./pages/EditPlan";
 import { CreateClient } from "./pages/CreateClient";
-import { InvestmentPlanShow } from "./pages/InvestmentPlan";
+import { InvestmentPlanShow } from "./pages/planning/InvestmentPlan";
 import { Simulation } from "./pages/Simulation";
-import PortfolioDataManagement from "@/pages/PortfolioDataManagement";
-import StatementImportsHistory from "@/pages/StatementImportsHistory";
-import FinancialRecords from "@/pages/FinancialRecords";
+import PortfolioDataManagement from "@/pages/performance/PortfolioDataManagement";
+import StatementImportsHistory from "@/pages/performance/StatementImportsHistory";
+import MarketDataAudit from "@/pages/performance/MarketDataAudit";
+import FinancialRecords from "@/pages/planning/FinancialRecords";
 import ClientProfile from "@/pages/ClientProfile";
-import FinancialGoals from "@/pages/FinancialGoals";
-import Events from "@/pages/Events";
+import FinancialGoals from "@/pages/planning/FinancialGoals";
+import Events from "@/pages/planning/Events";
 import { LoadingScreen } from "@/components/ui/loading-screen";
 import { PageTransition } from "@/components/ui/page-transition";
 import { ScrollToTop } from "@/components/ui/scroll-to-top";
@@ -175,6 +176,16 @@ function AppRoutes() {
             <ProtectedRoute>
               <PageTransition>
                 <PortfolioDataManagement />
+              </PageTransition>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/market-data-audit/:id"
+          element={
+            <ProtectedRoute>
+              <PageTransition>
+                <MarketDataAudit />
               </PageTransition>
             </ProtectedRoute>
           }

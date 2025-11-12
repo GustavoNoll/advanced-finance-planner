@@ -10,9 +10,9 @@ import { useEffect, useCallback, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Spinner } from "@/components/ui/spinner";
 import { Logo } from '@/components/ui/logo';
-import Finances from './Finances';
-import InvestmentPolicy from './InvestmentPolicy';
-import PortfolioPerformance from './PortfolioPerformance';
+import Finances from './planning/Finances';
+import InvestmentPolicy from './investment-policy/InvestmentPolicy';
+import PortfolioPerformance from './performance/PortfolioPerformance';
 import { useMicroInvestmentPlans } from '@/hooks/useMicroInvestmentPlans';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 

@@ -271,6 +271,12 @@ export default function PortfolioDataManagement() {
             <h1 className="text-2xl font-bold">{t('portfolioPerformance.dataManagement.title')}</h1>
           </div>
         </div>
+        <Button 
+          variant="outline" 
+          onClick={() => navigate(`/market-data-audit/${profileId}`)}
+        >
+          {t('portfolioPerformance.dataManagement.provaReal')}
+        </Button>
       </div>
 
       {/* Filtros */}

@@ -57,9 +57,9 @@ const indicatorUrls: Record<EuroIndicator, { url: string; name: string }> = {
 };
 
 /**
- * Fetches and transforms ECB data to custom format
+ * Fetches raw ECB data (before calculating variations)
  */
-async function fetchEcbData(indicator: EuroIndicator): Promise<BCBResponse[]> {
+async function fetchEcbRawData(indicator: EuroIndicator): Promise<BCBResponse[]> {
   const { url } = indicatorUrls[indicator];
   const response = await fetch(url);
   
@@ -84,39 +84,14 @@ async function fetchEcbData(indicator: EuroIndicator): Promise<BCBResponse[]> {
     }
 
     const data = series['0:0:0:0:0:0']?.observations ?? {};
-    const rawData = Object.entries(data).map(([index, [valor]]) => {
+    return Object.entries(data).map(([index, [valor]]) => {
       const date = structure[parseInt(index, 10)]?.id; // yyyy-mm
       const [year, month] = date.split('-');
       return {
         data: `01/${month}/${year}`,
-        valor: parseFloat(String(valor)),
+        valor: parseFloat(String(valor)).toFixed(2),
       };
     });
-
-    // For CPI, calculate period-over-period change
-    if (indicator === 'euro-cpi') {
-      return rawData.map((current, index) => {
-        if (index === 0) {
-          return {
-            data: current.data,
-            valor: '0.00', // First period has no change
-          };
-        }
-
-        const previous = rawData[index - 1];
-        const change = ((current.valor / previous.valor) - 1) * 100;
-        return {
-          data: current.data,
-          valor: change.toFixed(2),
-        };
-      });
-    }
-
-    // For other indicators, just format the value
-    return rawData.map(item => ({
-      ...item,
-      valor: item.valor.toFixed(2),
-    }));
   } catch (error) {
     console.error(`❌ Error processing ECB data for ${indicatorUrls[indicator].name}:`, error);
     throw error;
@@ -124,13 +99,65 @@ async function fetchEcbData(indicator: EuroIndicator): Promise<BCBResponse[]> {
 }
 
 /**
+ * Fetches and transforms ECB data to custom format
+ */
+async function fetchEcbData(indicator: EuroIndicator): Promise<BCBResponse[]> {
+  const rawData = await fetchEcbRawData(indicator);
+
+  // For CPI, calculate period-over-period change
+  if (indicator === 'euro-cpi') {
+    return rawData.map((current, index) => {
+      if (index === 0) {
+        return {
+          data: current.data,
+          valor: '0.00', // First period has no change
+        };
+      }
+
+      const previous = rawData[index - 1];
+      const currentVal = parseFloat(current.valor);
+      const previousVal = parseFloat(previous.valor);
+      const change = ((currentVal / previousVal) - 1) * 100;
+      return {
+        data: current.data,
+        valor: change.toFixed(2),
+      };
+    });
+  }
+
+  // For other indicators, just format the value
+  return rawData;
+}
+
+/**
  * Saves Euro indicators to JSON
  */
 async function saveEuroIndicator(indicator: EuroIndicator): Promise<void> {
-  const data = await fetchEcbData(indicator);
-  const filePath = path.join(process.cwd(), 'src', 'data', `${indicator}-historical.json`);
-  await writeFile(filePath, JSON.stringify(data, null, 2));
-  console.log(`✅ Dados de ${indicatorUrls[indicator].name} salvos em ${filePath}`);
+  const variationData = await fetchEcbData(indicator);
+  const variationFilePath = path.join(process.cwd(), 'src', 'data', `${indicator}-historical.json`);
+  await writeFile(variationFilePath, JSON.stringify(variationData, null, 2));
+  
+  // Para CPI, salvar também raw
+  if (indicator === 'euro-cpi') {
+    const rawData = await fetchEcbRawData(indicator);
+    const rawFilePath = path.join(process.cwd(), 'src', 'data', `${indicator}-raw-historical.json`);
+    await writeFile(rawFilePath, JSON.stringify(rawData, null, 2));
+    
+    console.log(`✅ Dados de ${indicatorUrls[indicator].name} salvos:`);
+    console.log(`   Variações: ${variationFilePath}`);
+    console.log(`   Valores raw: ${rawFilePath}`);
+    if (variationData.length > 0) {
+      console.log(`   Total de variações: ${variationData.length}`);
+      console.log(`   Total de valores raw: ${rawData.length}`);
+      console.log(`   Período: ${variationData[0]?.data} até ${variationData[variationData.length - 1]?.data}`);
+    }
+  } else {
+    console.log(`✅ Dados de ${indicatorUrls[indicator].name} salvos em ${variationFilePath}`);
+    if (variationData.length > 0) {
+      console.log(`   Total de registros: ${variationData.length}`);
+      console.log(`   Período: ${variationData[0]?.data} até ${variationData[variationData.length - 1]?.data}`);
+    }
+  }
 }
 
 async function main() {

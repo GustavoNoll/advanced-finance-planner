@@ -63,9 +63,9 @@ const indicatorMap: Record<USIndicator, {
 
 
 /**
- * Fetches and transforms FRED data to custom format
+ * Fetches raw FRED data (before calculating variations)
  */
-async function fetchFredData(indicator: USIndicator): Promise<BCBResponse[]> {
+async function fetchFredRawData(indicator: USIndicator): Promise<BCBResponse[]> {
   const { id, frequency, aggregationMethod } = indicatorMap[indicator];
   
   // Build URL with frequency and aggregation parameters if specified
@@ -100,7 +100,7 @@ async function fetchFredData(indicator: USIndicator): Promise<BCBResponse[]> {
     throw new Error(`Invalid response structure: observations array not found. Response: ${JSON.stringify(json)}`);
   }
 
-  const observations: BCBResponse[] = json.observations
+  return json.observations
     .filter(entry => entry.value !== '.' && entry.value !== '') // Filter out missing values
     .map((entry) => {
       const [year, month, day] = entry.date.split('-');
@@ -109,6 +109,13 @@ async function fetchFredData(indicator: USIndicator): Promise<BCBResponse[]> {
         valor: parseFloat(entry.value).toFixed(2),
       };
     });
+}
+
+/**
+ * Fetches and transforms FRED data to custom format
+ */
+async function fetchFredData(indicator: USIndicator): Promise<BCBResponse[]> {
+  const observations = await fetchFredRawData(indicator);
 
   // For CPI, calculate period-over-period change
   if (indicator === 'us-cpi') {
@@ -162,13 +169,30 @@ async function fetchFredData(indicator: USIndicator): Promise<BCBResponse[]> {
  */
 async function saveUSIndicator(indicator: USIndicator): Promise<void> {
   try {
-    const data = await fetchFredData(indicator);
-    const filePath = path.join(process.cwd(), 'src', 'data', `${indicator}-historical.json`);
-    await writeFile(filePath, JSON.stringify(data, null, 2));
-    console.log(`✅ Dados de ${indicatorMap[indicator].name} salvos em ${filePath}`);
-    if (data.length > 0) {
-      console.log(`   Total de registros: ${data.length}`);
-      console.log(`   Período: ${data[0]?.data} até ${data[data.length - 1]?.data}`);
+    const variationData = await fetchFredData(indicator);
+    const variationFilePath = path.join(process.cwd(), 'src', 'data', `${indicator}-historical.json`);
+    await writeFile(variationFilePath, JSON.stringify(variationData, null, 2));
+    
+    // Para indicadores que calculam variação, salvar também raw
+    if (indicator === 'us-cpi' || indicator === 'sp500') {
+      const rawData = await fetchFredRawData(indicator);
+      const rawFilePath = path.join(process.cwd(), 'src', 'data', `${indicator}-raw-historical.json`);
+      await writeFile(rawFilePath, JSON.stringify(rawData, null, 2));
+      
+      console.log(`✅ Dados de ${indicatorMap[indicator].name} salvos:`);
+      console.log(`   Variações: ${variationFilePath}`);
+      console.log(`   Valores raw: ${rawFilePath}`);
+      if (variationData.length > 0) {
+        console.log(`   Total de variações: ${variationData.length}`);
+        console.log(`   Total de valores raw: ${rawData.length}`);
+        console.log(`   Período: ${variationData[0]?.data} até ${variationData[variationData.length - 1]?.data}`);
+      }
+    } else {
+      console.log(`✅ Dados de ${indicatorMap[indicator].name} salvos em ${variationFilePath}`);
+      if (variationData.length > 0) {
+        console.log(`   Total de registros: ${variationData.length}`);
+        console.log(`   Período: ${variationData[0]?.data} até ${variationData[variationData.length - 1]?.data}`);
+      }
     }
   } catch (error) {
     console.error(`❌ Erro ao salvar ${indicatorMap[indicator].name}:`, error);
