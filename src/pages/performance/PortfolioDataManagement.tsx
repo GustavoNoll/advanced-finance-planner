@@ -4,16 +4,17 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Checkbox } from "@/components/ui/checkbox"
-import { ArrowLeft, Plus, Edit, Trash2, Save, X, CheckSquare, BarChart3, Info, CheckCircle2, AlertCircle, XCircle, Tag, DollarSign, Copy, ArrowUp, ArrowDown, ChevronDown, Settings2, ArrowRight } from "lucide-react"
+import { ArrowLeft, Plus, Edit, Trash2, Save, X, CheckSquare, BarChart3, Info, CheckCircle2, AlertCircle, XCircle, Tag, DollarSign, Copy, ArrowUp, ArrowDown, ChevronDown, Settings2, ArrowRight, Settings } from "lucide-react"
 import { useTranslation } from "react-i18next"
 import { PortfolioPerformanceService } from "@/services/portfolio-performance.service"
 import { useToast } from "@/hooks/use-toast"
+import { usePortfolioVerificationSettings, usePortfolioVerificationSettingsMutations } from "@/hooks/usePortfolioVerificationSettings"
 import { formatMaturityDate } from "@/utils/dateUtils"
 import { handleSaveEdit, handleDeleteRow, handleDeleteSelected } from "./helpers/portfolio-data-management.helpers"
 import { formatCurrency } from "@/utils/currency"
@@ -65,6 +66,15 @@ export default function PortfolioDataManagement() {
   // Export dialog
   const [isExportDialogOpen, setIsExportDialogOpen] = useState(false)
   
+  // Verification settings
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false)
+  const [tempToleranceValue, setTempToleranceValue] = useState<string>("2500.00")
+  const [tempCorrectThreshold, setTempCorrectThreshold] = useState<string>("0.01")
+  
+  // Hook para buscar configurações de verificação
+  const { correctThreshold, toleranceValue } = usePortfolioVerificationSettings(profileId || null)
+  const { updateSettings } = usePortfolioVerificationSettingsMutations(profileId || null)
+  
   // Column visibility
   const [visibleColumnsConsolidated, setVisibleColumnsConsolidated] = useState<Set<string>>(new Set([
     'period', 'institution', 'currency', 'account_name', 'final_assets', 'yield', 'verification', 'actions'
@@ -98,6 +108,12 @@ export default function PortfolioDataManagement() {
 
   useEffect(() => { fetchData() }, [fetchData])
 
+  // Sincronizar valores temporários quando as configurações mudarem
+  useEffect(() => {
+    setTempCorrectThreshold(correctThreshold.toString())
+    setTempToleranceValue(toleranceValue.toString())
+  }, [correctThreshold, toleranceValue])
+
   const {
     periods,
     institutions,
@@ -124,7 +140,9 @@ export default function PortfolioDataManagement() {
     getVerification
   } = usePortfolioDataManagement({
     consolidated,
-    detailed
+    detailed,
+    correctThreshold,
+    toleranceValue
   })
 
   const openEdit = (type: 'consolidated' | 'detailed', item?: ConsolidatedRow | PerformanceRow) => {
@@ -626,12 +644,165 @@ export default function PortfolioDataManagement() {
             <h1 className="text-2xl font-bold">{t('portfolioPerformance.dataManagement.title')}</h1>
           </div>
         </div>
-        <Button 
-          variant="outline" 
-          onClick={() => navigate(`/market-data-audit/${profileId}`)}
-        >
-          {t('portfolioPerformance.dataManagement.marketDataAudit')}
-        </Button>
+        <div className="flex items-center gap-2">
+          <Dialog open={isSettingsOpen} onOpenChange={setIsSettingsOpen}>
+            <DialogTrigger asChild>
+              <Button
+                variant="outline"
+                className="flex items-center gap-2 bg-card/50 border-primary/20 hover:bg-primary/10"
+              >
+                <Settings className="h-4 w-4" />
+                {t('portfolioPerformance.dataManagement.settings') || 'Configurações'}
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="sm:max-w-[425px]">
+              <DialogHeader>
+                <DialogTitle>{t('portfolioPerformance.dataManagement.verificationSettings') || 'Configurações de Verificação'}</DialogTitle>
+              </DialogHeader>
+              <div className="space-y-4 py-4">
+                <div className="space-y-2">
+                  <Label htmlFor="correctThreshold">
+                    {t('portfolioPerformance.dataManagement.correctThreshold') || 'Limite para "Correto" (R$)'}
+                  </Label>
+                  <div className="text-sm text-muted-foreground mb-2">
+                    {t('portfolioPerformance.dataManagement.correctThresholdDescription') || 'Diferenças abaixo deste valor serão marcadas como "Correto" (verde).'}
+                  </div>
+                  <Input
+                    id="correctThreshold"
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    value={tempCorrectThreshold}
+                    onChange={(e) => setTempCorrectThreshold(e.target.value)}
+                    placeholder="Ex: 0.01"
+                    className="w-full"
+                  />
+                  <div className="text-xs text-muted-foreground mt-1">
+                    {t('portfolioPerformance.dataManagement.currentValue') || 'Valor atual:'} {formatCurrency(correctThreshold, currency)}
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="tolerance">
+                    {t('portfolioPerformance.dataManagement.toleranceThreshold') || 'Limite para "Tolerância" (R$)'}
+                  </Label>
+                  <div className="text-sm text-muted-foreground mb-2">
+                    {t('portfolioPerformance.dataManagement.toleranceThresholdDescription') || 'Diferenças abaixo deste valor serão marcadas como "Tolerância" (amarelo) ao invés de "Inconsistente" (vermelho).'}
+                  </div>
+                  <Input
+                    id="tolerance"
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    value={tempToleranceValue}
+                    onChange={(e) => setTempToleranceValue(e.target.value)}
+                    placeholder="Ex: 2500.00"
+                    className="w-full"
+                  />
+                  <div className="text-xs text-muted-foreground mt-1">
+                    {t('portfolioPerformance.dataManagement.currentValue') || 'Valor atual:'} {formatCurrency(toleranceValue, currency)}
+                  </div>
+                </div>
+                
+                <div className="bg-muted p-3 rounded-md text-sm space-y-1">
+                  <p><strong>{t('portfolioPerformance.dataManagement.howItWorks') || 'Como funciona:'}</strong></p>
+                  <ul className="list-disc list-inside space-y-1 text-muted-foreground">
+                    <li>
+                      {t('portfolioPerformance.dataManagement.differenceCorrect') || 'Diferença <'} {formatCurrency(parseFloat(tempCorrectThreshold || "0"), currency)}: 
+                      <span className="text-green-600 font-medium"> ✓ {t('portfolioPerformance.dataManagement.correct') || 'Correto'}</span>
+                    </li>
+                    <li>
+                      {t('portfolioPerformance.dataManagement.differenceTolerance') || 'Diferença <'} {formatCurrency(parseFloat(tempToleranceValue || "0"), currency)}: 
+                      <span className="text-yellow-600 font-medium"> ⚠️ {t('portfolioPerformance.dataManagement.tolerance') || 'Tolerância'}</span>
+                    </li>
+                    <li>
+                      {t('portfolioPerformance.dataManagement.differenceInconsistent') || 'Diferença ≥'} {formatCurrency(parseFloat(tempToleranceValue || "0"), currency)}: 
+                      <span className="text-red-600 font-medium"> ✗ {t('portfolioPerformance.dataManagement.inconsistent') || 'Inconsistente'}</span>
+                    </li>
+                  </ul>
+                </div>
+              </div>
+              
+              <div className="flex justify-end gap-2">
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    setTempCorrectThreshold(correctThreshold.toString())
+                    setTempToleranceValue(toleranceValue.toString())
+                    setIsSettingsOpen(false)
+                  }}
+                >
+                  {t('portfolioPerformance.dataManagement.cancel') || 'Cancelar'}
+                </Button>
+                <Button
+                  onClick={async () => {
+                    const newToleranceValue = parseFloat(tempToleranceValue)
+                    const newCorrectThreshold = parseFloat(tempCorrectThreshold)
+                    
+                    // Validações
+                    if (isNaN(newToleranceValue) || newToleranceValue < 0) {
+                      toast({
+                        title: t('portfolioPerformance.dataManagement.invalidValue') || "Valor Inválido",
+                        description: t('portfolioPerformance.dataManagement.invalidToleranceValue') || "Por favor, insira um valor de tolerância válido maior ou igual a zero.",
+                        variant: "destructive",
+                      })
+                      return
+                    }
+                    
+                    if (isNaN(newCorrectThreshold) || newCorrectThreshold < 0) {
+                      toast({
+                        title: t('portfolioPerformance.dataManagement.invalidValue') || "Valor Inválido",
+                        description: t('portfolioPerformance.dataManagement.invalidCorrectThreshold') || "Por favor, insira um limite de 'Correto' válido maior ou igual a zero.",
+                        variant: "destructive",
+                      })
+                      return
+                    }
+                    
+                    // Validação lógica: limite "correto" deve ser menor que "tolerância"
+                    if (newCorrectThreshold >= newToleranceValue) {
+                      toast({
+                        title: t('portfolioPerformance.dataManagement.invalidConfiguration') || "Configuração Inválida",
+                        description: t('portfolioPerformance.dataManagement.correctMustBeLessThanTolerance') || "O limite 'Correto' deve ser menor que o limite 'Tolerância'.",
+                        variant: "destructive",
+                      })
+                      return
+                    }
+
+                    // Usar o hook de mutation para salvar
+                    try {
+                      await updateSettings.mutateAsync({
+                        correctThreshold: newCorrectThreshold,
+                        toleranceValue: newToleranceValue
+                      })
+                      
+                      toast({
+                        title: t('portfolioPerformance.dataManagement.settingsSaved') || "Configurações salvas",
+                        description: `${t('portfolioPerformance.dataManagement.correct') || 'Correto'}: ≤ ${formatCurrency(newCorrectThreshold, currency)} | ${t('portfolioPerformance.dataManagement.tolerance') || 'Tolerância'}: ≤ ${formatCurrency(newToleranceValue, currency)}`,
+                      })
+                      
+                      setIsSettingsOpen(false)
+                    } catch (error) {
+                      // O erro já é tratado no hook
+                      console.error('Error saving settings:', error)
+                    }
+                  }}
+                  disabled={updateSettings.isPending}
+                >
+                  {updateSettings.isPending 
+                    ? t('portfolioPerformance.dataManagement.saving') || 'Salvando...' 
+                    : t('portfolioPerformance.dataManagement.save') || 'Salvar'}
+                </Button>
+              </div>
+            </DialogContent>
+          </Dialog>
+          
+          <Button 
+            variant="outline" 
+            onClick={() => navigate(`/market-data-audit/${profileId}`)}
+          >
+            {t('portfolioPerformance.dataManagement.marketDataAudit')}
+          </Button>
+        </div>
       </div>
 
       {/* Resumo de Verificação */}
