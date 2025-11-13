@@ -10,17 +10,27 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Checkbox } from "@/components/ui/checkbox"
-import { ArrowLeft, Plus, Edit, Trash2, Save, X, CheckSquare, Upload } from "lucide-react"
-import { CSVImportDialog } from "@/components/portfolio/csv-import-dialog"
+import { ArrowLeft, Plus, Edit, Trash2, Save, X, CheckSquare, BarChart3, Info, CheckCircle2, AlertCircle, XCircle, Tag, DollarSign, Copy, ArrowUp, ArrowDown, ChevronDown, Settings2, ArrowRight } from "lucide-react"
 import { useTranslation } from "react-i18next"
 import { PortfolioPerformanceService } from "@/services/portfolio-performance.service"
 import { useToast } from "@/hooks/use-toast"
 import { formatMaturityDate } from "@/utils/dateUtils"
-import { handleSaveEdit, handleDeleteRow, handleDeleteSelected, formatCurrency } from "./helpers/portfolio-data-management.helpers"
+import { handleSaveEdit, handleDeleteRow, handleDeleteSelected } from "./helpers/portfolio-data-management.helpers"
+import { formatCurrency } from "@/utils/currency"
 import type { ConsolidatedPerformance, PerformanceData } from "@/types/financial"
 import { CurrencyInput } from '@/components/ui/currency-input'
 import { CurrencyCode } from "@/utils/currency"
 import { useInvestmentPlanByUserId } from "@/hooks/useInvestmentPlan"
+import { usePortfolioDataManagement } from "./hooks/usePortfolioDataManagement"
+import { VerificationSummary } from "./components/VerificationSummary"
+import { ImportDialog } from "./components/ImportDialog"
+import { ExportDialog } from "./components/ExportDialog"
+import { Filter as FilterIcon } from "lucide-react"
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
+import { Separator } from "@/components/ui/separator"
+import type { Filter as FilterType, FilterableField } from "./types/portfolio-data-management.types"
+import { operatorsByFieldType } from "./utils/filters"
+import { isValidAssetClass } from "./utils/valid-asset-classes"
 
 type ConsolidatedRow = ConsolidatedPerformance
 type PerformanceRow = PerformanceData
@@ -47,9 +57,21 @@ export default function PortfolioDataManagement() {
 
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
   const [importDialogOpen, setImportDialogOpen] = useState(false)
+  const [importDialogType, setImportDialogType] = useState<'consolidated' | 'detailed'>('consolidated')
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false)
   const [deleteMultipleConfirmOpen, setDeleteMultipleConfirmOpen] = useState(false)
   const [itemToDelete, setItemToDelete] = useState<{ type: 'consolidated' | 'detailed', id: string } | null>(null)
+  
+  // Export dialog
+  const [isExportDialogOpen, setIsExportDialogOpen] = useState(false)
+  
+  // Column visibility
+  const [visibleColumnsConsolidated, setVisibleColumnsConsolidated] = useState<Set<string>>(new Set([
+    'period', 'institution', 'currency', 'account_name', 'final_assets', 'yield', 'verification', 'actions'
+  ]))
+  const [visibleColumnsDetailed, setVisibleColumnsDetailed] = useState<Set<string>>(new Set([
+    'period', 'institution', 'currency', 'account_name', 'asset', 'issuer', 'asset_class', 'position', 'rate', 'maturity', 'yield', 'verification', 'actions'
+  ]))
 
   const fetchData = useCallback(async () => {
     if (!profileId) return
@@ -76,39 +98,49 @@ export default function PortfolioDataManagement() {
 
   useEffect(() => { fetchData() }, [fetchData])
 
-  const periods = useMemo(() => {
-    return Array.from(new Set([...(consolidated.map(r => r.period || '')), ...(detailed.map(r => r.period || ''))].filter(Boolean))).sort().reverse()
-  }, [consolidated, detailed])
-  const institutions = useMemo(() => Array.from(new Set([...(consolidated.map(r => r.institution || '')), ...(detailed.map(r => r.institution || ''))].filter(Boolean))).sort(), [consolidated, detailed])
-  const classes = useMemo(() => Array.from(new Set(detailed.map(r => r.asset_class || '').filter(Boolean))).sort(), [detailed])
-  const issuers = useMemo(() => Array.from(new Set(detailed.map(r => r.issuer || '').filter(Boolean))).sort(), [detailed])
-
-  const [selectedPeriods, setSelectedPeriods] = useState<string[]>([])
-  const [selectedInstitutions, setSelectedInstitutions] = useState<string[]>([])
-  const [selectedClasses, setSelectedClasses] = useState<string[]>([])
-  const [selectedIssuers, setSelectedIssuers] = useState<string[]>([])
-
-  const filteredConsolidated = useMemo(() => {
-    return consolidated.filter(r => (
-      (selectedPeriods.length === 0 || (r.period && selectedPeriods.includes(r.period))) &&
-      (selectedInstitutions.length === 0 || (r.institution && selectedInstitutions.includes(r.institution)))
-    ))
-  }, [consolidated, selectedPeriods, selectedInstitutions])
-
-  const filteredDetailed = useMemo(() => {
-    return detailed.filter(r => (
-      (selectedPeriods.length === 0 || (r.period && selectedPeriods.includes(r.period))) &&
-      (selectedInstitutions.length === 0 || (r.institution && selectedInstitutions.includes(r.institution))) &&
-      (selectedClasses.length === 0 || (r.asset_class && selectedClasses.includes(r.asset_class))) &&
-      (selectedIssuers.length === 0 || (r.issuer && selectedIssuers.includes(r.issuer)))
-    ))
-  }, [detailed, selectedPeriods, selectedInstitutions, selectedClasses, selectedIssuers])
+  const {
+    periods,
+    institutions,
+    classes,
+    issuers,
+    selectedPeriods,
+    setSelectedPeriods,
+    selectedInstitutions,
+    setSelectedInstitutions,
+    selectedClasses,
+    setSelectedClasses,
+    selectedIssuers,
+    setSelectedIssuers,
+    activeFilters,
+    setActiveFilters,
+    sortConfig,
+    handleSort,
+    verifFilter,
+    setVerifFilter,
+    searchText,
+    setSearchText,
+    filteredConsolidated,
+    filteredDetailed,
+    getVerification
+  } = usePortfolioDataManagement({
+    consolidated,
+    detailed
+  })
 
   const openEdit = (type: 'consolidated' | 'detailed', item?: ConsolidatedRow | PerformanceRow) => {
     setEditingType(type)
     if (item) {
       setEditItem({ ...item })
     } else {
+      // Resetar filtros ao criar novo registro
+      setSelectedPeriods([])
+      setSelectedInstitutions([])
+      setSelectedClasses([])
+      setSelectedIssuers([])
+      setActiveFilters([])
+      setVerifFilter('all')
+      setSearchText('')
+      
       // Inicializar campos numéricos como 0
       setEditItem({
         profile_id: profileId || '',
@@ -260,6 +292,329 @@ export default function PortfolioDataManagement() {
 
   const clearSelection = () => setSelectedIds(new Set())
 
+  // Verifica se o ativo tem rentabilidade preenchida
+  const hasValidYield = (rendimento: number | null | undefined): boolean => {
+    if (rendimento == null) return false
+    if (typeof rendimento === 'number') {
+      return true // Aceita qualquer número, incluindo 0
+    }
+    return false
+  }
+
+  // Filterable fields
+  const filterableFieldsConsolidated: FilterableField[] = useMemo(() => [
+    { key: 'period', label: t('portfolioPerformance.dataManagement.table.period'), type: 'text', options: periods },
+    { key: 'institution', label: t('portfolioPerformance.dataManagement.table.institution'), type: 'text', options: institutions },
+    { key: 'account_name', label: t('portfolioPerformance.dataManagement.table.accountName'), type: 'text' },
+    { key: 'currency', label: t('portfolioPerformance.dataManagement.table.currency'), type: 'text' },
+    { key: 'initial_assets', label: t('portfolioPerformance.dataManagement.table.initialAssets'), type: 'number' },
+    { key: 'movement', label: t('portfolioPerformance.dataManagement.table.movement'), type: 'number' },
+    { key: 'taxes', label: t('portfolioPerformance.dataManagement.table.taxes'), type: 'number' },
+    { key: 'financial_gain', label: t('portfolioPerformance.dataManagement.table.financialGain'), type: 'number' },
+    { key: 'final_assets', label: t('portfolioPerformance.dataManagement.table.finalAssets'), type: 'number' },
+    { key: 'yield', label: t('portfolioPerformance.dataManagement.table.yield'), type: 'number' }
+  ], [periods, institutions, t])
+
+  const filterableFieldsDetailed: FilterableField[] = useMemo(() => [
+    { key: 'period', label: t('portfolioPerformance.dataManagement.table.period'), type: 'text', options: periods },
+    { key: 'institution', label: t('portfolioPerformance.dataManagement.table.institution'), type: 'text', options: institutions },
+    { key: 'account_name', label: t('portfolioPerformance.dataManagement.table.accountName'), type: 'text' },
+    { key: 'currency', label: t('portfolioPerformance.dataManagement.table.currency'), type: 'text' },
+    { key: 'asset', label: t('portfolioPerformance.dataManagement.table.asset'), type: 'text' },
+    { key: 'issuer', label: t('portfolioPerformance.dataManagement.table.issuer'), type: 'text', options: issuers },
+    { key: 'asset_class', label: t('portfolioPerformance.dataManagement.table.assetClass'), type: 'text', options: classes },
+    { key: 'position', label: t('portfolioPerformance.dataManagement.table.position'), type: 'number' },
+    { key: 'rate', label: t('portfolioPerformance.dataManagement.table.rate'), type: 'text' },
+    { key: 'maturity_date', label: t('portfolioPerformance.dataManagement.table.maturity'), type: 'text' },
+    { key: 'yield', label: t('portfolioPerformance.dataManagement.table.yield'), type: 'number' }
+  ], [periods, institutions, issuers, classes, t])
+
+  const getFilterableFields = () => {
+    return tab === 'detailed' ? filterableFieldsDetailed : filterableFieldsConsolidated
+  }
+
+  const getFieldType = (fieldKey: string) => {
+    const allFields = [...filterableFieldsConsolidated, ...filterableFieldsDetailed]
+    const field = allFields.find(f => f.key === fieldKey)
+    return field?.type || 'text'
+  }
+
+  const getFieldLabel = (fieldKey: string) => {
+    const allFields = [...filterableFieldsConsolidated, ...filterableFieldsDetailed]
+    const field = allFields.find(f => f.key === fieldKey)
+    return field?.label || fieldKey
+  }
+
+  const getOperatorLabel = (operator: string) => {
+    const allOperators = [...operatorsByFieldType.text, ...operatorsByFieldType.number]
+    const op = allOperators.find(o => o.value === operator)
+    return op?.label || operator
+  }
+
+  const formatFilterValue = (value: string | number | string[], fieldKey: string) => {
+    if (Array.isArray(value)) {
+      if (value.length === 0) return '(vazio)'
+      if (value.length === 1) return value[0]
+      if (value.length <= 3) return value.join(', ')
+      return `${value.slice(0, 2).join(', ')} +${value.length - 2}`
+    }
+    
+    const fieldType = getFieldType(fieldKey)
+    if (fieldType === 'number' && typeof value === 'number') {
+      return formatCurrency(value, 'BRL')
+    }
+    return String(value)
+  }
+
+  const getFieldOptions = (fieldKey: string) => {
+    const allFields = [...filterableFieldsConsolidated, ...filterableFieldsDetailed]
+    const field = allFields.find(f => f.key === fieldKey)
+    return field?.options || null
+  }
+
+  const handleAddFilter = (filter: FilterType) => {
+    setActiveFilters([...activeFilters, filter])
+  }
+
+  const handleRemoveFilter = (id: string) => {
+    if (id === 'all') {
+      setActiveFilters([])
+    } else {
+      setActiveFilters(activeFilters.filter(f => f.id !== id))
+    }
+  }
+
+  // Filter Builder Component
+  const FilterBuilder = ({ onAddFilter }: { onAddFilter: (filter: FilterType) => void }) => {
+    const [field, setField] = useState('')
+    const [operator, setOperator] = useState('')
+    const [value, setValue] = useState<string | number | string[]>('')
+    const [open, setOpen] = useState(false)
+
+    useEffect(() => {
+      if (operator) {
+        if (['contains', 'notContains'].includes(operator)) {
+          setValue([])
+        } else {
+          setValue('')
+        }
+      }
+    }, [operator])
+
+    const getOperators = (type: string) => {
+      return operatorsByFieldType[type] || operatorsByFieldType.text
+    }
+
+    const handleAdd = () => {
+      if (field && operator) {
+        onAddFilter({
+          id: crypto.randomUUID(),
+          field,
+          operator,
+          value: operator === 'isEmpty' || operator === 'isNotEmpty' ? '' : value
+        })
+        setField('')
+        setOperator('')
+        setValue('')
+        setOpen(false)
+      }
+    }
+
+    return (
+      <Popover open={open} onOpenChange={setOpen}>
+        <PopoverTrigger asChild>
+          <Button variant="outline" size="sm" className="h-8">
+            {t('portfolioPerformance.dataManagement.addFilter')}
+          </Button>
+        </PopoverTrigger>
+        <PopoverContent className="w-80" align="start">
+          <div className="space-y-4">
+            <div>
+              <Label>{t('portfolioPerformance.dataManagement.filterBuilder.field') || 'Campo'}</Label>
+              <Select value={field} onValueChange={(val) => { setField(val); setOperator(''); setValue(''); }}>
+                <SelectTrigger className="mt-1">
+                  <SelectValue placeholder={t('portfolioPerformance.dataManagement.filterBuilder.selectField') || 'Selecione um campo'} />
+                </SelectTrigger>
+                <SelectContent>
+                  {getFilterableFields().map(f => (
+                    <SelectItem key={f.key} value={f.key}>
+                      {f.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            {field && (
+              <div>
+                <Label>{t('portfolioPerformance.dataManagement.filterBuilder.operator') || 'Operador'}</Label>
+                <Select value={operator} onValueChange={setOperator}>
+                  <SelectTrigger className="mt-1">
+                    <SelectValue placeholder={t('portfolioPerformance.dataManagement.filterBuilder.selectOperator') || 'Selecione um operador'} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {getOperators(getFieldType(field)).map(op => (
+                      <SelectItem key={op.value} value={op.value}>
+                        {op.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+
+            {field && operator && !['isEmpty', 'isNotEmpty'].includes(operator) && (
+              <div>
+                <Label>{t('portfolioPerformance.dataManagement.filterBuilder.value') || 'Valor'}</Label>
+                {(() => {
+                  const fieldType = getFieldType(field)
+                  const fieldOptions = getFieldOptions(field)
+                  const isMultiSelectOperator = ['contains', 'notContains'].includes(operator)
+                  
+                  if (fieldOptions && fieldOptions.length > 0 && isMultiSelectOperator) {
+                    return (
+                      <div className="mt-1">
+                        <Popover>
+                          <PopoverTrigger asChild>
+                            <Button
+                              variant="outline"
+                              className="w-full justify-between"
+                              size="sm"
+                            >
+                              <span className="truncate">
+                                {Array.isArray(value) && value.length > 0
+                                  ? `${value.length} ${t('portfolioPerformance.dataManagement.filterBuilder.selected') || 'selecionado(s)'}`
+                                  : t('portfolioPerformance.dataManagement.filterBuilder.selectValues') || 'Selecione valores'}
+                              </span>
+                              <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                            </Button>
+                          </PopoverTrigger>
+                          <PopoverContent className="w-full p-0" align="start">
+                            <div className="max-h-64 overflow-y-auto p-2">
+                              {fieldOptions.map((option: string) => {
+                                const selectedValues = Array.isArray(value) ? value : []
+                                const isSelected = selectedValues.includes(option)
+                                
+                                return (
+                                  <div
+                                    key={option}
+                                    className="flex items-center space-x-2 p-2 hover:bg-accent rounded cursor-pointer"
+                                    onClick={() => {
+                                      const currentValues = Array.isArray(value) ? [...value] : []
+                                      if (isSelected) {
+                                        setValue(currentValues.filter(v => v !== option))
+                                      } else {
+                                        setValue([...currentValues, option])
+                                      }
+                                    }}
+                                  >
+                                    <Checkbox checked={isSelected} />
+                                    <label className="flex-1 cursor-pointer text-sm">
+                                      {option}
+                                    </label>
+                                  </div>
+                                )
+                              })}
+                            </div>
+                          </PopoverContent>
+                        </Popover>
+                      </div>
+                    )
+                  }
+                  
+                  if (fieldOptions && fieldOptions.length > 0) {
+                    return (
+                      <Select 
+                        value={String(value)} 
+                        onValueChange={(val) => setValue(val)}
+                      >
+                        <SelectTrigger className="mt-1">
+                          <SelectValue placeholder={t('portfolioPerformance.dataManagement.filterBuilder.selectValue') || 'Selecione um valor'} />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {fieldOptions.map((option: string) => (
+                            <SelectItem key={option} value={option}>
+                              {option}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    )
+                  }
+                  
+                  return (
+                    <Input
+                      type={fieldType === 'number' ? 'number' : 'text'}
+                      value={value as string}
+                      onChange={(e) => setValue(fieldType === 'number' ? Number(e.target.value) : e.target.value)}
+                      placeholder={t('portfolioPerformance.dataManagement.filterBuilder.enterValue') || 'Digite o valor'}
+                      className="mt-1"
+                    />
+                  )
+                })()}
+              </div>
+            )}
+
+            <Button 
+              onClick={handleAdd}
+              disabled={
+                !field || 
+                !operator || 
+                (
+                  !['isEmpty', 'isNotEmpty'].includes(operator) && 
+                  (
+                    (Array.isArray(value) && value.length === 0) || 
+                    (!Array.isArray(value) && !value)
+                  )
+                )
+              }
+              className="w-full"
+              size="sm"
+            >
+              {t('portfolioPerformance.dataManagement.filterBuilder.add') || 'Adicionar'}
+            </Button>
+          </div>
+        </PopoverContent>
+      </Popover>
+    )
+  }
+
+  // Active Filters Display
+  const ActiveFilters = ({ filters, onRemoveFilter }: { filters: FilterType[]; onRemoveFilter: (id: string) => void }) => {
+    if (filters.length === 0) return null
+
+    return (
+      <div className="flex flex-wrap gap-2 p-3 bg-muted/50 rounded-md mb-4">
+        <span className="text-sm text-muted-foreground font-medium">{t('portfolioPerformance.dataManagement.activeFilters') || 'Filtros:'}</span>
+        {filters.map(filter => (
+          <div key={filter.id} className="flex items-center gap-1.5 bg-background border rounded-md px-2.5 py-1 text-sm shadow-sm">
+            <span className="font-medium text-foreground">{getFieldLabel(filter.field)}</span>
+            <span className="text-muted-foreground">{getOperatorLabel(filter.operator)}</span>
+            {!['isEmpty', 'isNotEmpty'].includes(filter.operator) && (
+              <span className="font-medium text-foreground">{formatFilterValue(filter.value, filter.field)}</span>
+            )}
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-4 w-4 p-0 ml-1 hover:bg-destructive/10"
+              onClick={() => onRemoveFilter(filter.id)}
+            >
+              <X className="h-3 w-3" />
+            </Button>
+          </div>
+        ))}
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => onRemoveFilter('all')}
+          className="h-7 text-xs text-muted-foreground hover:text-foreground"
+        >
+          {t('portfolioPerformance.dataManagement.clearAllFilters') || 'Limpar todos'}
+        </Button>
+      </div>
+    )
+  }
+
   return (
     <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-8">
       <div className="flex justify-between items-center mb-6">
@@ -279,78 +634,24 @@ export default function PortfolioDataManagement() {
         </Button>
       </div>
 
-      {/* Filtros */}
-      <Card className="mb-6">
-        <CardHeader>
-          <CardTitle>{t('portfolioPerformance.dataManagement.filters')}</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <div>
-              <Label>{t('portfolioPerformance.dataManagement.filterLabels.periods')}</Label>
-              <Select 
-                value={selectedPeriods.length === 0 ? '__all__' : selectedPeriods[0]} 
-                onValueChange={(v) => setSelectedPeriods(v === '__all__' ? [] : [v])}
-              >
-                <SelectTrigger className="w-full">
-                  <SelectValue placeholder={t('portfolioPerformance.filters.allPeriods')} />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="__all__">{t('portfolioPerformance.filters.all')}</SelectItem>
-                  {periods.map(p => <SelectItem key={p} value={p}>{p}</SelectItem>)}
-                </SelectContent>
-              </Select>
-            </div>
-            <div>
-              <Label>{t('portfolioPerformance.dataManagement.filterLabels.institutions')}</Label>
-              <Select 
-                value={selectedInstitutions.length === 0 ? '__all__' : selectedInstitutions[0]} 
-                onValueChange={(v) => setSelectedInstitutions(v === '__all__' ? [] : [v])}
-              >
-                <SelectTrigger className="w-full">
-                  <SelectValue placeholder={t('portfolioPerformance.filters.allInstitutions')} />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="__all__">{t('portfolioPerformance.filters.all')}</SelectItem>
-                  {institutions.map(i => <SelectItem key={i} value={i}>{i}</SelectItem>)}
-                </SelectContent>
-              </Select>
-            </div>
-            <div>
-              <Label>{t('portfolioPerformance.dataManagement.filterLabels.assetClasses')}</Label>
-              <Select 
-                value={selectedClasses.length === 0 ? '__all__' : selectedClasses[0]} 
-                onValueChange={(v) => setSelectedClasses(v === '__all__' ? [] : [v])}
-              >
-                <SelectTrigger className="w-full">
-                  <SelectValue placeholder={t('portfolioPerformance.filters.allClasses')} />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="__all__">{t('portfolioPerformance.filters.all')}</SelectItem>
-                  {classes.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}
-                </SelectContent>
-              </Select>
-            </div>
-            <div>
-              <Label>{t('portfolioPerformance.dataManagement.filterLabels.issuers')}</Label>
-              <Select 
-                value={selectedIssuers.length === 0 ? '__all__' : selectedIssuers[0]} 
-                onValueChange={(v) => setSelectedIssuers(v === '__all__' ? [] : [v])}
-              >
-                <SelectTrigger className="w-full">
-                  <SelectValue placeholder={t('portfolioPerformance.filters.allIssuers')} />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="__all__">{t('portfolioPerformance.filters.all')}</SelectItem>
-                  {issuers.map(e => <SelectItem key={e} value={e}>{e}</SelectItem>)}
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+      {/* Resumo de Verificação */}
+      <VerificationSummary
+        consolidated={filteredConsolidated}
+        getVerification={getVerification}
+        t={t}
+      />
 
-      <Tabs value={tab} onValueChange={(v: string) => setTab(v as 'consolidated' | 'detailed')}>
+      <Tabs value={tab} onValueChange={(v: string) => {
+        setTab(v as 'consolidated' | 'detailed')
+        // Resetar filtros ao trocar de aba
+        setSelectedPeriods([])
+        setSelectedInstitutions([])
+        setSelectedClasses([])
+        setSelectedIssuers([])
+        setActiveFilters([])
+        setVerifFilter('all')
+        setSearchText('')
+      }}>
         <TabsList className="grid w-full grid-cols-2">
           <TabsTrigger value="consolidated">{t('portfolioPerformance.dataManagement.tabs.consolidated')}</TabsTrigger>
           <TabsTrigger value="detailed">{t('portfolioPerformance.dataManagement.tabs.detailed')}</TabsTrigger>
@@ -361,6 +662,9 @@ export default function PortfolioDataManagement() {
             <CardHeader className="flex flex-row items-center justify-between">
               <div>
                 <CardTitle>{t('portfolioPerformance.dataManagement.tabs.consolidated')}</CardTitle>
+                <p className="text-sm text-muted-foreground mt-1">
+                  {t('portfolioPerformance.dataManagement.tabs.consolidatedSubtitle')}
+                </p>
                 {selectedIds.size > 0 && (
                   <div className="flex items-center gap-2 mt-2 text-sm text-gray-500">
                     {selectedIds.size} {t('portfolioPerformance.dataManagement.selected')}
@@ -371,67 +675,476 @@ export default function PortfolioDataManagement() {
                 )}
               </div>
               <div className="flex items-center gap-2">
-                <Button size="sm" variant="outline" onClick={selectAllVisible} className="h-8">
-                  <CheckSquare className="h-3 w-3 mr-1" /> {t('portfolioPerformance.selectAll')}
-                </Button>
                 {selectedIds.size > 0 && (
                   <Button size="sm" variant="destructive" onClick={() => setDeleteMultipleConfirmOpen(true)} className="h-8">
                     <Trash2 className="h-3 w-3 mr-1" /> {t('portfolioPerformance.dataManagement.delete.deleteSelected')}
                   </Button>
                 )}
-                <Button variant="outline" onClick={() => { setTab('consolidated'); setImportDialogOpen(true) }}>
-                  <Upload className="mr-2 h-4 w-4" /> {t('portfolioPerformance.importCSV.button')}
+                <FilterBuilder onAddFilter={handleAddFilter} />
+                {tab === 'consolidated' && (
+                  <Select
+                    value={verifFilter}
+                    onValueChange={(value) => setVerifFilter(value)}
+                  >
+                    <SelectTrigger className={`w-[180px] h-8 ${
+                      verifFilter !== 'all' 
+                        ? 'bg-primary/10 border-primary' 
+                        : 'bg-card/50 border-primary/20'
+                    }`}>
+                      <SelectValue placeholder={t('portfolioPerformance.dataManagement.quickFilters') || 'Filtrar por verif.'} />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">
+                        <div className="flex items-center gap-2">
+                          <Info className="h-4 w-4 text-muted-foreground" />
+                          <span>{t('portfolioPerformance.filters.all')}</span>
+                        </div>
+                      </SelectItem>
+                      <SelectItem value="match">
+                        <div className="flex items-center gap-2">
+                          <CheckCircle2 className="h-4 w-4 text-green-500" />
+                          <span>{t('portfolioPerformance.verification.match')}</span>
+                        </div>
+                      </SelectItem>
+                      <SelectItem value="tolerance">
+                        <div className="flex items-center gap-2">
+                          <AlertCircle className="h-4 w-4 text-yellow-500" />
+                          <span>{t('portfolioPerformance.verification.tolerance')}</span>
+                        </div>
+                      </SelectItem>
+                      <SelectItem value="mismatch">
+                        <div className="flex items-center gap-2">
+                          <XCircle className="h-4 w-4 text-red-500" />
+                          <span>{t('portfolioPerformance.verification.mismatch')}</span>
+                        </div>
+                      </SelectItem>
+                      <SelectItem value="no-data">
+                        <div className="flex items-center gap-2">
+                          <Info className="h-4 w-4 text-gray-400" />
+                          <span>{t('portfolioPerformance.verification.noData')}</span>
+                        </div>
+                      </SelectItem>
+                    </SelectContent>
+                  </Select>
+                )}
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button variant="outline" size="sm" className="h-8">
+                      <Settings2 className="h-3 w-3 mr-1" /> {t('portfolioPerformance.dataManagement.columns')} <ChevronDown className="h-3 w-3 ml-1" />
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-64" align="end">
+                    <div className="space-y-2">
+                      <h4 className="font-medium text-sm mb-3">{t('portfolioPerformance.dataManagement.selectColumns')}</h4>
+                      <div className="space-y-2 max-h-80 overflow-y-auto">
+                        {[
+                          { key: 'period', label: t('portfolioPerformance.dataManagement.table.period') },
+                          { key: 'institution', label: t('portfolioPerformance.dataManagement.table.institution') },
+                          { key: 'currency', label: t('portfolioPerformance.dataManagement.table.currency') },
+                          { key: 'account_name', label: t('portfolioPerformance.dataManagement.table.accountName') },
+                          { key: 'final_assets', label: t('portfolioPerformance.dataManagement.table.finalAssetsShort') },
+                          { key: 'yield', label: t('portfolioPerformance.dataManagement.table.yieldShort') },
+                          { key: 'verification', label: t('portfolioPerformance.dataManagement.table.verification') },
+                          { key: 'actions', label: t('portfolioPerformance.dataManagement.table.actions') }
+                        ].map(col => (
+                          <div key={col.key} className="flex items-center space-x-2">
+                            <Checkbox
+                              id={`col-cons-${col.key}`}
+                              checked={visibleColumnsConsolidated.has(col.key)}
+                              onCheckedChange={(checked) => {
+                                const newVisible = new Set(visibleColumnsConsolidated)
+                                if (checked) {
+                                  newVisible.add(col.key)
+                                } else {
+                                  if (col.key !== 'actions') {
+                                    newVisible.delete(col.key)
+                                  }
+                                }
+                                setVisibleColumnsConsolidated(newVisible)
+                              }}
+                              disabled={col.key === 'actions'}
+                            />
+                            <label
+                              htmlFor={`col-cons-${col.key}`}
+                              className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
+                            >
+                              {col.label}
+                            </label>
+                          </div>
+                        ))}
+                      </div>
+                      <div className="pt-2 border-t space-y-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="w-full"
+                          onClick={() => setVisibleColumnsConsolidated(new Set(['period', 'institution', 'currency', 'account_name', 'final_assets', 'yield', 'verification', 'actions']))}
+                        >
+                          {t('portfolioPerformance.dataManagement.selectAllColumns') || 'Selecionar Todas as Colunas'}
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="w-full"
+                          onClick={selectAllVisible}
+                        >
+                          <CheckSquare className="h-3 w-3 mr-1" /> {t('portfolioPerformance.selectAll') || 'Selecionar Todas as Linhas'}
+                        </Button>
+                      </div>
+                    </div>
+                  </PopoverContent>
+                </Popover>
+                <div className="flex items-center gap-1">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-8 w-8 p-0"
+                    onClick={() => {
+                      setImportDialogType('consolidated')
+                      setImportDialogOpen(true)
+                    }}
+                    title={t('portfolioPerformance.dataManagement.import.button') || 'Importar CSV'}
+                  >
+                    <ArrowUp className="h-4 w-4" />
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-8 w-8 p-0"
+                    onClick={() => setIsExportDialogOpen(true)}
+                    title={t('portfolioPerformance.dataManagement.export.button') || 'Exportar CSV'}
+                  >
+                    <ArrowDown className="h-4 w-4" />
+                  </Button>
+                </div>
+                <Button onClick={() => openEdit('consolidated')} className="bg-yellow-500 hover:bg-yellow-600">
+                  <Plus className="mr-2 h-4 w-4" /> {t('portfolioPerformance.newRecord')}
                 </Button>
-                <Button onClick={() => openEdit('consolidated')}><Plus className="mr-2 h-4 w-4" /> {t('portfolioPerformance.newRecord')}</Button>
               </div>
             </CardHeader>
             <CardContent>
+              <ActiveFilters filters={activeFilters} onRemoveFilter={handleRemoveFilter} />
               <div className="overflow-x-auto">
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead className="w-10"></TableHead>
-                      <TableHead>{t('portfolioPerformance.dataManagement.table.period')}</TableHead>
-                      <TableHead>{t('portfolioPerformance.dataManagement.table.institution')}</TableHead>
-                      <TableHead>{t('portfolioPerformance.dataManagement.table.currency')}</TableHead>
-                      <TableHead>{t('portfolioPerformance.dataManagement.table.accountName')}</TableHead>
-                      <TableHead>{t('portfolioPerformance.dataManagement.table.initialAssets')}</TableHead>
-                      <TableHead>{t('portfolioPerformance.dataManagement.table.movement')}</TableHead>
-                      <TableHead>{t('portfolioPerformance.dataManagement.table.taxes')}</TableHead>
-                      <TableHead>{t('portfolioPerformance.dataManagement.table.financialGain')}</TableHead>
-                      <TableHead>{t('portfolioPerformance.dataManagement.table.finalAssets')}</TableHead>
-                      <TableHead>{t('portfolioPerformance.dataManagement.table.yield')}</TableHead>
-                      <TableHead>{t('portfolioPerformance.dataManagement.table.actions')}</TableHead>
+                      <TableHead className="w-10">
+                        <Checkbox
+                          checked={filteredConsolidated.length > 0 && filteredConsolidated.every(r => selectedIds.has(r.id))}
+                          onCheckedChange={(checked) => {
+                            if (checked) {
+                              selectAllVisible()
+                            } else {
+                              clearSelection()
+                            }
+                          }}
+                        />
+                      </TableHead>
+                      {visibleColumnsConsolidated.has('period') && (
+                        <TableHead 
+                          className="cursor-pointer hover:bg-muted/50"
+                          onClick={() => handleSort('period')}
+                        >
+                          {t('portfolioPerformance.dataManagement.table.period')}
+                          {sortConfig?.field === 'period' && (
+                            sortConfig.direction === 'asc' ? <ArrowUp className="ml-1 h-3 w-3 inline-block" /> : <ArrowDown className="ml-1 h-3 w-3 inline-block" />
+                          )}
+                        </TableHead>
+                      )}
+                      {visibleColumnsConsolidated.has('institution') && (
+                        <TableHead 
+                          className="cursor-pointer hover:bg-muted/50"
+                          onClick={() => handleSort('institution')}
+                        >
+                          {t('portfolioPerformance.dataManagement.table.institution')}
+                          {sortConfig?.field === 'institution' && (
+                            sortConfig.direction === 'asc' ? <ArrowUp className="ml-1 h-3 w-3 inline-block" /> : <ArrowDown className="ml-1 h-3 w-3 inline-block" />
+                          )}
+                        </TableHead>
+                      )}
+                      {visibleColumnsConsolidated.has('currency') && <TableHead>{t('portfolioPerformance.dataManagement.table.currency')}</TableHead>}
+                      {visibleColumnsConsolidated.has('account_name') && <TableHead>{t('portfolioPerformance.dataManagement.table.accountName')}</TableHead>}
+                      {visibleColumnsConsolidated.has('final_assets') && (
+                        <TableHead 
+                          className="cursor-pointer hover:bg-muted/50"
+                          onClick={() => handleSort('final_assets')}
+                        >
+                          {t('portfolioPerformance.dataManagement.table.finalAssetsShort') || t('portfolioPerformance.dataManagement.table.finalAssets')}
+                          {sortConfig?.field === 'final_assets' && (
+                            sortConfig.direction === 'asc' ? <ArrowUp className="ml-1 h-3 w-3 inline-block" /> : <ArrowDown className="ml-1 h-3 w-3 inline-block" />
+                          )}
+                        </TableHead>
+                      )}
+                      {visibleColumnsConsolidated.has('yield') && (
+                        <TableHead 
+                          className="cursor-pointer hover:bg-muted/50"
+                          onClick={() => handleSort('yield')}
+                        >
+                          {t('portfolioPerformance.dataManagement.table.yieldShort') || t('portfolioPerformance.dataManagement.table.yield')}
+                          {sortConfig?.field === 'yield' && (
+                            sortConfig.direction === 'asc' ? <ArrowUp className="ml-1 h-3 w-3 inline-block" /> : <ArrowDown className="ml-1 h-3 w-3 inline-block" />
+                          )}
+                        </TableHead>
+                      )}
+                      {visibleColumnsConsolidated.has('verification') && <TableHead>{t('portfolioPerformance.dataManagement.table.verification')}</TableHead>}
+                      {visibleColumnsConsolidated.has('actions') && <TableHead>{t('portfolioPerformance.dataManagement.table.actions')}</TableHead>}
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {isLoading ? (
-                      <TableRow><TableCell colSpan={12}>{t('portfolioPerformance.dataManagement.loading')}</TableCell></TableRow>
+                      <TableRow><TableCell colSpan={visibleColumnsConsolidated.size + 1}>{t('portfolioPerformance.dataManagement.loading')}</TableCell></TableRow>
                     ) : filteredConsolidated.length === 0 ? (
-                      <TableRow><TableCell colSpan={12}>{t('portfolioPerformance.dataManagement.noData')}</TableCell></TableRow>
-                    ) : filteredConsolidated.map(r => (
-                      <TableRow key={r.id}>
-                        <TableCell>
-                          <Checkbox checked={selectedIds.has(r.id)} onCheckedChange={() => toggleSelect(r.id)} />
-                        </TableCell>
-                        <TableCell>{r.period}</TableCell>
-                        <TableCell>{r.institution}</TableCell>
-                        <TableCell>{r.currency || 'BRL'}</TableCell>
-                        <TableCell>{r.account_name || '-'}</TableCell>
-                        <TableCell>{formatCurrency(r.initial_assets)}</TableCell>
-                        <TableCell>{formatCurrency(r.movement)}</TableCell>
-                        <TableCell>{formatCurrency(r.taxes)}</TableCell>
-                        <TableCell>{formatCurrency(r.financial_gain)}</TableCell>
-                        <TableCell>{formatCurrency(r.final_assets)}</TableCell>
-                        <TableCell>{(((r.yield || 0) * 100).toFixed(2))}%</TableCell>
-                        <TableCell>
-                          <div className="flex gap-2">
-                            <Button variant="outline" size="sm" onClick={() => openEdit('consolidated', r)}><Edit className="h-4 w-4" /></Button>
-                            <Button variant="destructive" size="sm" onClick={() => confirmDelete('consolidated', r.id)}><Trash2 className="h-4 w-4" /></Button>
-                          </div>
-                        </TableCell>
-                      </TableRow>
-                    ))}
+                      <TableRow><TableCell colSpan={visibleColumnsConsolidated.size + 1}>{t('portfolioPerformance.dataManagement.noData')}</TableCell></TableRow>
+                    ) : filteredConsolidated.map(r => {
+                      const verification = getVerification(r)
+                      return (
+                        <TableRow key={r.id}>
+                          <TableCell>
+                            <Checkbox checked={selectedIds.has(r.id)} onCheckedChange={() => toggleSelect(r.id)} />
+                          </TableCell>
+                          {visibleColumnsConsolidated.has('period') && <TableCell>{r.period}</TableCell>}
+                          {visibleColumnsConsolidated.has('institution') && <TableCell>{r.institution}</TableCell>}
+                          {visibleColumnsConsolidated.has('currency') && <TableCell>{r.currency === 'USD' ? 'Dólar' : r.currency === 'EUR' ? 'Euro' : 'Real'}</TableCell>}
+                          {visibleColumnsConsolidated.has('account_name') && <TableCell>{r.account_name || '-'}</TableCell>}
+                          {visibleColumnsConsolidated.has('final_assets') && <TableCell>{formatCurrency(r.final_assets || 0, (r.currency as CurrencyCode) || 'BRL')}</TableCell>}
+                          {visibleColumnsConsolidated.has('yield') && <TableCell>{(((r.yield || 0) * 100).toFixed(2)).replace('.', ',')}%</TableCell>}
+                          {visibleColumnsConsolidated.has('verification') && (
+                            <TableCell className="text-center">
+                              <Popover>
+                                <PopoverTrigger asChild>
+                                  <Button variant="ghost" size="sm" className="h-8 px-1 flex items-center justify-center gap-1 mx-auto cursor-pointer hover:opacity-70 transition-opacity">
+                                    {/* PRIMEIRA BOLINHA: Status de Integridade Numérica */}
+                                    {verification.status === 'match' && (
+                                      <CheckCircle2 className="h-4 w-4 text-green-500" />
+                                    )}
+                                    {verification.status === 'tolerance' && (
+                                      <AlertCircle className="h-4 w-4 text-yellow-500" />
+                                    )}
+                                    {verification.status === 'mismatch' && (
+                                      <XCircle className="h-4 w-4 text-red-500" />
+                                    )}
+                                    {verification.status === 'no-data' && (
+                                      <Info className="h-4 w-4 text-blue-500" />
+                                    )}
+                                    
+                                    {/* SEGUNDA BOLINHA: Status de Classificação */}
+                                    {verification.hasUnclassified ? (
+                                      <XCircle className="h-4 w-4 text-red-500" />
+                                    ) : (
+                                      <CheckCircle2 className="h-4 w-4 text-green-500" />
+                                    )}
+                                    
+                                    {/* TERCEIRA BOLINHA: Status de Rentabilidade */}
+                                    {verification.hasMissingYield ? (
+                                      <XCircle className="h-4 w-4 text-red-500" />
+                                    ) : (
+                                      <CheckCircle2 className="h-4 w-4 text-green-500" />
+                                    )}
+                                  </Button>
+                                </PopoverTrigger>
+                                <PopoverContent className="w-80">
+                                  <div className="space-y-2">
+                                    <div>
+                                      <h4 className="font-medium text-sm mb-2 flex items-center gap-2">
+                                        <BarChart3 className="h-4 w-4" />
+                                        {t('portfolioPerformance.verification.integrity') || 'Verificação de Integridade'}
+                                      </h4>
+                                      <div className="text-sm space-y-1">
+                                        <div className="flex justify-between">
+                                          <span className="text-muted-foreground">{t('portfolioPerformance.verification.finalAssets') || 'Patrimônio Final:'}</span>
+                                          <span className="font-medium">{formatCurrency(verification.consolidatedValue, (r.currency as CurrencyCode) || 'BRL')}</span>
+                                        </div>
+                                        <div className="flex justify-between">
+                                          <span className="text-muted-foreground">{t('portfolioPerformance.verification.detailedSum') || 'Soma Detalhada:'}</span>
+                                          <span className="font-medium">{formatCurrency(verification.detailedSum, (r.currency as CurrencyCode) || 'BRL')}</span>
+                                        </div>
+                                        <div className="flex justify-between">
+                                          <span className="text-muted-foreground">{t('portfolioPerformance.verification.difference') || 'Diferença:'}</span>
+                                          <span className={`font-medium ${
+                                            verification.status === 'mismatch' ? 'text-red-500' : 
+                                            verification.status === 'tolerance' ? 'text-yellow-500' : 
+                                            'text-green-500'
+                                          }`}>
+                                            {formatCurrency(verification.difference, (r.currency as CurrencyCode) || 'BRL')}
+                                          </span>
+                                        </div>
+                                        <div className="flex justify-between">
+                                          <span className="text-muted-foreground">{t('portfolioPerformance.verification.detailedRecords') || 'Registros Detalhados:'}</span>
+                                          <span className="font-medium">{verification.detailedCount}</span>
+                                        </div>
+                                        {verification.status === 'mismatch' && (
+                                          <div className="mt-2 p-2 bg-red-50 dark:bg-red-950/20 rounded text-xs text-red-700 dark:text-red-400">
+                                            ⚠️ {t('portfolioPerformance.verification.mismatchWarning') || 'Diferença significativa detectada. Verifique os ativos.'}
+                                          </div>
+                                        )}
+                                        {verification.status === 'no-data' && (
+                                          <div className="mt-2 p-2 bg-blue-50 dark:bg-blue-950/20 rounded text-xs text-blue-700 dark:text-blue-400">
+                                            ℹ️ {t('portfolioPerformance.verification.noDataWarning') || 'Nenhum dado detalhado encontrado para esta combinação.'}
+                                          </div>
+                                        )}
+                                      </div>
+                                    </div>
+                                    
+                                    <Separator className="my-2" />
+                                    <div>
+                                      <h4 className="font-medium text-sm mb-2 flex items-center gap-2">
+                                        <Tag className="h-4 w-4" />
+                                        {t('portfolioPerformance.verification.classification') || 'Verificação de Classificação'}
+                                      </h4>
+                                      <div className="flex justify-between">
+                                        <span className="text-muted-foreground">{t('portfolioPerformance.verification.classified') || 'Classificados:'}</span>
+                                        <span className={`font-medium ${
+                                          !verification.hasUnclassified ? 'text-green-500' : 'text-muted-foreground'
+                                        }`}>
+                                          {verification.detailedCount - verification.unclassifiedCount}
+                                          {!verification.hasUnclassified && (
+                                            <CheckCircle2 className="h-3 w-3 ml-1 inline" />
+                                          )}
+                                        </span>
+                                      </div>
+                                      <div className="flex justify-between">
+                                        <span className="text-muted-foreground">{t('portfolioPerformance.verification.unclassifiedLabel') || 'Não Classificados:'}</span>
+                                        <span className={`font-medium ${
+                                          verification.hasUnclassified ? 'text-red-500' : 'text-green-500'
+                                        }`}>
+                                          {verification.unclassifiedCount}
+                                          {verification.hasUnclassified && (
+                                            <XCircle className="h-3 w-3 ml-1 inline" />
+                                          )}
+                                        </span>
+                                      </div>
+                                      {verification.hasUnclassified && (
+                                        <div className="mt-2 p-2 bg-red-50 dark:bg-red-950/20 rounded text-xs text-red-700 dark:text-red-400">
+                                          🏷️ {t('portfolioPerformance.verification.unclassifiedWarning', { count: verification.unclassifiedCount }) || `${verification.unclassifiedCount} ativo(s) com classe inválida ou não classificada detectado(s).`}
+                                          <div className="mt-1 text-[10px] opacity-80">
+                                            {t('portfolioPerformance.verification.unclassifiedHint') || 'Certifique-se de que a classe está na lista de opções válidas do dropdown.'}
+                                          </div>
+                                        </div>
+                                      )}
+                                    </div>
+                                    
+                                    <Separator className="my-2" />
+                                    <div>
+                                      <h4 className="font-medium text-sm mb-2 flex items-center gap-2">
+                                        <DollarSign className="h-4 w-4" />
+                                        {t('portfolioPerformance.verification.profitability') || 'Verificação de Rentabilidade'}
+                                      </h4>
+                                      <div className="flex justify-between">
+                                        <span className="text-muted-foreground">{t('portfolioPerformance.verification.withYield') || 'Com Rentabilidade:'}</span>
+                                        <span className={`font-medium ${
+                                          !verification.hasMissingYield ? 'text-green-500' : 'text-muted-foreground'
+                                        }`}>
+                                          {verification.detailedCount - verification.missingYieldCount}
+                                          {!verification.hasMissingYield && (
+                                            <CheckCircle2 className="h-3 w-3 ml-1 inline" />
+                                          )}
+                                        </span>
+                                      </div>
+                                      <div className="flex justify-between">
+                                        <span className="text-muted-foreground">{t('portfolioPerformance.verification.withoutYield') || 'Sem Rentabilidade:'}</span>
+                                        <span className={`font-medium ${
+                                          verification.hasMissingYield ? 'text-red-500' : 'text-green-500'
+                                        }`}>
+                                          {verification.missingYieldCount}
+                                          {verification.hasMissingYield && (
+                                            <XCircle className="h-3 w-3 ml-1 inline" />
+                                          )}
+                                        </span>
+                                      </div>
+                                      {verification.hasMissingYield && (
+                                        <div className="mt-2 p-2 bg-red-50 dark:bg-red-950/20 rounded text-xs text-red-700 dark:text-red-400">
+                                          💰 {t('portfolioPerformance.verification.missingYieldWarning', { count: verification.missingYieldCount }) || `${verification.missingYieldCount} ativo(s) sem campo "Rendimento" preenchido.`}
+                                          <div className="mt-1 text-[10px] opacity-80">
+                                            {t('portfolioPerformance.verification.missingYieldHint') || 'Preencha o campo "Rendimento" para todos os ativos.'}
+                                          </div>
+                                        </div>
+                                      )}
+                                    </div>
+                                  </div>
+                                </PopoverContent>
+                              </Popover>
+                            </TableCell>
+                          )}
+                          {visibleColumnsConsolidated.has('actions') && (
+                            <TableCell>
+                              <div className="flex items-center gap-1">
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  className="h-8 px-2 hover:bg-primary/10 text-primary"
+                                  onClick={() => {
+                                    setTab('detailed')
+                                    setSelectedPeriods([r.period])
+                                    setSelectedInstitutions([r.institution])
+                                    if (r.account_name) {
+                                      // Aplicar filtro de account_name se disponível
+                                      setActiveFilters([{
+                                        id: crypto.randomUUID(),
+                                        field: 'account_name',
+                                        operator: 'equals',
+                                        value: r.account_name
+                                      }])
+                                    }
+                                    setTimeout(() => {
+                                      document.querySelector('[value="detailed"]')?.scrollIntoView({ 
+                                        behavior: 'smooth' 
+                                      })
+                                    }, 100)
+                                  }}
+                                  title={t('portfolioPerformance.dataManagement.viewDetailed', { count: verification.detailedCount }) || `Ver ${verification.detailedCount || 0} ativos detalhados`}
+                                >
+                                  <ArrowRight className="h-4 w-4 text-yellow-600 dark:text-yellow-400" />
+                                  <span className="ml-1 text-xs font-medium text-yellow-600 dark:text-yellow-400">{verification.detailedCount || 0}</span>
+                                </Button>
+                                
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  className="h-8 w-8 p-0 text-primary hover:text-primary"
+                                  onClick={() => {
+                                    // Criar novo registro baseado neste
+                                    openEdit('consolidated', {
+                                      ...r,
+                                      id: undefined,
+                                      period: '',
+                                      final_assets: r.final_assets,
+                                      initial_assets: r.final_assets,
+                                      movement: 0,
+                                      taxes: 0,
+                                      financial_gain: 0,
+                                      yield: 0
+                                    } as ConsolidatedRow)
+                                  }}
+                                  title={t('portfolioPerformance.dataManagement.createFromRecord') || 'Criar novo registro com base neste'}
+                                >
+                                  <Copy className="h-4 w-4" />
+                                </Button>
+                                
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  className="h-8 w-8 p-0"
+                                  onClick={() => openEdit('consolidated', r)}
+                                  title={t('portfolioPerformance.dataManagement.edit') || 'Editar'}
+                                >
+                                  <Edit className="h-4 w-4" />
+                                </Button>
+                                
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  className="h-8 w-8 p-0 text-destructive hover:text-destructive"
+                                  onClick={() => confirmDelete('consolidated', r.id)}
+                                  title={t('portfolioPerformance.dataManagement.delete') || 'Excluir'}
+                                >
+                                  <Trash2 className="h-4 w-4" />
+                                </Button>
+                              </div>
+                            </TableCell>
+                          )}
+                        </TableRow>
+                      )
+                    })}
                   </TableBody>
                 </Table>
               </div>
@@ -454,67 +1167,347 @@ export default function PortfolioDataManagement() {
                 )}
               </div>
               <div className="flex items-center gap-2">
-                <Button size="sm" variant="outline" onClick={selectAllVisible} className="h-8">
-                  <CheckSquare className="h-3 w-3 mr-1" /> {t('portfolioPerformance.selectAll')}
-                </Button>
                 {selectedIds.size > 0 && (
                   <Button size="sm" variant="destructive" onClick={() => setDeleteMultipleConfirmOpen(true)} className="h-8">
                     <Trash2 className="h-3 w-3 mr-1" /> {t('portfolioPerformance.dataManagement.delete.deleteSelected')}
                   </Button>
                 )}
-                <Button variant="outline" onClick={() => { setTab('detailed'); setImportDialogOpen(true) }}>
-                  <Upload className="mr-2 h-4 w-4" /> {t('portfolioPerformance.importCSV.button')}
+                <FilterBuilder onAddFilter={handleAddFilter} />
+                {tab === 'detailed' && (
+                  <Select
+                    value={verifFilter}
+                    onValueChange={(value) => setVerifFilter(value)}
+                  >
+                    <SelectTrigger className={`w-[180px] h-8 ${
+                      verifFilter !== 'all' 
+                        ? 'bg-primary/10 border-primary' 
+                        : 'bg-card/50 border-primary/20'
+                    }`}>
+                      <SelectValue placeholder={t('portfolioPerformance.dataManagement.quickFilters') || 'Filtrar por verif.'} />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">
+                        <div className="flex items-center gap-2">
+                          <Info className="h-4 w-4 text-muted-foreground" />
+                          <span>{t('portfolioPerformance.filters.all')}</span>
+                        </div>
+                      </SelectItem>
+                      <SelectItem value="match">
+                        <div className="flex items-center gap-2">
+                          <CheckCircle2 className="h-4 w-4 text-green-500" />
+                          <span>{t('portfolioPerformance.verification.match')}</span>
+                        </div>
+                      </SelectItem>
+                      <SelectItem value="tolerance">
+                        <div className="flex items-center gap-2">
+                          <AlertCircle className="h-4 w-4 text-yellow-500" />
+                          <span>{t('portfolioPerformance.verification.tolerance')}</span>
+                        </div>
+                      </SelectItem>
+                      <SelectItem value="mismatch">
+                        <div className="flex items-center gap-2">
+                          <XCircle className="h-4 w-4 text-red-500" />
+                          <span>{t('portfolioPerformance.verification.mismatch')}</span>
+                        </div>
+                      </SelectItem>
+                      <SelectItem value="no-data">
+                        <div className="flex items-center gap-2">
+                          <Info className="h-4 w-4 text-gray-400" />
+                          <span>{t('portfolioPerformance.verification.noData')}</span>
+                        </div>
+                      </SelectItem>
+                    </SelectContent>
+                  </Select>
+                )}
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button variant="outline" size="sm" className="h-8">
+                      <Settings2 className="h-3 w-3 mr-1" /> {t('portfolioPerformance.dataManagement.columns')} <ChevronDown className="h-3 w-3 ml-1" />
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-64" align="end">
+                    <div className="space-y-2">
+                      <h4 className="font-medium text-sm mb-3">{t('portfolioPerformance.dataManagement.selectColumns')}</h4>
+                      <div className="space-y-2 max-h-80 overflow-y-auto">
+                        {[
+                          { key: 'period', label: t('portfolioPerformance.dataManagement.table.period') },
+                          { key: 'institution', label: t('portfolioPerformance.dataManagement.table.institution') },
+                          { key: 'currency', label: t('portfolioPerformance.dataManagement.table.currency') },
+                          { key: 'account_name', label: t('portfolioPerformance.dataManagement.table.accountName') },
+                          { key: 'asset', label: t('portfolioPerformance.dataManagement.table.asset') },
+                          { key: 'issuer', label: t('portfolioPerformance.dataManagement.table.issuer') },
+                          { key: 'asset_class', label: t('portfolioPerformance.dataManagement.table.assetClass') },
+                          { key: 'position', label: t('portfolioPerformance.dataManagement.table.position') },
+                          { key: 'rate', label: t('portfolioPerformance.dataManagement.table.rate') },
+                          { key: 'maturity', label: t('portfolioPerformance.dataManagement.table.maturity') },
+                          { key: 'yield', label: t('portfolioPerformance.dataManagement.table.yield') },
+                          { key: 'verification', label: t('portfolioPerformance.dataManagement.table.verification') },
+                          { key: 'actions', label: t('portfolioPerformance.dataManagement.table.actions') }
+                        ].map(col => (
+                          <div key={col.key} className="flex items-center space-x-2">
+                            <Checkbox
+                              id={`col-det-${col.key}`}
+                              checked={visibleColumnsDetailed.has(col.key)}
+                              onCheckedChange={(checked) => {
+                                const newVisible = new Set(visibleColumnsDetailed)
+                                if (checked) {
+                                  newVisible.add(col.key)
+                                } else {
+                                  if (col.key !== 'actions') {
+                                    newVisible.delete(col.key)
+                                  }
+                                }
+                                setVisibleColumnsDetailed(newVisible)
+                              }}
+                              disabled={col.key === 'actions'}
+                            />
+                            <label
+                              htmlFor={`col-det-${col.key}`}
+                              className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
+                            >
+                              {col.label}
+                            </label>
+                          </div>
+                        ))}
+                      </div>
+                      <div className="pt-2 border-t space-y-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="w-full"
+                          onClick={() => setVisibleColumnsDetailed(new Set(['period', 'institution', 'currency', 'account_name', 'asset', 'issuer', 'asset_class', 'position', 'rate', 'maturity', 'yield', 'verification', 'actions']))}
+                        >
+                          {t('portfolioPerformance.dataManagement.selectAllColumns') || 'Selecionar Todas as Colunas'}
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="w-full"
+                          onClick={selectAllVisible}
+                        >
+                          <CheckSquare className="h-3 w-3 mr-1" /> {t('portfolioPerformance.selectAll') || 'Selecionar Todas as Linhas'}
+                        </Button>
+                      </div>
+                    </div>
+                  </PopoverContent>
+                </Popover>
+                <div className="flex items-center gap-1">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-8 w-8 p-0"
+                    onClick={() => {
+                      setImportDialogType('detailed')
+                      setImportDialogOpen(true)
+                    }}
+                    title={t('portfolioPerformance.dataManagement.import.button') || 'Importar CSV'}
+                  >
+                    <ArrowUp className="h-4 w-4" />
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-8 w-8 p-0"
+                    onClick={() => setIsExportDialogOpen(true)}
+                    title={t('portfolioPerformance.dataManagement.export.button') || 'Exportar CSV'}
+                  >
+                    <ArrowDown className="h-4 w-4" />
+                  </Button>
+                </div>
+                <Button onClick={() => openEdit('detailed')} className="bg-yellow-500 hover:bg-yellow-600">
+                  <Plus className="mr-2 h-4 w-4" /> {t('portfolioPerformance.newRecord')}
                 </Button>
-                <Button onClick={() => openEdit('detailed')}><Plus className="mr-2 h-4 w-4" /> {t('portfolioPerformance.newRecord')}</Button>
               </div>
             </CardHeader>
             <CardContent>
+              <ActiveFilters filters={activeFilters} onRemoveFilter={handleRemoveFilter} />
               <div className="overflow-x-auto">
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead className="w-10"></TableHead>
-                      <TableHead>{t('portfolioPerformance.dataManagement.table.period')}</TableHead>
-                      <TableHead>{t('portfolioPerformance.dataManagement.table.institution')}</TableHead>
-                      <TableHead>{t('portfolioPerformance.dataManagement.table.currency')}</TableHead>
-                      <TableHead>{t('portfolioPerformance.dataManagement.table.accountName')}</TableHead>
-                      <TableHead>{t('portfolioPerformance.dataManagement.table.asset')}</TableHead>
-                      <TableHead>{t('portfolioPerformance.dataManagement.table.issuer')}</TableHead>
-                      <TableHead>{t('portfolioPerformance.dataManagement.table.assetClass')}</TableHead>
-                      <TableHead>{t('portfolioPerformance.dataManagement.table.position')}</TableHead>
-                      <TableHead>{t('portfolioPerformance.dataManagement.table.rate')}</TableHead>
-                      <TableHead>{t('portfolioPerformance.dataManagement.table.maturity')}</TableHead>
-                      <TableHead>{t('portfolioPerformance.dataManagement.table.yield')}</TableHead>
-                      <TableHead>{t('portfolioPerformance.dataManagement.table.actions')}</TableHead>
+                      <TableHead className="w-10">
+                        <Checkbox
+                          checked={filteredDetailed.length > 0 && filteredDetailed.every(r => selectedIds.has(r.id))}
+                          onCheckedChange={(checked) => {
+                            if (checked) {
+                              selectAllVisible()
+                            } else {
+                              clearSelection()
+                            }
+                          }}
+                        />
+                      </TableHead>
+                      {visibleColumnsDetailed.has('period') && <TableHead>{t('portfolioPerformance.dataManagement.table.period')}</TableHead>}
+                      {visibleColumnsDetailed.has('institution') && <TableHead>{t('portfolioPerformance.dataManagement.table.institution')}</TableHead>}
+                      {visibleColumnsDetailed.has('currency') && <TableHead>{t('portfolioPerformance.dataManagement.table.currency')}</TableHead>}
+                      {visibleColumnsDetailed.has('account_name') && <TableHead>{t('portfolioPerformance.dataManagement.table.accountName')}</TableHead>}
+                      {visibleColumnsDetailed.has('asset') && <TableHead>{t('portfolioPerformance.dataManagement.table.asset')}</TableHead>}
+                      {visibleColumnsDetailed.has('issuer') && <TableHead>{t('portfolioPerformance.dataManagement.table.issuer')}</TableHead>}
+                      {visibleColumnsDetailed.has('asset_class') && <TableHead>{t('portfolioPerformance.dataManagement.table.assetClass')}</TableHead>}
+                      {visibleColumnsDetailed.has('position') && <TableHead>{t('portfolioPerformance.dataManagement.table.position')}</TableHead>}
+                      {visibleColumnsDetailed.has('rate') && <TableHead>{t('portfolioPerformance.dataManagement.table.rate')}</TableHead>}
+                      {visibleColumnsDetailed.has('maturity') && <TableHead>{t('portfolioPerformance.dataManagement.table.maturity')}</TableHead>}
+                      {visibleColumnsDetailed.has('yield') && <TableHead>{t('portfolioPerformance.dataManagement.table.yield')}</TableHead>}
+                      {visibleColumnsDetailed.has('verification') && <TableHead className="text-center">{t('portfolioPerformance.dataManagement.table.verification')}</TableHead>}
+                      {visibleColumnsDetailed.has('actions') && <TableHead>{t('portfolioPerformance.dataManagement.table.actions')}</TableHead>}
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {isLoading ? (
-                      <TableRow><TableCell colSpan={13}>{t('portfolioPerformance.dataManagement.loading')}</TableCell></TableRow>
+                      <TableRow><TableCell colSpan={visibleColumnsDetailed.size + 1}>{t('portfolioPerformance.dataManagement.loading')}</TableCell></TableRow>
                     ) : filteredDetailed.length === 0 ? (
-                      <TableRow><TableCell colSpan={13}>{t('portfolioPerformance.dataManagement.noData')}</TableCell></TableRow>
+                      <TableRow><TableCell colSpan={visibleColumnsDetailed.size + 1}>{t('portfolioPerformance.dataManagement.noData')}</TableCell></TableRow>
                     ) : filteredDetailed.map(r => (
                       <TableRow key={r.id}>
                         <TableCell>
                           <Checkbox checked={selectedIds.has(r.id)} onCheckedChange={() => toggleSelect(r.id)} />
                         </TableCell>
-                        <TableCell>{r.period}</TableCell>
-                        <TableCell>{r.institution}</TableCell>
-                        <TableCell>{r.currency || 'BRL'}</TableCell>
-                        <TableCell>{r.account_name || '-'}</TableCell>
-                        <TableCell>{r.asset}</TableCell>
-                        <TableCell>{r.issuer}</TableCell>
-                        <TableCell>{r.asset_class}</TableCell>
-                        <TableCell>{formatCurrency(r.position)}</TableCell>
-                        <TableCell>{r.rate || '-'}</TableCell>
-                        <TableCell>{formatMaturityDate(r.maturity_date)}</TableCell>
-                        <TableCell>{(((r.yield || 0) * 100).toFixed(2))}%</TableCell>
-                        <TableCell>
-                          <div className="flex gap-2">
-                            <Button variant="outline" size="sm" onClick={() => openEdit('detailed', r)}><Edit className="h-4 w-4" /></Button>
-                            <Button variant="destructive" size="sm" onClick={() => confirmDelete('detailed', r.id)}><Trash2 className="h-4 w-4" /></Button>
-                          </div>
-                        </TableCell>
+                        {visibleColumnsDetailed.has('period') && <TableCell>{r.period}</TableCell>}
+                        {visibleColumnsDetailed.has('institution') && <TableCell>{r.institution}</TableCell>}
+                        {visibleColumnsDetailed.has('currency') && <TableCell>{r.currency || 'BRL'}</TableCell>}
+                        {visibleColumnsDetailed.has('account_name') && <TableCell>{r.account_name || '-'}</TableCell>}
+                        {visibleColumnsDetailed.has('asset') && <TableCell>{r.asset}</TableCell>}
+                        {visibleColumnsDetailed.has('issuer') && <TableCell>{r.issuer}</TableCell>}
+                        {visibleColumnsDetailed.has('asset_class') && <TableCell>{r.asset_class}</TableCell>}
+                        {visibleColumnsDetailed.has('position') && <TableCell>{formatCurrency(r.position || 0, (r.currency as CurrencyCode) || 'BRL')}</TableCell>}
+                        {visibleColumnsDetailed.has('rate') && <TableCell>{r.rate || '-'}</TableCell>}
+                        {visibleColumnsDetailed.has('maturity') && <TableCell>{formatMaturityDate(r.maturity_date)}</TableCell>}
+                        {visibleColumnsDetailed.has('yield') && <TableCell>{(((r.yield || 0) * 100).toFixed(2))}%</TableCell>}
+                        {visibleColumnsDetailed.has('verification') && (
+                          <TableCell className="text-center">
+                            {(() => {
+                              const hasInvalidClass = !isValidAssetClass(r.asset_class)
+                              const hasMissingYield = !hasValidYield(r.yield)
+                              
+                              return (
+                                <Popover>
+                                  <PopoverTrigger asChild>
+                                    <Button variant="ghost" size="sm" className="h-8 px-1 flex items-center justify-center gap-1 mx-auto cursor-pointer hover:opacity-70 transition-opacity">
+                                      {/* Verificação da Classe */}
+                                      {hasInvalidClass ? (
+                                        <XCircle className="h-4 w-4 text-red-500" />
+                                      ) : (
+                                        <CheckCircle2 className="h-4 w-4 text-green-500" />
+                                      )}
+                                      
+                                      {/* Verificação da Rentabilidade */}
+                                      {hasMissingYield ? (
+                                        <XCircle className="h-4 w-4 text-red-500" />
+                                      ) : (
+                                        <CheckCircle2 className="h-4 w-4 text-green-500" />
+                                      )}
+                                    </Button>
+                                  </PopoverTrigger>
+                                  <PopoverContent className="w-80">
+                                    <div className="space-y-2">
+                                      <div>
+                                        <h4 className="font-medium text-sm mb-2 flex items-center gap-2">
+                                          <Tag className="h-4 w-4" />
+                                          {t('portfolioPerformance.verification.classification') || 'Verificação de Classificação'}
+                                        </h4>
+                                        <div className="text-sm space-y-1">
+                                          <div className="flex justify-between">
+                                            <span className="text-muted-foreground">{t('portfolioPerformance.dataManagement.table.assetClass') || 'Classe do Ativo:'}</span>
+                                            <span className="font-medium">{r.asset_class || '-'}</span>
+                                          </div>
+                                          <div className="flex justify-between">
+                                            <span className="text-muted-foreground">{t('portfolioPerformance.verification.status') || 'Status:'}</span>
+                                            <span className={`font-medium ${
+                                              hasInvalidClass ? 'text-red-500' : 'text-green-500'
+                                            }`}>
+                                              {hasInvalidClass 
+                                                ? t('portfolioPerformance.verification.invalidClass') || 'Inválida'
+                                                : t('portfolioPerformance.verification.validClass') || 'Válida'}
+                                              {hasInvalidClass ? (
+                                                <XCircle className="h-3 w-3 ml-1 inline" />
+                                              ) : (
+                                                <CheckCircle2 className="h-3 w-3 ml-1 inline" />
+                                              )}
+                                            </span>
+                                          </div>
+                                          {hasInvalidClass && (
+                                            <div className="mt-2 p-2 bg-red-50 dark:bg-red-950/20 rounded text-xs text-red-700 dark:text-red-400">
+                                              🏷️ {t('portfolioPerformance.verification.invalidClassWarning') || 'Classe inválida ou não classificada.'}
+                                              <div className="mt-1 text-[10px] opacity-80">
+                                                {t('portfolioPerformance.verification.unclassifiedHint') || 'Certifique-se de que a classe está na lista de opções válidas do dropdown.'}
+                                              </div>
+                                            </div>
+                                          )}
+                                        </div>
+                                      </div>
+                                      
+                                      <Separator className="my-2" />
+                                      <div>
+                                        <h4 className="font-medium text-sm mb-2 flex items-center gap-2">
+                                          <DollarSign className="h-4 w-4" />
+                                          {t('portfolioPerformance.verification.profitability') || 'Verificação de Rentabilidade'}
+                                        </h4>
+                                        <div className="text-sm space-y-1">
+                                          <div className="flex justify-between">
+                                            <span className="text-muted-foreground">{t('portfolioPerformance.dataManagement.table.yield') || 'Rendimento:'}</span>
+                                            <span className="font-medium">
+                                              {hasValidYield(r.yield) 
+                                                ? `${(((r.yield || 0) * 100).toFixed(2))}%`
+                                                : '-'}
+                                            </span>
+                                          </div>
+                                          <div className="flex justify-between">
+                                            <span className="text-muted-foreground">{t('portfolioPerformance.verification.status') || 'Status:'}</span>
+                                            <span className={`font-medium ${
+                                              hasMissingYield ? 'text-red-500' : 'text-green-500'
+                                            }`}>
+                                              {hasMissingYield 
+                                                ? t('portfolioPerformance.verification.withoutYield') || 'Sem Rentabilidade'
+                                                : t('portfolioPerformance.verification.withYield') || 'Com Rentabilidade'}
+                                              {hasMissingYield ? (
+                                                <XCircle className="h-3 w-3 ml-1 inline" />
+                                              ) : (
+                                                <CheckCircle2 className="h-3 w-3 ml-1 inline" />
+                                              )}
+                                            </span>
+                                          </div>
+                                          {hasMissingYield && (
+                                            <div className="mt-2 p-2 bg-red-50 dark:bg-red-950/20 rounded text-xs text-red-700 dark:text-red-400">
+                                              💰 {t('portfolioPerformance.verification.missingYieldWarningSingle') || 'Campo "Rendimento" não preenchido.'}
+                                              <div className="mt-1 text-[10px] opacity-80">
+                                                {t('portfolioPerformance.verification.missingYieldHint') || 'Preencha o campo "Rendimento" para todos os ativos.'}
+                                              </div>
+                                            </div>
+                                          )}
+                                        </div>
+                                      </div>
+                                    </div>
+                                  </PopoverContent>
+                                </Popover>
+                              )
+                            })()}
+                          </TableCell>
+                        )}
+                        {visibleColumnsDetailed.has('actions') && (
+                          <TableCell>
+                            <div className="flex items-center gap-1">
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="h-8 w-8 p-0"
+                                onClick={() => openEdit('detailed', r)}
+                                title={t('portfolioPerformance.dataManagement.edit') || 'Editar'}
+                              >
+                                <Edit className="h-4 w-4" />
+                              </Button>
+                              
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="h-8 w-8 p-0 text-destructive hover:text-destructive"
+                                onClick={() => confirmDelete('detailed', r.id)}
+                                title={t('portfolioPerformance.dataManagement.delete') || 'Excluir'}
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </div>
+                          </TableCell>
+                        )}
                       </TableRow>
                     ))}
                   </TableBody>
@@ -714,13 +1707,23 @@ export default function PortfolioDataManagement() {
         </DialogContent>
       </Dialog>
 
-      {/* CSV Import Dialog */}
-      <CSVImportDialog
+      {/* Import Dialog */}
+      <ImportDialog
         open={importDialogOpen}
         onOpenChange={setImportDialogOpen}
+        type={importDialogType}
         profileId={profileId || ''}
-        onImportComplete={fetchData}
-        importType={tab}
+        onImportSuccess={fetchData}
+      />
+
+      {/* Export Dialog */}
+      <ExportDialog
+        open={isExportDialogOpen}
+        onOpenChange={setIsExportDialogOpen}
+        type={tab}
+        profileId={profileId || ''}
+        filteredData={tab === 'consolidated' ? filteredConsolidated : filteredDetailed}
+        allData={tab === 'consolidated' ? consolidated : detailed}
       />
 
       {/* Delete Confirmation Dialog */}
