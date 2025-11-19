@@ -1,6 +1,6 @@
 import type { SortConfig } from '../types/portfolio-data-management.types'
 
-export function applySortingGeneric<T extends Record<string, any>>(
+export function applySortingGeneric<T extends Record<string, unknown>>(
   data: T[],
   sortConfig: SortConfig | null
 ): T[] {

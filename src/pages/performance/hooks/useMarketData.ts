@@ -12,16 +12,30 @@ interface IPCARecord {
   ipca: number
 }
 
+interface CDIDataItem {
+  competencia?: string
+  period?: string
+  cdiRate?: number
+  rate?: number
+}
+
+interface IPCADataItem {
+  competencia?: string
+  period?: string
+  ipca?: number
+  rate?: number
+}
+
 export function useMarketData() {
   const cdiRecords = useMemo<CDIRecord[]>(() => {
-    return (cdiData as any[]).map(item => ({
+    return (cdiData as CDIDataItem[]).map(item => ({
       competencia: item.competencia || item.period || '',
       cdiRate: item.cdiRate || item.rate || 0
     })).filter(item => item.competencia)
   }, [])
 
   const ipcaRecords = useMemo<IPCARecord[]>(() => {
-    return (ipcaData as any[]).map(item => ({
+    return (ipcaData as IPCADataItem[]).map(item => ({
       competencia: item.competencia || item.period || '',
       ipca: item.ipca || item.rate || 0
     })).filter(item => item.competencia)

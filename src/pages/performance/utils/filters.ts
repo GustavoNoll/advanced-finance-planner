@@ -1,6 +1,6 @@
 import type { Filter } from '../types/portfolio-data-management.types'
 
-export function applyFiltersGeneric<T extends Record<string, any>>(
+export function applyFiltersGeneric<T extends Record<string, unknown>>(
   data: T[],
   filters: Filter[]
 ): T[] {
