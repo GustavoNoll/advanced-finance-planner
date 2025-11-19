@@ -7,9 +7,11 @@ import { useState, useMemo, useCallback } from "react"
 import { useTranslation } from "react-i18next"
 import { 
   groupStrategyName, 
+  getStrategyBenchmarkLabelByKey,
   getStrategyColor,
   getStrategyOrder,
   STRATEGY_ORDER,
+  calculateBenchmarkReturnsByGroupedKey,
   type GroupedStrategyKey 
 } from "@/utils/benchmark-calculator"
 import type { PerformanceData } from "@/types/financial"
@@ -19,37 +21,76 @@ interface AssetReturnsTableProps {
   performanceData: PerformanceData[]
 }
 
+interface AssetReturnsTableCopy {
+  title: string
+  columnsButton: string
+  dropdownLabel: string
+  columns: {
+    asset: string
+    allocation: string
+    grossBalance: string
+    month: string
+    year: string
+    inception: string
+    issuer: string
+    institution: string
+    accountName: string
+    maturity: string
+    currency: string
+  }
+  summary: {
+    balance: string
+    rentability: string
+    rentabilityShort: string
+  }
+}
+
+const ASSET_RETURNS_I18N_PATH = "portfolioPerformance.assetReturnsTable"
+
+interface VisibleColumnsState {
+  allocation: boolean
+  grossBalance: boolean
+  month: boolean
+  year: boolean
+  inception: boolean
+  issuer: boolean
+  institution: boolean
+  accountName: boolean
+  maturity: boolean
+  currency: boolean
+}
+
 
 export function AssetReturnsTable({ performanceData }: AssetReturnsTableProps) {
-  const { convertValue, adjustReturnWithFX, formatCurrency } = useCurrency()
+  const { convertValue, adjustReturnWithFX, formatCurrency, currency } = useCurrency()
   const [expandedStrategies, setExpandedStrategies] = useState<Set<string>>(new Set())
-  const [visibleColumns, setVisibleColumns] = useState({
-    alocacao: true,
-    saldoBruto: true,
-    mes: true,
-    ano: true,
-    inicio: true,
-    emissor: true,
-    instituicao: true,
-    nomeConta: true,
-    vencimento: true,
-    moedaOrigem: true
+  const [visibleColumns, setVisibleColumns] = useState<VisibleColumnsState>({
+    allocation: true,
+    grossBalance: true,
+    month: true,
+    year: true,
+    inception: true,
+    issuer: true,
+    institution: true,
+    accountName: true,
+    maturity: true,
+    currency: true
   })
 
   // Helper function to generate grid template columns based on visible columns
   const getGridTemplateColumns = () => {
     const columns = ['minmax(180px, 1fr)'] // Ativo - flexível com mínimo de 180px
     
-    if (visibleColumns.alocacao) columns.push('110px')      // Alocação % - fixo
-    if (visibleColumns.saldoBruto) columns.push('130px')    // Saldo Bruto - fixo
-    if (visibleColumns.mes) columns.push('75px')            // Mês % - fixo
-    if (visibleColumns.ano) columns.push('75px')             // Ano % - fixo
-    if (visibleColumns.inicio) columns.push('75px')          // Início % - fixo
-    if (visibleColumns.emissor) columns.push('140px')        // Emissor - fixo
-    if (visibleColumns.instituicao) columns.push('130px')    // Instituição - fixo
-    if (visibleColumns.nomeConta) columns.push('140px')     // Nome da Conta - fixo
-    if (visibleColumns.vencimento) columns.push('95px')     // Vencimento - fixo
-    if (visibleColumns.moedaOrigem) columns.push('90px')     // Moeda - fixo
+    if (visibleColumns.allocation) columns.push('110px')      // Alocação % - fixo
+    if (visibleColumns.grossBalance) columns.push('130px')    // Saldo Bruto - fixo
+    if (visibleColumns.month) columns.push('75px')            // Mês % - fixo
+    if (visibleColumns.year) columns.push('75px')             // Ano % - fixo
+    if (visibleColumns.inception) columns.push('75px')          // Início % - fixo
+    if (visibleColumns.issuer) columns.push('140px')        // Emissor - fixo
+    if (visibleColumns.institution) columns.push('130px')    // Instituição - fixo
+    if (visibleColumns.accountName) columns.push('140px')     // Nome da Conta - fixo
+    if (visibleColumns.maturity) columns.push('95px')     // Vencimento - fixo
+    if (visibleColumns.currency) columns.push('90px')     // Moeda - fixo
     
     return columns.join(' ')
   }
@@ -187,7 +228,31 @@ export function AssetReturnsTable({ performanceData }: AssetReturnsTableProps) {
     }, 0)
   }, [finalPeriodData, convertValue])
 
-  const { t } = useTranslation()
+  const { t, i18n } = useTranslation()
+  const currentLocale: 'pt-BR' | 'en-US' = i18n.language === 'en-US' ? 'en-US' : 'pt-BR'
+  const assetReturnsCopy = useMemo<AssetReturnsTableCopy>(() => ({
+    title: t(`${ASSET_RETURNS_I18N_PATH}.title`),
+    columnsButton: t(`${ASSET_RETURNS_I18N_PATH}.columnsButton`),
+    dropdownLabel: t(`${ASSET_RETURNS_I18N_PATH}.dropdownLabel`),
+    columns: {
+      asset: t(`${ASSET_RETURNS_I18N_PATH}.columns.asset`),
+      allocation: t(`${ASSET_RETURNS_I18N_PATH}.columns.allocation`),
+      grossBalance: t(`${ASSET_RETURNS_I18N_PATH}.columns.grossBalance`),
+      month: t(`${ASSET_RETURNS_I18N_PATH}.columns.month`),
+      year: t(`${ASSET_RETURNS_I18N_PATH}.columns.year`),
+      inception: t(`${ASSET_RETURNS_I18N_PATH}.columns.inception`),
+      issuer: t(`${ASSET_RETURNS_I18N_PATH}.columns.issuer`),
+      institution: t(`${ASSET_RETURNS_I18N_PATH}.columns.institution`),
+      accountName: t(`${ASSET_RETURNS_I18N_PATH}.columns.accountName`),
+      maturity: t(`${ASSET_RETURNS_I18N_PATH}.columns.maturity`),
+      currency: t(`${ASSET_RETURNS_I18N_PATH}.columns.currency`),
+    },
+    summary: {
+      balance: t(`${ASSET_RETURNS_I18N_PATH}.summary.balance`),
+      rentability: t(`${ASSET_RETURNS_I18N_PATH}.summary.rentability`),
+      rentabilityShort: t(`${ASSET_RETURNS_I18N_PATH}.summary.rentabilityShort`)
+    }
+  }), [t])
 
   /**
    * Traduz uma chave de estratégia agrupada usando i18n
@@ -382,6 +447,32 @@ export function AssetReturnsTable({ performanceData }: AssetReturnsTableProps) {
       }, 0)
       const returns = calculateStrategyReturns(strategy)
       
+      // Get unique periods for this strategy to calculate benchmark
+      const strategyPeriods = [...new Set(
+        performanceData
+          .filter(p => groupStrategy(p.asset_class || null) === strategy)
+          .map(p => p.period)
+          .filter(Boolean) as string[]
+      )]
+      
+      // Get the grouped key for this strategy
+      const firstAssetClass = assets
+        .map(p => p.asset_class)
+        .find(Boolean) || null
+      
+      const groupedKey = groupStrategyName(firstAssetClass)
+      
+      // Determine locale based on the currency
+      const benchmarkLocale: 'pt-BR' | 'en-US' = currency === 'BRL' ? 'pt-BR' : 'en-US'
+      
+      // Calculate benchmark returns using the grouped key and currency
+      const benchmark = calculateBenchmarkReturnsByGroupedKey(
+        groupedKey,
+        currency,
+        strategyPeriods,
+        benchmarkLocale
+      )
+      
       return {
         strategy,
         assets,
@@ -389,7 +480,8 @@ export function AssetReturnsTable({ performanceData }: AssetReturnsTableProps) {
         monthReturn: returns.monthReturn,
         yearReturn: returns.yearReturn,
         inceptionReturn: returns.inceptionReturn,
-        percentage: totalPatrimonio > 0 ? (totalPosition / totalPatrimonio) * 100 : 0
+        percentage: totalPatrimonio > 0 ? (totalPosition / totalPatrimonio) * 100 : 0,
+        benchmark
       }
     }).sort((a, b) => {
       const indexA = getStrategyOrderForName(a.strategy)
@@ -405,7 +497,7 @@ export function AssetReturnsTable({ performanceData }: AssetReturnsTableProps) {
       // If neither is in the array, maintain original order
       return 0
     })
-  }, [groupedData, totalPatrimonio, calculateStrategyReturns, convertValue, getStrategyOrderForName])
+  }, [groupedData, totalPatrimonio, calculateStrategyReturns, convertValue, getStrategyOrderForName, performanceData, groupStrategy, currency])
 
   if (performanceData.length === 0) {
     return null
@@ -417,97 +509,99 @@ export function AssetReturnsTable({ performanceData }: AssetReturnsTableProps) {
         <div className="flex items-center justify-between">
           <CardTitle className="flex items-center gap-2">
             <Target className="h-5 w-5 text-primary" />
-            Retorno por Ativo
+            {assetReturnsCopy.title}
           </CardTitle>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="outline" size="sm" className="gap-2">
                 <Settings2 className="h-4 w-4" />
-                Colunas
+                {assetReturnsCopy.columnsButton}
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-64 bg-background/95 backdrop-blur-sm border-border shadow-lg z-50">
-              <DropdownMenuLabel className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Exibir Colunas</DropdownMenuLabel>
+              <DropdownMenuLabel className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+                {assetReturnsCopy.dropdownLabel}
+              </DropdownMenuLabel>
               <DropdownMenuSeparator />
               <DropdownMenuCheckboxItem
-                checked={visibleColumns.alocacao}
-                onCheckedChange={(checked) => setVisibleColumns(prev => ({ ...prev, alocacao: checked }))}
+                checked={visibleColumns.allocation}
+                onCheckedChange={(checked) => setVisibleColumns(prev => ({ ...prev, allocation: checked }))}
                 onSelect={(e) => e.preventDefault()}
                 className="cursor-pointer"
               >
-                Alocação / Qtd.
+                {assetReturnsCopy.columns.allocation}
               </DropdownMenuCheckboxItem>
               <DropdownMenuCheckboxItem
-                checked={visibleColumns.saldoBruto}
-                onCheckedChange={(checked) => setVisibleColumns(prev => ({ ...prev, saldoBruto: checked }))}
+                checked={visibleColumns.grossBalance}
+                onCheckedChange={(checked) => setVisibleColumns(prev => ({ ...prev, grossBalance: checked }))}
                 onSelect={(e) => e.preventDefault()}
                 className="cursor-pointer"
               >
-                Saldo Bruto
+                {assetReturnsCopy.columns.grossBalance}
               </DropdownMenuCheckboxItem>
               <DropdownMenuCheckboxItem
-                checked={visibleColumns.mes}
-                onCheckedChange={(checked) => setVisibleColumns(prev => ({ ...prev, mes: checked }))}
+                checked={visibleColumns.month}
+                onCheckedChange={(checked) => setVisibleColumns(prev => ({ ...prev, month: checked }))}
                 onSelect={(e) => e.preventDefault()}
                 className="cursor-pointer"
               >
-                Mês
+                {assetReturnsCopy.columns.month}
               </DropdownMenuCheckboxItem>
               <DropdownMenuCheckboxItem
-                checked={visibleColumns.ano}
-                onCheckedChange={(checked) => setVisibleColumns(prev => ({ ...prev, ano: checked }))}
+                checked={visibleColumns.year}
+                onCheckedChange={(checked) => setVisibleColumns(prev => ({ ...prev, year: checked }))}
                 onSelect={(e) => e.preventDefault()}
                 className="cursor-pointer"
               >
-                Ano
+                {assetReturnsCopy.columns.year}
               </DropdownMenuCheckboxItem>
               <DropdownMenuCheckboxItem
-                checked={visibleColumns.inicio}
-                onCheckedChange={(checked) => setVisibleColumns(prev => ({ ...prev, inicio: checked }))}
+                checked={visibleColumns.inception}
+                onCheckedChange={(checked) => setVisibleColumns(prev => ({ ...prev, inception: checked }))}
                 onSelect={(e) => e.preventDefault()}
                 className="cursor-pointer"
               >
-                Início
+                {assetReturnsCopy.columns.inception}
               </DropdownMenuCheckboxItem>
               <DropdownMenuCheckboxItem
-                checked={visibleColumns.emissor}
-                onCheckedChange={(checked) => setVisibleColumns(prev => ({ ...prev, emissor: checked }))}
+                checked={visibleColumns.issuer}
+                onCheckedChange={(checked) => setVisibleColumns(prev => ({ ...prev, issuer: checked }))}
                 onSelect={(e) => e.preventDefault()}
                 className="cursor-pointer"
               >
-                Emissor
+                {assetReturnsCopy.columns.issuer}
               </DropdownMenuCheckboxItem>
               <DropdownMenuCheckboxItem
-                checked={visibleColumns.instituicao}
-                onCheckedChange={(checked) => setVisibleColumns(prev => ({ ...prev, instituicao: checked }))}
+                checked={visibleColumns.institution}
+                onCheckedChange={(checked) => setVisibleColumns(prev => ({ ...prev, institution: checked }))}
                 onSelect={(e) => e.preventDefault()}
                 className="cursor-pointer"
               >
-                Instituição
+                {assetReturnsCopy.columns.institution}
               </DropdownMenuCheckboxItem>
               <DropdownMenuCheckboxItem
-                checked={visibleColumns.nomeConta}
-                onCheckedChange={(checked) => setVisibleColumns(prev => ({ ...prev, nomeConta: checked }))}
+                checked={visibleColumns.accountName}
+                onCheckedChange={(checked) => setVisibleColumns(prev => ({ ...prev, accountName: checked }))}
                 onSelect={(e) => e.preventDefault()}
                 className="cursor-pointer"
               >
-                Nome da Conta
+                {assetReturnsCopy.columns.accountName}
               </DropdownMenuCheckboxItem>
               <DropdownMenuCheckboxItem
-                checked={visibleColumns.vencimento}
-                onCheckedChange={(checked) => setVisibleColumns(prev => ({ ...prev, vencimento: checked }))}
+                checked={visibleColumns.maturity}
+                onCheckedChange={(checked) => setVisibleColumns(prev => ({ ...prev, maturity: checked }))}
                 onSelect={(e) => e.preventDefault()}
                 className="cursor-pointer"
               >
-                Vencimento
+                {assetReturnsCopy.columns.maturity}
               </DropdownMenuCheckboxItem>
               <DropdownMenuCheckboxItem
-                checked={visibleColumns.moedaOrigem}
-                onCheckedChange={(checked) => setVisibleColumns(prev => ({ ...prev, moedaOrigem: checked }))}
+                checked={visibleColumns.currency}
+                onCheckedChange={(checked) => setVisibleColumns(prev => ({ ...prev, currency: checked }))}
                 onSelect={(e) => e.preventDefault()}
                 className="cursor-pointer"
               >
-                Moeda Origem
+                {assetReturnsCopy.columns.currency}
               </DropdownMenuCheckboxItem>
             </DropdownMenuContent>
           </DropdownMenu>
@@ -515,7 +609,7 @@ export function AssetReturnsTable({ performanceData }: AssetReturnsTableProps) {
       </CardHeader>
       <CardContent>
         <div className="space-y-3">
-          {strategyTotals.map(({ strategy, assets, totalPosition, monthReturn, yearReturn, inceptionReturn, percentage }) => {
+          {strategyTotals.map(({ strategy, assets, totalPosition, monthReturn, yearReturn, inceptionReturn, percentage, benchmark }) => {
             const isExpanded = expandedStrategies.has(strategy)
             const strategyColor = getStrategyColorForName(strategy)
             
@@ -543,11 +637,11 @@ export function AssetReturnsTable({ performanceData }: AssetReturnsTableProps) {
                         </div>
                         <div className="flex items-center gap-4">
                           <div className="text-right">
-                            <div className="text-sm text-muted-foreground">Saldo</div>
+                            <div className="text-sm text-muted-foreground">{assetReturnsCopy.summary.balance}</div>
                             <div className="font-semibold text-foreground">{formatCurrency(totalPosition)}</div>
                           </div>
                           <div className="text-right">
-                            <div className="text-sm text-muted-foreground">Rentabilidade</div>
+                            <div className="text-sm text-muted-foreground">{assetReturnsCopy.summary.rentability}</div>
                             <div className={`font-semibold ${monthReturn >= 0 ? "text-success" : "text-destructive"}`}>
                               {monthReturn >= 0 ? "+" : ""}{(monthReturn * 100).toFixed(2)}%
                             </div>
@@ -572,95 +666,84 @@ export function AssetReturnsTable({ performanceData }: AssetReturnsTableProps) {
                         <div className="min-w-max">
                           {/* Table Header */}
                           <div className={`grid gap-4 p-3 border-b border-border/30 bg-muted/20 text-xs font-medium text-muted-foreground`} style={{ gridTemplateColumns: getGridTemplateColumns() }}>
-                            <div className="text-left">Ativo</div>
-                            {visibleColumns.alocacao && <div className="text-right">Alocação / Qtd.</div>}
-                            {visibleColumns.saldoBruto && <div className="text-right">Saldo Bruto</div>}
-                            {visibleColumns.mes && <div className="text-center">Mês</div>}
-                            {visibleColumns.ano && <div className="text-center">Ano</div>}
-                            {visibleColumns.inicio && <div className="text-center">Início</div>}
-                            {visibleColumns.emissor && <div className="text-left">Emissor</div>}
-                            {visibleColumns.instituicao && <div className="text-left">Instituição</div>}
-                            {visibleColumns.nomeConta && <div className="text-left">Nome da Conta</div>}
-                            {visibleColumns.vencimento && <div className="text-center">Vencimento</div>}
-                            {visibleColumns.moedaOrigem && <div className="text-center">Moeda Origem</div>}
+                            <div className="text-left">{assetReturnsCopy.columns.asset}</div>
+                            {visibleColumns.allocation && <div className="text-right">{assetReturnsCopy.columns.allocation}</div>}
+                            {visibleColumns.grossBalance && <div className="text-right">{assetReturnsCopy.columns.grossBalance}</div>}
+                            {visibleColumns.month && <div className="text-center">{assetReturnsCopy.columns.month}</div>}
+                            {visibleColumns.year && <div className="text-center">{assetReturnsCopy.columns.year}</div>}
+                            {visibleColumns.inception && <div className="text-center">{assetReturnsCopy.columns.inception}</div>}
+                            {visibleColumns.issuer && <div className="text-left">{assetReturnsCopy.columns.issuer}</div>}
+                            {visibleColumns.institution && <div className="text-left">{assetReturnsCopy.columns.institution}</div>}
+                            {visibleColumns.accountName && <div className="text-left">{assetReturnsCopy.columns.accountName}</div>}
+                            {visibleColumns.maturity && <div className="text-center">{assetReturnsCopy.columns.maturity}</div>}
+                            {visibleColumns.currency && <div className="text-center">{assetReturnsCopy.columns.currency}</div>}
                           </div>
                           
                           {/* Strategy Summary Row */}
                           <div className={`grid gap-4 p-3 border-b border-border/30 bg-muted/30 text-sm font-semibold`} style={{ gridTemplateColumns: getGridTemplateColumns() }}>
                             <div className="text-left text-foreground">{strategy}</div>
-                            {visibleColumns.alocacao && <div className="text-right text-foreground">{percentage.toFixed(2)}%</div>}
-                            {visibleColumns.saldoBruto && <div className="text-right text-foreground">{formatCurrency(totalPosition)}</div>}
-                            {visibleColumns.mes && <div className="text-center">
-                              <div className="text-xs text-muted-foreground">Rent.</div>
+                            {visibleColumns.allocation && <div className="text-right text-foreground">{percentage.toFixed(2)}%</div>}
+                            {visibleColumns.grossBalance && <div className="text-right text-foreground">{formatCurrency(totalPosition)}</div>}
+                            {visibleColumns.month && <div className="text-center">
+                              <div className="text-xs text-muted-foreground">{assetReturnsCopy.summary.rentabilityShort}</div>
                               <div className={`font-medium ${monthReturn >= 0 ? "text-success" : "text-destructive"}`}>
                                 {monthReturn >= 0 ? "+" : ""}{(monthReturn * 100).toFixed(2)}%
                               </div>
                             </div>}
-                            {visibleColumns.ano && <div className="text-center">
-                              <div className="text-xs text-muted-foreground">Rent.</div>
+                            {visibleColumns.year && <div className="text-center">
+                              <div className="text-xs text-muted-foreground">{assetReturnsCopy.summary.rentabilityShort}</div>
                               <div className={`font-medium ${yearReturn >= 0 ? "text-success" : "text-destructive"}`}>
                                 {yearReturn >= 0 ? "+" : ""}{(yearReturn * 100).toFixed(2)}%
                               </div>
                             </div>}
-                            {visibleColumns.inicio && <div className="text-center">
-                              <div className="text-xs text-muted-foreground">Rent.</div>
+                            {visibleColumns.inception && <div className="text-center">
+                              <div className="text-xs text-muted-foreground">{assetReturnsCopy.summary.rentabilityShort}</div>
                               <div className={`font-medium ${inceptionReturn >= 0 ? "text-success" : "text-destructive"}`}>
                                 {inceptionReturn >= 0 ? "+" : ""}{(inceptionReturn * 100).toFixed(2)}%
                               </div>
                             </div>}
-                            {visibleColumns.emissor && <div className="text-left text-foreground">-</div>}
-                            {visibleColumns.instituicao && <div className="text-left text-foreground">-</div>}
-                            {visibleColumns.nomeConta && <div className="text-left text-foreground">-</div>}
-                            {visibleColumns.vencimento && <div className="text-center text-foreground">-</div>}
-                            {visibleColumns.moedaOrigem && <div className="text-center text-foreground">-</div>}
+                            {visibleColumns.issuer && <div className="text-left text-foreground">-</div>}
+                            {visibleColumns.institution && <div className="text-left text-foreground">-</div>}
+                            {visibleColumns.accountName && <div className="text-left text-foreground">-</div>}
+                            {visibleColumns.maturity && <div className="text-center text-foreground">-</div>}
+                            {visibleColumns.currency && <div className="text-center text-foreground">-</div>}
                           </div>
 
                           {/* Benchmark Row */}
                           <div className={`grid gap-4 p-3 border-b border-border/30 bg-muted/10 text-sm`} style={{ gridTemplateColumns: getGridTemplateColumns() }}>
                             <div className="text-left text-muted-foreground">
-                              {(() => {
-                                switch (strategy) {
-                                  case 'Pós Fixado - Liquidez':
-                                  case 'Pós Fixado':
-                                    return '% CDI'
-                                  case 'Inflação':
-                                    return '± IPCA'
-                                  case 'Pré Fixado':
-                                    return '± IRF-M'
-                                  case 'Multimercado':
-                                    return '% CDI'
-                                  case 'Imobiliário':
-                                    return '± IFIX'
-                                  case 'Ações':
-                                  case 'Ações - Long Bias':
-                                    return '± IBOV'
-                                  case 'Private Equity':
-                                    return '% CDI'
-                                  case 'Exterior - Renda Fixa':
-                                    return '± T-Bond'
-                                  case 'Exterior - Ações':
-                                    return '± S&P500'
-                                  case 'COE':
-                                    return '% CDI'
-                                  case 'Ouro':
-                                    return '± Gold'
-                                  case 'Criptoativos':
-                                    return '± BTC'
-                                  default:
-                                    return '% CDI'
-                                }
-                              })()}
+                              {benchmark 
+                                ? (currentLocale === 'pt-BR' ? benchmark.name : benchmark.nameEn)
+                                : '-'}
                             </div>
-                            {visibleColumns.alocacao && <div className="text-right text-muted-foreground">-</div>}
-                            {visibleColumns.saldoBruto && <div className="text-right text-muted-foreground">-</div>}
-                            {visibleColumns.mes && <div className="text-center text-muted-foreground">-</div>}
-                            {visibleColumns.ano && <div className="text-center text-muted-foreground">-</div>}
-                            {visibleColumns.inicio && <div className="text-center text-muted-foreground">-</div>}
-                            {visibleColumns.emissor && <div className="text-left text-muted-foreground">-</div>}
-                            {visibleColumns.instituicao && <div className="text-left text-muted-foreground">-</div>}
-                            {visibleColumns.nomeConta && <div className="text-left text-muted-foreground">-</div>}
-                            {visibleColumns.vencimento && <div className="text-center text-muted-foreground">-</div>}
-                            {visibleColumns.moedaOrigem && <div className="text-center text-muted-foreground">-</div>}
+                            {visibleColumns.allocation && <div className="text-right text-muted-foreground">-</div>}
+                            {visibleColumns.grossBalance && <div className="text-right text-muted-foreground">-</div>}
+                            {visibleColumns.month && <div className="text-center text-muted-foreground">
+                              {benchmark && benchmark.monthReturn !== null ? (
+                                <span className="text-foreground">
+                                  {benchmark.monthReturn >= 0 ? '+' : ''}{benchmark.monthReturn.toFixed(2)}%
+                                </span>
+                              ) : '-'}
+                            </div>}
+                            {visibleColumns.year && <div className="text-center text-muted-foreground">
+                              {benchmark && benchmark.yearReturn !== null ? (
+                                <span className="text-foreground">
+                                  {benchmark.yearReturn >= 0 ? '+' : ''}{benchmark.yearReturn.toFixed(2)}%
+                                </span>
+                              ) : '-'}
+                            </div>}
+                            {visibleColumns.inception && <div className="text-center text-muted-foreground">
+                              {benchmark && benchmark.inceptionReturn !== null ? (
+                                <span className="text-foreground">
+                                  {benchmark.inceptionReturn >= 0 ? '+' : ''}{benchmark.inceptionReturn.toFixed(2)}%
+                                </span>
+                              ) : '-'}
+                            </div>}
+                            {visibleColumns.issuer && <div className="text-left text-muted-foreground">-</div>}
+                            {visibleColumns.institution && <div className="text-left text-muted-foreground">-</div>}
+                            {visibleColumns.accountName && <div className="text-left text-muted-foreground">-</div>}
+                            {visibleColumns.maturity && <div className="text-center text-muted-foreground">-</div>}
+                            {visibleColumns.currency && <div className="text-center text-muted-foreground">-</div>}
                           </div>
 
                           {/* Individual Assets */}
@@ -672,45 +755,45 @@ export function AssetReturnsTable({ performanceData }: AssetReturnsTableProps) {
                                   <div className="text-left">
                                     <div className="font-medium text-foreground text-xs">{item.asset || "-"}</div>
                                   </div>
-                                  {visibleColumns.alocacao && <div className="text-right text-foreground text-xs">
+                                  {visibleColumns.allocation && <div className="text-right text-foreground text-xs">
                                     {totalPatrimonio > 0 ? (() => {
                                       const originalCurrency = (item.currency === 'USD' || item.currency === 'Dolar') ? 'USD' : 'BRL'
                                       const posicaoConvertida = convertValue(item.position || 0, item.period || '', originalCurrency)
                                       return `${((posicaoConvertida / totalPatrimonio) * 100).toFixed(2)}%`
                                     })() : "-"}
                                   </div>}
-                                  {visibleColumns.saldoBruto && <div className="text-right text-foreground">
+                                  {visibleColumns.grossBalance && <div className="text-right text-foreground">
                                     {(() => {
                                       const originalCurrency = (item.currency === 'USD' || item.currency === 'Dolar') ? 'USD' : 'BRL'
                                       const posicaoConvertida = convertValue(item.position || 0, item.period || '', originalCurrency)
                                       return formatCurrency(posicaoConvertida)
                                     })()}
                                   </div>}
-                                  {visibleColumns.mes && <div className="text-center">
+                                  {visibleColumns.month && <div className="text-center">
                                     <div className={`font-medium ${assetReturns.monthReturn >= 0 ? "text-success" : "text-destructive"}`}>
                                       {assetReturns.monthReturn >= 0 ? "+" : ""}{(assetReturns.monthReturn * 100).toFixed(2)}%
                                     </div>
                                     <div className="text-xs text-muted-foreground">-</div>
                                   </div>}
-                                  {visibleColumns.ano && <div className="text-center">
+                                  {visibleColumns.year && <div className="text-center">
                                     <div className={`font-medium ${assetReturns.yearReturn >= 0 ? "text-success" : "text-destructive"}`}>
                                       {assetReturns.yearReturn >= 0 ? "+" : ""}{(assetReturns.yearReturn * 100).toFixed(2)}%
                                     </div>
                                     <div className="text-xs text-muted-foreground">-</div>
                                   </div>}
-                                  {visibleColumns.inicio && <div className="text-center">
+                                  {visibleColumns.inception && <div className="text-center">
                                     <div className={`font-medium ${assetReturns.inceptionReturn >= 0 ? "text-success" : "text-destructive"}`}>
                                       {assetReturns.inceptionReturn >= 0 ? "+" : ""}{(assetReturns.inceptionReturn * 100).toFixed(2)}%
                                     </div>
                                     <div className="text-xs text-muted-foreground">-</div>
                                   </div>}
-                                  {visibleColumns.emissor && <div className="text-left text-foreground text-xs">{item.issuer || "-"}</div>}
-                                  {visibleColumns.instituicao && <div className="text-left text-foreground text-xs">{item.institution || "-"}</div>}
-                                  {visibleColumns.nomeConta && <div className="text-left text-foreground text-xs">{item.account_name || "-"}</div>}
-                                  {visibleColumns.vencimento && <div className="text-center text-foreground text-xs">
+                                  {visibleColumns.issuer && <div className="text-left text-foreground text-xs">{item.issuer || "-"}</div>}
+                                  {visibleColumns.institution && <div className="text-left text-foreground text-xs">{item.institution || "-"}</div>}
+                                  {visibleColumns.accountName && <div className="text-left text-foreground text-xs">{item.account_name || "-"}</div>}
+                                  {visibleColumns.maturity && <div className="text-center text-foreground text-xs">
                                     {item.maturity_date ? new Date(item.maturity_date).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' }) : "-"}
                                   </div>}
-                                  {visibleColumns.moedaOrigem && <div className="text-center text-foreground text-xs">
+                                  {visibleColumns.currency && <div className="text-center text-foreground text-xs">
                                     {item.currency === 'USD' || item.currency === 'Dolar' ? (
                                       <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300">
                                         USD

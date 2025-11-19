@@ -55,14 +55,14 @@ interface CurrentMetrics {
 const TRANSLATION_BASE = 'portfolioPerformance.kpi.diversificationDialog'
 
 /**
- * Traduz uma chave de estratégia agrupada usando i18n
+ * Translates a grouped strategy key using i18n
  */
 function translateGroupedStrategy(key: GroupedStrategyKey, t: (key: string) => string): string {
   return t(`${TRANSLATION_BASE}.strategiesOrder.${key}`)
 }
 
 /**
- * Agrupa e traduz o nome de uma estratégia
+ * Groups and translates a strategy name
  */
 function groupAndTranslateStrategy(strategy: string | null, t: (key: string) => string): string {
   const groupedKey = groupStrategyName(strategy)
@@ -70,7 +70,7 @@ function groupAndTranslateStrategy(strategy: string | null, t: (key: string) => 
 }
 
 /**
- * Ordena períodos no formato "MM/YYYY" cronologicamente
+ * Sorts periods in "MM/YYYY" format chronologically
  */
 function sortPeriods(periods: string[]): string[] {
   return [...periods].sort((a, b) => {
@@ -82,7 +82,7 @@ function sortPeriods(periods: string[]): string[] {
 }
 
 /**
- * Calcula informações sobre uma estratégia (duração, status, etc.)
+ * Calculates information about a strategy (duration, status, etc.)
  */
 function calculateStrategyInfo(
   strategy: string,

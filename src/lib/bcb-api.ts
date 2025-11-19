@@ -7,6 +7,7 @@ import tBondData from '../data/t-bond-historical.json';
 import ibovData from '../data/ibov-historical.json';
 import goldData from '../data/gold-historical.json';
 import btcData from '../data/btc-historical.json';
+import irfmData from '../data/irfm-historical.json';
 import ptaxRawData from '../data/ptax-raw-historical.json';
 
 interface RateData {
@@ -131,6 +132,33 @@ export const fetchBTCPrices = (startDate: string, endDate: string) => {
     return filterDataByDateRange(btcData, startDate, endDate);
   } catch (error) {
     console.error('Error fetching BTC prices:', error);
+    return [];
+  }
+};
+
+/**
+ * Fetches IRF-M (Brazilian fixed-rate bond index) monthly rates within a date range
+ */
+export const fetchIRFMRates = (startDate: string, endDate: string) => {
+  try {
+    return filterDataByDateRange(irfmData, startDate, endDate);
+  } catch (error) {
+    console.error('Error fetching IRF-M rates:', error);
+    return [];
+  }
+};
+
+/**
+ * Fetches IFIX (Brazilian real estate index) monthly rates within a date range
+ * Note: IFIX data may not be available, returns empty array if not found
+ */
+export const fetchIFIXRates = (startDate: string, endDate: string) => {
+  try {
+    // IFIX data file doesn't exist yet, return empty array
+    // This can be implemented when IFIX data becomes available
+    return [];
+  } catch (error) {
+    console.error('Error fetching IFIX rates:', error);
     return [];
   }
 };

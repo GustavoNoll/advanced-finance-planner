@@ -9,6 +9,8 @@ import {
   fetchIBOVRates,
   fetchGoldPrices,
   fetchBTCPrices,
+  fetchIRFMRates,
+  fetchIFIXRates,
 } from '@/lib/bcb-api'
 import { calculateCompoundedRates } from '@/lib/financial-math'
 
@@ -354,6 +356,24 @@ export const STRATEGY_COLORS_SOFT: Record<GroupedStrategyKey, string> = {
   others: 'hsl(210 16% 58%)',             // Default gray
 }
 
+const GROUPED_STRATEGY_BENCHMARK: Record<GroupedStrategyKey, BenchmarkType> = {
+  postFixedLiquidity: 'CDI',
+  postFixed: 'CDI',
+  inflation: 'IPCA',
+  preFixed: 'IRF-M',
+  multimarket: 'CDI',
+  realEstate: 'IFIX',
+  stocks: 'IBOV',
+  stocksLongBias: 'IBOV',
+  privateEquity: 'CDI',
+  foreignFixedIncome: 'T-Bond',
+  foreignStocks: 'SP500',
+  coe: 'CDI',
+  gold: 'Gold',
+  crypto: 'BTC',
+  others: 'CDI',
+}
+
 /**
  * Obtém a cor de uma estratégia agrupada
  * 
@@ -375,14 +395,24 @@ export function getStrategyOrder(key: GroupedStrategyKey): number {
   return STRATEGY_ORDER.indexOf(key)
 }
 
+export function getStrategyBenchmarkLabelByKey(
+  key: GroupedStrategyKey,
+  locale: 'pt-BR' | 'en-US' = 'pt-BR'
+): string {
+  const benchmarkType = GROUPED_STRATEGY_BENCHMARK[key] || 'CDI'
+  const benchmarkName = getBenchmarkName(benchmarkType, locale)
+  const prefix = benchmarkType === 'CDI' ? '%' : '±'
+  return `${prefix} ${benchmarkName}`
+}
+
 export interface BenchmarkData {
   name: string
   nameEn: string
-  monthReturn: number
-  yearReturn: number
-  sixMonthsReturn: number
-  twelveMonthsReturn: number
-  inceptionReturn: number
+  monthReturn: number | null
+  yearReturn: number | null
+  sixMonthsReturn: number | null
+  twelveMonthsReturn: number | null
+  inceptionReturn: number | null
 }
 
 /**
@@ -502,6 +532,20 @@ function fetchBenchmarkData(
       }))
     }
     
+    case 'IRF-M': {
+      return fetchIRFMRates(startDate, endDate).map(item => ({
+        date: item.date,
+        return: item.monthlyRate / 100, // IRF-M já vem em percentual
+      }))
+    }
+    
+    case 'IFIX': {
+      return fetchIFIXRates(startDate, endDate).map(item => ({
+        date: item.date,
+        return: item.monthlyRate / 100, // IFIX já vem em percentual
+      }))
+    }
+    
     default:
       return []
   }
@@ -545,7 +589,43 @@ function getBenchmarkName(benchmarkType: BenchmarkType, locale: 'pt-BR' | 'en-US
 }
 
 /**
+ * Obtém o benchmark correto para uma estratégia agrupada baseado no currency
+ * Esta função centraliza a lógica de seleção de benchmark por currency
+ */
+function getBenchmarkForGroupedStrategy(
+  groupedKey: GroupedStrategyKey,
+  currency: CurrencyCode
+): BenchmarkType {
+  // Para estratégias que têm benchmarks diferentes por currency, usar o mapeamento do padrão
+  const strategyPattern = STRATEGY_PATTERNS.find(pattern => pattern.groupedKey === groupedKey)
+  
+  if (strategyPattern) {
+    return strategyPattern.benchmark[currency]
+  }
+  
+  // Fallback para o mapeamento padrão
+  const defaultBenchmark = GROUPED_STRATEGY_BENCHMARK[groupedKey] || 'CDI'
+  
+  // Se o benchmark padrão não varia por currency, retornar direto
+  // Caso contrário, usar o padrão do currency
+  if (defaultBenchmark === 'IFIX' && currency !== 'BRL') {
+    return 'T-Bond' // IFIX só existe para BRL, usar T-Bond para USD/EUR
+  }
+  
+  if (defaultBenchmark === 'IRF-M' && currency !== 'BRL') {
+    return 'T-Bond' // IRF-M só existe para BRL, usar T-Bond para USD/EUR
+  }
+  
+  if (defaultBenchmark === 'IBOV' && currency !== 'BRL') {
+    return 'SP500' // IBOV só existe para BRL, usar SP500 para USD/EUR
+  }
+  
+  return defaultBenchmark
+}
+
+/**
  * Calcula os retornos do benchmark para os mesmos períodos da estratégia
+ * Esta função pode receber tanto o nome da estratégia original quanto o groupedKey
  */
 export function calculateBenchmarkReturns(
   strategyName: string,
@@ -569,13 +649,10 @@ export function calculateBenchmarkReturns(
   const endDate = formatDateForBCB(periodToDate(lastPeriod))
   
   // Determina o tipo de benchmark usando match flexível
-  console.log('strategyName', strategyName)
   const benchmarkType: BenchmarkType = findBenchmarkForStrategy(strategyName, currency)
-  console.log('benchmarkType', benchmarkType)
   
   // Busca os dados históricos do benchmark
   const benchmarkData = fetchBenchmarkData(benchmarkType, startDate, endDate)
-  console.log('benchmarkData', benchmarkData)
   
   if (benchmarkData.length === 0) return null
   
@@ -627,6 +704,137 @@ export function calculateBenchmarkReturns(
   
   const benchmarkName = getBenchmarkName(benchmarkType, locale)
   
+  return {
+    name: `± ${benchmarkName}`,
+    nameEn: `± ${getBenchmarkName(benchmarkType, 'en-US')}`,
+    monthReturn: lastMonthReturn * 100, // Converte para percentual
+    yearReturn: yearReturn * 100,
+    sixMonthsReturn: sixMonthsReturn * 100,
+    twelveMonthsReturn: twelveMonthsReturn * 100,
+    inceptionReturn: inceptionReturn * 100,
+  }
+}
+
+/**
+ * Calcula os retornos do benchmark usando o groupedKey diretamente
+ * Esta função centraliza toda a lógica de determinação de benchmark baseado no currency
+ * 
+ * @param groupedKey - A chave da estratégia agrupada (ex: 'realEstate', 'preFixed')
+ * @param currency - A moeda para determinar qual benchmark usar (BRL usa IFIX, USD usa T-Bond, etc.)
+ * @param periods - Array de períodos no formato "MM/YYYY"
+ * @param locale - Locale para tradução do nome do benchmark
+ * @returns Dados do benchmark ou null se não houver dados
+ */
+export function calculateBenchmarkReturnsByGroupedKey(
+  groupedKey: GroupedStrategyKey,
+  currency: CurrencyCode,
+  periods: string[],
+  locale: 'pt-BR' | 'en-US' = 'pt-BR'
+): BenchmarkData | null {
+  // Determina o tipo de benchmark baseado no groupedKey e currency
+  const benchmarkType: BenchmarkType = getBenchmarkForGroupedStrategy(groupedKey, currency)
+  const benchmarkName = getBenchmarkName(benchmarkType, locale)
+  
+  // Sempre retorna pelo menos o nome do benchmark, mesmo sem dados
+  if (periods.length === 0) {
+    return {
+      name: `± ${benchmarkName}`,
+      nameEn: `± ${getBenchmarkName(benchmarkType, 'en-US')}`,
+      monthReturn: null,
+      yearReturn: null,
+      sixMonthsReturn: null,
+      twelveMonthsReturn: null,
+      inceptionReturn: null,
+    }
+  }
+  
+  // Ordena os períodos cronologicamente
+  const sortedPeriods = [...periods].sort((a, b) => {
+    const dateA = periodToDate(a)
+    const dateB = periodToDate(b)
+    return dateA.getTime() - dateB.getTime()
+  })
+  
+  const firstPeriod = sortedPeriods[0]
+  const lastPeriod = sortedPeriods[sortedPeriods.length - 1]
+  
+  const startDate = formatDateForBCB(periodToDate(firstPeriod))
+  const endDate = formatDateForBCB(periodToDate(lastPeriod))
+  
+  // Busca os dados históricos do benchmark
+  const benchmarkData = fetchBenchmarkData(benchmarkType, startDate, endDate)
+  
+  // Se não houver dados, retorna o nome do benchmark com retornos null
+  if (benchmarkData.length === 0) {
+    return {
+      name: `± ${benchmarkName}`,
+      nameEn: `± ${getBenchmarkName(benchmarkType, 'en-US')}`,
+      monthReturn: null,
+      yearReturn: null,
+      sixMonthsReturn: null,
+      twelveMonthsReturn: null,
+      inceptionReturn: null,
+    }
+  }
+  
+  // Agrupa retornos por período (MM/YYYY)
+  const returnsByPeriod = new Map<string, number[]>()
+  
+  benchmarkData.forEach(item => {
+    const periodKey = `${String(item.date.getMonth() + 1).padStart(2, '0')}/${item.date.getFullYear()}`
+    if (!returnsByPeriod.has(periodKey)) {
+      returnsByPeriod.set(periodKey, [])
+    }
+    returnsByPeriod.get(periodKey)!.push(item.return)
+  })
+  
+  // Calcula retorno médio por período
+  const periodReturns = sortedPeriods.map(period => {
+    const periodReturnsList = returnsByPeriod.get(period) || []
+    if (periodReturnsList.length === 0) return 0
+    return periodReturnsList.reduce((a, b) => a + b, 0) / periodReturnsList.length
+  })
+  
+  // Se não houver retornos calculados, retorna o nome do benchmark com retornos null
+  if (periodReturns.length === 0) {
+    return {
+      name: `± ${benchmarkName}`,
+      nameEn: `± ${getBenchmarkName(benchmarkType, 'en-US')}`,
+      monthReturn: null,
+      yearReturn: null,
+      sixMonthsReturn: null,
+      twelveMonthsReturn: null,
+      inceptionReturn: null,
+    }
+  }
+  
+  // Calcula os retornos para diferentes janelas de tempo
+  const lastMonthReturn = periodReturns[periodReturns.length - 1] || 0
+  
+  // Retornos do último ano (últimos 12 períodos ou todos se houver menos)
+  const lastYearReturns = periodReturns.slice(-12)
+  const yearReturn = lastYearReturns.length > 0
+    ? calculateCompoundedRates(lastYearReturns) // Já está em decimal (0.05 para 5%)
+    : 0
+  
+  // Retornos dos últimos 6 meses
+  const last6Returns = periodReturns.slice(-6)
+  const sixMonthsReturn = last6Returns.length > 0
+    ? calculateCompoundedRates(last6Returns)
+    : 0
+  
+  // Retornos dos últimos 12 meses
+  const last12Returns = periodReturns.slice(-12)
+  const twelveMonthsReturn = last12Returns.length > 0
+    ? calculateCompoundedRates(last12Returns)
+    : 0
+  
+  // Retorno desde o início (inception)
+  const inceptionReturn = periodReturns.length > 0
+    ? calculateCompoundedRates(periodReturns)
+    : 0
+  
+  // benchmarkName já foi declarado no início da função
   return {
     name: `± ${benchmarkName}`,
     nameEn: `± ${getBenchmarkName(benchmarkType, 'en-US')}`,

@@ -1733,6 +1733,111 @@ export const enUS = {
   portfolioPerformance: {
     selectAll: "Select All",
     newRecord: "New Record",
+    issuerExposure: {
+      title: "Issuer Exposure",
+      limitDescription: "Concentration limit: {{amount}} per issuer",
+      legend: {
+        insideLimit: "Within limit",
+        aboveLimit: "Above limit"
+      },
+      noData: "No data available",
+      noMaturities: "N/A",
+      maturityRange: "{{start}} ... {{end}} (+{{additional}} more)",
+      limitReferenceLabel: "Limit {{symbol}} {{shortAmount}}",
+      tooltip: {
+        exposure: "Exposure: {{value}}",
+        assets: "Assets: {{count}}",
+        maturitiesTitle: "Maturities",
+        limitExceeded: "Above the limit by: {{value}}"
+      }
+    },
+    performanceChart: {
+      viewModes: {
+        returns: "Accumulated Return",
+        patrimony: "Your Patrimony",
+        growth: "Growth"
+      },
+      switchView: "Switch",
+      indicators: "Indicators",
+      selectIndicators: "Select Indicators",
+      target: "Target",
+      targetNotAvailable: "(Not available)",
+      periodButtons: {
+        month: "Month",
+        year: "Year",
+        twelveMonths: "12M",
+        all: "All",
+        custom: "Custom"
+      },
+      customPeriod: {
+        startPeriod: "Start Period",
+        endPeriod: "End Period",
+        selectStart: "Select start period",
+        selectEnd: "Select end period"
+      },
+      growthView: {
+        showAll: "Show All",
+        generatedIncome: "Generated Income",
+        initialPatrimony: "Initial Patrimony",
+        totalGrowth: "Total Growth",
+        movement: "Movement:",
+        financialGain: "Financial Gain:",
+        finalPatrimony: "Final Patrimony:"
+      },
+      tooltips: {
+        portfolio: "Portfolio",
+        cdi: "CDI",
+        target: "Target",
+        ipca: "IPCA",
+        appliedPatrimony: "Applied Patrimony",
+        patrimony: "Patrimony"
+      },
+      metrics: {
+        snowballEffect: "Snowball Effect",
+        snowballDescription: "over applied patrimony",
+        averageGrowth: "Average Growth",
+        perPeriod: "per period",
+        totalGrowthPeriod: "Total Growth in Period",
+        lastGeneratedIncome: "Last Generated Income",
+        incomePercentage: "% of patrimony",
+        averageIncome12M: "Average Income (12M)",
+        total: "Total:",
+        vsTarget: "vs Target",
+      meta: "Target",
+        aboveTarget: "above",
+        belowTarget: "below",
+        ofTarget: "of target",
+        vsCDI: "vs CDI",
+        ofCDIReturn: "of CDI return",
+        vsIPCA: "vs IPCA",
+        aboveInflation: "above",
+        belowInflation: "below",
+        ofInflation: "of inflation"
+      }
+    },
+    assetReturnsTable: {
+      title: "Asset Returns",
+      columnsButton: "Columns",
+      dropdownLabel: "Show Columns",
+      columns: {
+        asset: "Asset",
+        allocation: "Allocation / Qty.",
+        grossBalance: "Gross Balance",
+        month: "Month",
+        year: "Year",
+        inception: "Inception",
+        issuer: "Issuer",
+        institution: "Institution",
+        accountName: "Account Name",
+        maturity: "Maturity",
+        currency: "Source Currency"
+      },
+      summary: {
+        balance: "Balance",
+        rentability: "Return",
+        rentabilityShort: "Ret."
+      }
+    },
     filters: {
       all: "All",
       allPeriods: "All periods",
@@ -2062,7 +2167,7 @@ export const enUS = {
       noPreviousMonth: "No previous month to compare",
       vsPreviousMonth: "vs previous month",
       monthlyYield: "Monthly Yield",
-      vsTarget: "vs Target: --",
+      vsTarget: "vs Target: ",
       diversification: "Diversification",
       assetsInPortfolio: "Assets in portfolio",
       nextMaturity: "Next Maturity",
@@ -2144,7 +2249,8 @@ export const enUS = {
         total: "Total Value",
         avgRate: "Average Rate",
         byStrategy: "By Strategy",
-        emptyFor: "No maturity data available for",
+        emptyFor: "No maturity data available for {{assetClass}}",
+        noMaturityData: "No maturity data available",
         assetClasses: {
           postFixed: "Post Fixed",
           inflation: "Inflation",
@@ -2196,43 +2302,15 @@ export const enUS = {
           others: "Others"
         }
       },
-      assetReturnsTable: {
-        title: "Asset Returns",
-        columns: "Columns",
-        showColumns: "Show Columns",
-        allocation: "Allocation / Qty.",
-        grossBalance: "Gross Balance",
-        month: "Month",
-        year: "Year",
-        inception: "Inception",
-        issuer: "Issuer",
-        institution: "Institution",
-        accountName: "Account Name",
-        maturity: "Maturity",
-        originalCurrency: "Original Currency",
-        asset: "Asset",
-        balance: "Balance",
-        rentability: "Rentability",
-        benchmark: {
-          postFixedLiquidity: "% CDI",
-          postFixed: "% CDI",
-          inflation: "± IPCA",
-          preFixed: "± IRF-M",
-          multimarket: "% CDI",
-          realEstate: "± IFIX",
-          stocks: "± IBOV",
-          stocksLongBias: "± IBOV",
-          privateEquity: "% CDI",
-          foreignFixedIncome: "± T-Bond",
-          foreignStocks: "± S&P500",
-          coe: "% CDI",
-          gold: "± Gold",
-          crypto: "± BTC",
-          others: "% CDI"
-        },
-        rentability: "Rent.",
-        emptyValue: "-",
-        others: "Others"
+      maturityDialog: {
+        title: "Maturity Schedule",
+        description: "Upcoming portfolio security maturities",
+        totalNext12Months: "Total Due (12 months)",
+        titlesWithMaturity: "Securities with Maturity",
+        maturitiesByYear: "Maturities by Year",
+        chartValueLabel: "Value",
+        noFutureMaturities: "No future maturities found",
+        upcomingMaturities: "Upcoming Maturities"
       }
     }
   },

@@ -5,339 +5,423 @@ import { Checkbox } from "@/components/ui/checkbox"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar, Cell, LabelList } from 'recharts'
 import { TrendingUp, Settings, ArrowLeftRight, Wallet, BarChart3, Calendar as CalendarIcon } from "lucide-react"
-import { useState, useMemo } from "react"
+import { useState, useMemo, useCallback } from "react"
+import { useTranslation } from "react-i18next"
 import type { ConsolidatedPerformance } from "@/types/financial"
 import { fetchIPCARates, fetchCDIRates } from "@/lib/bcb-api"
 import { useCurrency } from "@/contexts/CurrencyContext"
+import { calculateCompoundedRates, yearlyReturnRateToMonthlyReturnRate } from "@/lib/financial-math"
 
 interface PerformanceChartProps {
   consolidatedData: ConsolidatedPerformance[]
   targetReturnIpcaPlus?: string
 }
 
-// Helper function to convert competencia to Date
-const competenciaToDate = (competencia: string): Date => {
-  const [month, year] = competencia.split('/').map(Number)
+type ViewMode = 'rentabilidade' | 'patrimonio' | 'crescimento'
+type PeriodType = 'month' | 'year' | '12months' | 'all' | 'custom'
+
+interface ConsolidatedByPeriod {
+  period: string
+  finalPatrimony: number
+  initialPatrimony: number
+  movement: number
+  financialGain: number
+  taxes: number
+  yield: number
+}
+
+interface ChartDataPoint {
+  name: string
+  accumulatedReturn: number
+  monthlyReturn: number
+  period: string
+  cdiReturn?: number | null
+  targetReturn?: number | null
+  ipcaReturn?: number | null
+}
+
+interface PatrimonyDataPoint {
+  name: string
+  appliedPatrimony: number
+  currentPatrimony: number
+  period: string
+}
+
+interface GrowthDataPoint {
+  name: string
+  generatedIncome: number
+  basePatrimony: number
+  growth: number
+  negativeGrowth: number
+  totalGrowth: number
+  growthPercentage: number
+  finalPatrimony: number
+  initialPatrimony: number
+  movement: number
+  financialGain: number
+  period: string
+}
+
+/**
+ * Converts a period string (MM/YYYY) to a Date object
+ */
+function periodToDate(period: string): Date {
+  const [month, year] = period.split('/').map(Number)
   return new Date(year, month - 1)
 }
 
-// Format competencia display
-const formatCompetenciaDisplay = (competencia: string) => {
-  const [month, year] = competencia.split('/')
-  const monthNames = [
-    'Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun',
-    'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'
-  ]
-  return `${monthNames[parseInt(month) - 1]}/${year.slice(-2)}`
+/**
+ * Formats a period string for display using i18n month names
+ */
+function formatPeriodDisplay(period: string, monthNames: string[]): string {
+  const [month, year] = period.split('/')
+  const monthIndex = parseInt(month) - 1
+  const fallbackMonths = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
+  const months = monthNames?.length === 12 ? monthNames : fallbackMonths
+  return `${months[monthIndex] || fallbackMonths[monthIndex]}/${year.slice(-2)}`
 }
 
+/**
+ * Determines the original currency from a currency string
+ */
+function getOriginalCurrency(currency?: string | null): 'USD' | 'BRL' {
+  return currency === 'USD' || currency === 'Dolar' ? 'USD' : 'BRL'
+}
+
+/**
+ * Performance chart component displaying portfolio returns, patrimony, and growth over time
+ * Supports multiple view modes and period filters with market indicators
+ */
 export function PerformanceChart({ consolidatedData, targetReturnIpcaPlus }: PerformanceChartProps) {
+  const { t } = useTranslation()
   const { convertValue, adjustReturnWithFX, formatCurrency } = useCurrency()
-  const [selectedPeriod, setSelectedPeriod] = useState<'month' | 'year' | '12months' | 'all' | 'custom'>('12months')
-  const [customStartCompetencia, setCustomStartCompetencia] = useState<string>('')
-  const [customEndCompetencia, setCustomEndCompetencia] = useState<string>('')
+  const [selectedPeriod, setSelectedPeriod] = useState<PeriodType>('12months')
+  const [customStartPeriod, setCustomStartPeriod] = useState<string>('')
+  const [customEndPeriod, setCustomEndPeriod] = useState<string>('')
   const [showCustomSelector, setShowCustomSelector] = useState(false)
   const [showIndicators, setShowIndicators] = useState(false)
-  const [viewMode, setViewMode] = useState<'rentabilidade' | 'patrimonio' | 'crescimento'>('rentabilidade')
-  const [showOnlyRendaGerada, setShowOnlyRendaGerada] = useState(false)
+  const [viewMode, setViewMode] = useState<ViewMode>('rentabilidade')
+  const [showOnlyGeneratedIncome, setShowOnlyGeneratedIncome] = useState(false)
   const [selectedIndicators, setSelectedIndicators] = useState({
     cdi: false,
     target: true,
     ipca: true
   })
 
-  // Consolidate data by competencia (sum patrimônio, weighted average rendimento)
-  const consolidatedByCompetencia = useMemo(() => {
-    const competenciaMap = new Map<string, {
-      competencia: string
-      patrimonioFinal: number
-      patrimonioInicial: number
-      movimentacao: number
-      ganhoFinanceiro: number
-      impostos: number
-      rendimentoSum: number
-      patrimonioForWeightedAvg: number
+  // Get month names from i18n
+  const monthNames = useMemo(() => {
+    return t('portfolioPerformance.months.short', { returnObjects: true }) as string[]
+  }, [t])
+
+  /**
+   * Consolidate data by period (sum patrimony, weighted average yield)
+   */
+  const consolidatedByPeriod = useMemo(() => {
+    const periodMap = new Map<string, {
+      period: string
+      finalPatrimony: number
+      initialPatrimony: number
+      movement: number
+      financialGain: number
+      taxes: number
+      yieldSum: number
+      patrimonyForWeightedAvg: number
     }>()
 
     consolidatedData.forEach(item => {
-      const competencia = item.period || ''
-      if (!competencia) return
+      const period = item.period || ''
+      if (!period) return
 
-      if (!competenciaMap.has(competencia)) {
-        competenciaMap.set(competencia, {
-          competencia,
-          patrimonioFinal: 0,
-          patrimonioInicial: 0,
-          movimentacao: 0,
-          ganhoFinanceiro: 0,
-          impostos: 0,
-          rendimentoSum: 0,
-          patrimonioForWeightedAvg: 0
+      if (!periodMap.has(period)) {
+        periodMap.set(period, {
+          period,
+          finalPatrimony: 0,
+          initialPatrimony: 0,
+          movement: 0,
+          financialGain: 0,
+          taxes: 0,
+          yieldSum: 0,
+          patrimonyForWeightedAvg: 0
         })
       }
 
-      const consolidated = competenciaMap.get(competencia)!
-      const originalCurrency = (item.currency === 'USD' || item.currency === 'Dolar') ? 'USD' : 'BRL'
+      const consolidated = periodMap.get(period)!
+      const originalCurrency = getOriginalCurrency(item.currency)
       
-      const patrimonioFinalConvertido = convertValue(
+      const finalPatrimonyConverted = convertValue(
         Number(item.final_assets || 0),
-        competencia,
+        period,
         originalCurrency
       )
-      const patrimonioInicialConvertido = convertValue(
+      const initialPatrimonyConverted = convertValue(
         Number(item.initial_assets || 0),
-        competencia,
+        period,
         originalCurrency
       )
-      const movimentacaoConvertida = convertValue(
+      const movementConverted = convertValue(
         Number(item.movement || 0),
-        competencia,
+        period,
         originalCurrency
       )
-      const ganhoFinanceiroConvertido = convertValue(
+      const financialGainConverted = convertValue(
         Number(item.financial_gain || 0),
-        competencia,
+        period,
         originalCurrency
       )
-      const impostosConvertidos = convertValue(
+      const taxesConverted = convertValue(
         Number(item.taxes || 0),
-        competencia,
+        period,
         originalCurrency
       )
 
-      consolidated.patrimonioFinal += patrimonioFinalConvertido
-      consolidated.patrimonioInicial += patrimonioInicialConvertido
-      consolidated.movimentacao += movimentacaoConvertida
-      consolidated.ganhoFinanceiro += ganhoFinanceiroConvertido
-      consolidated.impostos += impostosConvertidos
+      consolidated.finalPatrimony += finalPatrimonyConverted
+      consolidated.initialPatrimony += initialPatrimonyConverted
+      consolidated.movement += movementConverted
+      consolidated.financialGain += financialGainConverted
+      consolidated.taxes += taxesConverted
 
-      // For weighted average rendimento - with FX adjustment
-      const rendimentoAjustado = adjustReturnWithFX(
+      // For weighted average yield - with FX adjustment
+      const adjustedYield = adjustReturnWithFX(
         Number(item.yield || 0),
-        competencia,
+        period,
         originalCurrency
       )
 
-      consolidated.rendimentoSum += rendimentoAjustado * patrimonioFinalConvertido
-      consolidated.patrimonioForWeightedAvg += patrimonioFinalConvertido
+      consolidated.yieldSum += adjustedYield * finalPatrimonyConverted
+      consolidated.patrimonyForWeightedAvg += finalPatrimonyConverted
     })
 
-    return Array.from(competenciaMap.values()).map(item => ({
-      competencia: item.competencia,
-      patrimonioFinal: item.patrimonioFinal,
-      patrimonioInicial: item.patrimonioInicial,
-      movimentacao: item.movimentacao,
-      ganhoFinanceiro: item.ganhoFinanceiro,
-      impostos: item.impostos,
-      rendimento: item.patrimonioForWeightedAvg > 0 ? item.rendimentoSum / item.patrimonioForWeightedAvg : 0
+    return Array.from(periodMap.values()).map(item => ({
+      period: item.period,
+      finalPatrimony: item.finalPatrimony,
+      initialPatrimony: item.initialPatrimony,
+      movement: item.movement,
+      financialGain: item.financialGain,
+      taxes: item.taxes,
+      yield: item.patrimonyForWeightedAvg > 0 ? item.yieldSum / item.patrimonyForWeightedAvg : 0
     })).sort((a, b) => {
-      const dateA = competenciaToDate(a.competencia)
-      const dateB = competenciaToDate(b.competencia)
+      const dateA = periodToDate(a.period)
+      const dateB = periodToDate(b.period)
       return dateA.getTime() - dateB.getTime()
     })
   }, [consolidatedData, convertValue, adjustReturnWithFX])
 
-  // Get available competencias for custom selector
-  const availableCompetencias = useMemo(() => {
-    return [...new Set(consolidatedByCompetencia.map(item => item.competencia))]
+  /**
+   * Get available periods for custom selector, sorted chronologically
+   */
+  const availablePeriods = useMemo(() => {
+    return [...new Set(consolidatedByPeriod.map(item => item.period))]
       .sort((a, b) => {
-        const dateA = competenciaToDate(a)
-        const dateB = competenciaToDate(b)
+        const dateA = periodToDate(a)
+        const dateB = periodToDate(b)
         return dateA.getTime() - dateB.getTime()
       })
-  }, [consolidatedByCompetencia])
+  }, [consolidatedByPeriod])
 
-  // Filter data based on selected period
-  const getFilteredData = () => {
-    if (consolidatedByCompetencia.length === 0) return []
 
-    let filteredData = consolidatedByCompetencia
+  /**
+   * Calculates accumulated returns with compound interest
+   * Adds a zero starting point one month before the first data point
+   */
+  const calculateAccumulatedReturns = useCallback((data: ConsolidatedByPeriod[]): ChartDataPoint[] => {
+    if (data.length === 0) return []
+
+    const result: ChartDataPoint[] = []
+    let accumulated = 0 // Start at 0%
+
+    // Add zero point one month before the first period
+    if (data.length > 0) {
+      const [firstMonth, firstYear] = data[0].period.split('/').map(Number)
+      const firstDate = new Date(firstYear, firstMonth - 1, 1)
+      const previousMonth = new Date(firstDate)
+      previousMonth.setMonth(previousMonth.getMonth() - 1)
+
+      const previousPeriod = `${String(previousMonth.getMonth() + 1).padStart(2, '0')}/${previousMonth.getFullYear()}`
+      result.push({
+        name: formatPeriodDisplay(previousPeriod, monthNames),
+        accumulatedReturn: 0,
+        monthlyReturn: 0,
+        period: previousPeriod
+      })
+    }
+
+    // Calculate compound accumulated returns
+    data.forEach((item) => {
+      const monthlyReturn = item.yield || 0
+      // Use financial-math function for compound interest calculation
+      // For accumulated returns, we need to compound: (1 + accumulated) * (1 + monthlyReturn) - 1
+      // calculateCompoundedRates calculates: (1 + rate1) * (1 + rate2) * ... - 1
+      // So we pass the accumulated value as a rate: accumulated is already a return, so we use it directly
+      accumulated = calculateCompoundedRates([accumulated, monthlyReturn])
+
+      result.push({
+        name: formatPeriodDisplay(item.period, monthNames),
+        accumulatedReturn: accumulated * 100,
+        monthlyReturn: monthlyReturn * 100,
+        period: item.period
+      })
+    })
+
+    return result
+  }, [monthNames])
+
+  /**
+   * Calculates patrimony data (applied patrimony and current patrimony)
+   * Applied patrimony = initial patrimony + cumulative movements
+   */
+  const calculatePatrimonioData = useCallback((data: ConsolidatedByPeriod[]): PatrimonyDataPoint[] => {
+    if (data.length === 0) return []
+
+    const result: PatrimonyDataPoint[] = []
+    let cumulativeMovement = 0
+
+    // Add zero point one month before the first period
+    if (data.length > 0) {
+      const [firstMonth, firstYear] = data[0].period.split('/').map(Number)
+      const firstDate = new Date(firstYear, firstMonth - 1, 1)
+      const previousMonth = new Date(firstDate)
+      previousMonth.setMonth(previousMonth.getMonth() - 1)
+
+      const initialPatrimony = data[0].initialPatrimony || 0
+      const previousPeriod = `${String(previousMonth.getMonth() + 1).padStart(2, '0')}/${previousMonth.getFullYear()}`
+
+      result.push({
+        name: formatPeriodDisplay(previousPeriod, monthNames),
+        appliedPatrimony: initialPatrimony,
+        currentPatrimony: initialPatrimony,
+        period: previousPeriod
+      })
+    }
+
+    // Calculate patrimony for each month
+    data.forEach((item) => {
+      // Applied Patrimony = Initial Patrimony + cumulative movements
+      cumulativeMovement += item.movement || 0
+      const appliedPatrimony = (data[0]?.initialPatrimony || 0) + cumulativeMovement
+      const currentPatrimony = item.finalPatrimony || 0
+
+      result.push({
+        name: formatPeriodDisplay(item.period, monthNames),
+        appliedPatrimony,
+        currentPatrimony,
+        period: item.period
+      })
+    })
+
+    return result
+  }, [monthNames])
+
+  // Memoize filtered data and calculated datasets
+  const filteredData = useMemo(() => {
+    if (consolidatedByPeriod.length === 0) return []
+
+    let filtered: ConsolidatedByPeriod[] = consolidatedByPeriod
 
     switch (selectedPeriod) {
       case 'month':
-        filteredData = consolidatedByCompetencia.slice(-1)
+        filtered = consolidatedByPeriod.slice(-1)
         break
       case 'year':
-        if (consolidatedByCompetencia.length > 0) {
-          const mostRecentCompetencia = consolidatedByCompetencia[consolidatedByCompetencia.length - 1].competencia
-          const mostRecentYear = mostRecentCompetencia.split('/')[1]
-          filteredData = consolidatedByCompetencia.filter(item => {
-            const itemYear = item.competencia.split('/')[1]
+        if (consolidatedByPeriod.length > 0) {
+          const mostRecentPeriod = consolidatedByPeriod[consolidatedByPeriod.length - 1].period
+          const mostRecentYear = mostRecentPeriod.split('/')[1]
+          filtered = consolidatedByPeriod.filter(item => {
+            const itemYear = item.period.split('/')[1]
             return itemYear === mostRecentYear
           })
         }
         break
       case '12months':
-        filteredData = consolidatedByCompetencia.slice(-12)
+        filtered = consolidatedByPeriod.slice(-12)
         break
       case 'all':
-        filteredData = consolidatedByCompetencia
+        filtered = consolidatedByPeriod
         break
       case 'custom':
-        if (customStartCompetencia && customEndCompetencia) {
-          filteredData = consolidatedByCompetencia.filter(item => {
-            const itemDate = competenciaToDate(item.competencia)
-            const startDate = competenciaToDate(customStartCompetencia)
-            const endDate = competenciaToDate(customEndCompetencia)
+        if (customStartPeriod && customEndPeriod) {
+          filtered = consolidatedByPeriod.filter(item => {
+            const itemDate = periodToDate(item.period)
+            const startDate = periodToDate(customStartPeriod)
+            const endDate = periodToDate(customEndPeriod)
             return itemDate >= startDate && itemDate <= endDate
           })
         }
         break
     }
 
-    return filteredData
-  }
+    return filtered
+  }, [consolidatedByPeriod, selectedPeriod, customStartPeriod, customEndPeriod])
 
-  const filteredData = getFilteredData()
+  const chartData = useMemo(() => calculateAccumulatedReturns(filteredData), [filteredData, calculateAccumulatedReturns])
+  const patrimonioData = useMemo(() => calculatePatrimonioData(filteredData), [filteredData, calculatePatrimonioData])
 
-  // Calculate accumulated returns with compound interest
-  const calculateAccumulatedReturns = (data: typeof filteredData) => {
+  /**
+   * Calculates growth data showing patrimony volume with total growth
+   * Includes generated income based on monthly target rate
+   */
+  const calculateGrowthData = useCallback((data: ConsolidatedByPeriod[]): GrowthDataPoint[] => {
     if (data.length === 0) return []
 
-    const result = []
-    let accumulated = 0 // Start at 0%
-
-    // Add zero point one month before the first competencia
-    if (data.length > 0) {
-      const [firstMonth, firstYear] = data[0].competencia.split('/').map(Number)
-      const firstDate = new Date(firstYear, firstMonth - 1, 1)
-      const previousMonth = new Date(firstDate)
-      previousMonth.setMonth(previousMonth.getMonth() - 1)
-
-      result.push({
-        name: formatCompetenciaDisplay(`${String(previousMonth.getMonth() + 1).padStart(2, '0')}/${previousMonth.getFullYear()}`),
-        retornoAcumulado: 0,
-        retornoMensal: 0,
-        competencia: `${String(previousMonth.getMonth() + 1).padStart(2, '0')}/${previousMonth.getFullYear()}`
-      })
-    }
-
-    // Calculate compound accumulated returns
-    data.forEach((item) => {
-      const monthlyReturn = item.rendimento || 0
-      // Compound interest formula: (1 + accumulated) * (1 + monthly_return) - 1
-      accumulated = (1 + accumulated) * (1 + monthlyReturn) - 1
-
-      result.push({
-        name: formatCompetenciaDisplay(item.competencia),
-        retornoAcumulado: accumulated * 100,
-        retornoMensal: monthlyReturn * 100,
-        competencia: item.competencia
-      })
-    })
-
-    return result
-  }
-
-  const chartData = calculateAccumulatedReturns(filteredData)
-
-  // Calculate patrimônio data (patrimônio aplicado e patrimônio atual)
-  const calculatePatrimonioData = (data: typeof filteredData) => {
-    if (data.length === 0) return []
-
-    const result = []
-    let cumulativeMovimentacao = 0
-
-    // Add zero point one month before the first competencia
-    if (data.length > 0) {
-      const [firstMonth, firstYear] = data[0].competencia.split('/').map(Number)
-      const firstDate = new Date(firstYear, firstMonth - 1, 1)
-      const previousMonth = new Date(firstDate)
-      previousMonth.setMonth(previousMonth.getMonth() - 1)
-
-      const initialPatrimonio = data[0].patrimonioInicial || 0
-
-      result.push({
-        name: formatCompetenciaDisplay(`${String(previousMonth.getMonth() + 1).padStart(2, '0')}/${previousMonth.getFullYear()}`),
-        patrimonioAplicado: initialPatrimonio,
-        patrimonioAtual: initialPatrimonio,
-        competencia: `${String(previousMonth.getMonth() + 1).padStart(2, '0')}/${previousMonth.getFullYear()}`
-      })
-    }
-
-    // Calculate patrimônio for each month
-    data.forEach((item) => {
-      // Patrimônio Aplicado = Patrimônio Inicial + acumulação de todas as movimentações
-      cumulativeMovimentacao += item.movimentacao || 0
-      const patrimonioAplicado = (data[0]?.patrimonioInicial || 0) + cumulativeMovimentacao
-      const patrimonioAtual = item.patrimonioFinal || 0
-
-      result.push({
-        name: formatCompetenciaDisplay(item.competencia),
-        patrimonioAplicado,
-        patrimonioAtual,
-        competencia: item.competencia
-      })
-    })
-
-    return result
-  }
-
-  const patrimonioData = calculatePatrimonioData(filteredData)
-
-  // Calculate growth data showing patrimônio volume with total growth
-  const calculateGrowthData = (data: typeof filteredData) => {
-    if (data.length === 0) return []
-
-    // Calcular meta mensalizada do componente pré-fixado
+    // Calculate monthly target rate from pre-fixed component
     let monthlyTargetRate = 0
     if (targetReturnIpcaPlus) {
       const metaMatch = targetReturnIpcaPlus.match(/\+(\d+(?:\.\d+)?)/) || targetReturnIpcaPlus.match(/ipca_plus_(\d+)/i)
       if (metaMatch) {
         const preFixedComponent = parseFloat(metaMatch[1]) / 100
-        monthlyTargetRate = Math.pow(1 + preFixedComponent, 1/12) - 1
+        // Use financial-math function to convert yearly rate to monthly
+        monthlyTargetRate = yearlyReturnRateToMonthlyReturnRate(preFixedComponent)
       }
     }
 
-    const result = []
+    const result: GrowthDataPoint[] = []
 
     data.forEach((item) => {
-      const patrimonioInicial = item.patrimonioInicial || 0
-      const patrimonioFinal = item.patrimonioFinal || 0
-      const movimentacao = item.movimentacao || 0
-      const ganhoFinanceiro = item.ganhoFinanceiro || 0
+      const initialPatrimony = item.initialPatrimony || 0
+      const finalPatrimony = item.finalPatrimony || 0
+      const movement = item.movement || 0
+      const financialGain = item.financialGain || 0
 
-      // Renda gerada = patrimônio do mês * meta mensalizada
-      const rendaGerada = patrimonioInicial * monthlyTargetRate
+      // Generated income = patrimony of the month * monthly target rate
+      const generatedIncome = initialPatrimony * monthlyTargetRate
 
-      // Total growth = movimentação + ganho financeiro = patrimônio final - patrimônio inicial
-      const totalGrowth = patrimonioFinal - patrimonioInicial
-      const growthPercentage = patrimonioInicial > 0 ? (totalGrowth / patrimonioInicial) * 100 : 0
+      // Total growth = movement + financial gain = final patrimony - initial patrimony
+      const totalGrowth = finalPatrimony - initialPatrimony
+      const growthPercentage = initialPatrimony > 0 ? (totalGrowth / initialPatrimony) * 100 : 0
 
-      const patrimonioBaseAdjusted = Math.max(0, patrimonioInicial - rendaGerada)
+      const basePatrimonyAdjusted = Math.max(0, initialPatrimony - generatedIncome)
 
       result.push({
-        name: formatCompetenciaDisplay(item.competencia),
-        rendaGerada: rendaGerada,
-        patrimonioBase: patrimonioBaseAdjusted,
+        name: formatPeriodDisplay(item.period, monthNames),
+        generatedIncome: generatedIncome,
+        basePatrimony: basePatrimonyAdjusted,
         growth: totalGrowth >= 0 ? totalGrowth : 0,
         negativeGrowth: totalGrowth < 0 ? totalGrowth : 0,
         totalGrowth,
         growthPercentage,
-        patrimonioFinal,
-        patrimonioInicial,
-        movimentacao,
-        ganhoFinanceiro,
-        competencia: item.competencia
+        finalPatrimony,
+        initialPatrimony,
+        movement,
+        financialGain,
+        period: item.period
       })
     })
 
     return result
-  }
+  }, [targetReturnIpcaPlus, monthNames])
 
-  const growthData = calculateGrowthData(filteredData)
+  const growthData = useMemo(() => calculateGrowthData(filteredData), [filteredData, calculateGrowthData])
 
   // Get CDI and IPCA data for the period
   const marketData = useMemo(() => {
     if (filteredData.length === 0) return { cdiData: [], ipcaData: [] }
 
-    const firstCompetencia = filteredData[0]?.competencia
-    const lastCompetencia = filteredData[filteredData.length - 1]?.competencia
-    if (!firstCompetencia || !lastCompetencia) return { cdiData: [], ipcaData: [] }
+    const firstPeriod = filteredData[0]?.period
+    const lastPeriod = filteredData[filteredData.length - 1]?.period
+    if (!firstPeriod || !lastPeriod) return { cdiData: [], ipcaData: [] }
 
-    // Convert competencia to date format for fetch functions (DD/MM/YYYY)
-    const [firstMonth, firstYear] = firstCompetencia.split('/').map(Number)
-    const [lastMonth, lastYear] = lastCompetencia.split('/').map(Number)
+    // Convert period to date format for fetch functions (DD/MM/YYYY)
+    const [firstMonth, firstYear] = firstPeriod.split('/').map(Number)
+    const [lastMonth, lastYear] = lastPeriod.split('/').map(Number)
 
     const startDate = `01/${String(firstMonth).padStart(2, '0')}/${firstYear}`
     const lastDay = new Date(lastYear, lastMonth, 0).getDate()
@@ -347,40 +431,40 @@ export function PerformanceChart({ consolidatedData, targetReturnIpcaPlus }: Per
       const cdiRates = fetchCDIRates(startDate, endDate)
       const ipcaRates = fetchIPCARates(startDate, endDate)
 
-      // Group by competencia (MM/YYYY) and get the last value of each month
-      const cdiMap = new Map<string, { competencia: string; cdiRate: number }>()
+      // Group by period (MM/YYYY) and get the last value of each month
+      const cdiMap = new Map<string, { period: string; cdiRate: number }>()
       cdiRates.forEach(cdi => {
-        const competencia = `${String(cdi.date.getMonth() + 1).padStart(2, '0')}/${cdi.date.getFullYear()}`
-        const existing = cdiMap.get(competencia)
-        if (!existing || cdi.date > competenciaToDate(existing.competencia)) {
-          cdiMap.set(competencia, {
-            competencia,
+        const period = `${String(cdi.date.getMonth() + 1).padStart(2, '0')}/${cdi.date.getFullYear()}`
+        const existing = cdiMap.get(period)
+        if (!existing || cdi.date > periodToDate(existing.period)) {
+          cdiMap.set(period, {
+            period,
             cdiRate: cdi.monthlyRate / 100 // Convert percentage to decimal
           })
         }
       })
 
-      const ipcaMap = new Map<string, { competencia: string; monthlyRate: number }>()
+      const ipcaMap = new Map<string, { period: string; monthlyRate: number }>()
       ipcaRates.forEach(ipca => {
-        const competencia = `${String(ipca.date.getMonth() + 1).padStart(2, '0')}/${ipca.date.getFullYear()}`
-        const existing = ipcaMap.get(competencia)
-        if (!existing || ipca.date > competenciaToDate(existing.competencia)) {
-          ipcaMap.set(competencia, {
-            competencia,
+        const period = `${String(ipca.date.getMonth() + 1).padStart(2, '0')}/${ipca.date.getFullYear()}`
+        const existing = ipcaMap.get(period)
+        if (!existing || ipca.date > periodToDate(existing.period)) {
+          ipcaMap.set(period, {
+            period,
             monthlyRate: ipca.monthlyRate / 100 // Convert percentage to decimal
           })
         }
       })
 
       const cdiData = Array.from(cdiMap.values()).sort((a, b) => {
-        const dateA = competenciaToDate(a.competencia)
-        const dateB = competenciaToDate(b.competencia)
+        const dateA = periodToDate(a.period)
+        const dateB = periodToDate(b.period)
         return dateA.getTime() - dateB.getTime()
       })
 
       const ipcaData = Array.from(ipcaMap.values()).sort((a, b) => {
-        const dateA = competenciaToDate(a.competencia)
-        const dateB = competenciaToDate(b.competencia)
+        const dateA = periodToDate(a.period)
+        const dateB = periodToDate(b.period)
         return dateA.getTime() - dateB.getTime()
       })
 
@@ -401,154 +485,175 @@ export function PerformanceChart({ consolidatedData, targetReturnIpcaPlus }: Per
 
   const targetValue = extractTargetValue(targetReturnIpcaPlus)
 
-  // Add all indicators data to chart data
-  const chartDataWithIndicators = chartData.map((point, index) => {
+  /**
+   * Adds all indicators data (CDI, IPCA, Target) to chart data
+   * Calculates accumulated returns for each indicator
+   */
+  const chartDataWithIndicators = useMemo(() => {
+    return chartData.map((point, index) => {
     if (index === 0) {
       return {
         ...point,
-        cdiRetorno: 0,
-        targetRetorno: 0,
-        ipcaRetorno: 0
+        cdiReturn: 0,
+        targetReturn: 0,
+        ipcaReturn: 0
       }
     }
 
-    const firstCompetencia = chartData[1]?.competencia
-    const currentCompetencia = point.competencia
+    const firstPeriod = chartData[1]?.period
+    const currentPeriod = point.period
 
-    // CDI data - composição mensal correta
-    let cdiRetorno = null
-    if (firstCompetencia && marketData.cdiData.length > 0) {
-      const firstDate = competenciaToDate(firstCompetencia)
-      const currentDate = competenciaToDate(currentCompetencia)
+    // CDI data - correct monthly composition
+    let cdiReturn = null
+    if (firstPeriod && marketData.cdiData.length > 0) {
+      const firstDate = periodToDate(firstPeriod)
+      const currentDate = periodToDate(currentPeriod)
 
       const periodCDI = marketData.cdiData.filter(cdi => {
-        const cdiDate = competenciaToDate(cdi.competencia)
+        const cdiDate = periodToDate(cdi.period)
         return cdiDate >= firstDate && cdiDate <= currentDate
       })
 
       if (periodCDI.length > 0) {
-        if (currentCompetencia === firstCompetencia) {
-          cdiRetorno = periodCDI[0].cdiRate * 100
+        if (currentPeriod === firstPeriod) {
+          cdiReturn = periodCDI[0].cdiRate * 100
         } else {
-          let accumulatedCDI = 0
-          periodCDI.forEach(cdi => {
-            accumulatedCDI = (1 + accumulatedCDI) * (1 + cdi.cdiRate) - 1
-          })
-          cdiRetorno = accumulatedCDI * 100
+          // Use financial-math function to compound CDI rates
+          // cdiRate is already a decimal (e.g., 0.01 for 1%)
+          const cdiRates = periodCDI.map(cdi => cdi.cdiRate)
+          const accumulatedCDI = calculateCompoundedRates(cdiRates)
+          cdiReturn = accumulatedCDI * 100
         }
       }
     }
 
     // IPCA data
-    let ipcaRetorno = null
-    if (firstCompetencia && marketData.ipcaData.length > 0) {
-      const firstDate = competenciaToDate(firstCompetencia)
-      const currentDate = competenciaToDate(currentCompetencia)
+    let ipcaReturn = null
+    if (firstPeriod && marketData.ipcaData.length > 0) {
+      const firstDate = periodToDate(firstPeriod)
+      const currentDate = periodToDate(currentPeriod)
 
       const periodIpca = marketData.ipcaData.filter(ipca => {
-        const ipcaDate = competenciaToDate(ipca.competencia)
+        const ipcaDate = periodToDate(ipca.period)
         return ipcaDate >= firstDate && ipcaDate <= currentDate
       })
 
       if (periodIpca.length > 0) {
-        if (currentCompetencia === firstCompetencia) {
-          ipcaRetorno = periodIpca[0].monthlyRate * 100
+        if (currentPeriod === firstPeriod) {
+          ipcaReturn = periodIpca[0].monthlyRate * 100
         } else {
-          let accumulatedIPCA = 0
-          periodIpca.forEach(ipca => {
-            accumulatedIPCA = (1 + accumulatedIPCA) * (1 + ipca.monthlyRate) - 1
-          })
-          ipcaRetorno = accumulatedIPCA * 100
+          // Use financial-math function to compound IPCA rates
+          // monthlyRate is already a decimal (e.g., 0.01 for 1%)
+          const ipcaRates = periodIpca.map(ipca => ipca.monthlyRate)
+          const accumulatedIPCA = calculateCompoundedRates(ipcaRates)
+          ipcaReturn = accumulatedIPCA * 100
         }
       }
     }
 
     // Target data (IPCA + targetValue)
-    let targetRetorno = null
-    if (firstCompetencia && targetValue > 0 && marketData.ipcaData.length > 0) {
-      const firstDate = competenciaToDate(firstCompetencia)
-      const currentDate = competenciaToDate(currentCompetencia)
+    let targetReturn = null
+    if (firstPeriod && targetValue > 0 && marketData.ipcaData.length > 0) {
+      const firstDate = periodToDate(firstPeriod)
+      const currentDate = periodToDate(currentPeriod)
 
       const periodIpca = marketData.ipcaData.filter(ipca => {
-        const ipcaDate = competenciaToDate(ipca.competencia)
+        const ipcaDate = periodToDate(ipca.period)
         return ipcaDate >= firstDate && ipcaDate <= currentDate
       })
 
       if (periodIpca.length > 0) {
-        let accumulatedTarget = 0
-        periodIpca.forEach(ipca => {
+        // Use financial-math function to convert yearly target to monthly
+        const monthlyTargetRate = yearlyReturnRateToMonthlyReturnRate(targetValue)
+        // Calculate monthly rates: IPCA + monthly target rate
+        const monthlyRates = periodIpca.map(ipca => {
           const monthlyIpca = ipca.monthlyRate
-          // Calculate monthly target: (1 + IPCA) * (1 + target/12) - 1
-          const monthlyTargetRate = Math.pow(1 + targetValue, 1/12) - 1
-          const monthlyTarget = monthlyIpca + monthlyTargetRate
-          accumulatedTarget = (1 + accumulatedTarget) * (1 + monthlyTarget) - 1
+          return monthlyIpca + monthlyTargetRate
         })
-        targetRetorno = accumulatedTarget * 100
+        // Use financial-math function to compound target rates
+        // Rates are already decimals, no need to multiply by 100
+        const accumulatedTarget = calculateCompoundedRates(monthlyRates)
+        targetReturn = accumulatedTarget * 100
       }
     }
 
     return {
       ...point,
-      cdiRetorno,
-      targetRetorno,
-      ipcaRetorno
+      cdiReturn,
+      targetReturn,
+      ipcaReturn
     }
-  })
+    })
+  }, [chartData, marketData, targetValue])
 
-  // Calculate optimal Y axis scale
-  const portfolioValues = chartDataWithIndicators.map(item => item.retornoAcumulado)
-  const cdiValues = chartDataWithIndicators.map(item => item.cdiRetorno).filter(v => v !== null && v !== 0) as number[]
-  const targetValues = chartDataWithIndicators.map(item => item.targetRetorno).filter(v => v !== null && v !== 0) as number[]
-  const ipcaValues = chartDataWithIndicators.map(item => item.ipcaRetorno).filter(v => v !== null && v !== 0) as number[]
+  /**
+   * Calculates optimal Y axis scale based on visible indicators
+   */
+  const { yAxisMin, yAxisMax, yAxisTicks } = useMemo(() => {
+    const portfolioValues = chartDataWithIndicators.map(item => item.accumulatedReturn)
+    const cdiValues = chartDataWithIndicators.map(item => item.cdiReturn).filter(v => v !== null && v !== 0) as number[]
+    const targetValues = chartDataWithIndicators.map(item => item.targetReturn).filter(v => v !== null && v !== 0) as number[]
+    const ipcaValues = chartDataWithIndicators.map(item => item.ipcaReturn).filter(v => v !== null && v !== 0) as number[]
 
-  let allValues = [...portfolioValues]
-  if (selectedIndicators.cdi) allValues = [...allValues, ...cdiValues]
-  if (selectedIndicators.target) allValues = [...allValues, ...targetValues]
-  if (selectedIndicators.ipca) allValues = [...allValues, ...ipcaValues]
+    let allValues = [...portfolioValues]
+    if (selectedIndicators.cdi) allValues = [...allValues, ...cdiValues]
+    if (selectedIndicators.target) allValues = [...allValues, ...targetValues]
+    if (selectedIndicators.ipca) allValues = [...allValues, ...ipcaValues]
 
-  const minValue = Math.min(...allValues, 0)
-  const maxValue = Math.max(...allValues)
+    const minValue = Math.min(...allValues, 0)
+    const maxValue = Math.max(...allValues)
 
-  const range = maxValue - minValue
-  const buffer = Math.max(range * 0.1, 0.5)
-  const yAxisMin = Math.floor((minValue - buffer) * 2) / 2
-  const yAxisMax = Math.ceil((maxValue + buffer) * 2) / 2
+    const range = maxValue - minValue
+    const buffer = Math.max(range * 0.1, 0.5)
+    const yAxisMin = Math.floor((minValue - buffer) * 2) / 2
+    const yAxisMax = Math.ceil((maxValue + buffer) * 2) / 2
 
-  const generateTicks = (min: number, max: number) => {
-    const range = max - min
-    let step
-    if (range <= 2) step = 0.25
-    else if (range <= 5) step = 0.5
-    else if (range <= 10) step = 1
-    else if (range <= 20) step = 2
-    else step = Math.ceil(range / 10)
+    /**
+     * Generates evenly spaced ticks for Y axis
+     */
+    const generateTicks = (min: number, max: number): number[] => {
+      const range = max - min
+      let step
+      if (range <= 2) step = 0.25
+      else if (range <= 5) step = 0.5
+      else if (range <= 10) step = 1
+      else if (range <= 20) step = 2
+      else step = Math.ceil(range / 10)
 
-    const ticks = []
-    for (let i = Math.floor(min / step) * step; i <= max; i += step) {
-      ticks.push(Number(i.toFixed(2)))
+      const ticks: number[] = []
+      for (let i = Math.floor(min / step) * step; i <= max; i += step) {
+        ticks.push(Number(i.toFixed(2)))
+      }
+      return ticks
     }
-    return ticks
-  }
 
-  const yAxisTicks = generateTicks(yAxisMin, yAxisMax)
+    return {
+      yAxisMin,
+      yAxisMax,
+      yAxisTicks: generateTicks(yAxisMin, yAxisMax)
+    }
+  }, [chartDataWithIndicators, selectedIndicators])
 
-  const periodButtons = [
-    { id: 'month', label: 'Mês' },
-    { id: 'year', label: 'Ano' },
-    { id: '12months', label: '12M' },
-    { id: 'all', label: 'Ótimo' },
-    { id: 'custom', label: 'Personalizado' }
-  ]
+  /**
+   * Period button configuration with i18n labels
+   */
+  const periodButtons = useMemo(() => [
+    { id: 'month' as PeriodType, label: t('portfolioPerformance.performanceChart.periodButtons.month') },
+    { id: 'year' as PeriodType, label: t('portfolioPerformance.performanceChart.periodButtons.year') },
+    { id: '12months' as PeriodType, label: t('portfolioPerformance.performanceChart.periodButtons.twelveMonths') },
+    { id: 'all' as PeriodType, label: t('portfolioPerformance.performanceChart.periodButtons.all') },
+    { id: 'custom' as PeriodType, label: t('portfolioPerformance.performanceChart.periodButtons.custom') }
+  ], [t])
 
   // Calculate summary metrics
   const summaryMetrics = useMemo(() => {
     if (chartDataWithIndicators.length === 0) return null
 
     const lastDataPoint = chartDataWithIndicators[chartDataWithIndicators.length - 1]
-    const portfolioReturn = lastDataPoint.retornoAcumulado
-    const cdiReturn = lastDataPoint.cdiRetorno
-    const targetReturn = lastDataPoint.targetRetorno
-    const ipcaReturn = lastDataPoint.ipcaRetorno
+    const portfolioReturn = lastDataPoint.accumulatedReturn
+    const cdiReturn = lastDataPoint.cdiReturn
+    const targetReturn = lastDataPoint.targetReturn
+    const ipcaReturn = lastDataPoint.ipcaReturn
 
     return {
       portfolioReturn,
@@ -594,11 +699,17 @@ export function PerformanceChart({ consolidatedData, targetReturnIpcaPlus }: Per
             </div>
             <div className="flex items-center gap-3">
               <CardTitle className="text-foreground text-xl font-semibold">
-                {viewMode === 'rentabilidade' ? 'Retorno Acumulado' : viewMode === 'patrimonio' ? 'Seu patrimônio' : 'Crescimento'}
+                {viewMode === 'rentabilidade' 
+                  ? t('portfolioPerformance.performanceChart.viewModes.returns')
+                  : viewMode === 'patrimonio' 
+                  ? t('portfolioPerformance.performanceChart.viewModes.patrimony')
+                  : t('portfolioPerformance.performanceChart.viewModes.growth')}
               </CardTitle>
               <div className="flex items-center gap-1 px-2 py-1 rounded-md bg-muted/50 group-hover:bg-muted transition-colors">
                 <ArrowLeftRight className="h-4 w-4 text-muted-foreground group-hover:text-foreground transition-colors" />
-                <span className="text-xs text-muted-foreground group-hover:text-foreground transition-colors">Trocar</span>
+                <span className="text-xs text-muted-foreground group-hover:text-foreground transition-colors">
+                  {t('portfolioPerformance.performanceChart.switchView')}
+                </span>
               </div>
             </div>
           </div>
@@ -611,12 +722,12 @@ export function PerformanceChart({ consolidatedData, targetReturnIpcaPlus }: Per
                 <PopoverTrigger asChild>
                   <Button variant="outline" size="sm">
                     <Settings className="h-4 w-4 mr-2" />
-                    Indicadores
+                    {t('portfolioPerformance.performanceChart.indicators')}
                   </Button>
                 </PopoverTrigger>
                 <PopoverContent className="w-56 bg-background border-border z-50" align="end">
                   <div className="space-y-3 p-2">
-                    <h4 className="font-medium text-sm">Selecionar Indicadores</h4>
+                    <h4 className="font-medium text-sm">{t('portfolioPerformance.performanceChart.selectIndicators')}</h4>
                     <div className="space-y-2">
                       <div className="flex items-center space-x-2">
                         <Checkbox
@@ -626,7 +737,7 @@ export function PerformanceChart({ consolidatedData, targetReturnIpcaPlus }: Per
                             setSelectedIndicators(prev => ({ ...prev, cdi: checked as boolean }))
                           }
                         />
-                        <label htmlFor="cdi" className="text-sm">CDI</label>
+                        <label htmlFor="cdi" className="text-sm">{t('portfolioPerformance.performanceChart.tooltips.cdi')}</label>
                       </div>
                       <div className="flex items-center space-x-2">
                         <Checkbox
@@ -637,7 +748,9 @@ export function PerformanceChart({ consolidatedData, targetReturnIpcaPlus }: Per
                           }
                         />
                         <label htmlFor="target" className="text-sm">
-                          Meta {targetReturnIpcaPlus ? `(${targetReturnIpcaPlus.includes('ipca_plus') ? targetReturnIpcaPlus.replace('ipca_plus_', 'IPCA+').replace('_', '') + '%' : targetReturnIpcaPlus})` : '(Não disponível)'}
+                          {t('portfolioPerformance.performanceChart.target')} {targetReturnIpcaPlus 
+                            ? `(${targetReturnIpcaPlus.includes('ipca_plus') ? targetReturnIpcaPlus.replace('ipca_plus_', 'IPCA+').replace('_', '') + '%' : targetReturnIpcaPlus})` 
+                            : t('portfolioPerformance.performanceChart.targetNotAvailable')}
                         </label>
                       </div>
                       <div className="flex items-center space-x-2">
@@ -648,7 +761,7 @@ export function PerformanceChart({ consolidatedData, targetReturnIpcaPlus }: Per
                             setSelectedIndicators(prev => ({ ...prev, ipca: checked as boolean }))
                           }
                         />
-                        <label htmlFor="ipca" className="text-sm">IPCA</label>
+                        <label htmlFor="ipca" className="text-sm">{t('portfolioPerformance.performanceChart.tooltips.ipca')}</label>
                       </div>
                     </div>
                   </div>
@@ -659,13 +772,15 @@ export function PerformanceChart({ consolidatedData, targetReturnIpcaPlus }: Per
             <div className="flex items-center gap-1">
               {viewMode === 'crescimento' && (
                 <Button
-                  variant={showOnlyRendaGerada ? "default" : "outline"}
+                  variant={showOnlyGeneratedIncome ? "default" : "outline"}
                   size="sm"
-                  onClick={() => setShowOnlyRendaGerada(!showOnlyRendaGerada)}
+                  onClick={() => setShowOnlyGeneratedIncome(!showOnlyGeneratedIncome)}
                   className="gap-2 text-xs px-3 py-1 h-8 mr-2"
                 >
                   <Wallet className="h-4 w-4" />
-                  {showOnlyRendaGerada ? "Ver Tudo" : "Renda Gerada"}
+                  {showOnlyGeneratedIncome 
+                    ? t('portfolioPerformance.performanceChart.growthView.showAll')
+                    : t('portfolioPerformance.performanceChart.growthView.generatedIncome')}
                 </Button>
               )}
 
@@ -675,7 +790,7 @@ export function PerformanceChart({ consolidatedData, targetReturnIpcaPlus }: Per
                   variant={selectedPeriod === button.id ? "default" : "ghost"}
                   size="sm"
                   onClick={() => {
-                    setSelectedPeriod(button.id as any)
+                    setSelectedPeriod(button.id)
                     if (button.id === 'custom') {
                       setShowCustomSelector(true)
                     }
@@ -696,30 +811,34 @@ export function PerformanceChart({ consolidatedData, targetReturnIpcaPlus }: Per
                   <PopoverContent className="w-auto p-0" align="end">
                     <div className="p-4 space-y-4">
                       <div>
-                        <label className="text-sm font-medium mb-2 block">Competência Inicial</label>
-                        <Select value={customStartCompetencia} onValueChange={setCustomStartCompetencia}>
+                        <label className="text-sm font-medium mb-2 block">
+                          {t('portfolioPerformance.performanceChart.customPeriod.startPeriod')}
+                        </label>
+                        <Select value={customStartPeriod} onValueChange={setCustomStartPeriod}>
                           <SelectTrigger>
-                            <SelectValue placeholder="Selecione a competência inicial" />
+                            <SelectValue placeholder={t('portfolioPerformance.performanceChart.customPeriod.selectStart')} />
                           </SelectTrigger>
                           <SelectContent>
-                            {availableCompetencias.map((competencia) => (
-                              <SelectItem key={competencia} value={competencia}>
-                                {formatCompetenciaDisplay(competencia)}
+                            {availablePeriods.map((period) => (
+                              <SelectItem key={period} value={period}>
+                                {formatPeriodDisplay(period, monthNames)}
                               </SelectItem>
                             ))}
                           </SelectContent>
                         </Select>
                       </div>
                       <div>
-                        <label className="text-sm font-medium mb-2 block">Competência Final</label>
-                        <Select value={customEndCompetencia} onValueChange={setCustomEndCompetencia}>
+                        <label className="text-sm font-medium mb-2 block">
+                          {t('portfolioPerformance.performanceChart.customPeriod.endPeriod')}
+                        </label>
+                        <Select value={customEndPeriod} onValueChange={setCustomEndPeriod}>
                           <SelectTrigger>
-                            <SelectValue placeholder="Selecione a competência final" />
+                            <SelectValue placeholder={t('portfolioPerformance.performanceChart.customPeriod.selectEnd')} />
                           </SelectTrigger>
                           <SelectContent>
-                            {availableCompetencias.map((competencia) => (
-                              <SelectItem key={competencia} value={competencia}>
-                                {formatCompetenciaDisplay(competencia)}
+                            {availablePeriods.map((period) => (
+                              <SelectItem key={period} value={period}>
+                                {formatPeriodDisplay(period, monthNames)}
                               </SelectItem>
                             ))}
                           </SelectContent>
@@ -833,13 +952,17 @@ export function PerformanceChart({ consolidatedData, targetReturnIpcaPlus }: Per
                           backgroundColor: 'hsl(var(--muted) / 0.3)'
                         }}>
                           <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
-                            <span style={{ fontSize: '11px', color: 'hsl(var(--muted-foreground))' }}>Patrimônio Inicial</span>
-                            <strong style={{ fontSize: '12px' }}>{formatCurrency(data.patrimonioInicial)}</strong>
+                            <span style={{ fontSize: '11px', color: 'hsl(var(--muted-foreground))' }}>
+                              {t('portfolioPerformance.performanceChart.growthView.initialPatrimony')}
+                            </span>
+                            <strong style={{ fontSize: '12px' }}>{formatCurrency(data.initialPatrimony)}</strong>
                           </div>
-                          {data.rendaGerada > 0 && (
+                          {data.generatedIncome > 0 && (
                             <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '4px' }}>
-                              <span style={{ fontSize: '11px', color: 'hsl(47 90% 45%)' }}>Renda Gerada</span>
-                              <strong style={{ fontSize: '12px', color: 'hsl(47 90% 40%)' }}>{formatCurrency(data.rendaGerada)}</strong>
+                              <span style={{ fontSize: '11px', color: 'hsl(47 90% 45%)' }}>
+                                {t('portfolioPerformance.performanceChart.growthView.generatedIncome')}
+                              </span>
+                              <strong style={{ fontSize: '12px', color: 'hsl(47 90% 40%)' }}>{formatCurrency(data.generatedIncome)}</strong>
                             </div>
                           )}
                         </div>
@@ -852,7 +975,7 @@ export function PerformanceChart({ consolidatedData, targetReturnIpcaPlus }: Per
                         }}>
                           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
                             <span style={{ fontSize: '12px', fontWeight: '600', color: isPositive ? 'hsl(142 71% 35%)' : 'hsl(0 72% 45%)' }}>
-                              Crescimento Total
+                              {t('portfolioPerformance.performanceChart.growthView.totalGrowth')}
                             </span>
                             <strong style={{
                               fontSize: '14px',
@@ -880,15 +1003,15 @@ export function PerformanceChart({ consolidatedData, targetReturnIpcaPlus }: Per
                           gap: '6px'
                         }}>
                           <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                            <span>Movimentação:</span>
-                            <span style={{ fontWeight: '600', color: data.movimentacao >= 0 ? 'hsl(var(--foreground))' : 'hsl(var(--destructive))' }}>
-                              {data.movimentacao > 0 ? '+' : ''}{formatCurrency(data.movimentacao)}
+                            <span>{t('portfolioPerformance.performanceChart.growthView.movement')}</span>
+                            <span style={{ fontWeight: '600', color: data.movement >= 0 ? 'hsl(var(--foreground))' : 'hsl(var(--destructive))' }}>
+                              {data.movement > 0 ? '+' : ''}{formatCurrency(data.movement)}
                             </span>
                           </div>
                           <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                            <span>Ganho Financeiro:</span>
-                            <span style={{ fontWeight: '600', color: data.ganhoFinanceiro >= 0 ? 'hsl(142 71% 35%)' : 'hsl(0 72% 45%)' }}>
-                              {data.ganhoFinanceiro > 0 ? '+' : ''}{formatCurrency(data.ganhoFinanceiro)}
+                            <span>{t('portfolioPerformance.performanceChart.growthView.financialGain')}</span>
+                            <span style={{ fontWeight: '600', color: data.financialGain >= 0 ? 'hsl(142 71% 35%)' : 'hsl(0 72% 45%)' }}>
+                              {data.financialGain > 0 ? '+' : ''}{formatCurrency(data.financialGain)}
                             </span>
                           </div>
                           <div style={{
@@ -898,8 +1021,10 @@ export function PerformanceChart({ consolidatedData, targetReturnIpcaPlus }: Per
                             display: 'flex',
                             justifyContent: 'space-between'
                           }}>
-                            <strong style={{ color: 'hsl(var(--foreground))' }}>Patrimônio Final:</strong>
-                            <strong style={{ color: 'hsl(var(--primary))' }}>{formatCurrency(data.patrimonioFinal)}</strong>
+                            <strong style={{ color: 'hsl(var(--foreground))' }}>
+                              {t('portfolioPerformance.performanceChart.growthView.finalPatrimony')}
+                            </strong>
+                            <strong style={{ color: 'hsl(var(--primary))' }}>{formatCurrency(data.finalPatrimony)}</strong>
                           </div>
                         </div>
                       </div>
@@ -908,16 +1033,16 @@ export function PerformanceChart({ consolidatedData, targetReturnIpcaPlus }: Per
                   cursor={{ fill: 'hsl(var(--primary) / 0.05)', radius: 4 }}
                 />
                 <Bar
-                  dataKey="rendaGerada"
+                  dataKey="generatedIncome"
                   stackId="a"
                   fill="url(#barRendaGerada)"
                   radius={[0, 0, 6, 6]}
                   maxBarSize={60}
-                  hide={showOnlyRendaGerada ? false : false}
+                  hide={showOnlyGeneratedIncome ? false : false}
                 >
-                  {showOnlyRendaGerada && (
+                  {showOnlyGeneratedIncome && (
                     <LabelList
-                      dataKey="rendaGerada"
+                      dataKey="generatedIncome"
                       position="top"
                       formatter={(value: number) => {
                         if (value >= 1000000) return `${(value / 1000000).toFixed(1)}M`
@@ -934,12 +1059,12 @@ export function PerformanceChart({ consolidatedData, targetReturnIpcaPlus }: Per
                   )}
                 </Bar>
                 <Bar
-                  dataKey="patrimonioBase"
+                  dataKey="basePatrimony"
                   stackId="a"
                   fill="url(#barBase)"
                   radius={[0, 0, 0, 0]}
                   maxBarSize={60}
-                  hide={showOnlyRendaGerada}
+                  hide={showOnlyGeneratedIncome}
                 />
                 <Bar
                   dataKey="growth"
@@ -947,7 +1072,7 @@ export function PerformanceChart({ consolidatedData, targetReturnIpcaPlus }: Per
                   fill="url(#barPositive)"
                   radius={[6, 6, 0, 0]}
                   maxBarSize={60}
-                  hide={showOnlyRendaGerada}
+                  hide={showOnlyGeneratedIncome}
                 />
                 <Bar
                   dataKey="negativeGrowth"
@@ -955,7 +1080,7 @@ export function PerformanceChart({ consolidatedData, targetReturnIpcaPlus }: Per
                   fill="url(#barNegative)"
                   radius={[0, 0, 6, 6]}
                   maxBarSize={60}
-                  hide={showOnlyRendaGerada}
+                  hide={showOnlyGeneratedIncome}
                 />
               </BarChart>
             ) : viewMode === 'rentabilidade' ? (
@@ -998,20 +1123,21 @@ export function PerformanceChart({ consolidatedData, targetReturnIpcaPlus }: Per
                     fontSize: '13px',
                     padding: '12px'
                   }}
-                  formatter={(value: any, name: string) => {
-                    if (name === 'retornoAcumulado') {
-                      return [`${Number(value).toFixed(2)}%`, 'Portfolio']
+                  formatter={(value: number | string, name: string) => {
+                    const numValue = typeof value === 'number' ? value : Number(value)
+                    if (name === 'accumulatedReturn') {
+                      return [`${numValue.toFixed(2)}%`, t('portfolioPerformance.performanceChart.tooltips.portfolio')]
                     }
-                    if (name === 'cdiRetorno') {
-                      return [`${Number(value).toFixed(2)}%`, 'CDI']
+                    if (name === 'cdiReturn') {
+                      return [`${numValue.toFixed(2)}%`, t('portfolioPerformance.performanceChart.tooltips.cdi')]
                     }
-                    if (name === 'targetRetorno') {
-                      return [`${Number(value).toFixed(2)}%`, 'Meta']
+                    if (name === 'targetReturn') {
+                      return [`${numValue.toFixed(2)}%`, t('portfolioPerformance.performanceChart.tooltips.target')]
                     }
-                    if (name === 'ipcaRetorno') {
-                      return [`${Number(value).toFixed(2)}%`, 'IPCA']
+                    if (name === 'ipcaReturn') {
+                      return [`${numValue.toFixed(2)}%`, t('portfolioPerformance.performanceChart.tooltips.ipca')]
                     }
-                    return [`${Number(value).toFixed(2)}%`, name]
+                    return [`${numValue.toFixed(2)}%`, name]
                   }}
                   labelStyle={{
                     color: 'hsl(var(--foreground))',
@@ -1023,7 +1149,7 @@ export function PerformanceChart({ consolidatedData, targetReturnIpcaPlus }: Per
                 {/* Portfolio Line */}
                 <Line
                   type="monotone"
-                  dataKey="retornoAcumulado"
+                  dataKey="accumulatedReturn"
                   stroke="hsl(var(--primary))"
                   strokeWidth={3}
                   dot={{
@@ -1042,7 +1168,7 @@ export function PerformanceChart({ consolidatedData, targetReturnIpcaPlus }: Per
                 {selectedIndicators.cdi && (
                   <Line
                     type="monotone"
-                    dataKey="cdiRetorno"
+                    dataKey="cdiReturn"
                     stroke="hsl(var(--muted-foreground))"
                     strokeWidth={2}
                     dot={{
@@ -1062,7 +1188,7 @@ export function PerformanceChart({ consolidatedData, targetReturnIpcaPlus }: Per
                 {selectedIndicators.target && (
                   <Line
                     type="monotone"
-                    dataKey="targetRetorno"
+                    dataKey="targetReturn"
                     stroke="hsl(0 84% 60%)"
                     strokeWidth={2}
                     connectNulls={false}
@@ -1083,7 +1209,7 @@ export function PerformanceChart({ consolidatedData, targetReturnIpcaPlus }: Per
                 {selectedIndicators.ipca && (
                   <Line
                     type="monotone"
-                    dataKey="ipcaRetorno"
+                    dataKey="ipcaReturn"
                     stroke="hsl(var(--info))"
                     strokeWidth={2}
                     connectNulls={false}
@@ -1143,14 +1269,15 @@ export function PerformanceChart({ consolidatedData, targetReturnIpcaPlus }: Per
                     fontSize: '13px',
                     padding: '12px'
                   }}
-                  formatter={(value: any, name: string) => {
-                    if (name === 'patrimonioAplicado') {
-                      return [formatCurrency(value), 'Patrimônio Aplicado']
+                  formatter={(value: number | string, name: string) => {
+                    const numValue = typeof value === 'number' ? value : Number(value)
+                    if (name === 'appliedPatrimony') {
+                      return [formatCurrency(numValue), t('portfolioPerformance.performanceChart.tooltips.appliedPatrimony')]
                     }
-                    if (name === 'patrimonioAtual') {
-                      return [formatCurrency(value), 'Patrimônio']
+                    if (name === 'currentPatrimony') {
+                      return [formatCurrency(numValue), t('portfolioPerformance.performanceChart.tooltips.patrimony')]
                     }
-                    return [value, name]
+                    return [String(value), name]
                   }}
                   labelStyle={{
                     color: 'hsl(var(--foreground))',
@@ -1159,10 +1286,10 @@ export function PerformanceChart({ consolidatedData, targetReturnIpcaPlus }: Per
                   }}
                   cursor={{ fill: 'hsl(var(--primary) / 0.1)' }}
                 />
-                {/* Patrimônio Aplicado Line */}
+                {/* Applied Patrimony Line */}
                 <Line
                   type="monotone"
-                  dataKey="patrimonioAplicado"
+                  dataKey="appliedPatrimony"
                   stroke="hsl(var(--muted-foreground))"
                   strokeWidth={2.5}
                   dot={{
@@ -1178,10 +1305,10 @@ export function PerformanceChart({ consolidatedData, targetReturnIpcaPlus }: Per
                     stroke: 'hsl(var(--background))'
                   }}
                 />
-                {/* Patrimônio Atual Line */}
+                {/* Current Patrimony Line */}
                 <Line
                   type="monotone"
-                  dataKey="patrimonioAtual"
+                  dataKey="currentPatrimony"
                   stroke="hsl(var(--primary))"
                   strokeWidth={3}
                   dot={{
@@ -1207,12 +1334,12 @@ export function PerformanceChart({ consolidatedData, targetReturnIpcaPlus }: Per
           // Modo "Seu patrimônio" - apenas "Efeito bola de neve"
           patrimonioData.length > 1 && (() => {
             const lastDataPoint = patrimonioData[patrimonioData.length - 1]
-            const patrimonioAtual = lastDataPoint.patrimonioAtual
-            const patrimonioAplicado = lastDataPoint.patrimonioAplicado
+            const currentPatrimony = lastDataPoint.currentPatrimony
+            const appliedPatrimony = lastDataPoint.appliedPatrimony
 
-            // Efeito bola de neve = Patrimônio Atual / Patrimônio Aplicado
-            const snowballEffect = patrimonioAplicado > 0 ?
-              (patrimonioAtual / patrimonioAplicado) : 1
+            // Snowball effect = Current Patrimony / Applied Patrimony
+            const snowballEffect = appliedPatrimony > 0 ?
+              (currentPatrimony / appliedPatrimony) : 1
 
             const percentageGain = (snowballEffect - 1) * 100
 
@@ -1221,12 +1348,14 @@ export function PerformanceChart({ consolidatedData, targetReturnIpcaPlus }: Per
                 <div className="bg-card border border-border rounded-lg p-4">
                   <div className="flex items-center justify-between">
                     <div>
-                      <p className="text-sm text-muted-foreground">Efeito bola de neve</p>
+                      <p className="text-sm text-muted-foreground">
+                        {t('portfolioPerformance.performanceChart.metrics.snowballEffect')}
+                      </p>
                       <p className="text-2xl font-semibold text-foreground">
                         {snowballEffect.toFixed(2)}x
                       </p>
                       <p className="text-xs text-muted-foreground">
-                        {percentageGain >= 0 ? '+' : ''}{percentageGain.toFixed(2)}% sobre o patrimônio aplicado
+                        {percentageGain >= 0 ? '+' : ''}{percentageGain.toFixed(2)}% {t('portfolioPerformance.performanceChart.metrics.snowballDescription')}
                       </p>
                     </div>
                     <div className={`text-sm px-2 py-1 rounded ${
@@ -1242,38 +1371,40 @@ export function PerformanceChart({ consolidatedData, targetReturnIpcaPlus }: Per
         ) : viewMode === 'crescimento' ? (
           // Modo "Crescimento" - crescimento médio e total + renda gerada
           growthData.length > 0 && (() => {
-            // Calcular crescimento percentual médio
+            // Calculate average growth percentage
             const averageGrowthPercentage = growthData.reduce((sum, item) => sum + item.growthPercentage, 0) / growthData.length
 
-            // Calcular crescimento total do período
-            const firstPatrimonio = growthData[0]?.patrimonioBase || 0
-            const lastPatrimonio = growthData[growthData.length - 1]?.patrimonioFinal || 0
-            const periodGrowth = lastPatrimonio - firstPatrimonio
-            const periodGrowthPercentage = firstPatrimonio > 0 ? (periodGrowth / firstPatrimonio) * 100 : 0
+            // Calculate total growth for the period
+            const firstPatrimony = growthData[0]?.basePatrimony || 0
+            const lastPatrimony = growthData[growthData.length - 1]?.finalPatrimony || 0
+            const periodGrowth = lastPatrimony - firstPatrimony
+            const periodGrowthPercentage = firstPatrimony > 0 ? (periodGrowth / firstPatrimony) * 100 : 0
 
-            // Última renda gerada
-            const lastRendaGerada = growthData[growthData.length - 1]?.rendaGerada || 0
-            const lastPatrimonioInicial = growthData[growthData.length - 1]?.patrimonioInicial || 0
-            const rendaPercentage = lastPatrimonioInicial > 0 ? (lastRendaGerada / lastPatrimonioInicial) * 100 : 0
+            // Last generated income
+            const lastGeneratedIncome = growthData[growthData.length - 1]?.generatedIncome || 0
+            const lastInitialPatrimony = growthData[growthData.length - 1]?.initialPatrimony || 0
+            const incomePercentage = lastInitialPatrimony > 0 ? (lastGeneratedIncome / lastInitialPatrimony) * 100 : 0
 
-            // Renda média dos últimos 12 meses
+            // Average income for last 12 months
             const last12MonthsData = growthData.slice(-12)
-            const averageRenda12M = last12MonthsData.reduce((sum, item) => sum + (item.rendaGerada || 0), 0) / last12MonthsData.length
-            const totalRenda12M = last12MonthsData.reduce((sum, item) => sum + (item.rendaGerada || 0), 0)
+            const averageIncome12M = last12MonthsData.reduce((sum, item) => sum + (item.generatedIncome || 0), 0) / last12MonthsData.length
+            const totalIncome12M = last12MonthsData.reduce((sum, item) => sum + (item.generatedIncome || 0), 0)
 
             return (
               <>
-                {!showOnlyRendaGerada && (
+                {!showOnlyGeneratedIncome && (
                   <div className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="bg-card border border-border rounded-lg p-4">
                       <div className="flex items-center justify-between">
                         <div>
-                          <p className="text-sm text-muted-foreground">Crescimento médio</p>
+                          <p className="text-sm text-muted-foreground">
+                            {t('portfolioPerformance.performanceChart.metrics.averageGrowth')}
+                          </p>
                           <p className="text-2xl font-semibold text-foreground">
                             {averageGrowthPercentage >= 0 ? '+' : ''}{averageGrowthPercentage.toFixed(2)}%
                           </p>
                           <p className="text-xs text-muted-foreground">
-                            por período
+                            {t('portfolioPerformance.performanceChart.metrics.perPeriod')}
                           </p>
                         </div>
                         <div className={`text-sm px-2 py-1 rounded ${
@@ -1287,7 +1418,9 @@ export function PerformanceChart({ consolidatedData, targetReturnIpcaPlus }: Per
                     <div className="bg-card border border-border rounded-lg p-4">
                       <div className="flex items-center justify-between">
                         <div>
-                          <p className="text-sm text-muted-foreground">Crescimento total no período</p>
+                          <p className="text-sm text-muted-foreground">
+                            {t('portfolioPerformance.performanceChart.metrics.totalGrowthPeriod')}
+                          </p>
                           <p className="text-2xl font-semibold text-foreground">
                             {periodGrowthPercentage >= 0 ? '+' : ''}{periodGrowthPercentage.toFixed(2)}%
                           </p>
@@ -1305,17 +1438,19 @@ export function PerformanceChart({ consolidatedData, targetReturnIpcaPlus }: Per
                   </div>
                 )}
 
-                {showOnlyRendaGerada && (
+                {showOnlyGeneratedIncome && (
                   <div className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="bg-card border border-border rounded-lg p-4">
                       <div className="flex items-center justify-between">
                         <div>
-                          <p className="text-sm text-muted-foreground">Última renda gerada</p>
+                          <p className="text-sm text-muted-foreground">
+                            {t('portfolioPerformance.performanceChart.metrics.lastGeneratedIncome')}
+                          </p>
                           <p className="text-2xl font-semibold text-foreground">
-                            {formatCurrency(lastRendaGerada)}
+                            {formatCurrency(lastGeneratedIncome)}
                           </p>
                           <p className="text-xs text-muted-foreground">
-                            {rendaPercentage.toFixed(2)}% do patrimônio
+                            {incomePercentage.toFixed(2)} {t('portfolioPerformance.performanceChart.metrics.incomePercentage')}
                           </p>
                         </div>
                         <div className="text-sm px-2 py-1 rounded bg-[hsl(47_100%_65%)]/10" style={{ color: 'hsl(47 90% 40%)' }}>
@@ -1327,12 +1462,14 @@ export function PerformanceChart({ consolidatedData, targetReturnIpcaPlus }: Per
                     <div className="bg-card border border-border rounded-lg p-4">
                       <div className="flex items-center justify-between">
                         <div>
-                          <p className="text-sm text-muted-foreground">Renda média (12M)</p>
+                          <p className="text-sm text-muted-foreground">
+                            {t('portfolioPerformance.performanceChart.metrics.averageIncome12M')}
+                          </p>
                           <p className="text-2xl font-semibold text-foreground">
-                            {formatCurrency(averageRenda12M)}
+                            {formatCurrency(averageIncome12M)}
                           </p>
                           <p className="text-xs text-muted-foreground">
-                            Total: {formatCurrency(totalRenda12M)}
+                            {t('portfolioPerformance.performanceChart.metrics.total')} {formatCurrency(totalIncome12M)}
                           </p>
                         </div>
                         <div className="text-sm px-2 py-1 rounded bg-[hsl(47_100%_65%)]/10" style={{ color: 'hsl(47 90% 40%)' }}>
@@ -1353,12 +1490,16 @@ export function PerformanceChart({ consolidatedData, targetReturnIpcaPlus }: Per
                 <div className="bg-card border border-border rounded-lg p-4">
                   <div className="flex items-center justify-between">
                     <div>
-                      <p className="text-sm text-muted-foreground">vs Meta</p>
+                      <p className="text-sm text-muted-foreground">
+                        {t('portfolioPerformance.performanceChart.metrics.vsTarget')}
+                      </p>
                       <p className="text-2xl font-semibold text-foreground">
                         {summaryMetrics.targetDifference >= 0 ? '+' : ''}{summaryMetrics.targetDifference.toFixed(2)}pp
                       </p>
                       <p className="text-xs text-muted-foreground">
-                        {summaryMetrics.targetDifference >= 0 ? 'acima' : 'abaixo'} da meta ({targetReturnIpcaPlus.includes('ipca_plus') ? targetReturnIpcaPlus.replace('ipca_plus_', 'IPCA+').replace('_', '') + '%' : targetReturnIpcaPlus})
+                        {summaryMetrics.targetDifference >= 0 
+                          ? t('portfolioPerformance.performanceChart.metrics.aboveTarget')
+                          : t('portfolioPerformance.performanceChart.metrics.belowTarget')} {t('portfolioPerformance.performanceChart.metrics.ofTarget')} ({targetReturnIpcaPlus.includes('ipca_plus') ? targetReturnIpcaPlus.replace('ipca_plus_', 'IPCA+').replace('_', '') + '%' : targetReturnIpcaPlus})
                       </p>
                     </div>
                     <div className={`text-sm px-2 py-1 rounded ${
@@ -1374,12 +1515,14 @@ export function PerformanceChart({ consolidatedData, targetReturnIpcaPlus }: Per
                 <div className="bg-card border border-border rounded-lg p-4">
                   <div className="flex items-center justify-between">
                     <div>
-                      <p className="text-sm text-muted-foreground">vs CDI</p>
+                      <p className="text-sm text-muted-foreground">
+                        {t('portfolioPerformance.performanceChart.metrics.vsCDI')}
+                      </p>
                       <p className="text-2xl font-semibold text-foreground">
                         {summaryMetrics.cdiRelative.toFixed(1)}%
                       </p>
                       <p className="text-xs text-muted-foreground">
-                        do retorno do CDI
+                        {t('portfolioPerformance.performanceChart.metrics.ofCDIReturn')}
                       </p>
                     </div>
                     <div className={`text-sm px-2 py-1 rounded ${
@@ -1395,12 +1538,16 @@ export function PerformanceChart({ consolidatedData, targetReturnIpcaPlus }: Per
                 <div className="bg-card border border-border rounded-lg p-4">
                   <div className="flex items-center justify-between">
                     <div>
-                      <p className="text-sm text-muted-foreground">vs IPCA</p>
+                      <p className="text-sm text-muted-foreground">
+                        {t('portfolioPerformance.performanceChart.metrics.vsIPCA')}
+                      </p>
                       <p className="text-2xl font-semibold text-foreground">
                         {summaryMetrics.ipcaDifference >= 0 ? '+' : ''}{summaryMetrics.ipcaDifference.toFixed(2)}pp
                       </p>
                       <p className="text-xs text-muted-foreground">
-                        {summaryMetrics.ipcaDifference >= 0 ? 'acima' : 'abaixo'} da inflação
+                        {summaryMetrics.ipcaDifference >= 0 
+                          ? t('portfolioPerformance.performanceChart.metrics.aboveInflation')
+                          : t('portfolioPerformance.performanceChart.metrics.belowInflation')} {t('portfolioPerformance.performanceChart.metrics.ofInflation')}
                       </p>
                     </div>
                     <div className={`text-sm px-2 py-1 rounded ${

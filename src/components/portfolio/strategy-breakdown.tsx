@@ -1,87 +1,143 @@
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts';
-import type { PerformanceData } from "@/types/financial";
-import { CurrencyCode } from "@/utils/currency";
-import { formatCurrency } from "@/utils/currency";
-import { useTranslation } from "react-i18next";
-
-const COLORS = [
-  'hsl(210 16% 82%)', // Light blue-gray
-  'hsl(32 25% 72%)',  // Light beige
-  'hsl(45 20% 85%)',  // Very light beige
-  'hsl(210 11% 71%)', // Medium gray
-  'hsl(210 16% 58%)', // Darker gray
-  'hsl(207 26% 50%)', // Blue-gray
-  'hsl(158 64% 25%)', // Dark forest green
-  'hsl(159 61% 33%)', // Medium forest green
-  'hsl(210 29% 24%)', // Dark blue-gray
-  'hsl(25 28% 53%)',  // Medium brown
-  'hsl(40 23% 77%)',  // Light tan
-  'hsl(210 14% 53%)', // Medium blue-gray
-  'hsl(35 31% 65%)',  // Warm beige
-  'hsl(210 24% 40%)', // Darker blue-gray
-];
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts'
+import type { PerformanceData } from "@/types/financial"
+import { useTranslation } from "react-i18next"
+import { useMemo, useCallback } from "react"
+import { 
+  groupStrategyName, 
+  getStrategyColor,
+  getStrategyOrder,
+  STRATEGY_ORDER,
+  type GroupedStrategyKey 
+} from "@/utils/benchmark-calculator"
+import { useCurrency } from "@/contexts/CurrencyContext"
 
 interface StrategyBreakdownProps {
   performanceData: PerformanceData[];
-  currency?: CurrencyCode;
 }
 
-function toDate(competencia?: string | null) {
-  if (!competencia) return new Date(0);
-  const [m, y] = competencia.split('/');
-  return new Date(parseInt(y), parseInt(m) - 1);
+/**
+ * Converts a period string (MM/YYYY) to a Date object
+ */
+function periodToDate(period?: string | null): Date {
+  if (!period) return new Date(0)
+  const [month, year] = period.split('/')
+  return new Date(parseInt(year), parseInt(month) - 1)
 }
 
-export function StrategyBreakdown({ performanceData, currency = 'BRL' }: StrategyBreakdownProps) {
-  const { t } = useTranslation();
+export function StrategyBreakdown({ performanceData }: StrategyBreakdownProps) {
+  const { t } = useTranslation()
+  const { convertValue, formatCurrency, currency } = useCurrency()
 
-  // Get unique periods and find the most recent
-  const uniquePeriods = [...new Set(performanceData.map(d => d.period).filter(Boolean) as string[])];
-  const sortedPeriods = uniquePeriods.sort((a, b) => toDate(a).getTime() - toDate(b).getTime());
-  const mostRecentPeriod = [...sortedPeriods].sort((a, b) => toDate(b).getTime() - toDate(a).getTime())[0];
+  /**
+   * Traduz uma chave de estratégia agrupada usando i18n
+   */
+  const translateGroupedStrategy = useCallback((key: GroupedStrategyKey): string => {
+    const strategiesOrder = 'portfolioPerformance.kpi.diversificationDialog.strategiesOrder'
+    return t(`${strategiesOrder}.${key}`)
+  }, [t])
 
-  // Filter to get only the most recent period data
-  const filteredData = performanceData.filter(
-    item => item.period === mostRecentPeriod && item.position && item.position > 0
-  );
+  /**
+   * Agrupa e traduz o nome de uma estratégia
+   */
+  const groupStrategy = useCallback((strategy: string | null): string => {
+    const groupedKey = groupStrategyName(strategy)
+    return translateGroupedStrategy(groupedKey)
+  }, [translateGroupedStrategy])
 
-  if (filteredData.length === 0) {
-    return null;
-  }
+  /**
+   * Obtém a ordem de uma estratégia traduzida
+   */
+  const getStrategyOrderForName = useCallback((strategyName: string): number => {
+    const strategiesOrder = 'portfolioPerformance.kpi.diversificationDialog.strategiesOrder'
+    for (const key of STRATEGY_ORDER) {
+      if (t(`${strategiesOrder}.${key}`) === strategyName) {
+        return getStrategyOrder(key)
+      }
+    }
+    return STRATEGY_ORDER.length // Put unknown strategies at the end
+  }, [t])
+
+  /**
+   * Obtém a cor de uma estratégia traduzida
+   */
+  const getStrategyColorForName = useCallback((strategyName: string): string => {
+    const strategiesOrder = 'portfolioPerformance.kpi.diversificationDialog.strategiesOrder'
+    for (const key of STRATEGY_ORDER) {
+      if (t(`${strategiesOrder}.${key}`) === strategyName) {
+        return getStrategyColor(key, true) // Use soft colors for this component
+      }
+    }
+    return getStrategyColor('others', true)
+  }, [t])
+
+  // Find the most recent period from performance data
+  const mostRecentPeriod = useMemo(() => {
+    const uniquePeriods = [...new Set(performanceData.map(d => d.period).filter(Boolean) as string[])]
+    const sortedPeriods = uniquePeriods.sort((a, b) => periodToDate(a).getTime() - periodToDate(b).getTime())
+    return [...sortedPeriods].sort((a, b) => periodToDate(b).getTime() - periodToDate(a).getTime())[0]
+  }, [performanceData])
+
+  // Filter to get only the most recent period data with valid positions
+  const filteredData = useMemo(() => {
+    return performanceData.filter(
+      item => item.period === mostRecentPeriod && item.position && item.position > 0
+    )
+  }, [performanceData, mostRecentPeriod])
 
   // Group investments by asset class and calculate totals
-  const strategyData = filteredData.reduce((acc, investment) => {
-    const assetClass = investment.asset_class || "Outros";
-    
-    if (!acc[assetClass]) {
-      acc[assetClass] = { 
-        name: assetClass, 
-        value: 0, 
-        count: 0,
-        totalReturn: 0
-      };
-    }
-    const position = Number(investment.position || 0);
-    const yieldValue = Number(investment.yield || 0);
-    acc[assetClass].value += position;
-    acc[assetClass].totalReturn += yieldValue * position;
-    acc[assetClass].count += 1;
-    return acc;
-  }, {} as Record<string, { name: string; value: number; count: number; totalReturn: number }>);
+  const strategyData = useMemo(() => {
+    return filteredData.reduce((acc, investment) => {
+      const originalStrategy = investment.asset_class || null
+      const groupedStrategy = groupStrategy(originalStrategy)
+      
+      if (!acc[groupedStrategy]) {
+        acc[groupedStrategy] = { 
+          name: groupedStrategy, 
+          value: 0, 
+          count: 0,
+          totalReturn: 0
+        }
+      }
+      // Convert position to display currency
+      const originalCurrency = (investment.currency === 'USD' || investment.currency === 'Dolar') ? 'USD' : 'BRL'
+      const position = Number(investment.position || 0)
+      const positionConverted = convertValue(position, investment.period || '', originalCurrency)
+      const yieldValue = Number(investment.yield || 0)
+      acc[groupedStrategy].value += positionConverted
+      acc[groupedStrategy].totalReturn += yieldValue * positionConverted
+      acc[groupedStrategy].count += 1
+      return acc
+    }, {} as Record<string, { name: string; value: number; count: number; totalReturn: number }>)
+  }, [filteredData, groupStrategy, convertValue])
 
-  const totalPatrimonio = Object.values(strategyData).reduce((sum, item) => sum + item.value, 0);
+  // Calculate total patrimony for percentage calculations
+  const totalPatrimonio = useMemo(() => {
+    return Object.values(strategyData).reduce((sum, item) => sum + item.value, 0)
+  }, [strategyData])
 
-  const chartData = Object.values(strategyData)
-    .map((item, index) => {
-      return {
+  // Prepare chart data with percentages and colors
+  const chartData = useMemo(() => {
+    return Object.values(strategyData)
+      .map((item) => ({
         ...item,
-        percentage: (item.value / totalPatrimonio) * 100,
+        percentage: totalPatrimonio > 0 ? (item.value / totalPatrimonio) * 100 : 0,
         avgReturn: item.value > 0 ? (item.totalReturn / item.value) * 100 : 0,
-        color: COLORS[index % COLORS.length]
-      };
-    })
-    .sort((a, b) => b.percentage - a.percentage);
+        color: getStrategyColorForName(item.name)
+      }))
+      .sort((a, b) => {
+        const orderA = getStrategyOrderForName(a.name)
+        const orderB = getStrategyOrderForName(b.name)
+        if (orderA !== orderB) {
+          return orderA - orderB
+        }
+        return b.percentage - a.percentage
+      })
+  }, [strategyData, totalPatrimonio, getStrategyColorForName, getStrategyOrderForName])
+
+  if (filteredData.length === 0) {
+    return null
+  }
 
   interface TooltipProps {
     active?: boolean;
@@ -113,7 +169,7 @@ export function StrategyBreakdown({ performanceData, currency = 'BRL' }: Strateg
           <div className="space-y-1">
             <div className="flex items-baseline gap-1">
               <span className="text-foreground font-bold text-base">
-                {formatCurrency(data.value, currency)}
+                {formatCurrency(data.value)}
               </span>
             </div>
             <p className="text-muted-foreground text-xs mt-1">
@@ -154,7 +210,7 @@ export function StrategyBreakdown({ performanceData, currency = 'BRL' }: Strateg
                   {item.percentage.toFixed(2)}%
                 </div>
                 <div className="text-right text-foreground">
-                  {formatCurrency(item.value, currency)}
+                  {formatCurrency(item.value)}
                 </div>
               </div>
             ))}
@@ -205,7 +261,7 @@ export function StrategyBreakdown({ performanceData, currency = 'BRL' }: Strateg
                     {t('portfolioPerformance.kpi.strategyBreakdown.grossPatrimony')}
                   </div>
                   <div className="text-lg font-bold text-foreground text-center">
-                    {formatCurrency(totalPatrimonio, currency)}
+                    {formatCurrency(totalPatrimonio)}
                   </div>
                 </div>
               </div>

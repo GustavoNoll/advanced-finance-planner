@@ -1733,6 +1733,111 @@ export const ptBR = {
   portfolioPerformance: {
     selectAll: "Selecionar Todos",
     newRecord: "Novo Registro",
+    issuerExposure: {
+      title: "Exposição por Emissor",
+      limitDescription: "Limite de concentração: {{amount}} por emissor",
+      legend: {
+        insideLimit: "Dentro do limite",
+        aboveLimit: "Acima do limite"
+      },
+      noData: "Sem dados",
+      noMaturities: "N/A",
+      maturityRange: "{{start}} ... {{end}} (+{{additional}} outros)",
+      limitReferenceLabel: "Limite {{symbol}} {{shortAmount}}",
+      tooltip: {
+        exposure: "Exposição: {{value}}",
+        assets: "Ativos: {{count}}",
+        maturitiesTitle: "Vencimentos",
+        limitExceeded: "Acima do limite em: {{value}}"
+      }
+    },
+    performanceChart: {
+      viewModes: {
+        returns: "Retorno Acumulado",
+        patrimony: "Seu patrimônio",
+        growth: "Crescimento"
+      },
+      switchView: "Trocar",
+      indicators: "Indicadores",
+      selectIndicators: "Selecionar Indicadores",
+      target: "Meta",
+      targetNotAvailable: "(Não disponível)",
+      periodButtons: {
+        month: "Mês",
+        year: "Ano",
+        twelveMonths: "12M",
+        all: "Ótimo",
+        custom: "Personalizado"
+      },
+      customPeriod: {
+        startPeriod: "Competência Inicial",
+        endPeriod: "Competência Final",
+        selectStart: "Selecionar a competência inicial",
+        selectEnd: "Selecionar a competência final"
+      },
+      growthView: {
+        showAll: "Ver Tudo",
+        generatedIncome: "Renda Gerada",
+        initialPatrimony: "Patrimônio Inicial",
+        totalGrowth: "Crescimento Total",
+        movement: "Movimentação:",
+        financialGain: "Ganho Financeiro:",
+        finalPatrimony: "Patrimônio Final:"
+      },
+      tooltips: {
+        portfolio: "Portfolio",
+        cdi: "CDI",
+        target: "Meta",
+        ipca: "IPCA",
+        appliedPatrimony: "Patrimônio Aplicado",
+        patrimony: "Patrimônio"
+      },
+      metrics: {
+        snowballEffect: "Efeito bola de neve",
+        snowballDescription: "sobre o patrimônio aplicado",
+        averageGrowth: "Crescimento médio",
+        perPeriod: "por período",
+        totalGrowthPeriod: "Crescimento total no período",
+        lastGeneratedIncome: "Última renda gerada",
+        incomePercentage: "% do patrimônio",
+        averageIncome12M: "Renda média (12M)",
+        total: "Total:",
+        vsTarget: "vs Meta",
+        meta: "Meta",
+        aboveTarget: "acima",
+        belowTarget: "abaixo",
+        ofTarget: "da meta",
+        vsCDI: "vs CDI",
+        ofCDIReturn: "do retorno do CDI",
+        vsIPCA: "vs IPCA",
+        aboveInflation: "acima",
+        belowInflation: "abaixo",
+        ofInflation: "da inflação"
+      }
+    },
+    assetReturnsTable: {
+      title: "Retorno por Ativo",
+      columnsButton: "Colunas",
+      dropdownLabel: "Exibir Colunas",
+      columns: {
+        asset: "Ativo",
+        allocation: "Alocação / Qtd.",
+        grossBalance: "Saldo Bruto",
+        month: "Mês",
+        year: "Ano",
+        inception: "Início",
+        issuer: "Emissor",
+        institution: "Instituição",
+        accountName: "Nome da Conta",
+        maturity: "Vencimento",
+        currency: "Moeda Origem"
+      },
+      summary: {
+        balance: "Saldo",
+        rentability: "Rentabilidade",
+        rentabilityShort: "Rent."
+      }
+    },
     filters: {
       all: "Todos",
       allPeriods: "Todas competências",
@@ -2062,7 +2167,7 @@ export const ptBR = {
       noPreviousMonth: "Sem mês anterior para comparar",
       vsPreviousMonth: "vs mês anterior",
       monthlyYield: "Rentabilidade no mês",
-      vsTarget: "vs Meta: --",
+      vsTarget: "vs Meta: ",
       diversification: "Diversificação",
       assetsInPortfolio: "Ativos na carteira",
       nextMaturity: "Próximo Vencimento",
@@ -2144,7 +2249,8 @@ export const ptBR = {
         total: "Valor Total",
         avgRate: "Taxa Média",
         byStrategy: "Por Estratégia",
-        emptyFor: "Nenhum dado de vencimento disponível para",
+        emptyFor: "Nenhum dado de vencimento disponível para {{assetClass}}",
+        noMaturityData: "Nenhum dado de vencimento disponível",
         assetClasses: {
           postFixed: "Pós Fixado",
           inflation: "Inflação",
@@ -2196,42 +2302,15 @@ export const ptBR = {
           others: "Outros"
         }
       },
-      assetReturnsTable: {
-        title: "Retorno por Ativo",
-        columns: "Colunas",
-        showColumns: "Exibir Colunas",
-        allocation: "Alocação / Qtd.",
-        grossBalance: "Saldo Bruto",
-        month: "Mês",
-        year: "Ano",
-        inception: "Início",
-        issuer: "Emissor",
-        institution: "Instituição",
-        accountName: "Nome da Conta",
-        maturity: "Vencimento",
-        originalCurrency: "Moeda Origem",
-        asset: "Ativo",
-        balance: "Saldo",
-        rentability: "Rentabilidade",
-        benchmark: {
-          postFixedLiquidity: "% CDI",
-          postFixed: "% CDI",
-          inflation: "± IPCA",
-          preFixed: "± IRF-M",
-          multimarket: "% CDI",
-          realEstate: "± IFIX",
-          stocks: "± IBOV",
-          stocksLongBias: "± IBOV",
-          privateEquity: "% CDI",
-          foreignFixedIncome: "± T-Bond",
-          foreignStocks: "± S&P500",
-          coe: "% CDI",
-          gold: "± Gold",
-          crypto: "± BTC",
-          others: "% CDI"
-        },
-        emptyValue: "-",
-        others: "Outros"
+      maturityDialog: {
+        title: "Cronograma de Vencimentos",
+        description: "Próximos vencimentos de títulos da carteira",
+        totalNext12Months: "Total a Vencer (12 meses)",
+        titlesWithMaturity: "Títulos com Vencimento",
+        maturitiesByYear: "Vencimentos por Ano",
+        chartValueLabel: "Valor",
+        noFutureMaturities: "Nenhum vencimento futuro encontrado",
+        upcomingMaturities: "Próximos Vencimentos"
       }
     }
   },

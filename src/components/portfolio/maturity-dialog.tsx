@@ -3,9 +3,11 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, ResponsiveContainer, Cell } from "recharts"
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart"
 import { format } from "date-fns"
-import { ptBR } from "date-fns/locale"
+import { ptBR, enUS } from "date-fns/locale"
 import type { PerformanceData } from "@/types/financial"
 import { useCurrency } from "@/contexts/CurrencyContext"
+import { useTranslation } from "react-i18next"
+import { useMemo } from "react"
 
 interface MaturityDialogProps {
   open: boolean
@@ -13,67 +15,114 @@ interface MaturityDialogProps {
   performanceData: PerformanceData[]
 }
 
+const TRANSLATION_BASE = 'portfolioPerformance.kpi.maturityDialog'
+const MAX_UPCOMING_MATURITIES = 10
+const MONTHS_AHEAD = 12
+
+/**
+ * Converts a period string (MM/YYYY) to a timestamp for sorting
+ */
+function periodToTimestamp(period?: string | null): number {
+  if (!period) return 0
+  const [month, year] = period.split('/')
+  return new Date(parseInt(year), parseInt(month) - 1).getTime()
+}
+
+/**
+ * Determines the original currency from a currency string
+ */
+function getOriginalCurrency(currency?: string | null): 'USD' | 'BRL' {
+  return currency === 'USD' || currency === 'Dolar' ? 'USD' : 'BRL'
+}
+
 export function MaturityDialog({ open, onOpenChange, performanceData }: MaturityDialogProps) {
+  const { t, i18n } = useTranslation()
   const { convertValue, formatCurrency } = useCurrency()
+  const currentLocale = i18n.language === 'pt-BR' ? ptBR : enUS
   
-  const toDate = (competencia?: string | null) => {
-    if (!competencia) return 0
-    const [m, y] = competencia.split('/')
-    return new Date(parseInt(y), parseInt(m) - 1).getTime()
-  }
+  // Find the most recent period from performance data
+  const mostRecentPeriod = useMemo(() => {
+    const uniquePeriods = [...new Set(performanceData.map(d => d.period).filter(Boolean) as string[])]
+    return uniquePeriods.sort((a, b) => periodToTimestamp(b) - periodToTimestamp(a))[0]
+  }, [performanceData])
 
-  const mostRecent = [...new Set(performanceData.map(d => d.period).filter(Boolean) as string[])]
-    .sort((a, b) => toDate(b) - toDate(a))[0]
+  // Filter to most recent period and extract future maturities
+  const upcomingMaturities = useMemo(() => {
+    const filtered = performanceData.filter(d => d.period === mostRecentPeriod)
+    const now = new Date()
+    
+    return filtered
+      .filter(item => item.maturity_date)
+      .map(item => ({ 
+        ...item, 
+        maturityDate: new Date(item.maturity_date as string) 
+      }))
+      .filter(item => item.maturityDate >= now)
+      .sort((a, b) => a.maturityDate.getTime() - b.maturityDate.getTime())
+  }, [performanceData, mostRecentPeriod])
 
-  const filtered = performanceData.filter(d => d.period === mostRecent)
-  const now = new Date()
-  const maturity = filtered
-    .filter(i => i.maturity_date)
-    .map(i => ({ ...i, mat: new Date(i.maturity_date as string) }))
-    .filter(i => i.mat >= now)
-    .sort((a, b) => a.mat.getTime() - b.mat.getTime())
-
-  // Group by year for chart
-  const yearlyGroups = maturity.reduce((acc, item) => {
-    const year = format(item.mat, 'yyyy')
-    if (!acc[year]) {
-      acc[year] = {
-        year: year,
-        total: 0,
-        count: 0
+  // Group maturities by year for chart visualization
+  const yearlyMaturityGroups = useMemo(() => {
+    return upcomingMaturities.reduce((acc, item) => {
+      const year = format(item.maturityDate, 'yyyy')
+      if (!acc[year]) {
+        acc[year] = {
+          year,
+          total: 0,
+          count: 0
+        }
       }
-    }
-    const originalCurrency = (item.currency === 'USD' || item.currency === 'Dolar') ? 'USD' : 'BRL'
-    const positionConverted = convertValue(item.position || 0, item.period || mostRecent, originalCurrency)
-    acc[year].total += positionConverted
-    acc[year].count += 1
-    return acc
-  }, {} as Record<string, { year: string; total: number; count: number }>)
+      const originalCurrency = getOriginalCurrency(item.currency)
+      const positionConverted = convertValue(
+        item.position || 0, 
+        item.period || mostRecentPeriod, 
+        originalCurrency
+      )
+      acc[year].total += positionConverted
+      acc[year].count += 1
+      return acc
+    }, {} as Record<string, { year: string; total: number; count: number }>)
+  }, [upcomingMaturities, mostRecentPeriod, convertValue])
 
-  const chartData = (Object.values(yearlyGroups) as Array<{ year: string; total: number; count: number }>)
-    .sort((a, b) => parseInt(a.year) - parseInt(b.year))
+  // Sort chart data chronologically
+  const chartData = useMemo(() => {
+    return Object.values(yearlyMaturityGroups)
+      .sort((a, b) => parseInt(a.year) - parseInt(b.year))
+  }, [yearlyMaturityGroups])
 
-  // Calculate total for next 12 months only
-  const twelveMonthsFromNow = new Date()
-  twelveMonthsFromNow.setMonth(twelveMonthsFromNow.getMonth() + 12)
-  
-  const next12MonthsData = maturity.filter(item => 
-    item.mat <= twelveMonthsFromNow
-  )
-  
-  const totalNext12 = next12MonthsData.reduce((s, i) => {
-    const originalCurrency = (i.currency === 'USD' || i.currency === 'Dolar') ? 'USD' : 'BRL'
-    const positionConverted = convertValue(i.position || 0, i.period || mostRecent, originalCurrency)
-    return s + positionConverted
-  }, 0)
+  // Calculate total for next 12 months
+  const totalNext12Months = useMemo(() => {
+    const twelveMonthsFromNow = new Date()
+    twelveMonthsFromNow.setMonth(twelveMonthsFromNow.getMonth() + MONTHS_AHEAD)
+    
+    return upcomingMaturities
+      .filter(item => item.maturityDate <= twelveMonthsFromNow)
+      .reduce((sum, item) => {
+        const originalCurrency = getOriginalCurrency(item.currency)
+        const positionConverted = convertValue(
+          item.position || 0, 
+          item.period || mostRecentPeriod, 
+          originalCurrency
+        )
+        return sum + positionConverted
+      }, 0)
+  }, [upcomingMaturities, mostRecentPeriod, convertValue])
+
+  // Chart color palette
+  const chartColors = useMemo(() => [
+    '#3b82f6', '#10b981', '#f59e0b', '#ef4444', 
+    '#8b5cf6', '#06b6d4', '#ec4899', '#14b8a6'
+  ], [])
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-[95vw] md:max-w-4xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle className="text-xl md:text-2xl font-bold">Cronograma de Vencimentos</DialogTitle>
+          <DialogTitle className="text-xl md:text-2xl font-bold">
+            {t(`${TRANSLATION_BASE}.title`)}
+          </DialogTitle>
           <DialogDescription>
-            Próximos vencimentos de títulos da carteira
+            {t(`${TRANSLATION_BASE}.description`)}
           </DialogDescription>
         </DialogHeader>
 
@@ -83,12 +132,12 @@ export function MaturityDialog({ open, onOpenChange, performanceData }: Maturity
             <Card>
               <CardHeader className="pb-2">
                 <CardTitle className="text-xs md:text-sm font-medium text-muted-foreground">
-                  Total a Vencer (12 meses)
+                  {t(`${TRANSLATION_BASE}.totalNext12Months`)}
                 </CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="text-xl md:text-2xl font-bold">
-                  {formatCurrency(totalNext12)}
+                  {formatCurrency(totalNext12Months)}
                 </div>
               </CardContent>
             </Card>
@@ -96,12 +145,12 @@ export function MaturityDialog({ open, onOpenChange, performanceData }: Maturity
             <Card>
               <CardHeader className="pb-2">
                 <CardTitle className="text-xs md:text-sm font-medium text-muted-foreground">
-                  Títulos com Vencimento
+                  {t(`${TRANSLATION_BASE}.titlesWithMaturity`)}
                 </CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="text-xl md:text-2xl font-bold">
-                  {maturity.length}
+                  {upcomingMaturities.length}
                 </div>
               </CardContent>
             </Card>
@@ -111,13 +160,15 @@ export function MaturityDialog({ open, onOpenChange, performanceData }: Maturity
           {chartData.length > 0 ? (
             <Card>
               <CardHeader>
-                <CardTitle className="text-base md:text-lg">Vencimentos por Ano</CardTitle>
+                <CardTitle className="text-base md:text-lg">
+                  {t(`${TRANSLATION_BASE}.maturitiesByYear`)}
+                </CardTitle>
               </CardHeader>
               <CardContent className="px-2 md:px-6">
                 <ChartContainer
                   config={{
                     total: {
-                      label: "Valor",
+                      label: t(`${TRANSLATION_BASE}.chartValueLabel`),
                       color: "#3b82f6",
                     },
                   }}
@@ -145,10 +196,12 @@ export function MaturityDialog({ open, onOpenChange, performanceData }: Maturity
                         fill="#3b82f6" 
                         radius={[8, 8, 0, 0]}
                       >
-                        {chartData.map((entry, index) => {
-                          const colors = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#06b6d4', '#ec4899', '#14b8a6']
-                          return <Cell key={`cell-${index}`} fill={colors[index % colors.length]} />
-                        })}
+                        {chartData.map((entry, index) => (
+                          <Cell 
+                            key={`cell-${index}`} 
+                            fill={chartColors[index % chartColors.length]} 
+                          />
+                        ))}
                       </Bar>
                     </BarChart>
                   </ResponsiveContainer>
@@ -158,37 +211,47 @@ export function MaturityDialog({ open, onOpenChange, performanceData }: Maturity
           ) : (
             <Card>
               <CardContent className="py-8 text-center text-muted-foreground text-sm md:text-base">
-                Nenhum vencimento futuro encontrado
+                {t(`${TRANSLATION_BASE}.noFutureMaturities`)}
               </CardContent>
             </Card>
           )}
 
           {/* List of upcoming maturities */}
-          {maturity.length > 0 && (
+          {upcomingMaturities.length > 0 && (
             <Card>
               <CardHeader>
-                <CardTitle className="text-base md:text-lg">Próximos Vencimentos</CardTitle>
+                <CardTitle className="text-base md:text-lg">
+                  {t(`${TRANSLATION_BASE}.upcomingMaturities`)}
+                </CardTitle>
               </CardHeader>
               <CardContent className="px-2 md:px-6">
                 <div className="space-y-2 max-h-[250px] md:max-h-[300px] overflow-y-auto">
-                  {maturity.slice(0, 10).map((item, index) => {
-                    const originalCurrency = (item.currency === 'USD' || item.currency === 'Dolar') ? 'USD' : 'BRL'
-                    const positionConverted = convertValue(item.position || 0, item.period || mostRecent, originalCurrency)
+                  {upcomingMaturities.slice(0, MAX_UPCOMING_MATURITIES).map((item, index) => {
+                    const originalCurrency = getOriginalCurrency(item.currency)
+                    const positionConverted = convertValue(
+                      item.position || 0, 
+                      item.period || mostRecentPeriod, 
+                      originalCurrency
+                    )
                     return (
                       <div 
-                        key={index}
+                        key={`${item.asset}-${item.maturity_date}-${index}`}
                         className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2 p-2 md:p-3 rounded-lg bg-muted/50 hover:bg-muted transition-colors"
                       >
                         <div className="flex-1 min-w-0">
-                          <div className="font-medium text-xs md:text-sm truncate">{item.asset || '-'}</div>
-                          <div className="text-[10px] md:text-xs text-muted-foreground truncate">{item.issuer || '-'}</div>
+                          <div className="font-medium text-xs md:text-sm truncate">
+                            {item.asset || '-'}
+                          </div>
+                          <div className="text-[10px] md:text-xs text-muted-foreground truncate">
+                            {item.issuer || '-'}
+                          </div>
                         </div>
                         <div className="text-left sm:text-right flex-shrink-0">
                           <div className="font-semibold text-xs md:text-sm">
                             {formatCurrency(positionConverted)}
                           </div>
                           <div className="text-[10px] md:text-xs text-muted-foreground">
-                            {format(item.mat, 'dd/MM/yyyy', { locale: ptBR })}
+                            {format(item.maturityDate, 'dd/MM/yyyy', { locale: currentLocale })}
                           </div>
                         </div>
                       </div>

@@ -126,26 +126,36 @@ export function MaturityTimeline({ performanceData }: MaturityTimelineProps) {
     return chartReady
   }, [filteredData])
 
+  /**
+   * Custom tooltip component for the maturity timeline chart
+   */
   const CustomTooltip = ({ active, payload }: { active?: boolean; payload?: Array<{ payload: MaturityYearDataItem }> }) => {
-    if (active && payload && payload.length) {
-      const data = payload[0].payload as MaturityYearDataItem
-      return (
-        <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-lg p-3 shadow-lg">
-          <p className="text-foreground font-medium">{t('portfolioPerformance.kpi.maturityTimeline.year', 'Ano')}: {data.year}</p>
-          <p className="text-primary">{t('portfolioPerformance.kpi.maturityTimeline.total', 'Valor Total')}: {formatCurrency(data.totalAmount)}</p>
-          <p className="text-muted-foreground">{t('portfolioPerformance.kpi.maturityTimeline.avgRate', 'Taxa Média')}: {data.avgRate}</p>
-          <div className="mt-2">
-            <p className="text-sm font-medium text-foreground">{t('portfolioPerformance.kpi.maturityTimeline.byStrategy', 'Por Estratégia')}:</p>
-            {Object.entries(data.strategies).map(([strategy, s]) => (
-              <div key={strategy} className="text-xs text-muted-foreground ml-2">
-                {strategy}: {formatCurrency(s.amount)}
-              </div>
-            ))}
-          </div>
+    if (!active || !payload || payload.length === 0) return null
+    
+    const data = payload[0].payload as MaturityYearDataItem
+    return (
+      <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-lg p-3 shadow-lg">
+        <p className="text-foreground font-medium">
+          {t('portfolioPerformance.kpi.maturityTimeline.year')}: {data.year}
+        </p>
+        <p className="text-primary">
+          {t('portfolioPerformance.kpi.maturityTimeline.total')}: {formatCurrency(data.totalAmount)}
+        </p>
+        <p className="text-muted-foreground">
+          {t('portfolioPerformance.kpi.maturityTimeline.avgRate')}: {data.avgRate}
+        </p>
+        <div className="mt-2">
+          <p className="text-sm font-medium text-foreground">
+            {t('portfolioPerformance.kpi.maturityTimeline.byStrategy')}:
+          </p>
+          {Object.entries(data.strategies).map(([strategy, s]) => (
+            <div key={strategy} className="text-xs text-muted-foreground ml-2">
+              {strategy}: {formatCurrency(s.amount)}
+            </div>
+          ))}
         </div>
-      )
-    }
-    return null
+      </div>
+    )
   }
 
   return (
@@ -153,8 +163,12 @@ export function MaturityTimeline({ performanceData }: MaturityTimelineProps) {
       <CardHeader>
         <div className="flex items-center justify-between">
           <div>
-            <CardTitle className="text-foreground">{t('portfolioPerformance.kpi.maturityTimeline.title', 'Vencimentos por Estratégia')}</CardTitle>
-            <p className="text-sm text-muted-foreground">{t('portfolioPerformance.kpi.maturityTimeline.subtitle', 'Distribuição por data de vencimento')}</p>
+            <CardTitle className="text-foreground">
+              {t('portfolioPerformance.kpi.maturityTimeline.title')}
+            </CardTitle>
+            <p className="text-sm text-muted-foreground">
+              {t('portfolioPerformance.kpi.maturityTimeline.subtitle')}
+            </p>
           </div>
           <div className="flex items-center gap-1 flex-wrap">
             {assetClassOptions.length > 0 ? (
@@ -171,7 +185,7 @@ export function MaturityTimeline({ performanceData }: MaturityTimelineProps) {
               ))
             ) : (
               <p className="text-sm text-muted-foreground">
-                {t('portfolioPerformance.kpi.maturityTimeline.emptyFor', 'Nenhum dado de vencimento disponível')}
+                {t('portfolioPerformance.kpi.maturityTimeline.noMaturityData')}
               </p>
             )}
           </div>
@@ -181,8 +195,9 @@ export function MaturityTimeline({ performanceData }: MaturityTimelineProps) {
         {maturityData.length === 0 ? (
           <div className="flex items-center justify-center h-[400px] text-muted-foreground">
             <p>
-              {t('portfolioPerformance.kpi.maturityTimeline.emptyFor', 'Nenhum dado de vencimento disponível para')}{' '}
-              {assetClassOptions.find(opt => opt.key === selectedAssetClass)?.label || selectedAssetClass}
+              {t('portfolioPerformance.kpi.maturityTimeline.emptyFor', {
+                assetClass: assetClassOptions.find(opt => opt.key === selectedAssetClass)?.label || selectedAssetClass
+              })}
             </p>
           </div>
         ) : (

@@ -334,6 +334,7 @@ const Index = () => {
           profile={clientProfile}
           broker={brokerProfile}
           investmentPlan={investmentPlan}
+          activeMicroPlan={activeMicroPlan || null}
           onLogout={handleLogout}
           onShareClient={handleShareClient}
         />

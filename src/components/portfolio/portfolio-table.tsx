@@ -1,19 +1,17 @@
-import { useEffect, useMemo, useState } from "react"
+import { Fragment, useEffect, useMemo, useState } from "react"
 import { ChevronDown, ChevronUp, Trophy } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import type { ConsolidatedPerformance } from "@/types/financial"
-import { formatCurrency } from "@/utils/currency"
-import { CurrencyCode } from "@/utils/currency"
 import { calculateCompoundedRates } from "@/lib/financial-math"
 import { useTranslation } from "react-i18next"
 import { useCurrency } from "@/contexts/CurrencyContext"
 
-interface MarketPoint { competencia: string; clientTarget: number }
+interface MarketPoint { period: string; clientTarget: number }
 
 interface PortfolioTableProps {
   consolidatedData: ConsolidatedPerformance[]
-  filteredRange?: { inicio: string; fim: string }
+  filteredRange?: { start: string; end: string }
   onYearTotalsChange?: (totals: { totalPatrimonio: number; totalRendimento: number } | null) => void
   marketData?: MarketPoint[]
 }
@@ -21,18 +19,19 @@ interface PortfolioTableProps {
 export function PortfolioTable({ consolidatedData, filteredRange, onYearTotalsChange, marketData }: PortfolioTableProps) {
   const { t } = useTranslation()
   const { convertValue, adjustReturnWithFX, formatCurrency: formatCurrencyContext } = useCurrency()
-  const toDate = (comp?: string | null) => {
-    if (!comp) return 0
-    const [m, y] = comp.split('/')
-    return new Date(parseInt(y), parseInt(m) - 1).getTime()
+  const periodToDate = (period?: string | null) => {
+    if (!period) return 0
+    const [month, year] = period.split('/')
+    return new Date(parseInt(year), parseInt(month) - 1).getTime()
   }
+  const getOriginalCurrency = (currency?: string | null) => currency === 'USD' || currency === 'Dolar' ? 'USD' : 'BRL'
 
   const filtered = useMemo(() => {
-    if (!filteredRange?.inicio || !filteredRange?.fim) return consolidatedData
-    const start = toDate(filteredRange.inicio)
-    const end = toDate(filteredRange.fim)
+    if (!filteredRange?.start || !filteredRange?.end) return consolidatedData
+    const start = periodToDate(filteredRange.start)
+    const end = periodToDate(filteredRange.end)
     return consolidatedData.filter(r => {
-      const d = toDate(r.period)
+      const d = periodToDate(r.period)
       return d >= start && d <= end
     })
   }, [consolidatedData, filteredRange])
@@ -46,50 +45,50 @@ export function PortfolioTable({ consolidatedData, filteredRange, onYearTotalsCh
       groups.set(year, arr)
     })
     return Array.from(groups.entries()).map(([year, rows]) => {
-      const sorted = [...rows].sort((a, b) => toDate(a.period) - toDate(b.period))
+      const sorted = [...rows].sort((a, b) => periodToDate(a.period) - periodToDate(b.period))
       const oldest = sorted[0]
       const mostRecent = sorted[sorted.length - 1]
       
       // Convert values considering currency
       const movement = rows.reduce((s, r) => {
-        const originalCurrency = (r.currency === 'USD' || r.currency === 'Dolar') ? 'USD' : 'BRL'
+        const originalCurrency = getOriginalCurrency(r.currency)
         return s + convertValue(Number(r.movement || 0), r.period || '', originalCurrency)
       }, 0)
       const taxes = rows.reduce((s, r) => {
-        const originalCurrency = (r.currency === 'USD' || r.currency === 'Dolar') ? 'USD' : 'BRL'
+        const originalCurrency = getOriginalCurrency(r.currency)
         return s + convertValue(Number(r.taxes || 0), r.period || '', originalCurrency)
       }, 0)
       const gain = rows.reduce((s, r) => {
-        const originalCurrency = (r.currency === 'USD' || r.currency === 'Dolar') ? 'USD' : 'BRL'
+        const originalCurrency = getOriginalCurrency(r.currency)
         return s + convertValue(Number(r.financial_gain || 0), r.period || '', originalCurrency)
       }, 0)
       
       // Adjust yields with FX
       const adjustedYields = sorted.map(r => {
-        const originalCurrency = (r.currency === 'USD' || r.currency === 'Dolar') ? 'USD' : 'BRL'
+        const originalCurrency = getOriginalCurrency(r.currency)
         return adjustReturnWithFX(Number(r.yield || 0), r.period || '', originalCurrency)
       })
       const compound = calculateCompoundedRates(adjustedYields)
-      // Target compose
+      // Compose portfolio return vs. client target to highlight deltas
       let ppAbove: string | null = null
       if (marketData && marketData.length > 0) {
         const [first, last] = [sorted[0].period!, sorted[sorted.length - 1].period!]
         const pts = marketData
-          .filter(m => toDate(m.competencia) >= toDate(first) && toDate(m.competencia) <= toDate(last))
-          .sort((a, b) => toDate(a.competencia) - toDate(b.competencia))
+          .filter(m => periodToDate(m.period) >= periodToDate(first) && periodToDate(m.period) <= periodToDate(last))
+          .sort((a, b) => periodToDate(a.period) - periodToDate(b.period))
         const targetCompound = calculateCompoundedRates(pts.map(p => p.clientTarget || 0))
         ppAbove = `${((compound - targetCompound) * 100).toFixed(2)}pp`
       }
       const best = rows.reduce((best, cur) => {
-        const curOriginalCurrency = (cur.currency === 'USD' || cur.currency === 'Dolar') ? 'USD' : 'BRL'
-        const bestOriginalCurrency = (best.currency === 'USD' || best.currency === 'Dolar') ? 'USD' : 'BRL'
+        const curOriginalCurrency = getOriginalCurrency(cur.currency)
+        const bestOriginalCurrency = getOriginalCurrency(best.currency)
         const curYield = adjustReturnWithFX(Number(cur.yield || 0), cur.period || '', curOriginalCurrency)
         const bestYield = adjustReturnWithFX(Number(best.yield || 0), best.period || '', bestOriginalCurrency)
         return curYield > bestYield ? cur : best
       }, rows[0])
       
-      const oldestOriginalCurrency = (oldest.currency === 'USD' || oldest.currency === 'Dolar') ? 'USD' : 'BRL'
-      const mostRecentOriginalCurrency = (mostRecent.currency === 'USD' || mostRecent.currency === 'Dolar') ? 'USD' : 'BRL'
+      const oldestOriginalCurrency = getOriginalCurrency(oldest.currency)
+      const mostRecentOriginalCurrency = getOriginalCurrency(mostRecent.currency)
       
       return {
         year,
@@ -111,7 +110,7 @@ export function PortfolioTable({ consolidatedData, filteredRange, onYearTotalsCh
     const periodAgg = new Map<string, { initial: number; movement: number; taxes: number; final: number; gain: number; yieldWeighted: number; weight: number }>()
     filtered.forEach(r => {
       const p = r.period || '-'
-      const originalCurrency = (r.currency === 'USD' || r.currency === 'Dolar') ? 'USD' : 'BRL'
+      const originalCurrency = getOriginalCurrency(r.currency)
       const agg = periodAgg.get(p) || { initial: 0, movement: 0, taxes: 0, final: 0, gain: 0, yieldWeighted: 0, weight: 0 }
       agg.initial += convertValue(Number(r.initial_assets || 0), p, originalCurrency)
       agg.movement += convertValue(Number(r.movement || 0), p, originalCurrency)
@@ -141,7 +140,7 @@ export function PortfolioTable({ consolidatedData, filteredRange, onYearTotalsCh
     // sort months desc within each year
     Array.from(yearToMonths.keys()).forEach(y => {
       const arr = yearToMonths.get(y)!
-      arr.sort((a, b) => toDate(b.period) - toDate(a.period))
+      arr.sort((a, b) => periodToDate(b.period) - periodToDate(a.period))
     })
     return yearToMonths
   }, [filtered, convertValue, adjustReturnWithFX])
@@ -169,8 +168,10 @@ export function PortfolioTable({ consolidatedData, filteredRange, onYearTotalsCh
     if (!period) return '-'
     const [m] = period.split('/')
     const monthNames = t('portfolioPerformance.months.short', { returnObjects: true }) as string[]
+    const fallbackMonths = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
+    const dictionary = monthNames?.length === 12 ? monthNames : fallbackMonths
     const idx = Math.max(1, Math.min(12, parseInt(m))) - 1
-    return monthNames[idx] || '-'
+    return dictionary[idx] || '-'
   }
 
   const [expandedYears, setExpandedYears] = useState<Set<string>>(new Set())
@@ -205,8 +206,8 @@ export function PortfolioTable({ consolidatedData, filteredRange, onYearTotalsCh
             </TableHeader>
             <TableBody>
               {byYear.map(y => (
-                <>
-                  <TableRow key={y.year} className="border-border/50 bg-muted/10">
+                <Fragment key={y.year}>
+                  <TableRow className="border-border/50 bg-muted/10">
                     <TableCell className="text-foreground font-semibold flex items-center gap-2">
                       <span className="inline-block w-3 h-3 rounded-full bg-yellow-500"></span>
                       <button aria-label="toggle-year" className="text-muted-foreground" onClick={() => toggleYear(y.year)}>
@@ -248,7 +249,7 @@ export function PortfolioTable({ consolidatedData, filteredRange, onYearTotalsCh
                       <TableCell className="text-foreground">N/A</TableCell>
                     </TableRow>
                   ))}
-                </>
+                </Fragment>
               ))}
 
               {/* No row extra para mês mais recente; os meses aparecem dentro do respectivo ano */}
