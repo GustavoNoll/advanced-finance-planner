@@ -7,6 +7,7 @@ import tBondData from '../data/t-bond-historical.json';
 import ibovData from '../data/ibov-historical.json';
 import goldData from '../data/gold-historical.json';
 import btcData from '../data/btc-historical.json';
+import ptaxRawData from '../data/ptax-raw-historical.json';
 
 interface RateData {
   data: string;
@@ -133,3 +134,72 @@ export const fetchBTCPrices = (startDate: string, endDate: string) => {
     return [];
   }
 };
+
+/**
+ * Processa dados históricos de PTAX e retorna função para buscar cotação por competência
+ * @returns Função que recebe competência (MM/YYYY) e retorna cotação ou null
+ */
+export const getPTAXByCompetencia = (): ((competencia: string) => number | null) => {
+  try {
+    // Agrupar cotações por competência (MM/YYYY) e pegar o último dia útil do mês
+    const competenciaMap = new Map<string, { cotacao: number; date: Date }>()
+
+    ;(ptaxRawData as RateData[]).forEach((item) => {
+      const itemDate = parseBrazilianDate(item.data)
+      const month = String(itemDate.getMonth() + 1).padStart(2, '0')
+      const year = itemDate.getFullYear()
+      const competencia = `${month}/${year}`
+      
+      const cotacao = parseFloat(item.valor) || 0
+
+      // Guardar apenas se não existe ou se a data é mais recente (último dia do mês)
+      const existing = competenciaMap.get(competencia)
+      if (!existing || itemDate > existing.date) {
+        competenciaMap.set(competencia, { cotacao, date: itemDate })
+      }
+    })
+
+    // Criar map final apenas com cotações
+    const cotacaoMap = new Map<string, number>()
+    competenciaMap.forEach(({ cotacao }, competencia) => {
+      cotacaoMap.set(competencia, cotacao)
+    })
+
+    // Retornar função que busca cotação por competência
+    return (competencia: string): number | null => {
+      // Try exact match first
+      const found = cotacaoMap.get(competencia)
+      if (found !== undefined) {
+        return found
+      }
+
+      // If not found, try to find nearest previous competencia
+      const [mes, ano] = competencia.split('/').map(Number)
+      const requestedDate = new Date(ano, mes - 1, 1)
+      
+      const sortedCompetencias = Array.from(cotacaoMap.entries())
+        .map(([comp, cotacao]) => {
+          const [mesItem, anoItem] = comp.split('/').map(Number)
+          return {
+            competencia: comp,
+            cotacao,
+            date: new Date(anoItem, mesItem - 1, 1)
+          }
+        })
+        .sort((a, b) => b.date.getTime() - a.date.getTime())
+
+      const nearest = sortedCompetencias.find(item => item.date <= requestedDate)
+
+      if (nearest) {
+        console.log(`⚠️ PTAX not found for ${competencia}, using nearest previous: ${nearest.competencia} = ${nearest.cotacao}`)
+        return nearest.cotacao
+      }
+
+      console.error(`❌ No PTAX data available for ${competencia} or any previous date`)
+      return null
+    }
+  } catch (error) {
+    console.error('Error processing PTAX data:', error)
+    return () => null
+  }
+}

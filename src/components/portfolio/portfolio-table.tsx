@@ -7,6 +7,7 @@ import { formatCurrency } from "@/utils/currency"
 import { CurrencyCode } from "@/utils/currency"
 import { calculateCompoundedRates } from "@/lib/financial-math"
 import { useTranslation } from "react-i18next"
+import { useCurrency } from "@/contexts/CurrencyContext"
 
 interface MarketPoint { competencia: string; clientTarget: number }
 
@@ -15,11 +16,11 @@ interface PortfolioTableProps {
   filteredRange?: { inicio: string; fim: string }
   onYearTotalsChange?: (totals: { totalPatrimonio: number; totalRendimento: number } | null) => void
   marketData?: MarketPoint[]
-  currency?: CurrencyCode
 }
 
-export function PortfolioTable({ consolidatedData, filteredRange, onYearTotalsChange, marketData, currency = 'BRL' }: PortfolioTableProps) {
+export function PortfolioTable({ consolidatedData, filteredRange, onYearTotalsChange, marketData }: PortfolioTableProps) {
   const { t } = useTranslation()
+  const { convertValue, adjustReturnWithFX, formatCurrency: formatCurrencyContext } = useCurrency()
   const toDate = (comp?: string | null) => {
     if (!comp) return 0
     const [m, y] = comp.split('/')
@@ -48,10 +49,27 @@ export function PortfolioTable({ consolidatedData, filteredRange, onYearTotalsCh
       const sorted = [...rows].sort((a, b) => toDate(a.period) - toDate(b.period))
       const oldest = sorted[0]
       const mostRecent = sorted[sorted.length - 1]
-      const movement = rows.reduce((s, r) => s + Number(r.movement || 0), 0)
-      const taxes = rows.reduce((s, r) => s + Number(r.taxes || 0), 0)
-      const gain = rows.reduce((s, r) => s + Number(r.financial_gain || 0), 0)
-      const compound = calculateCompoundedRates(sorted.map(r => Number(r.yield || 0)))
+      
+      // Convert values considering currency
+      const movement = rows.reduce((s, r) => {
+        const originalCurrency = (r.currency === 'USD' || r.currency === 'Dolar') ? 'USD' : 'BRL'
+        return s + convertValue(Number(r.movement || 0), r.period || '', originalCurrency)
+      }, 0)
+      const taxes = rows.reduce((s, r) => {
+        const originalCurrency = (r.currency === 'USD' || r.currency === 'Dolar') ? 'USD' : 'BRL'
+        return s + convertValue(Number(r.taxes || 0), r.period || '', originalCurrency)
+      }, 0)
+      const gain = rows.reduce((s, r) => {
+        const originalCurrency = (r.currency === 'USD' || r.currency === 'Dolar') ? 'USD' : 'BRL'
+        return s + convertValue(Number(r.financial_gain || 0), r.period || '', originalCurrency)
+      }, 0)
+      
+      // Adjust yields with FX
+      const adjustedYields = sorted.map(r => {
+        const originalCurrency = (r.currency === 'USD' || r.currency === 'Dolar') ? 'USD' : 'BRL'
+        return adjustReturnWithFX(Number(r.yield || 0), r.period || '', originalCurrency)
+      })
+      const compound = calculateCompoundedRates(adjustedYields)
       // Target compose
       let ppAbove: string | null = null
       if (marketData && marketData.length > 0) {
@@ -62,20 +80,30 @@ export function PortfolioTable({ consolidatedData, filteredRange, onYearTotalsCh
         const targetCompound = calculateCompoundedRates(pts.map(p => p.clientTarget || 0))
         ppAbove = `${((compound - targetCompound) * 100).toFixed(2)}pp`
       }
-      const best = rows.reduce((best, cur) => (Number(cur.yield || 0) > Number(best.yield || 0) ? cur : best), rows[0])
+      const best = rows.reduce((best, cur) => {
+        const curOriginalCurrency = (cur.currency === 'USD' || cur.currency === 'Dolar') ? 'USD' : 'BRL'
+        const bestOriginalCurrency = (best.currency === 'USD' || best.currency === 'Dolar') ? 'USD' : 'BRL'
+        const curYield = adjustReturnWithFX(Number(cur.yield || 0), cur.period || '', curOriginalCurrency)
+        const bestYield = adjustReturnWithFX(Number(best.yield || 0), best.period || '', bestOriginalCurrency)
+        return curYield > bestYield ? cur : best
+      }, rows[0])
+      
+      const oldestOriginalCurrency = (oldest.currency === 'USD' || oldest.currency === 'Dolar') ? 'USD' : 'BRL'
+      const mostRecentOriginalCurrency = (mostRecent.currency === 'USD' || mostRecent.currency === 'Dolar') ? 'USD' : 'BRL'
+      
       return {
         year,
-        initial: Number(oldest.initial_assets || 0),
+        initial: convertValue(Number(oldest.initial_assets || 0), oldest.period || '', oldestOriginalCurrency),
         movement,
         taxes,
-        final: Number(mostRecent.final_assets || 0),
+        final: convertValue(Number(mostRecent.final_assets || 0), mostRecent.period || '', mostRecentOriginalCurrency),
         gain,
         compound,
         bestMonth: best.period || '',
         ppAbove
       }
     }).sort((a, b) => b.year.localeCompare(a.year))
-  }, [filtered, marketData])
+  }, [filtered, marketData, convertValue, adjustReturnWithFX])
 
   // Build months per year aggregates similar to reference component
   const monthsByYear = useMemo(() => {
@@ -83,14 +111,16 @@ export function PortfolioTable({ consolidatedData, filteredRange, onYearTotalsCh
     const periodAgg = new Map<string, { initial: number; movement: number; taxes: number; final: number; gain: number; yieldWeighted: number; weight: number }>()
     filtered.forEach(r => {
       const p = r.period || '-'
+      const originalCurrency = (r.currency === 'USD' || r.currency === 'Dolar') ? 'USD' : 'BRL'
       const agg = periodAgg.get(p) || { initial: 0, movement: 0, taxes: 0, final: 0, gain: 0, yieldWeighted: 0, weight: 0 }
-      agg.initial += Number(r.initial_assets || 0)
-      agg.movement += Number(r.movement || 0)
-      agg.taxes += Number(r.taxes || 0)
-      agg.final += Number(r.final_assets || 0)
-      agg.gain += Number(r.financial_gain || 0)
-      const weight = Number(r.final_assets || 0)
-      agg.yieldWeighted += Number(r.yield || 0) * weight
+      agg.initial += convertValue(Number(r.initial_assets || 0), p, originalCurrency)
+      agg.movement += convertValue(Number(r.movement || 0), p, originalCurrency)
+      agg.taxes += convertValue(Number(r.taxes || 0), p, originalCurrency)
+      agg.final += convertValue(Number(r.final_assets || 0), p, originalCurrency)
+      agg.gain += convertValue(Number(r.financial_gain || 0), p, originalCurrency)
+      const weight = convertValue(Number(r.final_assets || 0), p, originalCurrency)
+      const adjustedYield = adjustReturnWithFX(Number(r.yield || 0), p, originalCurrency)
+      agg.yieldWeighted += adjustedYield * weight
       agg.weight += weight
       periodAgg.set(p, agg)
     })
@@ -114,7 +144,7 @@ export function PortfolioTable({ consolidatedData, filteredRange, onYearTotalsCh
       arr.sort((a, b) => toDate(b.period) - toDate(a.period))
     })
     return yearToMonths
-  }, [filtered])
+  }, [filtered, convertValue, adjustReturnWithFX])
 
   const totals = useMemo(() => {
     if (byYear.length === 0) return null
@@ -133,7 +163,7 @@ export function PortfolioTable({ consolidatedData, filteredRange, onYearTotalsCh
     else onYearTotalsChange(null)
   }, [totals, onYearTotalsChange])
 
-  const formatCurrencyValue = (v: number) => formatCurrency(v || 0, currency)
+  const formatCurrencyValue = (v: number) => formatCurrencyContext(v || 0)
 
   const monthShort = (period?: string | null) => {
     if (!period) return '-'
