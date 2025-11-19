@@ -4,12 +4,10 @@ import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContaine
 import { useMemo, useState, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { PerformanceData } from "@/types/financial"
-import { formatCurrency, getCurrencySymbol } from "@/utils/currency"
-import { CurrencyCode } from "@/utils/currency"
+import { useCurrency } from "@/contexts/CurrencyContext"
 
 interface MaturityTimelineProps {
   performanceData: PerformanceData[]
-  currency?: CurrencyCode
 }
 
 interface MaturityYearDataItem {
@@ -25,8 +23,9 @@ interface AssetClassOption {
   label: string
 }
 
-export function MaturityTimeline({ performanceData, currency = 'BRL' }: MaturityTimelineProps) {
+export function MaturityTimeline({ performanceData }: MaturityTimelineProps) {
   const { t } = useTranslation()
+  const { currency, convertValue, formatCurrency, getCurrencySymbol } = useCurrency()
   
   // Extract unique asset classes with maturity dates from performance data
   const assetClassOptions = useMemo<AssetClassOption[]>(() => {
@@ -98,12 +97,14 @@ export function MaturityTimeline({ performanceData, currency = 'BRL' }: Maturity
           }
         }
 
+        const originalCurrency = (investment.currency === 'USD' || investment.currency === 'Dolar') ? 'USD' : 'BRL'
         const position = Number(investment.position || 0)
-        acc[maturityYear].strategies[strategy].amount += position
+        const positionConverted = convertValue(position, investment.period || '', originalCurrency)
+        acc[maturityYear].strategies[strategy].amount += positionConverted
         acc[maturityYear].strategies[strategy].count += 1
         if (investment.rate) acc[maturityYear].strategies[strategy].rates.push(investment.rate)
 
-        acc[maturityYear].totalAmount += position
+        acc[maturityYear].totalAmount += positionConverted
         acc[maturityYear].totalInvestments += 1
         return acc
       }, {} as Record<string, MaturityYearDataItem>)
@@ -125,26 +126,36 @@ export function MaturityTimeline({ performanceData, currency = 'BRL' }: Maturity
     return chartReady
   }, [filteredData])
 
+  /**
+   * Custom tooltip component for the maturity timeline chart
+   */
   const CustomTooltip = ({ active, payload }: { active?: boolean; payload?: Array<{ payload: MaturityYearDataItem }> }) => {
-    if (active && payload && payload.length) {
-      const data = payload[0].payload as MaturityYearDataItem
-      return (
-        <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-lg p-3 shadow-lg">
-          <p className="text-foreground font-medium">{t('portfolioPerformance.kpi.maturityTimeline.year', 'Ano')}: {data.year}</p>
-          <p className="text-primary">{t('portfolioPerformance.kpi.maturityTimeline.total', 'Valor Total')}: {formatCurrency(data.totalAmount, currency)}</p>
-          <p className="text-muted-foreground">{t('portfolioPerformance.kpi.maturityTimeline.avgRate', 'Taxa Média')}: {data.avgRate}</p>
-          <div className="mt-2">
-            <p className="text-sm font-medium text-foreground">{t('portfolioPerformance.kpi.maturityTimeline.byStrategy', 'Por Estratégia')}:</p>
-            {Object.entries(data.strategies).map(([strategy, s]) => (
-              <div key={strategy} className="text-xs text-muted-foreground ml-2">
-                {strategy}: {formatCurrency(s.amount, currency)}
-              </div>
-            ))}
-          </div>
+    if (!active || !payload || payload.length === 0) return null
+    
+    const data = payload[0].payload as MaturityYearDataItem
+    return (
+      <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-lg p-3 shadow-lg">
+        <p className="text-foreground font-medium">
+          {t('portfolioPerformance.kpi.maturityTimeline.year')}: {data.year}
+        </p>
+        <p className="text-primary">
+          {t('portfolioPerformance.kpi.maturityTimeline.total')}: {formatCurrency(data.totalAmount)}
+        </p>
+        <p className="text-muted-foreground">
+          {t('portfolioPerformance.kpi.maturityTimeline.avgRate')}: {data.avgRate}
+        </p>
+        <div className="mt-2">
+          <p className="text-sm font-medium text-foreground">
+            {t('portfolioPerformance.kpi.maturityTimeline.byStrategy')}:
+          </p>
+          {Object.entries(data.strategies).map(([strategy, s]) => (
+            <div key={strategy} className="text-xs text-muted-foreground ml-2">
+              {strategy}: {formatCurrency(s.amount)}
+            </div>
+          ))}
         </div>
-      )
-    }
-    return null
+      </div>
+    )
   }
 
   return (
@@ -152,8 +163,12 @@ export function MaturityTimeline({ performanceData, currency = 'BRL' }: Maturity
       <CardHeader>
         <div className="flex items-center justify-between">
           <div>
-            <CardTitle className="text-foreground">{t('portfolioPerformance.kpi.maturityTimeline.title', 'Vencimentos por Estratégia')}</CardTitle>
-            <p className="text-sm text-muted-foreground">{t('portfolioPerformance.kpi.maturityTimeline.subtitle', 'Distribuição por data de vencimento')}</p>
+            <CardTitle className="text-foreground">
+              {t('portfolioPerformance.kpi.maturityTimeline.title')}
+            </CardTitle>
+            <p className="text-sm text-muted-foreground">
+              {t('portfolioPerformance.kpi.maturityTimeline.subtitle')}
+            </p>
           </div>
           <div className="flex items-center gap-1 flex-wrap">
             {assetClassOptions.length > 0 ? (
@@ -170,7 +185,7 @@ export function MaturityTimeline({ performanceData, currency = 'BRL' }: Maturity
               ))
             ) : (
               <p className="text-sm text-muted-foreground">
-                {t('portfolioPerformance.kpi.maturityTimeline.emptyFor', 'Nenhum dado de vencimento disponível')}
+                {t('portfolioPerformance.kpi.maturityTimeline.noMaturityData')}
               </p>
             )}
           </div>
@@ -180,8 +195,9 @@ export function MaturityTimeline({ performanceData, currency = 'BRL' }: Maturity
         {maturityData.length === 0 ? (
           <div className="flex items-center justify-center h-[400px] text-muted-foreground">
             <p>
-              {t('portfolioPerformance.kpi.maturityTimeline.emptyFor', 'Nenhum dado de vencimento disponível para')}{' '}
-              {assetClassOptions.find(opt => opt.key === selectedAssetClass)?.label || selectedAssetClass}
+              {t('portfolioPerformance.kpi.maturityTimeline.emptyFor', {
+                assetClass: assetClassOptions.find(opt => opt.key === selectedAssetClass)?.label || selectedAssetClass
+              })}
             </p>
           </div>
         ) : (
@@ -199,7 +215,7 @@ export function MaturityTimeline({ performanceData, currency = 'BRL' }: Maturity
                 tick={{ fontSize: 12, fill: '#6B7280' }}
                 axisLine={{ stroke: '#E5E7EB' }}
                 tickLine={{ stroke: '#E5E7EB' }}
-                tickFormatter={value => `${getCurrencySymbol(currency)} ${Number(value) / 1000}k`}
+                tickFormatter={value => `${getCurrencySymbol()} ${Number(value) / 1000}k`}
               />
               <Tooltip content={<CustomTooltip />} />
               <Bar 

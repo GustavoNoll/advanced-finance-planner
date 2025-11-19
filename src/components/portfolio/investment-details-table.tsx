@@ -1,74 +1,131 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import type { PerformanceData } from "@/types/financial"
-import { CurrencyCode } from "@/utils/currency"
 import { calculateCompoundedRates } from "@/lib/financial-math"
 import { useTranslation } from "react-i18next"
-import { calculateBenchmarkReturns } from "@/utils/benchmark-calculator"
+import { 
+  calculateBenchmarkReturnsByGroupedKey,
+  groupStrategyName, 
+  getStrategyColor,
+  getStrategyOrder,
+  STRATEGY_ORDER,
+  type GroupedStrategyKey 
+} from "@/utils/benchmark-calculator"
+import { useMemo, useCallback } from "react"
+import { useCurrency } from "@/contexts/CurrencyContext"
 
 interface InvestmentDetailsTableProps {
   performanceData: PerformanceData[]
-  currency?: CurrencyCode
+}
+
+/**
+ * Converts a period string (MM/YYYY) to a timestamp for sorting
+ */
+function periodToTimestamp(period?: string | null): number {
+  if (!period) return 0
+  const [month, year] = period.split('/')
+  return new Date(parseInt(year), parseInt(month) - 1).getTime()
 }
 
 
-const COLORS = [
-  'hsl(210 16% 82%)',
-  'hsl(32 25% 72%)',
-  'hsl(45 20% 85%)',
-  'hsl(210 11% 71%)',
-  'hsl(210 16% 58%)',
-  'hsl(207 26% 50%)',
-  'hsl(158 64% 25%)',
-  'hsl(159 61% 33%)',
-  'hsl(210 29% 24%)',
-  'hsl(25 28% 53%)',
-  'hsl(40 23% 77%)',
-  'hsl(210 14% 53%)',
-  'hsl(35 31% 65%)',
-  'hsl(210 24% 40%)',
-]
-
-function toDate(competencia?: string | null) {
-  if (!competencia) return 0
-  const [m, y] = competencia.split('/')
-  return new Date(parseInt(y), parseInt(m) - 1).getTime()
-}
-
-function getStrategyColor(strategyName: string, index: number) {
-  return COLORS[index % COLORS.length]
-}
-
+/**
+ * Calculates compound return from an array of monthly returns
+ */
 function calculateCompoundReturn(monthlyReturns: number[]): number {
   if (monthlyReturns.length === 0) return 0
   return calculateCompoundedRates(monthlyReturns)
 }
 
-export function InvestmentDetailsTable({ performanceData, currency = 'BRL' }: InvestmentDetailsTableProps) {
+export function InvestmentDetailsTable({ performanceData }: InvestmentDetailsTableProps) {
   const { t } = useTranslation()
+  const { currency, adjustReturnWithFX, convertValue } = useCurrency()
   const currentLocale = currency === 'BRL' ? 'pt-BR' : 'en-US'
-  const uniquePeriods = [...new Set(performanceData.map(d => d.period).filter(Boolean) as string[])]
-  const sortedPeriods = uniquePeriods.sort((a, b) => toDate(a) - toDate(b))
-  const mostRecent = [...sortedPeriods].sort((a, b) => toDate(b) - toDate(a))[0]
+  
+  /**
+   * Traduz uma chave de estratégia agrupada usando i18n
+   */
+  const translateGroupedStrategy = useCallback((key: GroupedStrategyKey): string => {
+    const strategiesOrder = 'portfolioPerformance.kpi.diversificationDialog.strategiesOrder'
+    return t(`${strategiesOrder}.${key}`)
+  }, [t])
 
-  // Only for sizing and counts, use most recent snapshot per strategy
-  const mostRecentData = performanceData.filter(d => d.period === mostRecent)
+  /**
+   * Agrupa e traduz o nome de uma estratégia
+   */
+  const groupStrategy = useCallback((strategy: string | null): string => {
+    const groupedKey = groupStrategyName(strategy)
+    return translateGroupedStrategy(groupedKey)
+  }, [translateGroupedStrategy])
 
-  const strategySnapshot = mostRecentData.reduce((acc, item) => {
-    const assetClass = item.asset_class || "Outros"
-    if (!acc[assetClass]) acc[assetClass] = { name: assetClass, value: 0, count: 0 }
-    acc[assetClass].value += Number(item.position || 0)
-    acc[assetClass].count += 1
-    return acc
-  }, {} as Record<string, { name: string; value: number; count: number }>)
+  /**
+   * Obtém a ordem de uma estratégia traduzida
+   */
+  const getStrategyOrderForName = useCallback((strategyName: string): number => {
+    const strategiesOrder = 'portfolioPerformance.kpi.diversificationDialog.strategiesOrder'
+    for (const key of STRATEGY_ORDER) {
+      if (t(`${strategiesOrder}.${key}`) === strategyName) {
+        return getStrategyOrder(key)
+      }
+    }
+    return STRATEGY_ORDER.length // Put unknown strategies at the end
+  }, [t])
 
-  const totalPatrimonio = Object.values(strategySnapshot).reduce((sum, item) => sum + item.value, 0)
+  /**
+   * Obtém a cor de uma estratégia traduzida
+   */
+  const getStrategyColorForName = useCallback((strategyName: string): string => {
+    const strategiesOrder = 'portfolioPerformance.kpi.diversificationDialog.strategiesOrder'
+    for (const key of STRATEGY_ORDER) {
+      if (t(`${strategiesOrder}.${key}`) === strategyName) {
+        return getStrategyColor(key, true) // Use soft colors for this component
+      }
+    }
+    return getStrategyColor('others', true)
+  }, [t])
+  
+  // Find the most recent period from performance data
+  const mostRecentPeriod = useMemo(() => {
+    const uniquePeriods = [...new Set(performanceData.map(d => d.period).filter(Boolean) as string[])]
+    const sortedPeriods = uniquePeriods.sort((a, b) => periodToTimestamp(a) - periodToTimestamp(b))
+    return [...sortedPeriods].sort((a, b) => periodToTimestamp(b) - periodToTimestamp(a))[0]
+  }, [performanceData])
 
-  function calculateStrategyReturns(strategy: string) {
-    const allStrategyData = performanceData.filter(p => (p.asset_class || "Outros") === strategy)
+  // Filter to most recent period for snapshot calculations
+  const mostRecentData = useMemo(() => {
+    return performanceData.filter(d => d.period === mostRecentPeriod)
+  }, [performanceData, mostRecentPeriod])
+
+  // Build strategy snapshot from most recent period
+  const strategySnapshot = useMemo(() => {
+    return mostRecentData.reduce((acc, item) => {
+      const originalStrategy = item.asset_class || null
+      const groupedStrategy = groupStrategy(originalStrategy)
+      if (!acc[groupedStrategy]) acc[groupedStrategy] = { name: groupedStrategy, value: 0, count: 0 }
+      // Convert position to display currency
+      const originalCurrency = (item.currency === 'USD' || item.currency === 'Dolar') ? 'USD' : 'BRL'
+      const position = Number(item.position || 0)
+      const positionConverted = convertValue(position, item.period || '', originalCurrency)
+      acc[groupedStrategy].value += positionConverted
+      acc[groupedStrategy].count += 1
+      return acc
+    }, {} as Record<string, { name: string; value: number; count: number }>)
+  }, [mostRecentData, groupStrategy, convertValue])
+
+  // Calculate total patrimony for percentage calculations
+  const totalPatrimonio = useMemo(() => {
+    return Object.values(strategySnapshot).reduce((sum, item) => sum + item.value, 0)
+  }, [strategySnapshot])
+
+  /**
+   * Calculates returns for a specific strategy across different time periods
+   */
+  const calculateStrategyReturns = useCallback((strategy: string) => {
+    const allStrategyData = performanceData.filter(p => 
+      groupStrategy(p.asset_class || null) === strategy
+    )
     if (allStrategyData.length === 0) return { month: 0, year: 0, sixMonths: 0, twelveMonths: 0, inception: 0 }
 
-    // group by period -> weighted average return per period
+    // Group by period and calculate weighted average return per period
     const byPeriod = allStrategyData.reduce((acc, item) => {
       const key = item.period || ''
       if (!key) return acc
@@ -77,13 +134,26 @@ export function InvestmentDetailsTable({ performanceData, currency = 'BRL' }: In
       return acc
     }, {} as Record<string, PerformanceData[]>)
 
-    const periodList = Object.keys(byPeriod).sort((a, b) => toDate(a) - toDate(b))
+    const periodList = Object.keys(byPeriod).sort((a, b) => periodToTimestamp(a) - periodToTimestamp(b))
     if (periodList.length === 0) return { month: 0, year: 0, sixMonths: 0, twelveMonths: 0, inception: 0 }
 
+    // Calculate weighted returns for each period with FX adjustment
     const weightedReturns = periodList.map(period => {
       const items = byPeriod[period]
-      const totalPos = items.reduce((s, x) => s + Number(x.position || 0), 0)
-      const totalRet = items.reduce((s, x) => s + (Number(x.yield || 0) * Number(x.position || 0)), 0)
+      // Convert positions and adjust returns with FX
+      const totalPos = items.reduce((s, x) => {
+        const originalCurrency = (x.currency === 'USD' || x.currency === 'Dolar') ? 'USD' : 'BRL'
+        const position = Number(x.position || 0)
+        return s + convertValue(position, period, originalCurrency)
+      }, 0)
+      const totalRet = items.reduce((s, x) => {
+        const originalCurrency = (x.currency === 'USD' || x.currency === 'Dolar') ? 'USD' : 'BRL'
+        const position = Number(x.position || 0)
+        const positionConverted = convertValue(position, period, originalCurrency)
+        const yieldValue = Number(x.yield || 0) / 100 // Convert to decimal
+        const yieldAdjusted = adjustReturnWithFX(yieldValue, period, originalCurrency)
+        return s + (yieldAdjusted * positionConverted)
+      }, 0)
       const r = totalPos > 0 ? totalRet / totalPos : 0
       return { period, r }
     })
@@ -91,6 +161,7 @@ export function InvestmentDetailsTable({ performanceData, currency = 'BRL' }: In
     const lastPeriod = periodList[periodList.length - 1]
     const month = weightedReturns.find(w => w.period === lastPeriod)?.r || 0
 
+    // Year return: compound return for the year of the most recent period
     const lastYear = lastPeriod?.slice(3)
     const yearReturns = weightedReturns.filter(w => w.period.endsWith(lastYear)).map(w => w.r)
     const year = calculateCompoundReturn(yearReturns)
@@ -101,64 +172,97 @@ export function InvestmentDetailsTable({ performanceData, currency = 'BRL' }: In
     const sixMonths = calculateCompoundReturn(last6)
     const twelveMonths = calculateCompoundReturn(last12)
 
+    // Inception return: compound return since first period
     const inception = calculateCompoundReturn(weightedReturns.map(w => w.r))
 
     return { month, year, sixMonths, twelveMonths, inception }
-  }
+  }, [performanceData, groupStrategy, convertValue, adjustReturnWithFX])
 
-  const consolidated = Object.values(strategySnapshot)
-    .map((item, index) => {
-      const perf = calculateStrategyReturns(item.name)
-      
-      // Calcula os períodos únicos para esta estratégia
-      const strategyPeriods = [...new Set(
-        performanceData
-          .filter(p => (p.asset_class || "Outros") === item.name)
-          .map(p => p.period)
-          .filter(Boolean) as string[]
-      )]
-      
-      // Calcula benchmark para esta estratégia
-      const benchmark = calculateBenchmarkReturns(
-        item.name,
-        currency,
-        strategyPeriods,
-        currentLocale
-      )
-      
-      return {
-        ...item,
-        percentage: totalPatrimonio > 0 ? (item.value / totalPatrimonio) * 100 : 0,
-        monthReturn: perf.month * 100,
-        yearReturn: perf.year * 100,
-        sixMonthsReturn: perf.sixMonths * 100,
-        twelveMonthsReturn: perf.twelveMonths * 100,
-        inceptionReturn: perf.inception * 100,
-        index,
-        benchmark,
-      }
-    })
-    .sort((a, b) => a.name.localeCompare(b.name))
+  // Consolidate strategy data with returns and benchmarks
+  const consolidated = useMemo(() => {
+    return Object.values(strategySnapshot)
+      .map((item, index) => {
+        const perf = calculateStrategyReturns(item.name)
+        
+        // Get all assets for this strategy
+        const strategyAssets = performanceData.filter(p => 
+          groupStrategy(p.asset_class || null) === item.name
+        )
+        
+        // Get unique periods for this strategy
+        const strategyPeriods = [...new Set(
+          strategyAssets
+            .map(p => p.period)
+            .filter(Boolean) as string[]
+        )]
+        
+        // Get the grouped key for this strategy
+        // Find the first asset's original class to get the grouped key
+        const firstAssetClass = strategyAssets
+          .map(p => p.asset_class)
+          .find(Boolean) || null
+        
+        const groupedKey = groupStrategyName(firstAssetClass)
+        
+        // Determine locale based on the currency prop
+        const benchmarkLocale: 'pt-BR' | 'en-US' = currency === 'BRL' ? 'pt-BR' : 'en-US'
+        
+        // Calculate benchmark returns using the grouped key and currency
+        // This function centralizes the logic: IFIX for BRL Real Estate, T-Bond for USD Real Estate, etc.
+        const benchmark = calculateBenchmarkReturnsByGroupedKey(
+          groupedKey,
+          currency,
+          strategyPeriods,
+          benchmarkLocale
+        )
+        
+        return {
+          ...item,
+          percentage: totalPatrimonio > 0 ? (item.value / totalPatrimonio) * 100 : 0,
+          monthReturn: perf.month * 100,
+          yearReturn: perf.year * 100,
+          sixMonthsReturn: perf.sixMonths * 100,
+          twelveMonthsReturn: perf.twelveMonths * 100,
+          inceptionReturn: perf.inception * 100,
+          benchmark,
+        }
+      })
+      .sort((a, b) => {
+        const orderA = getStrategyOrderForName(a.name)
+        const orderB = getStrategyOrderForName(b.name)
+        if (orderA !== orderB) {
+          return orderA - orderB
+        }
+        return a.name.localeCompare(b.name)
+      })
+  }, [strategySnapshot, totalPatrimonio, performanceData, groupStrategy, getStrategyOrderForName, calculateStrategyReturns, currency])
 
-  function getPerformanceColor(v: number): string {
-    if (v > 2) return 'text-green-600 dark:text-green-500'
-    if (v > 0.5) return 'text-black-600 dark:text-black-500'
-    if (v > 0) return 'text-yellow-600 dark:text-yellow-500'
+  /**
+   * Gets color class based on return performance thresholds
+   */
+  function getPerformanceColor(returnValue: number): string {
+    if (returnValue > 2) return 'text-green-600 dark:text-green-500'
+    if (returnValue > 0.5) return 'text-black-600 dark:text-black-500'
+    if (returnValue > 0) return 'text-yellow-600 dark:text-yellow-500'
     return 'text-red-600 dark:text-red-500'
   }
 
+  /**
+   * Gets color class comparing strategy return to benchmark
+   * Green if above benchmark, red if below
+   */
   function getStrategyColorComparedToBenchmark(strategyReturn: number, benchmarkReturn: number | null): string {
     if (benchmarkReturn === null) {
-      // Se não há benchmark, usa a cor padrão baseada no valor
+      // If no benchmark, use default color based on value
       return getPerformanceColor(strategyReturn)
     }
-    // Verde se maior que benchmark, vermelho se menor
+    // Green if greater than or equal to benchmark, red if below
     return strategyReturn >= benchmarkReturn
       ? 'text-green-600 dark:text-green-500'
       : 'text-red-600 dark:text-red-500'
   }
 
-  // Cor do benchmark sempre em preto
+  // Benchmark color is always neutral (foreground)
   const benchmarkColor = 'text-foreground'
 
   return (
@@ -185,7 +289,7 @@ export function InvestmentDetailsTable({ performanceData, currency = 'BRL' }: In
                   <>
                     <TableRow key={item.name} className="border-border/50">
                       <TableCell className="font-medium text-foreground flex items-center gap-2 py-2">
-                        <div className="w-3 h-3 rounded-full" style={{ backgroundColor: getStrategyColor(item.name, item.index) }} />
+                        <div className="w-3 h-3 rounded-full" style={{ backgroundColor: getStrategyColorForName(item.name) }} />
                         {item.name}
                       </TableCell>
                       <TableCell className="text-center py-2">
@@ -222,35 +326,35 @@ export function InvestmentDetailsTable({ performanceData, currency = 'BRL' }: In
                         }
                       </TableCell>
                       <TableCell className="text-center text-muted-foreground py-1">
-                        {item.benchmark ? (
+                        {item.benchmark && item.benchmark.monthReturn !== null ? (
                           <span className={benchmarkColor}>
                             {item.benchmark.monthReturn >= 0 ? '+' : ''}{item.benchmark.monthReturn.toFixed(2)}%
                           </span>
                         ) : '-'}
                       </TableCell>
                       <TableCell className="text-center text-muted-foreground py-1">
-                        {item.benchmark ? (
+                        {item.benchmark && item.benchmark.yearReturn !== null ? (
                           <span className={benchmarkColor}>
                             {item.benchmark.yearReturn >= 0 ? '+' : ''}{item.benchmark.yearReturn.toFixed(2)}%
                           </span>
                         ) : '-'}
                       </TableCell>
                       <TableCell className="text-center text-muted-foreground py-1">
-                        {item.benchmark ? (
+                        {item.benchmark && item.benchmark.sixMonthsReturn !== null ? (
                           <span className={benchmarkColor}>
                             {item.benchmark.sixMonthsReturn >= 0 ? '+' : ''}{item.benchmark.sixMonthsReturn.toFixed(2)}%
                           </span>
                         ) : '-'}
                       </TableCell>
                       <TableCell className="text-center text-muted-foreground py-1">
-                        {item.benchmark ? (
+                        {item.benchmark && item.benchmark.twelveMonthsReturn !== null ? (
                           <span className={benchmarkColor}>
                             {item.benchmark.twelveMonthsReturn >= 0 ? '+' : ''}{item.benchmark.twelveMonthsReturn.toFixed(2)}%
                           </span>
                         ) : '-'}
                       </TableCell>
                       <TableCell className="text-center text-muted-foreground py-1">
-                        {item.benchmark ? (
+                        {item.benchmark && item.benchmark.inceptionReturn !== null ? (
                           <span className={benchmarkColor}>
                             {item.benchmark.inceptionReturn >= 0 ? '+' : ''}{item.benchmark.inceptionReturn.toFixed(2)}%
                           </span>

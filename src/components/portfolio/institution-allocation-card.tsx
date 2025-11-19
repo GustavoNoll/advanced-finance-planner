@@ -1,9 +1,8 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart"
 import { Pie, PieChart, Cell, Label } from "recharts"
-import { formatCurrency } from "@/utils/currency"
-import { CurrencyCode } from "@/utils/currency"
 import { useTranslation } from "react-i18next"
+import { useCurrency } from "@/contexts/CurrencyContext"
 
 export interface InstitutionAllocationItem {
   institution: string
@@ -18,12 +17,12 @@ interface InstitutionAllocationCardProps {
   totalPatrimonio: number
   selectedInstitution?: string | null
   onInstitutionClick?: (institution: string) => void
-  currency?: CurrencyCode
 }
 
-export function InstitutionAllocationCard({ institutionData, totalPatrimonio, selectedInstitution, onInstitutionClick, currency = 'BRL' }: InstitutionAllocationCardProps) {
+export function InstitutionAllocationCard({ institutionData, totalPatrimonio, selectedInstitution, onInstitutionClick }: InstitutionAllocationCardProps) {
   const { t } = useTranslation()
-  const formatCurrencyValue = (v: number) => formatCurrency(v || 0, currency)
+  const { formatCurrency } = useCurrency()
+  const formatCurrencyValue = (v: number) => formatCurrency(v || 0)
 
   return (
     <Card className="bg-gradient-card border-border/50 shadow-elegant-md">

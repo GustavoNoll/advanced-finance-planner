@@ -37,7 +37,9 @@ export function getMostRecentPeriod(
  */
 export function calculateInstitutionCardData(
   consolidatedData: ConsolidatedPerformance[],
-  noInstitutionLabel: string
+  noInstitutionLabel: string,
+  convertValue?: (value: number, competencia: string, originalCurrency: 'BRL' | 'USD') => number,
+  adjustReturnWithFX?: (returnPercent: number, competencia: string, originalCurrency: 'BRL' | 'USD') => number
 ): InstitutionCardData | null {
   if (!consolidatedData || consolidatedData.length === 0) return null
 
@@ -47,7 +49,15 @@ export function calculateInstitutionCardData(
   const rows = consolidatedData.filter(r => r.period === mostRecent)
   if (rows.length === 0) return null
 
-  const totalPatrimonio = rows.reduce((s, r) => s + Number(r.final_assets || 0), 0)
+  // Use conversion functions if provided, otherwise use raw values
+  const totalPatrimonio = rows.reduce((s, r) => {
+    if (convertValue) {
+      const originalCurrency = (r.currency === 'USD' || r.currency === 'Dolar') ? 'USD' : 'BRL'
+      return s + convertValue(Number(r.final_assets || 0), r.period || mostRecent, originalCurrency)
+    }
+    return s + Number(r.final_assets || 0)
+  }, 0)
+  
   const palette = [
     'hsl(40 22% 80%)',
     'hsl(45 18% 86%)',
@@ -62,9 +72,15 @@ export function calculateInstitutionCardData(
   const byInstitution = rows.reduce((acc, r) => {
     const key = r.institution || noInstitutionLabel
     const entry = acc.get(key) || { patrimonio: 0, rendimentoSum: 0, weight: 0 }
-    const pat = Number(r.final_assets || 0)
+    const originalCurrency = (r.currency === 'USD' || r.currency === 'Dolar') ? 'USD' : 'BRL'
+    const pat = convertValue 
+      ? convertValue(Number(r.final_assets || 0), r.period || mostRecent, originalCurrency)
+      : Number(r.final_assets || 0)
+    const yieldValue = adjustReturnWithFX
+      ? adjustReturnWithFX(Number(r.yield || 0), r.period || mostRecent, originalCurrency)
+      : Number(r.yield || 0)
     entry.patrimonio += pat
-    entry.rendimentoSum += Number(r.yield || 0) * pat
+    entry.rendimentoSum += yieldValue * pat
     entry.weight += pat
     acc.set(key, entry)
     return acc

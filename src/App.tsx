@@ -29,6 +29,7 @@ import { SpeedInsights } from "@vercel/speed-insights/react"
 import { Analytics } from "@vercel/analytics/react"
 import { Suspense, lazy } from 'react'
 import { ThemeToggle } from '@/components/ui/theme-toggle'
+import { CurrencyProvider } from '@/contexts/CurrencyContext'
 const AdminDashboard = lazy(() => import('./pages/AdminDashboard').then(m => ({ default: m.AdminDashboard })))
 const BrokerDashboard = lazy(() => import('./pages/BrokerDashboard').then(m => ({ default: m.BrokerDashboard })))
 const LandingPage = lazy(() => import('./pages/LandingPage'))
@@ -260,18 +261,20 @@ const App = () => (
   <QueryClientProvider client={queryClient}>
     <BrowserRouter>
       <AuthProvider>
-        <ActivityTracker>
-          <TooltipProvider>
-            <RouteProgress />
-            <ThemeToggle />
-            <Toaster />
-            <Sonner />
-            <ScrollToTop />
-            <AppRoutes />
-          </TooltipProvider>
-        </ActivityTracker>
-        <Analytics />
-        <SpeedInsights />
+        <CurrencyProvider>
+          <ActivityTracker>
+            <TooltipProvider>
+              <RouteProgress />
+              <ThemeToggle />
+              <Toaster />
+              <Sonner />
+              <ScrollToTop />
+              <AppRoutes />
+            </TooltipProvider>
+          </ActivityTracker>
+          <Analytics />
+          <SpeedInsights />
+        </CurrencyProvider>
       </AuthProvider>
     </BrowserRouter>
   </QueryClientProvider>

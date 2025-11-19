@@ -3,16 +3,14 @@ import { InstitutionAllocationCard } from "@/components/portfolio/institution-al
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
 import type { ConsolidatedPerformance, PerformanceData } from "@/types/financial"
-import { formatCurrency } from "@/utils/currency"
-import { CurrencyCode } from "@/utils/currency"
 import { useTranslation } from "react-i18next"
+import { useCurrency } from "@/contexts/CurrencyContext"
 
 interface ClientDataDisplayProps {
   consolidatedData: ConsolidatedPerformance[]
   performanceData: PerformanceData[]
   loading: boolean
   clientName: string
-  currency?: CurrencyCode
   portfolioTableComponent?: React.ReactNode
   institutionCardData?: {
     institutionData: Array<{
@@ -28,8 +26,9 @@ interface ClientDataDisplayProps {
   onInstitutionClick?: (institution: string) => void
 }
 
-export function ClientDataDisplay({ consolidatedData, performanceData, loading, clientName, currency = 'BRL', portfolioTableComponent, institutionCardData, selectedInstitution, onInstitutionClick }: ClientDataDisplayProps) {
+export function ClientDataDisplay({ consolidatedData, performanceData, loading, clientName, portfolioTableComponent, institutionCardData, selectedInstitution, onInstitutionClick }: ClientDataDisplayProps) {
   const { t } = useTranslation()
+  const { convertValue, adjustReturnWithFX, formatCurrency: formatCurrencyContext } = useCurrency()
   
   if (!clientName) return null
 
@@ -84,19 +83,30 @@ export function ClientDataDisplay({ consolidatedData, performanceData, loading, 
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {latestRows.map(r => (
-                  <TableRow key={r.id}>
-                    <TableCell className="font-medium">{r.institution || '-'}</TableCell>
-                    <TableCell>{formatCurrency(Number(r.initial_assets || 0), currency)}</TableCell>
-                    <TableCell className={Number(r.movement || 0) >= 0 ? "text-success" : "text-destructive"}>{formatCurrency(Number(r.movement || 0), currency)}</TableCell>
-                    <TableCell className={Number(r.taxes || 0) >= 0 ? "text-muted-foreground" : "text-destructive"}>{formatCurrency(Number(r.taxes || 0), currency)}</TableCell>
-                    <TableCell className={Number(r.financial_gain || 0) >= 0 ? "text-success" : "text-destructive"}>{formatCurrency(Number(r.financial_gain || 0), currency)}</TableCell>
-                    <TableCell className="font-semibold">{formatCurrency(Number(r.final_assets || 0), currency)}</TableCell>
-                    <TableCell>
-                      <Badge variant={Number(r.yield || 0) >= 0 ? "default" : "destructive"}>{((Number(r.yield || 0)) * 100).toFixed(2)}%</Badge>
-                    </TableCell>
-                  </TableRow>
-                ))}
+                {latestRows.map(r => {
+                  const originalCurrency = (r.currency === 'USD' || r.currency === 'Dolar') ? 'USD' : 'BRL'
+                  const period = r.period || mostRecent
+                  const initialConverted = convertValue(Number(r.initial_assets || 0), period, originalCurrency)
+                  const movementConverted = convertValue(Number(r.movement || 0), period, originalCurrency)
+                  const taxesConverted = convertValue(Number(r.taxes || 0), period, originalCurrency)
+                  const gainConverted = convertValue(Number(r.financial_gain || 0), period, originalCurrency)
+                  const finalConverted = convertValue(Number(r.final_assets || 0), period, originalCurrency)
+                  const yieldAdjusted = adjustReturnWithFX(Number(r.yield || 0), period, originalCurrency)
+                  
+                  return (
+                    <TableRow key={r.id}>
+                      <TableCell className="font-medium">{r.institution || '-'}</TableCell>
+                      <TableCell>{formatCurrencyContext(initialConverted)}</TableCell>
+                      <TableCell className={movementConverted >= 0 ? "text-success" : "text-destructive"}>{formatCurrencyContext(movementConverted)}</TableCell>
+                      <TableCell className={taxesConverted >= 0 ? "text-muted-foreground" : "text-destructive"}>{formatCurrencyContext(taxesConverted)}</TableCell>
+                      <TableCell className={gainConverted >= 0 ? "text-success" : "text-destructive"}>{formatCurrencyContext(gainConverted)}</TableCell>
+                      <TableCell className="font-semibold">{formatCurrencyContext(finalConverted)}</TableCell>
+                      <TableCell>
+                        <Badge variant={yieldAdjusted >= 0 ? "default" : "destructive"}>{((yieldAdjusted) * 100).toFixed(2)}%</Badge>
+                      </TableCell>
+                    </TableRow>
+                  )
+                })}
               </TableBody>
             </Table>
           </CardContent>
@@ -111,7 +121,6 @@ export function ClientDataDisplay({ consolidatedData, performanceData, loading, 
           totalPatrimonio={institutionCardData.totalPatrimonio}
           selectedInstitution={selectedInstitution}
           onInstitutionClick={onInstitutionClick}
-          currency={currency}
         />
       )}
 

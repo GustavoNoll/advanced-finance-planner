@@ -9,14 +9,19 @@ import { usePerformanceData } from "@/hooks";
 import { useStatementImports } from "@/hooks/useStatementImports";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/components/auth/AuthProvider";
-import { CompetenciaSeletor } from "@/components/portfolio/competencia-seletor";
+import { CompetenceSelector } from "@/components/portfolio/competence-selector";
 import { ClientDataDisplay } from "@/components/portfolio/client-data-display";
 import { PortfolioTable } from "@/components/portfolio/portfolio-table";
 import { MaturityDialog } from "@/components/portfolio/maturity-dialog";
+import { DiversificationDialog } from "@/components/portfolio/diversification-dialog";
 import { IssuerExposure } from "@/components/portfolio/issuer-exposure";
 import { MaturityTimeline } from "@/components/portfolio/maturity-timeline";
 import { InvestmentDetailsTable } from "@/components/portfolio/investment-details-table";
 import { StrategyBreakdown } from "@/components/portfolio/strategy-breakdown";
+import { CurrencyToggle } from "@/components/portfolio/currency-toggle";
+import { PerformanceChart } from "@/components/portfolio/performance-chart";
+import { AssetReturnsTable } from "@/components/portfolio/asset-returns-table";
+import { useCurrency } from "@/contexts/CurrencyContext";
 import { formatMaturityDate } from "@/utils/dateUtils";
 import {
   calculateInstitutionCardData,
@@ -24,14 +29,16 @@ import {
   getNextMaturityDate,
   formatPercentage
 } from "./helpers/portfolio-performance.helpers";
-import { formatCurrency } from "@/utils/currency";
-import { CurrencyCode } from "@/utils/currency";
+import { MicroInvestmentPlan } from "@/types/financial";
+import { fetchIPCARates, fetchUSCPIRates, fetchEuroCPIRates } from "@/lib/bcb-api";
+import { calculateCompoundedRates, yearlyReturnRateToMonthlyReturnRate } from "@/lib/financial-math";
 
 interface PortfolioPerformanceProps {
   clientId: string;
   profile: Profile | null;
   broker: Profile | null;
   investmentPlan: InvestmentPlan | null;
+  activeMicroPlan: MicroInvestmentPlan | null;
   onLogout: () => void;
   onShareClient: () => void;
 }
@@ -41,19 +48,71 @@ function PortfolioPerformance({
   profile,
   broker,
   investmentPlan,
+  activeMicroPlan,
   onLogout,
   onShareClient
 }: PortfolioPerformanceProps) {
   const { t } = useTranslation();
   const { isBroker } = useAuth();
+  const { currency: displayCurrency, convertValue, adjustReturnWithFX, formatCurrency: formatCurrencyContext } = useCurrency();
   const { consolidatedData, performanceData, loading, error, totalAssets, totalYield, previousAssets, assetsChangePercent, hasData, refetch } = usePerformanceData(profile?.id || null)
   const { latestImport } = useStatementImports(profile?.id || null)
-  const [filteredRange, setFilteredRange] = useState<{ inicio: string; fim: string }>({ inicio: "", fim: "" })
+  const [filteredPeriodRange, setFilteredPeriodRange] = useState<{ start: string; end: string }>({ start: "", end: "" })
   const [yearTotals, setYearTotals] = useState<{ totalPatrimonio: number; totalRendimento: number } | null>(null)
   const [maturityDialogOpen, setMaturityDialogOpen] = useState(false)
+  const [diversificationDialogOpen, setDiversificationDialogOpen] = useState(false)
   const navigate = useNavigate()
+
+  // Get current month inflation rate based on investment plan currency
+  // Uses the most recent available month (inflation data may have delay)
+  const currentMonthInflation = useMemo(() => {
+    if (!investmentPlan) return null
+    
+    const now = new Date()
+    // Get last 3 months to ensure we have data (inflation data usually has 1-2 month delay)
+    const startDate = new Date(now.getFullYear(), now.getMonth() - 3, 1)
+    const endDate = new Date(now.getFullYear(), now.getMonth(), 1)
+    
+    const startDateStr = `01/${String(startDate.getMonth() + 1).padStart(2, '0')}/${startDate.getFullYear()}`
+    const endDateStr = `01/${String(endDate.getMonth() + 1).padStart(2, '0')}/${endDate.getFullYear()}`
+    
+    let rates: Array<{ date: Date; monthlyRate: number }> = []
+    switch (investmentPlan.currency) {
+      case 'USD':
+        rates = fetchUSCPIRates(startDateStr, endDateStr)
+        break
+      case 'EUR':
+        rates = fetchEuroCPIRates(startDateStr, endDateStr)
+        break
+      case 'BRL':
+      default:
+        rates = fetchIPCARates(startDateStr, endDateStr)
+        break
+    }
+    
+    if (rates.length === 0) return null
+    
+    // Get the most recent rate (last item in array, as rates are sorted by date)
+    const mostRecentRate = rates[rates.length - 1]
+    return mostRecentRate ? mostRecentRate.monthlyRate : null
+  }, [investmentPlan])
+
+  // Calculate target return: Expected Return - Current Month Inflation
+  const targetReturn = useMemo(() => {
+    if (!activeMicroPlan || !currentMonthInflation) return null
+    const inflation = currentMonthInflation
+    
+    console.log('inflation', inflation)
+    console.log('expectedReturn', activeMicroPlan.expected_return/100)
+    const targetConverted = parseFloat((
+      calculateCompoundedRates([
+        inflation/100, 
+        yearlyReturnRateToMonthlyReturnRate(activeMicroPlan.expected_return/100)
+      ])
+    ).toFixed(10))
+    return targetConverted
+  }, [activeMicroPlan, currentMonthInflation])
   
-  const currency = (investmentPlan?.currency || 'BRL') as CurrencyCode
   
   const openDataManagement = () => {
     navigate(`/portfolio-data-management/${profile?.id}`)
@@ -79,14 +138,82 @@ function PortfolioPerformance({
     }
   }
   
-  const handleFilterChange = useCallback((inicioCompetencia: string, fimCompetencia: string) => {
-    setFilteredRange({ inicio: inicioCompetencia, fim: fimCompetencia })
+  const handleFilterChange = useCallback((startPeriod: string, endPeriod: string) => {
+    setFilteredPeriodRange({ start: startPeriod, end: endPeriod })
   }, [])
+
+  // Calculate converted total assets considering currency conversion
+  const convertedTotalAssets = useMemo(() => {
+    if (!hasData || consolidatedData.length === 0) return totalAssets || 0
+    
+    // Get most recent period
+    const periods = [...new Set(consolidatedData.map(d => d.period).filter(Boolean) as string[])]
+      .sort((a, b) => {
+        const [mA, yA] = a.split('/').map(Number)
+        const [mB, yB] = b.split('/').map(Number)
+        if (yA !== yB) return yB - yA
+        return mB - mA
+      })
+    
+    if (periods.length === 0) return totalAssets || 0
+    
+    const mostRecentPeriod = periods[0]
+    const recentData = consolidatedData.filter(d => d.period === mostRecentPeriod)
+    
+    return recentData.reduce((sum, entry) => {
+      const originalCurrency = (entry.currency === 'USD' || entry.currency === 'Dolar') ? 'USD' : 'BRL'
+      const value = entry.final_assets || 0
+      return sum + convertValue(value, entry.period || mostRecentPeriod, originalCurrency)
+    }, 0)
+  }, [consolidatedData, hasData, totalAssets, convertValue])
+
+  // Calculate converted total yield considering FX adjustment
+  const convertedTotalYield = useMemo(() => {
+    if (!hasData || consolidatedData.length === 0) return totalYield || 0
+    
+    // Get most recent period
+    const periods = [...new Set(consolidatedData.map(d => d.period).filter(Boolean) as string[])]
+      .sort((a, b) => {
+        const [mA, yA] = a.split('/').map(Number)
+        const [mB, yB] = b.split('/').map(Number)
+        if (yA !== yB) return yB - yA
+        return mB - mA
+      })
+    
+    if (periods.length === 0) return totalYield || 0
+    
+    const mostRecentPeriod = periods[0]
+    const recentData = consolidatedData.filter(d => d.period === mostRecentPeriod)
+    
+    // Calculate weighted average yield with FX adjustment
+    const totalWeight = recentData.reduce((sum, entry) => {
+      const originalCurrency = (entry.currency === 'USD' || entry.currency === 'Dolar') ? 'USD' : 'BRL'
+      const value = entry.final_assets || 0
+      return sum + convertValue(value, entry.period || mostRecentPeriod, originalCurrency)
+    }, 0)
+    
+    if (totalWeight === 0) return totalYield || 0
+    
+    const weightedYield = recentData.reduce((sum, entry) => {
+      const originalCurrency = (entry.currency === 'USD' || entry.currency === 'Dolar') ? 'USD' : 'BRL'
+      const patrimonio = entry.final_assets || 0
+      const patrimonioConvertido = convertValue(patrimonio, entry.period || mostRecentPeriod, originalCurrency)
+      const rendimentoAjustado = adjustReturnWithFX(entry.yield || 0, entry.period || mostRecentPeriod, originalCurrency)
+      return sum + (rendimentoAjustado * patrimonioConvertido)
+    }, 0)
+    
+    return weightedYield / totalWeight
+  }, [consolidatedData, hasData, totalYield, convertValue, adjustReturnWithFX])
 
   // Institution allocation data for latest period
   const institutionCardData = useMemo(() => {
-    return calculateInstitutionCardData(consolidatedData, t('portfolioPerformance.kpi.noInstitution'))
-  }, [consolidatedData, t])
+    return calculateInstitutionCardData(
+      consolidatedData, 
+      t('portfolioPerformance.kpi.noInstitution'),
+      convertValue,
+      adjustReturnWithFX
+    )
+  }, [consolidatedData, t, convertValue, adjustReturnWithFX])
 
   // Diversification count (assets in portfolio)
   const diversificationCount = useMemo(() => {
@@ -98,50 +225,93 @@ function PortfolioPerformance({
     return getNextMaturityDate(performanceData)
   }, [performanceData])
 
+  // Calculate total value that will mature on next maturity date
+  const nextMaturityValue = useMemo(() => {
+    if (!nextMaturity || !performanceData.length) return null
+
+    // Get most recent period
+    const mostRecentPeriod = [...new Set(performanceData.map(d => d.period).filter(Boolean) as string[])]
+      .sort((a, b) => {
+        const [mA, yA] = a.split('/').map(Number)
+        const [mB, yB] = b.split('/').map(Number)
+        if (yA !== yB) return yB - yA
+        return mB - mA
+      })[0]
+
+    if (!mostRecentPeriod) return null
+
+    // Filter assets that mature on the next maturity date
+    const assetsMaturing = performanceData.filter(item => {
+      if (item.period !== mostRecentPeriod || !item.maturity_date) return false
+      const maturityDate = new Date(item.maturity_date)
+      return maturityDate.getTime() === nextMaturity.getTime()
+    })
+
+    if (assetsMaturing.length === 0) return null
+
+    // Sum all positions converted to display currency
+    const totalValue = assetsMaturing.reduce((sum, item) => {
+      const originalCurrency = (item.currency === 'USD' || item.currency === 'Dolar') ? 'USD' : 'BRL'
+      const position = Number(item.position || 0)
+      const positionConverted = convertValue(position, item.period || mostRecentPeriod, originalCurrency)
+      return sum + positionConverted
+    }, 0)
+
+    return totalValue
+  }, [nextMaturity, performanceData, convertValue])
+
   const [selectedInstitution, setSelectedInstitution] = useState<string | null>(null)
 
 
   return (
     <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-8">
       <div className="space-y-6">
-        {isBroker && (
-          <div className="flex justify-end gap-2">
-            <Button 
-              variant="outline" 
-              onClick={openImportsHistory}
-              className="flex items-center gap-2"
-            >
-              {latestImport ? (
-                <>
-                  {getStatusIcon(latestImport.status)}
-                  <History className="h-4 w-4" />
-                  {t('portfolioPerformance.kpi.imports.history')}
-                </>
-              ) : (
-                <>
-                  <Clock className="h-4 w-4 text-gray-500" />
-                  <History className="h-4 w-4" />
-                  {t('portfolioPerformance.kpi.imports.neverImported')}
-                </>
-              )}
-            </Button>
-            <Button variant="default" onClick={openDataManagement}>
-              {t('portfolioPerformance.kpi.manageData')}
-            </Button>
+        <div className="flex justify-between items-center">
+          <div></div>
+          <div className="flex items-center gap-2">
+            <CurrencyToggle />
+            {isBroker && (
+              <>
+                <Button 
+                  variant="outline" 
+                  onClick={openImportsHistory}
+                  className="flex items-center gap-2"
+                >
+                  {latestImport ? (
+                    <>
+                      {getStatusIcon(latestImport.status)}
+                      <History className="h-4 w-4" />
+                      {t('portfolioPerformance.kpi.imports.history')}
+                    </>
+                  ) : (
+                    <>
+                      <Clock className="h-4 w-4 text-gray-500" />
+                      <History className="h-4 w-4" />
+                      {t('portfolioPerformance.kpi.imports.neverImported')}
+                    </>
+                  )}
+                </Button>
+                <Button variant="default" onClick={openDataManagement}>
+                  {t('portfolioPerformance.kpi.manageData')}
+                </Button>
+              </>
+            )}
           </div>
-        )}
-        {/* KPI Cards - estilo próximo ao InvestmentDashboard */}
+        </div>
+        {/* KPI cards styled similar to InvestmentDashboard */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
           <Card className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 shadow-sm">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium text-gray-600 dark:text-gray-300">
                 {t('portfolioPerformance.kpi.totalAssets')}
               </CardTitle>
-              <DollarSign className="h-4 w-4 text-amber-500" />
+              <div className="h-10 w-10 rounded-lg bg-gradient-to-br from-amber-400 via-amber-500 to-orange-500 dark:from-amber-600 dark:via-amber-700 dark:to-orange-700 flex items-center justify-center shadow-md">
+                <DollarSign className="h-5 w-5 text-white" />
+              </div>
             </CardHeader>
             <CardContent>
               <div className="text-3xl font-bold text-gray-900 dark:text-gray-50">
-                {loading ? <Spinner className="h-5 w-5" /> : formatCurrency(totalAssets || 0, currency)}
+                {loading ? <Spinner className="h-5 w-5" /> : formatCurrencyContext(convertedTotalAssets)}
               </div>
               {loading ? null : assetsChangePercent !== null ? (
                 <p className={`text-xs mt-1 ${assetsChangePercent >= 0 ? 'text-emerald-600' : 'text-red-600'}`}>
@@ -160,22 +330,40 @@ function PortfolioPerformance({
               <CardTitle className="text-sm font-medium text-gray-600 dark:text-gray-300">
                 {t('portfolioPerformance.kpi.monthlyYield')}
               </CardTitle>
-              <Target className="h-4 w-4 text-amber-500" />
+              <div className="h-10 w-10 rounded-lg bg-gradient-to-br from-emerald-400 via-emerald-500 to-teal-500 dark:from-emerald-600 dark:via-emerald-700 dark:to-teal-700 flex items-center justify-center shadow-md">
+                <Target className="h-5 w-5 text-white" />
+              </div>
             </CardHeader>
             <CardContent>
               <div className="text-3xl font-bold text-gray-900 dark:text-gray-50">
-                {loading ? <Spinner className="h-5 w-5" /> : formatPercentage(totalYield || 0)}
+                {loading ? <Spinner className="h-5 w-5" /> : formatPercentage(convertedTotalYield)}
               </div>
-              <p className="text-xs text-emerald-600 mt-1">{t('portfolioPerformance.kpi.vsTarget')}</p>
+              {targetReturn !== null ? (() => {
+                const difference = (convertedTotalYield - targetReturn) * 100 // Difference in percentage points
+                const isAbove = difference >= 0
+                const sign = isAbove ? '+' : ''
+                return (
+                  <p className={`text-xs mt-1 ${isAbove ? 'text-emerald-600' : 'text-red-600'}`}>
+                    {t('portfolioPerformance.kpi.vsTarget')}: {formatPercentage(targetReturn)} ({sign}{Math.abs(difference).toFixed(2)}pp)
+                  </p>
+                )
+              })() : (
+                <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">{t('portfolioPerformance.kpi.vsTarget')}</p>
+              )}
             </CardContent>
           </Card>
 
-          <Card className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 shadow-sm">
+          <Card 
+            className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 shadow-sm cursor-pointer hover:shadow-md transition-shadow"
+            onClick={() => setDiversificationDialogOpen(true)}
+          >
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium text-gray-600 dark:text-gray-300">
                 {t('portfolioPerformance.kpi.diversification')}
               </CardTitle>
-              <Building2 className="h-4 w-4 text-amber-500" />
+              <div className="h-10 w-10 rounded-lg bg-gradient-to-br from-blue-400 via-blue-500 to-indigo-500 dark:from-blue-600 dark:via-blue-700 dark:to-indigo-700 flex items-center justify-center shadow-md">
+                <Building2 className="h-5 w-5 text-white" />
+              </div>
             </CardHeader>
             <CardContent>
               <div className="text-3xl font-bold text-gray-900 dark:text-gray-50">
@@ -187,32 +375,45 @@ function PortfolioPerformance({
             </CardContent>
           </Card>
 
-          <Card className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 shadow-sm">
+          <Card 
+            className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 shadow-sm cursor-pointer hover:shadow-md transition-shadow"
+            onClick={() => setMaturityDialogOpen(true)}
+          >
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium text-gray-600 dark:text-gray-300">
                 {t('portfolioPerformance.kpi.nextMaturity')}
               </CardTitle>
-              <Calendar className="h-4 w-4 text-amber-500" />
+              <div className="h-10 w-10 rounded-lg bg-gradient-to-br from-purple-400 via-purple-500 to-pink-500 dark:from-purple-600 dark:via-purple-700 dark:to-pink-700 flex items-center justify-center shadow-md">
+                <Calendar className="h-5 w-5 text-white" />
+              </div>
             </CardHeader>
             <CardContent>
               <div className="text-3xl font-bold text-gray-900 dark:text-gray-50">
                 {loading ? "--" : nextMaturity ? formatMaturityDate(nextMaturity) : "--"}
               </div>
               <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                {t('portfolioPerformance.kpi.waitingData')}
+                {loading ? t('portfolioPerformance.kpi.waitingData') : nextMaturityValue !== null ? formatCurrencyContext(nextMaturityValue) : t('portfolioPerformance.kpi.waitingData')}
               </p>
             </CardContent>
           </Card>
         </div>
 
-        {/* Competência (Período) Selector */}
-        <CompetenciaSeletor 
+        {/* Competence (Period) Selector */}
+        <CompetenceSelector 
           consolidatedData={consolidatedData}
           performanceData={performanceData}
           onFilterChange={handleFilterChange}
         />
         
-        {/* Consolidated Performance Card + Resumo do Patrimônio (cada um com seu card) */}
+        {/* Performance Chart - Above Consolidated Performance */}
+        {hasData && (
+          <PerformanceChart 
+            consolidatedData={consolidatedData}
+            targetReturnIpcaPlus={targetReturn !== null ? targetReturn.toString() : undefined}
+          />
+        )}
+        
+        {/* Consolidated performance card plus wealth summary */}
         {loading ? (
           <div className="py-8 flex justify-center"><Spinner className="h-6 w-6" /></div>
         ) : hasData ? (
@@ -222,13 +423,11 @@ function PortfolioPerformance({
               performanceData={performanceData}
               loading={loading}
               clientName={profile?.name || ''}
-              currency={currency}
               portfolioTableComponent={
                 <PortfolioTable 
                   consolidatedData={consolidatedData}
-                  filteredRange={filteredRange}
+                  filteredRange={filteredPeriodRange}
                   onYearTotalsChange={setYearTotals}
-                  currency={currency}
                 />
               }
               institutionCardData={institutionCardData || undefined}
@@ -237,18 +436,20 @@ function PortfolioPerformance({
             />
           </>
         ) : (
-          <p className="text-center text-gray-500 dark:text-gray-400 py-6">{t('common.noData') || 'Sem dados'}</p>
+          <p className="text-center text-gray-500 dark:text-gray-400 py-6">{t('common.noData')}</p>
         )}
 
-        {/* Maturity Dialog trigger placeholder (can be wired to a button later) */}
+        {/* Dialogs */}
         <MaturityDialog open={maturityDialogOpen} onOpenChange={setMaturityDialogOpen} performanceData={performanceData} />
+        <DiversificationDialog open={diversificationDialogOpen} onOpenChange={setDiversificationDialogOpen} performanceData={performanceData} />
 
         {/* Charts/Breakdowns similar to InvestmentDashboard */}
         <div className="space-y-6">
-          <StrategyBreakdown performanceData={performanceData} currency={currency} />
-          <InvestmentDetailsTable performanceData={performanceData} currency={currency} />
-          <MaturityTimeline performanceData={performanceData} currency={currency} />
-          <IssuerExposure performanceData={performanceData} currency={currency} />
+          <StrategyBreakdown performanceData={performanceData} />
+          <InvestmentDetailsTable performanceData={performanceData} />
+          <MaturityTimeline performanceData={performanceData} />
+          <IssuerExposure performanceData={performanceData} />
+          <AssetReturnsTable performanceData={performanceData} />
         </div>
       </div>
     </div>
