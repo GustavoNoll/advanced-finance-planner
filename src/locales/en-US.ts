@@ -663,6 +663,17 @@ export const enUS = {
     loading: "Verifying permissions..."
   },
   common: {
+    language: {
+      label: "Language",
+      placeholder: "Select language",
+      updating: "Updating...",
+      tooltip: "Change interface language",
+      updateError: "Unable to update your language preference. Please try again.",
+      options: {
+        ptBR: "Portuguese (Brazil)",
+        enUS: "English (United States)"
+      }
+    },
     actions: "Actions",
     confirmDeleteTitle: "Confirm deletion",
     confirmDeleteMessage: "Are you sure you want to delete this item? This action cannot be undone.",
