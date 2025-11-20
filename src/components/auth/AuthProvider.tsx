@@ -2,6 +2,7 @@
 import { createContext, useContext, useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import type { User } from '@supabase/supabase-js';
+import { detectLanguage } from '@/lib/locale-detection';
 
 type AuthContextType = {
   user: User | null;
@@ -53,7 +54,12 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         if (!profiles || profiles.length === 0) {
           const { data: newProfile } = await supabase
             .from('profiles')
-            .insert([{ id: user.id, is_broker: false, is_admin: false }])
+            .insert([{
+              id: user.id,
+              is_broker: false,
+              is_admin: false,
+              language_preference: detectLanguage()
+            }])
             .select('is_broker, is_admin')
             .single();
           

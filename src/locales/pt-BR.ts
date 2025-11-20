@@ -663,6 +663,17 @@ export const ptBR = {
     loading: "Verificando permissões..."
   },
   common: {
+    language: {
+      label: "Idioma",
+      placeholder: "Selecione o idioma",
+      updating: "Atualizando...",
+      tooltip: "Alterar idioma da interface",
+      updateError: "Não foi possível atualizar sua preferência de idioma. Tente novamente.",
+      options: {
+        ptBR: "Português (Brasil)",
+        enUS: "Inglês (Estados Unidos)"
+      }
+    },
     actions: "Ações",
     confirmDeleteTitle: "Confirmar exclusão",
     confirmDeleteMessage: "Tem certeza que deseja excluir este item? Esta ação não pode ser desfeita.",

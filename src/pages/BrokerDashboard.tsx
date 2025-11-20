@@ -21,38 +21,6 @@ import { Spinner } from '@/components/ui/spinner';
 import { ClientAccessAnalysis } from '@/components/shared/ClientAccessAnalysis';
 import { useClientAccessData } from '@/hooks/useClientAccessData';
 
-interface WealthDistribution {
-  range: string;
-  count: number;
-  total: number;
-}
-
-interface PlanningMetrics {
-  averageAge: number;
-  averageRetirementAge: number;
-  averageDesiredIncome: number;
-  planTypes: {
-    type1: number; // Encerrar
-    type2: number; // Deixar Herança
-    type3: number; // Não tocar no principal
-  };
-}
-
-interface TrendMetrics {
-  newClientsThisMonth: number;
-  totalGrowthThisMonth: number;
-  averageMonthlyGrowth: number;
-  inactiveClients: number;
-}
-
-interface ActionMetrics {
-  needsPlanReview: number;
-  belowRequiredContribution: number;
-  nearRetirement: number;
-  lowReturns: number;
-}
-
-
 /**
  * Main broker dashboard component that displays client metrics and management tools
  */
@@ -748,7 +716,7 @@ export const BrokerDashboard = () => {
               
               <div className="flex flex-col gap-4">
                 {/* Primeira linha: Meu Perfil e Sair */}
-                <div className="flex items-center gap-4">
+                <div className="flex flex-wrap items-center gap-4">
                   <Button 
                     variant="outline" 
                     size="lg"
@@ -774,7 +742,7 @@ export const BrokerDashboard = () => {
                 </div>
                 
                 {/* Segunda linha: Novo Cliente e Simular Projeção */}
-                <div className="flex items-center gap-4">
+                <div className="flex flex-wrap items-center gap-4">
                   <Button
                     variant="default"
                     size="lg"
