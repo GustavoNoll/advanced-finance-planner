@@ -10,6 +10,39 @@ export type ImportResult = {
 export type ExportType = 'filtered' | 'all'
 export type DataType = 'consolidated' | 'detailed'
 
+export interface AcceptedInstitution {
+  name: string
+  defaultCurrency: 'BRL' | 'USD' | 'EUR'
+}
+
+/**
+ * List of accepted institutions with their default currencies
+ */
+export const ACCEPTED_INSTITUTIONS: AcceptedInstitution[] = [
+  { name: 'Avenue', defaultCurrency: 'USD' },
+  { name: 'B3', defaultCurrency: 'BRL' },
+  { name: 'BB', defaultCurrency: 'BRL' },
+  { name: 'Bradesco', defaultCurrency: 'BRL' },
+  { name: 'BTG', defaultCurrency: 'BRL' },
+  { name: 'C6', defaultCurrency: 'BRL' },
+  { name: 'Fidelity', defaultCurrency: 'USD' },
+  { name: 'IB', defaultCurrency: 'USD' },
+  { name: 'Itau', defaultCurrency: 'BRL' },
+  { name: 'Santander', defaultCurrency: 'BRL' },
+  { name: 'Smart', defaultCurrency: 'BRL' },
+  { name: 'Warren', defaultCurrency: 'BRL' },
+  { name: 'XP', defaultCurrency: 'BRL' }
+]
+
+export interface PDFImportParams {
+  client_id: string
+  types: string[]
+  institution: string
+  currency: 'BRL' | 'USD' | 'EUR'
+  period: string // MM/YYYY format
+  account_name: string
+}
+
 /**
  * Downloads a CSV template for the specified data type
  */
@@ -104,19 +137,22 @@ export async function handleCSVImport(
  */
 export async function handlePDFImport(
   file: File,
-  type: DataType,
-  profileId: string
+  params: PDFImportParams
 ): Promise<void> {
   if (!file.name.endsWith('.pdf')) {
     throw new Error('Invalid file type. Please select a PDF file.')
   }
 
-  const n8nUrl = import.meta.env.VITE_N8N_PDF_IMPORT_URL || 'https://your-n8n-url.com/webhook/pdf-import'
+  const n8nUrl = import.meta.env.VITE_N8N_PDF_IMPORT_URL
   
   const formData = new FormData()
   formData.append('file', file)
-  formData.append('profileId', profileId)
-  formData.append('type', type)
+  formData.append('client_id', params.client_id)
+  formData.append('types', JSON.stringify(params.types))
+  formData.append('institution', params.institution)
+  formData.append('currency', params.currency)
+  formData.append('period', params.period)
+  formData.append('account_name', params.account_name)
 
   const response = await fetch(n8nUrl, {
     method: 'POST',

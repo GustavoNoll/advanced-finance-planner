@@ -375,7 +375,8 @@ export const ptBR = {
       newClient: "Novo Cliente",
       simulation: "Simular Projeção",
       logout: "Sair",
-      search: "Buscar"
+      search: "Buscar",
+      importPDF: "Importar PDF"
     },
     clientAccessAnalysis: {
       title: "Análise de Acessos dos Clientes",
@@ -1636,6 +1637,9 @@ export const ptBR = {
           name: 'Nome do Investimento',
           value: 'Valor (R$)',
           location: 'Localização',
+          address: {
+            name: 'Endereço'
+          },
           country: 'País',
           description: 'Descrição',
           add: 'Adicionar Investimento',
@@ -1647,6 +1651,9 @@ export const ptBR = {
           name: 'Nome da Participação',
           value: 'Valor (R$)',
           location: 'Localização',
+          address: {
+            name: 'Endereço'
+          },
           country: 'País',
           description: 'Descrição',
           add: 'Adicionar Participação',
@@ -1658,6 +1665,9 @@ export const ptBR = {
           name: 'Nome da Reserva',
           value: 'Valor (R$)',
           location: 'Localização',
+          address: {
+            name: 'Endereço'
+          },
           country: 'País',
           description: 'Descrição',
           add: 'Adicionar Reserva',
@@ -1684,6 +1694,9 @@ export const ptBR = {
           name: 'Nome do Veículo',
           value: 'Valor (R$)',
           location: 'Localização',
+          address: {
+            name: 'Endereço'
+          },
           country: 'País',
           description: 'Descrição',
           add: 'Adicionar Veículo',
@@ -1695,6 +1708,9 @@ export const ptBR = {
           name: 'Nome do Bem',
           value: 'Valor (R$)',
           location: 'Localização',
+          address: {
+            name: 'Endereço'
+          },
           country: 'País',
           description: 'Descrição',
           add: 'Adicionar Bem',
@@ -1710,6 +1726,9 @@ export const ptBR = {
           name: 'Nome do Financiamento',
           value: 'Valor (R$)',
           location: 'Localização',
+          address: {
+            name: 'Endereço'
+          },
           country: 'País',
           description: 'Descrição',
           add: 'Adicionar Financiamento',
@@ -1721,6 +1740,9 @@ export const ptBR = {
           name: 'Nome da Dívida',
           value: 'Valor (R$)',
           location: 'Localização',
+          address: {
+            name: 'Endereço'
+          },
           country: 'País',
           description: 'Descrição',
           add: 'Adicionar Dívida',
@@ -2058,6 +2080,36 @@ export const ptBR = {
         pdfSuccessDescription: "O PDF foi enviado para processamento. Os dados serão importados em breve.",
         pdfError: "Erro ao enviar PDF",
         pdfErrorDescription: "Ocorreu um erro ao enviar o PDF."
+      },
+      importPDF: {
+        formTitle: "Preencha os dados do PDF",
+        brokerDialogTitle: "Importar PDF de Performance",
+        selectFile: "Selecionar arquivo PDF",
+        submitButton: "Enviar PDF",
+        searchClient: "Buscar cliente...",
+        noClientFound: "Nenhum cliente encontrado.",
+        formLabels: {
+          file: "Arquivo PDF",
+          client: "Cliente",
+          institution: "Instituição",
+          currency: "Moeda",
+          period: "Período (MM/YYYY)",
+          accountName: "Nome da Conta"
+        },
+        formPlaceholders: {
+          client: "Selecione o cliente",
+          institution: "Selecione a instituição",
+          accountName: "Ex: Conta 12345"
+        },
+        formErrors: {
+          filesRequired: "Este campo é obrigatório",
+          clientRequired: "Este campo é obrigatório",
+          institutionRequired: "Este campo é obrigatório",
+          currencyRequired: "Este campo é obrigatório",
+          periodRequired: "Este campo é obrigatório",
+          periodInvalid: "Formato inválido. Use MM/YYYY",
+          accountNameRequired: "Este campo é obrigatório"
+        }
       },
       marketDataAudit: "Auditoria de Dados de Mercado",
       settings: "Configurações",

@@ -375,7 +375,8 @@ export const enUS = {
       newClient: "New Client",
       simulation: "Simulate Projection",
       logout: "Logout",
-      search: "Search"
+      search: "Search",
+      importPDF: "Import PDF"
     },
     clientAccessAnalysis: {
       title: "Client Access Analysis",
@@ -1636,6 +1637,9 @@ export const enUS = {
           name: 'Investment Name',
           value: 'Value ($)',
           location: 'Location',
+          address: {
+            name: 'Address'
+          },
           country: 'Country',
           description: 'Description',
           add: 'Add Investment',
@@ -1647,6 +1651,9 @@ export const enUS = {
           name: 'Interest Name',
           value: 'Value ($)',
           location: 'Location',
+          address: {
+            name: 'Address'
+          },
           country: 'Country',
           description: 'Description',
           add: 'Add Interest',
@@ -1658,6 +1665,9 @@ export const enUS = {
           name: 'Reserve Name',
           value: 'Value ($)',
           location: 'Location',
+          address: {
+            name: 'Address'
+          },
           country: 'Country',
           description: 'Description',
           add: 'Add Reserve',
@@ -1684,6 +1694,9 @@ export const enUS = {
           name: 'Vehicle Name',
           value: 'Value ($)',
           location: 'Location',
+          address: {
+            name: 'Address'
+          },
           country: 'Country',
           description: 'Description',
           add: 'Add Vehicle',
@@ -1695,6 +1708,9 @@ export const enUS = {
           name: 'Item Name',
           value: 'Value ($)',
           location: 'Location',
+          address: {
+            name: 'Address'
+          },
           country: 'Country',
           description: 'Description',
           add: 'Add Item',
@@ -1710,6 +1726,9 @@ export const enUS = {
           name: 'Financing Name',
           value: 'Value ($)',
           location: 'Location',
+          address: {
+            name: 'Address'
+          },
           country: 'Country',
           description: 'Description',
           add: 'Add Financing',
@@ -1721,6 +1740,9 @@ export const enUS = {
           name: 'Debt Name',
           value: 'Value ($)',
           location: 'Location',
+          address: {
+            name: 'Address'
+          },
           country: 'Country',
           description: 'Description',
           add: 'Add Debt',
@@ -2058,6 +2080,36 @@ export const enUS = {
         pdfSuccessDescription: "The PDF has been sent for processing. Data will be imported shortly.",
         pdfError: "Error sending PDF",
         pdfErrorDescription: "An error occurred while sending the PDF."
+      },
+      importPDF: {
+        formTitle: "Fill in PDF data",
+        brokerDialogTitle: "Import Performance PDF",
+        selectFile: "Select PDF file",
+        submitButton: "Send PDF",
+        searchClient: "Search client...",
+        noClientFound: "No client found.",
+        formLabels: {
+          file: "PDF File",
+          client: "Client",
+          institution: "Institution",
+          currency: "Currency",
+          period: "Period (MM/YYYY)",
+          accountName: "Account Name"
+        },
+        formPlaceholders: {
+          client: "Select client",
+          institution: "Select institution",
+          accountName: "Ex: Account 12345"
+        },
+        formErrors: {
+          filesRequired: "This field is required",
+          clientRequired: "This field is required",
+          institutionRequired: "This field is required",
+          currencyRequired: "This field is required",
+          periodRequired: "This field is required",
+          periodInvalid: "Invalid format. Use MM/YYYY",
+          accountNameRequired: "This field is required"
+        }
       },
       marketDataAudit: "Real Proof",
       settings: "Settings",
