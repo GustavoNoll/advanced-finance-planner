@@ -90,8 +90,26 @@ export const BudgetForm = ({
         if (data) {
           form.reset({
             ...data,
-            incomes: data.incomes || [{ description: '', amount: 0 }],
-            expenses: data.expenses || [{ description: '', amount: 0 }],
+            incomes: (data.incomes || [{ description: '', amount: 0 }]).map(income => ({
+              description: income.description || '',
+              amount: income.amount != null ? Number(income.amount) : 0
+            })),
+            expenses: (data.expenses || [{ description: '', amount: 0 }]).map(expense => ({
+              description: expense.description || '',
+              amount: expense.amount != null ? Number(expense.amount) : 0
+            })),
+            bonus: data.bonus != null ? Number(data.bonus) : 0,
+            dividends: data.dividends != null ? Number(data.dividends) : 0,
+            savings: data.savings != null ? Number(data.savings) : 0,
+          });
+        } else {
+          // Se não houver dados, inicializa com valores padrão
+          form.reset({
+            incomes: [{ description: '', amount: 0 }],
+            expenses: [{ description: '', amount: 0 }],
+            bonus: 0,
+            dividends: 0,
+            savings: 0,
           });
         }
       } catch (error) {
@@ -171,9 +189,9 @@ export const BudgetForm = ({
   const renderReadOnlyView = () => {
     const incomes = form.getValues('incomes') || [];
     const expenses = form.getValues('expenses') || [];
-    const bonus = form.getValues('bonus') || 0;
-    const dividends = form.getValues('dividends') || 0;
-    const savings = form.getValues('savings') || 0;
+    const bonus = form.getValues('bonus') ?? 0;
+    const dividends = form.getValues('dividends') ?? 0;
+    const savings = form.getValues('savings') ?? 0;
 
     return (
       <Card>
@@ -446,7 +464,7 @@ export const BudgetForm = ({
                         <FormLabel>{t('budget.other.bonus')}</FormLabel>
                         <FormControl>
                           <CurrencyInput
-                            value={field.value}
+                            value={field.value ?? 0}
                             onValueChange={(value) => field.onChange(value ? parseFloat(value) : 0)}
                             disabled={!isEditing}
                             intlConfig={{ locale: 'pt-BR', currency: 'BRL' }}
@@ -466,7 +484,7 @@ export const BudgetForm = ({
                         <FormLabel>{t('budget.other.dividends')}</FormLabel>
                         <FormControl>
                           <CurrencyInput
-                            value={field.value}
+                            value={field.value ?? 0}
                             onValueChange={(value) => field.onChange(value ? parseFloat(value) : 0)}
                             disabled={!isEditing}
                             intlConfig={{ locale: 'pt-BR', currency: 'BRL' }}
@@ -486,7 +504,7 @@ export const BudgetForm = ({
                         <FormLabel>{t('budget.other.savings')}</FormLabel>
                         <FormControl>
                           <CurrencyInput
-                            value={field.value}
+                            value={field.value ?? 0}
                             onValueChange={(value) => field.onChange(value ? parseFloat(value) : 0)}
                             disabled={!isEditing}
                             intlConfig={{ locale: 'pt-BR', currency: 'BRL' }}

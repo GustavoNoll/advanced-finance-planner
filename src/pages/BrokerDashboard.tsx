@@ -3,7 +3,7 @@ import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/lib/supabase';
 import { useToast } from '@/components/ui/use-toast';
-import { Plus, LogOut, Share2, Trash2, Calculator } from 'lucide-react';
+import { Plus, LogOut, Share2, Trash2, Calculator, FileText } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { createDateWithoutTimezone } from '@/utils/dateUtils';
 
@@ -20,6 +20,7 @@ import { useAuth } from '@/components/auth/AuthProvider';
 import { Spinner } from '@/components/ui/spinner';
 import { ClientAccessAnalysis } from '@/components/shared/ClientAccessAnalysis';
 import { useClientAccessData } from '@/hooks/useClientAccessData';
+import { BrokerPDFImportDialog } from '@/pages/performance/components/BrokerPDFImportDialog';
 
 /**
  * Main broker dashboard component that displays client metrics and management tools
@@ -131,6 +132,8 @@ export const BrokerDashboard = () => {
     adequateContributors: number;
     percentage: number;
   }>>([]);
+
+  const [isPDFImportDialogOpen, setIsPDFImportDialogOpen] = useState(false);
 
   // Client access data using shared hook
   const { clientAccessData, fetchClientAccessData, processClientData } = useClientAccessData();
@@ -762,6 +765,16 @@ export const BrokerDashboard = () => {
                     <Calculator className="h-5 w-5" />
                     {t('brokerDashboard.buttons.simulation')}
                   </Button>
+                  
+                  <Button
+                    variant="outline"
+                    size="lg"
+                    onClick={() => setIsPDFImportDialogOpen(true)}
+                    className="flex items-center gap-3 bg-purple-50 hover:bg-purple-100 text-purple-600 border-purple-200 hover:border-purple-300 dark:bg-purple-900/20 dark:hover:bg-purple-900/30 dark:text-purple-400 dark:border-purple-700 dark:hover:border-purple-600 transition-all duration-300"
+                  >
+                    <FileText className="h-5 w-5" />
+                    {t('brokerDashboard.buttons.importPDF') || 'Importar PDF'}
+                  </Button>
                 </div>
               </div>
             </div>
@@ -821,6 +834,13 @@ export const BrokerDashboard = () => {
           />
         </div>
       </div>
+
+      {/* PDF Import Dialog */}
+      <BrokerPDFImportDialog
+        open={isPDFImportDialogOpen}
+        onOpenChange={setIsPDFImportDialogOpen}
+        clients={searchResults}
+      />
     </div>
   );
 };

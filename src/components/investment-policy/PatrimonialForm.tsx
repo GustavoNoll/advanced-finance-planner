@@ -786,11 +786,11 @@ export const PatrimonialForm = ({
           </CardHeader>
           <CardContent className="space-y-8">
             {/* Investments Section */}
-            <div className="space-y-4 bg-blue-50 p-6 rounded-lg border border-blue-100">
+            <div className="space-y-4 bg-blue-50 dark:bg-slate-800 p-6 rounded-lg border border-blue-100 dark:border-slate-700">
               <div className="flex justify-between items-center">
-                <h2 className="text-xl font-bold text-blue-900">{t('patrimonial.form.investments.title')}</h2>
+                <h2 className="text-xl font-bold text-blue-900 dark:text-blue-300">{t('patrimonial.form.investments.title')}</h2>
               </div>
-              <p className="text-sm text-blue-700">{t('patrimonial.form.investments.description')}</p>
+              <p className="text-sm text-blue-700 dark:text-blue-300">{t('patrimonial.form.investments.description')}</p>
 
               {renderAssetFields(
                 investmentPropertiesFields,
@@ -837,11 +837,11 @@ export const PatrimonialForm = ({
             </div>
 
             {/* Personal Assets Section */}
-            <div className="space-y-4 bg-green-50 p-6 rounded-lg border border-green-100">
+            <div className="space-y-4 bg-green-50 dark:bg-slate-800 p-6 rounded-lg border border-green-100 dark:border-slate-700">
               <div className="flex justify-between items-center">
-                <h2 className="text-xl font-bold text-green-900">{t('patrimonial.form.personal_assets.title')}</h2>
+                <h2 className="text-xl font-bold text-green-900 dark:text-green-300">{t('patrimonial.form.personal_assets.title')}</h2>
               </div>
-              <p className="text-sm text-green-700">{t('patrimonial.form.personal_assets.description')}</p>
+              <p className="text-sm text-green-700 dark:text-green-300">{t('patrimonial.form.personal_assets.description')}</p>
 
               {renderAssetFields(
                 personalPropertiesFields,
@@ -877,11 +877,11 @@ export const PatrimonialForm = ({
             </div>
 
             {/* Liabilities Section */}
-            <div className="space-y-4 bg-red-50 p-6 rounded-lg border border-red-100">
+            <div className="space-y-4 bg-red-50 dark:bg-slate-800 p-6 rounded-lg border border-red-100 dark:border-slate-700">
               <div className="flex justify-between items-center">
-                <h2 className="text-xl font-bold text-red-900">{t('patrimonial.form.liabilities.title')}</h2>
+                <h2 className="text-xl font-bold text-red-900 dark:text-red-300">{t('patrimonial.form.liabilities.title')}</h2>
               </div>
-              <p className="text-sm text-red-700">{t('patrimonial.form.liabilities.description')}</p>
+              <p className="text-sm text-red-700 dark:text-red-300">{t('patrimonial.form.liabilities.description')}</p>
 
               {renderAssetFields(
                 financingFields,
@@ -909,7 +909,7 @@ export const PatrimonialForm = ({
         {/* Fixed Bottom Action Bar */}
         <div className="fixed bottom-0 left-0 right-0 z-50 bg-background border-t shadow-lg">
           <div className="container mx-auto px-4 py-4 flex justify-end items-center gap-4">
-            <span className="text-sm font-medium text-gray-700 flex items-center gap-1">
+            <span className="text-sm font-medium text-gray-700 dark:text-gray-300 flex items-center gap-1">
               <Info className="w-4 h-4 text-blue-500" />
               {t('patrimonial.save_changes')}
             </span>
