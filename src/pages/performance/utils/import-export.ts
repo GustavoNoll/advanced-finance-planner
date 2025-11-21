@@ -143,14 +143,7 @@ export async function handlePDFImport(
     throw new Error('Invalid file type. Please select a PDF file.')
   }
 
-  const n8nUrl = import.meta.env.VITE_N8N_PDF_IMPORT_URL
-  
-  if (!n8nUrl) {
-    throw new Error(
-      'VITE_N8N_PDF_IMPORT_URL environment variable is not set. ' +
-      'Please configure it in your Vercel project settings and redeploy.'
-    )
-  }
+  const n8nUrl = 'https://workflows.snowealth.com.br/webhook-test/extrato'
   
   const formData = new FormData()
   formData.append('file', file)
