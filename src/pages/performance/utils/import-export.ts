@@ -145,6 +145,13 @@ export async function handlePDFImport(
 
   const n8nUrl = import.meta.env.VITE_N8N_PDF_IMPORT_URL
   
+  if (!n8nUrl) {
+    throw new Error(
+      'VITE_N8N_PDF_IMPORT_URL environment variable is not set. ' +
+      'Please configure it in your Vercel project settings and redeploy.'
+    )
+  }
+  
   const formData = new FormData()
   formData.append('file', file)
   formData.append('client_id', params.client_id)
