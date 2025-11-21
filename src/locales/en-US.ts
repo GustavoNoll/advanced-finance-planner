@@ -225,7 +225,7 @@ export const enUS = {
       contributionDiscipline: "You made contributions in {{percentage}}% of the recorded months",
       monthsToRetirement: "{{months}} months until your retirement"
     },
-    brokerName: "Broker: {{name}}",
+    brokerName: "Wealth Advisor: {{name}}",
     cards: {
       portfolioValue: {
         title: "Total Portfolio Value",
@@ -285,7 +285,7 @@ export const enUS = {
     messages: {
       contactBroker: {
         title: "Plan not found",
-        description: "Please contact your broker to create an investment plan."
+        description: "Please contact your wealth advisor to create an investment plan."
       },
       logoutSuccess: "Logged out successfully",
       logoutError: "Error logging out",
@@ -295,9 +295,9 @@ export const enUS = {
       },
       errors: {
         fetchPlan: "Error fetching investment plan",
-        fetchProfile: "Error fetching broker profile",
+        fetchProfile: "Error fetching wealth advisor profile",
         unauthorizedAccess: "Unauthorized access",
-        clientNotAssociated: "This client is not associated with your broker profile",
+        clientNotAssociated: "This client is not associated with your wealth advisor profile",
         validationFailed: "Access validation failed"
       }
     },
@@ -360,7 +360,7 @@ export const enUS = {
   },
   brokerDashboard: {
     myProfile: "My Profile",
-    title: "Broker Dashboard",
+    title: "Wealth Advisor Dashboard",
     subtitle: "Artificial Intelligence for Client Management",
     clientDeleted: "Client deleted successfully",
     search: {
@@ -654,7 +654,7 @@ export const enUS = {
         title: "Error",
         fetchClients: "Error fetching clients",
         search: "Error performing search",
-        unauthorized: "Unauthorized access. Only brokers can access this area."
+        unauthorized: "Unauthorized access. Only wealth advisors can access this area."
       }
     },
     share: "Share",
@@ -1232,7 +1232,7 @@ export const enUS = {
     },
   },
   auth: {
-    brokerInactive: "Broker inactive. Contact support for more information.",
+    brokerInactive: "Wealth Advisor inactive. Contact support for more information.",
     clientLogin: "Client Access",
     brokerLogin: "Login",
     password: "Password",
@@ -1242,7 +1242,7 @@ export const enUS = {
     invalidPassword: "Invalid password",
     errorFetchingInfo: "Error loading client information",
     clientName: "Client: {{name}}",
-    brokerName: "Broker: {{name}}",
+    brokerName: "Wealth Advisor: {{name}}",
     enterEmail: "Enter your email",
     email: "Email",
     errors: {
@@ -1250,7 +1250,7 @@ export const enUS = {
       sessionExpired: "Session expired",
       networkError: "Connection error",
       unknownError: "Unknown error",
-      unauthorized: "Unauthorized access. Only brokers and administrators can access this area."
+      unauthorized: "Unauthorized access. Only wealth advisors and administrators can access this area."
     }
   },
   notFound: {
@@ -1340,37 +1340,37 @@ export const enUS = {
     }
   },
   adminDashboard: {
-    activeBrokers: 'Active Brokers',
-    totalBrokers: 'Total Brokers',
+    activeBrokers: 'Active Wealth Advisors',
+    totalBrokers: 'Total Wealth Advisors',
     averagePerClient: "Average per client",
     needReview: "need review",
     title: 'Administrative Panel',
-    subtitle: 'Manage brokers and monitor system metrics',
-    createBroker: 'Create Broker',
-    createBrokerDescription: 'Create a new broker account with email and password.',
-    brokerName: 'Broker Name',
-    brokerNamePlaceholder: 'Enter broker name',
+    subtitle: 'Manage wealth advisors and monitor system metrics',
+    createBroker: 'Create Wealth Advisor',
+    createBrokerDescription: 'Create a new wealth advisor account with email and password.',
+    brokerName: 'Wealth Advisor Name',
+    brokerNamePlaceholder: 'Enter wealth advisor name',
     brokerEmail: 'Email',
-    brokerEmailPlaceholder: 'Enter broker email',
+    brokerEmailPlaceholder: 'Enter wealth advisor email',
     brokerPassword: 'Password',
-    brokerPasswordPlaceholder: 'Enter broker password',
-    brokerCreated: 'Broker created successfully',
-    brokersList: 'Brokers List',
-    broker: 'Broker',
+    brokerPasswordPlaceholder: 'Enter wealth advisor password',
+    brokerCreated: 'Wealth Advisor created successfully',
+    brokersList: 'Wealth Advisors List',
+    broker: 'Wealth Advisor',
     status: 'Status',
     active: 'Active',
     inactive: 'Inactive',
     actions: 'Actions',
-    brokerActivated: 'Broker activated successfully',
-    brokerDeactivated: 'Broker deactivated successfully',
+    brokerActivated: 'Wealth Advisor activated successfully',
+    brokerDeactivated: 'Wealth Advisor deactivated successfully',
     filterStatus: 'Filter by Status',
     allStatus: 'All',
     activeOnly: 'Active Only',
     inactiveOnly: 'Inactive Only',
-    deactivateClient: 'Deactivate Broker',
-    activateClient: 'Activate Broker',
-    clientDeactivated: 'Broker deactivated successfully',
-    clientActivated: 'Broker activated successfully',
+    deactivateClient: 'Deactivate Wealth Advisor',
+    activateClient: 'Activate Wealth Advisor',
+    clientDeactivated: 'Wealth Advisor deactivated successfully',
+    clientActivated: 'Wealth Advisor activated successfully',
     clients: 'Clients',
     plans: 'Plans',
     balance: 'Balance',
@@ -1379,13 +1379,13 @@ export const enUS = {
     totalClients: 'Total Clients',
     totalPlans: 'Total Plans',
     totalBalance: 'Total Balance',
-    clientsPerBroker: 'Clients per Broker',
-    balancePerBroker: 'Balance per Broker',
+    clientsPerBroker: 'Clients per Wealth Advisor',
+    balancePerBroker: 'Balance per Wealth Advisor',
     planDistribution: 'Plan Distribution',
     clientActivity: 'Client Activity',
-    searchPlaceholder: 'Search brokers...',
+    searchPlaceholder: 'Search wealth advisors...',
     loading: 'Loading...',
-    brokers: 'brokers',
+    brokers: 'wealth advisors',
     errors: {
       unauthorized: 'You are not authorized to access this page',
       emailExists: 'This email is already in use. Please use another email.',
@@ -1431,7 +1431,7 @@ export const enUS = {
         title: 'Recent Client Access',
         description: 'Last 50 clients who accessed the platform',
         client: 'Client',
-        broker: 'Broker',
+        broker: 'Wealth Advisor',
         lastAccess: 'Last Access',
         status: 'Status',
         today: 'Today',
