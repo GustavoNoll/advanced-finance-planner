@@ -264,6 +264,7 @@ const InvestmentPolicy = ({
                           isEditing={isBrokerProfile}
                           policyId={policy?.id}
                           clientId={clientId}
+                          currency={investmentPlan?.currency}
                         />
                       )}
                     </AccordionContent>

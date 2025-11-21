@@ -58,6 +58,7 @@ interface InvestmentPreferencesFormProps {
   isEditing?: boolean;
   policyId?: string;
   clientId?: string;
+  currency?: 'BRL' | 'USD' | 'EUR';
 }
 
 const investmentModes = [
@@ -67,8 +68,6 @@ const investmentModes = [
 ];
 
 const reviewPeriods = [
-  { value: 'monthly', label: 'Mensal' },
-  { value: 'quarterly', label: 'Trimestral' },
   { value: 'semiannual', label: 'Semestral' },
   { value: 'annual', label: 'Anual' },
 ];
@@ -124,14 +123,18 @@ const ASSET_CATEGORIES = {
   },
 } as const;
 
-const bondMaturities = Array.from({ length: 10 }, (_, i) => ({
-  value: `${i + 1}`,
-  label: `${i + 1} ${i === 0 ? 'ano' : 'anos'}`
-}));
+const bondMaturities = [
+  { value: '1', label: 'Até 1 ano' },
+  { value: '3', label: 'Até 3 anos' },
+  { value: '5', label: 'Até 5 anos' },
+  { value: '10', label: 'Até 10 anos' },
+  { value: '10_plus', label: '10 anos +' },
+];
 
-const targetReturns = Array.from({ length: 6 }, (_, i) => ({
-  value: `${i + 3}`,
-  label: `IPCA + ${i + 3}%`
+// Target returns will be filtered based on currency
+const getAllTargetReturns = () => Array.from({ length: 12 }, (_, i) => ({
+  value: `ipca_plus_${i}`,
+  label: i === 0 ? `IPCA + ${i}%` : `IPCA + ${i}%`
 }));
 
 export const InvestmentPreferencesForm = ({
@@ -140,11 +143,25 @@ export const InvestmentPreferencesForm = ({
   isEditing = false,
   policyId,
   clientId,
+  currency = 'BRL',
 }: InvestmentPreferencesFormProps) => {
   const { t } = useTranslation();
   const queryClient = useQueryClient();
   const [isEditMode, setIsEditMode] = useState(false);
   const [totalAllocation, setTotalAllocation] = useState(0);
+  
+  // Filter target returns based on currency
+  const targetReturns = React.useMemo(() => {
+    const allReturns = getAllTargetReturns();
+    if (currency === 'BRL') {
+      // Remove IPCA+ 3, 7, and 8 for BRL
+      return allReturns.filter((_, i) => i > 3 && i < 7);
+    } else if (currency === 'USD' || currency === 'EUR') {
+      // Use IPCA+ 0 to +3 for USD/EUR
+      return allReturns.slice(0, 4);
+    }
+    return allReturns;
+  }, [currency]);
   const initialFormValues = useRef<InvestmentPreferencesFormValues | undefined>({
     target_return_review: initialData?.target_return_review || '',
     max_bond_maturity: initialData?.max_bond_maturity || '',
@@ -458,7 +475,11 @@ export const InvestmentPreferencesForm = ({
             </div>
             <div>
               <p className="text-sm text-muted-foreground">{t('investmentPreferences.form.targetReturnIpcaPlus')}</p>
-              <p className="font-medium">{getDisplayValue(values.target_return_ipca_plus, targetReturns)}</p>
+              <p className="font-medium">
+                {values.target_return_ipca_plus 
+                  ? t(`investmentPreferences.options.targetReturns.${values.target_return_ipca_plus}`, { defaultValue: values.target_return_ipca_plus })
+                  : t('common.notInformed')}
+              </p>
             </div>
             <div>
               <p className="text-sm text-muted-foreground">{t('investmentPreferences.form.stockInvestmentMode')}</p>
@@ -806,7 +827,7 @@ export const InvestmentPreferencesForm = ({
                           <SelectContent>
                             {targetReturns.map((return_) => (
                               <SelectItem key={return_.value} value={return_.value}>
-                                {return_.label}
+                                {t(`investmentPreferences.options.targetReturns.${return_.value}`, { defaultValue: return_.label })}
                               </SelectItem>
                             ))}
                           </SelectContent>

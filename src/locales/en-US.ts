@@ -2471,6 +2471,7 @@ export const enUS = {
         stock_funds: 'Stock Funds'
       },
       targetReturns: {
+        ipca_plus_0: 'IPCA + 0%',
         ipca_plus_1: 'IPCA + 1%',
         ipca_plus_2: 'IPCA + 2%',
         ipca_plus_3: 'IPCA + 3%',
