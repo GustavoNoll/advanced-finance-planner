@@ -225,7 +225,7 @@ export const ptBR = {
       contributionDiscipline: "Você fez aportes em {{percentage}}% dos meses registrados",
       monthsToRetirement: "Faltam {{months}} meses para sua aposentadoria"
     },
-    brokerName: "Corretor: {{name}}",
+    brokerName: "Consultor: {{name}}",
     cards: {
       portfolioValue: {
         title: "Valor Total do Portfólio",
@@ -285,7 +285,7 @@ export const ptBR = {
     messages: {
       contactBroker: {
         title: "Plano não encontrado",
-        description: "Por favor, entre em contato com seu corretor para criar um plano de investimento."
+        description: "Por favor, entre em contato com seu consultor para criar um plano de investimento."
       },
       logoutSuccess: "Desconectado com sucesso",
       logoutError: "Erro ao desconectar",
@@ -295,9 +295,9 @@ export const ptBR = {
       },
       errors: {
         fetchPlan: "Erro ao buscar plano de investimento",
-        fetchProfile: "Erro ao buscar perfil do corretor",
+        fetchProfile: "Erro ao buscar perfil do consultor",
         unauthorizedAccess: "Acesso não autorizado",
-        clientNotAssociated: "Este cliente não está associado ao seu perfil de corretor",
+        clientNotAssociated: "Este cliente não está associado ao seu perfil de consultor",
         validationFailed: "Falha na validação de acesso"
       }
     },
@@ -360,7 +360,7 @@ export const ptBR = {
   },
   brokerDashboard: {
     myProfile: "Meu Perfil",
-    title: "Dashboard do Corretor",
+    title: "Dashboard do Consultor",
     subtitle: "Inteligência Artificial para Gestão de Clientes",
     clientDeleted: "Cliente excluído com sucesso",
     search: {
@@ -654,7 +654,7 @@ export const ptBR = {
         title: "Erro",
         fetchClients: "Erro ao buscar clientes",
         search: "Erro ao realizar busca",
-        unauthorized: "Acesso não autorizado. Apenas corretores podem acessar esta área."
+        unauthorized: "Acesso não autorizado. Apenas consultores podem acessar esta área."
       }
     },
     share: "Compartilhar",
@@ -1232,7 +1232,7 @@ export const ptBR = {
     },
   },
   auth: {
-    brokerInactive: "Corretor inativo. Entre em contato com o suporte para mais informações.",
+    brokerInactive: "Consultor inativo. Entre em contato com o suporte para mais informações.",
     clientLogin: "Acesso do Cliente",
     brokerLogin: "Login",
     password: "Senha",
@@ -1242,7 +1242,7 @@ export const ptBR = {
     invalidPassword: "Senha inválida",
     errorFetchingInfo: "Erro ao carregar informações do cliente",
     clientName: "Cliente: {{name}}",
-    brokerName: "Corretor: {{name}}",
+    brokerName: "Consultor: {{name}}",
     enterEmail: "Digite seu e-mail",
     email: "E-mail",
     errors: {
@@ -1250,7 +1250,7 @@ export const ptBR = {
       sessionExpired: "Sessão expirada",
       networkError: "Erro de conexão",
       unknownError: "Erro desconhecido",
-      unauthorized: "Acesso não autorizado. Apenas corretores e administradores podem acessar esta área."
+      unauthorized: "Acesso não autorizado. Apenas consultores e administradores podem acessar esta área."
     }
   },
   notFound: {
@@ -1340,37 +1340,37 @@ export const ptBR = {
     }
   },
   adminDashboard: {
-    activeBrokers: 'Corretores Ativos',
-    totalBrokers: 'Total de Corretores',
+    activeBrokers: 'Consultores Ativos',
+    totalBrokers: 'Total de Consultores',
     averagePerClient: "Média por cliente",
     needReview: "precisam de revisão",
     title: 'Painel Administrativo',
-    subtitle: 'Gerenciar corretores e monitorar métricas do sistema',
-    createBroker: 'Criar Corretor',
-    createBrokerDescription: 'Criar uma nova conta de corretor com email e senha.',
-    brokerName: 'Nome do Corretor',
-    brokerNamePlaceholder: 'Digite o nome do corretor',
+    subtitle: 'Gerenciar consultores e monitorar métricas do sistema',
+    createBroker: 'Criar Consultor',
+    createBrokerDescription: 'Criar uma nova conta de consultor com email e senha.',
+    brokerName: 'Nome do Consultor',
+    brokerNamePlaceholder: 'Digite o nome do consultor',
     brokerEmail: 'Email',
-    brokerEmailPlaceholder: 'Digite o email do corretor',
+    brokerEmailPlaceholder: 'Digite o email do consultor',
     brokerPassword: 'Senha',
-    brokerPasswordPlaceholder: 'Digite a senha do corretor',
-    brokerCreated: 'Corretor criado com sucesso',
-    brokersList: 'Lista de Corretores',
-    broker: 'Corretor',
+    brokerPasswordPlaceholder: 'Digite a senha do consultor',
+    brokerCreated: 'Consultor criado com sucesso',
+    brokersList: 'Lista de Consultores',
+    broker: 'Consultor',
     status: 'Status',
     active: 'Ativo',
     inactive: 'Inativo',
     actions: 'Ações',
-    brokerActivated: 'Corretor ativado com sucesso',
-    brokerDeactivated: 'Corretor desativado com sucesso',
+    brokerActivated: 'Consultor ativado com sucesso',
+    brokerDeactivated: 'Consultor desativado com sucesso',
     filterStatus: 'Filtrar por Status',
     allStatus: 'Todos',
     activeOnly: 'Somente Ativos',
     inactiveOnly: 'Somente Inativos',
-    deactivateClient: 'Desativar Corretor',
-    activateClient: 'Ativar Corretor',
-    clientDeactivated: 'Corretor desativado com sucesso',
-    clientActivated: 'Corretor ativado com sucesso',
+    deactivateClient: 'Desativar Consultor',
+    activateClient: 'Ativar Consultor',
+    clientDeactivated: 'Consultor desativado com sucesso',
+    clientActivated: 'Consultor ativado com sucesso',
     clients: 'Clientes',
     plans: 'Planos',
     balance: 'Saldo',
@@ -1379,13 +1379,13 @@ export const ptBR = {
     totalClients: 'Total de Clientes',
     totalPlans: 'Total de Planos',
     totalBalance: 'Saldo Total',
-    clientsPerBroker: 'Clientes por Corretor',
-    balancePerBroker: 'Saldo por Corretor',
+    clientsPerBroker: 'Clientes por Consultor',
+    balancePerBroker: 'Saldo por Consultor',
     planDistribution: 'Distribuição de Planos',
     clientActivity: 'Atividade dos Clientes',
-    searchPlaceholder: 'Buscar corretores...',
+    searchPlaceholder: 'Buscar consultores...',
     loading: 'Carregando...',
-    brokers: 'corretoras',
+    brokers: 'consultores',
     errors: {
       unauthorized: 'Você não está autorizado a acessar esta página',
       emailExists: 'Este email já está em uso. Por favor, use outro email.',
