@@ -1,21 +1,33 @@
-import { defineConfig } from "vite";
+import { defineConfig, loadEnv } from "vite";
 import react from "@vitejs/plugin-react-swc";
 import path from "path";
 import vercel from 'vite-plugin-vercel';
 
 // https://vitejs.dev/config/
-export default defineConfig(({ mode }) => ({
-  server: {
-    host: "::",
-    port: 8080,
-  },
-  plugins: [
-    vercel(),
-    react(),
-  ].filter(Boolean),
-  resolve: {
-    alias: {
-      "@": path.resolve(__dirname, "./src"),
+export default defineConfig(({ mode }) => {
+  // Load env file based on `mode` in the current working directory.
+  // Set the third parameter to '' to load all env regardless of the `VITE_` prefix.
+  const env = loadEnv(mode, process.cwd(), '');
+  
+  return {
+    server: {
+      host: "::",
+      port: 8080,
     },
-  },
-}));
+    plugins: [
+      vercel(),
+      react(),
+    ].filter(Boolean),
+    resolve: {
+      alias: {
+        "@": path.resolve(__dirname, "./src"),
+      },
+    },
+    // Explicitly define environment variables for Vercel
+    define: {
+      'import.meta.env.VITE_N8N_PDF_IMPORT_URL': JSON.stringify(
+        env.VITE_N8N_PDF_IMPORT_URL || ''
+      ),
+    },
+  };
+});
