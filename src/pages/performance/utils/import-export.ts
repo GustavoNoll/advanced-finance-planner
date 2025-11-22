@@ -143,7 +143,7 @@ export async function handlePDFImport(
     throw new Error('Invalid file type. Please select a PDF file.')
   }
 
-  const n8nUrl = 'https://workflows.snowealth.com.br/webhook-test/extrato'
+  const n8nUrl = 'https://webhooks.snowealth.com.br/webhook/extrato'
   
   const formData = new FormData()
   formData.append('file', file)
