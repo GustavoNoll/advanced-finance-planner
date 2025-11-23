@@ -126,7 +126,8 @@ export function usePerformanceData(profileId: string | null) {
     previousAssets,
     assetsChangePercent,
     hasData: consolidatedData.length > 0 || performanceData.length > 0,
-    refetch: fetchPerformanceData
+    refetch: fetchPerformanceData,
+    mostRecentPeriod: period || null
   };
 }
 

@@ -1,6 +1,6 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts'
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from 'recharts'
 import { useMemo, useState, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { PerformanceData } from "@/types/financial"
@@ -125,7 +125,7 @@ export function MaturityTimeline({ performanceData }: MaturityTimelineProps) {
       .sort((a, b) => parseInt(a.year) - parseInt(b.year))
 
     return chartReady
-  }, [filteredData])
+  }, [filteredData, convertValue])
 
   /**
    * Custom tooltip component for the maturity timeline chart
@@ -225,10 +225,16 @@ export function MaturityTimeline({ performanceData }: MaturityTimelineProps) {
               <Tooltip content={<CustomTooltip />} />
               <Bar 
                 dataKey="totalAmount" 
-                fill="hsl(var(--primary))"
+                fill="#3b82f6"
                 radius={[4, 4, 0, 0]}
-                opacity={0.85}
-              />
+              >
+                {maturityData.map((entry, index) => {
+                  const colors = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#06b6d4', '#ec4899', '#14b8a6']
+                  return (
+                    <Cell key={`cell-${index}`} fill={colors[index % colors.length]} />
+                  )
+                })}
+              </Bar>
             </BarChart>
           </ResponsiveContainer>
         )}

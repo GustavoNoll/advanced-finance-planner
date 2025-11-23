@@ -8,7 +8,7 @@ import { TrendingUp, Settings, ArrowLeftRight, Wallet, BarChart3, Calendar as Ca
 import { useState, useMemo, useCallback } from "react"
 import { useTranslation } from "react-i18next"
 import type { ConsolidatedPerformance } from "@/types/financial"
-import { fetchIPCARates, fetchCDIRates } from "@/lib/bcb-api"
+import { fetchIPCARates, fetchCDIRates, fetchUSCPIRates, fetchEuroCPIRates } from "@/lib/bcb-api"
 import { useCurrency } from "@/contexts/CurrencyContext"
 import { calculateCompoundedRates, yearlyReturnRateToMonthlyReturnRate } from "@/lib/financial-math"
 import { buttonSelectedOrange, gradientCard, iconContainerRentabilidade, iconContainerPatrimonio, iconContainerCrescimento } from "@/lib/gradient-classes"
@@ -16,6 +16,7 @@ import { buttonSelectedOrange, gradientCard, iconContainerRentabilidade, iconCon
 interface PerformanceChartProps {
   consolidatedData: ConsolidatedPerformance[]
   targetReturnIpcaPlus?: string
+  targetReturnIpcaPlusText?: string // Text like "IPCA+5%" or "CPI+3%" to determine currency and expected return
 }
 
 type ViewMode = 'rentabilidade' | 'patrimonio' | 'crescimento'
@@ -93,8 +94,10 @@ function getOriginalCurrency(currency?: string | null): 'USD' | 'BRL' {
  * Performance chart component displaying portfolio returns, patrimony, and growth over time
  * Supports multiple view modes and period filters with market indicators
  */
-export function PerformanceChart({ consolidatedData, targetReturnIpcaPlus }: PerformanceChartProps) {
+export function PerformanceChart({ consolidatedData, targetReturnIpcaPlus, targetReturnIpcaPlusText }: PerformanceChartProps) {
   const { t } = useTranslation()
+  console.log('consolidatedData', consolidatedData)
+  console.log('targetReturnIpcaPlus', targetReturnIpcaPlus)
   const { convertValue, adjustReturnWithFX, formatCurrency } = useCurrency()
   const [selectedPeriod, setSelectedPeriod] = useState<PeriodType>('12months')
   const [customStartPeriod, setCustomStartPeriod] = useState<string>('')
@@ -412,13 +415,36 @@ export function PerformanceChart({ consolidatedData, targetReturnIpcaPlus }: Per
 
   const growthData = useMemo(() => calculateGrowthData(filteredData), [filteredData, calculateGrowthData])
 
-  // Get CDI and IPCA data for the period
+  // Extract currency and expected return from targetReturnIpcaPlusText
+  const { currency, expectedReturn } = useMemo(() => {
+    if (!targetReturnIpcaPlusText) return { currency: 'BRL' as const, expectedReturn: undefined }
+    
+    // Extract expected return value (e.g., "IPCA+5%" -> 5, "CPI+3%" -> 3)
+    const match = targetReturnIpcaPlusText.match(/\+(\d+(?:\.\d+)?)/)
+    const expectedReturnValue = match ? parseFloat(match[1]) : undefined
+    
+    // Determine currency based on text
+    const textUpper = targetReturnIpcaPlusText.toUpperCase()
+    let currency: 'BRL' | 'USD' | 'EUR' = 'BRL'
+    if (textUpper.includes('CPI') || textUpper.includes('US CPI') || textUpper.includes('USD')) {
+      currency = 'USD'
+    } else if (textUpper.includes('EURO CPI') || textUpper.includes('EUR')) {
+      currency = 'EUR'
+    } else {
+      // Default to IPCA for BRL
+      currency = 'BRL'
+    }
+    
+    return { currency, expectedReturn: expectedReturnValue }
+  }, [targetReturnIpcaPlusText])
+
+  // Get CDI and inflation data (IPCA/CPI) for the period
   const marketData = useMemo(() => {
-    if (filteredData.length === 0) return { cdiData: [], ipcaData: [] }
+    if (filteredData.length === 0) return { cdiData: [], inflationData: [] }
 
     const firstPeriod = filteredData[0]?.period
     const lastPeriod = filteredData[filteredData.length - 1]?.period
-    if (!firstPeriod || !lastPeriod) return { cdiData: [], ipcaData: [] }
+    if (!firstPeriod || !lastPeriod) return { cdiData: [], inflationData: [] }
 
     // Convert period to date format for fetch functions (DD/MM/YYYY)
     const [firstMonth, firstYear] = firstPeriod.split('/').map(Number)
@@ -430,7 +456,17 @@ export function PerformanceChart({ consolidatedData, targetReturnIpcaPlus }: Per
 
     try {
       const cdiRates = fetchCDIRates(startDate, endDate)
-      const ipcaRates = fetchIPCARates(startDate, endDate)
+      
+      // Fetch inflation data based on currency
+      let inflationRates: Array<{ date: Date; monthlyRate: number }> = []
+      if (currency === 'USD') {
+        inflationRates = fetchUSCPIRates(startDate, endDate)
+      } else if (currency === 'EUR') {
+        inflationRates = fetchEuroCPIRates(startDate, endDate)
+      } else {
+        // Default to IPCA for BRL
+        inflationRates = fetchIPCARates(startDate, endDate)
+      }
 
       // Group by period (MM/YYYY) and get the last value of each month
       const cdiMap = new Map<string, { period: string; cdiRate: number }>()
@@ -445,14 +481,14 @@ export function PerformanceChart({ consolidatedData, targetReturnIpcaPlus }: Per
         }
       })
 
-      const ipcaMap = new Map<string, { period: string; monthlyRate: number }>()
-      ipcaRates.forEach(ipca => {
-        const period = `${String(ipca.date.getMonth() + 1).padStart(2, '0')}/${ipca.date.getFullYear()}`
-        const existing = ipcaMap.get(period)
-        if (!existing || ipca.date > periodToDate(existing.period)) {
-          ipcaMap.set(period, {
+      const inflationMap = new Map<string, { period: string; monthlyRate: number }>()
+      inflationRates.forEach(inflation => {
+        const period = `${String(inflation.date.getMonth() + 1).padStart(2, '0')}/${inflation.date.getFullYear()}`
+        const existing = inflationMap.get(period)
+        if (!existing || inflation.date > periodToDate(existing.period)) {
+          inflationMap.set(period, {
             period,
-            monthlyRate: ipca.monthlyRate / 100 // Convert percentage to decimal
+            monthlyRate: inflation.monthlyRate / 100 // Convert percentage to decimal
           })
         }
       })
@@ -463,18 +499,18 @@ export function PerformanceChart({ consolidatedData, targetReturnIpcaPlus }: Per
         return dateA.getTime() - dateB.getTime()
       })
 
-      const ipcaData = Array.from(ipcaMap.values()).sort((a, b) => {
+      const inflationData = Array.from(inflationMap.values()).sort((a, b) => {
         const dateA = periodToDate(a.period)
         const dateB = periodToDate(b.period)
         return dateA.getTime() - dateB.getTime()
       })
 
-      return { cdiData, ipcaData }
+      return { cdiData, inflationData }
     } catch (error) {
       console.error('Error fetching market data:', error)
-      return { cdiData: [], ipcaData: [] }
+      return { cdiData: [], inflationData: [] }
     }
-  }, [filteredData])
+  }, [filteredData, currency])
 
   // Calculate target return from investment plan
   const extractTargetValue = (targetString?: string): number => {
@@ -514,6 +550,7 @@ export function PerformanceChart({ consolidatedData, targetReturnIpcaPlus }: Per
         const cdiDate = periodToDate(cdi.period)
         return cdiDate >= firstDate && cdiDate <= currentDate
       })
+      console.log('periodCDI', periodCDI)
 
       if (periodCDI.length > 0) {
         if (currentPeriod === firstPeriod) {
@@ -528,48 +565,72 @@ export function PerformanceChart({ consolidatedData, targetReturnIpcaPlus }: Per
       }
     }
 
-    // IPCA data
+    // Inflation data (IPCA/CPI)
     let ipcaReturn = null
-    if (firstPeriod && marketData.ipcaData.length > 0) {
+    if (firstPeriod && marketData.inflationData.length > 0) {
       const firstDate = periodToDate(firstPeriod)
       const currentDate = periodToDate(currentPeriod)
 
-      const periodIpca = marketData.ipcaData.filter(ipca => {
-        const ipcaDate = periodToDate(ipca.period)
-        return ipcaDate >= firstDate && ipcaDate <= currentDate
+      const periodInflation = marketData.inflationData.filter(inflation => {
+        const inflationDate = periodToDate(inflation.period)
+        return inflationDate >= firstDate && inflationDate <= currentDate
       })
 
-      if (periodIpca.length > 0) {
+      if (periodInflation.length > 0) {
         if (currentPeriod === firstPeriod) {
-          ipcaReturn = periodIpca[0].monthlyRate * 100
+          ipcaReturn = periodInflation[0].monthlyRate * 100
         } else {
-          // Use financial-math function to compound IPCA rates
+          // Use financial-math function to compound inflation rates
           // monthlyRate is already a decimal (e.g., 0.01 for 1%)
-          const ipcaRates = periodIpca.map(ipca => ipca.monthlyRate)
-          const accumulatedIPCA = calculateCompoundedRates(ipcaRates)
-          ipcaReturn = accumulatedIPCA * 100
+          const inflationRates = periodInflation.map(inflation => inflation.monthlyRate)
+          const accumulatedInflation = calculateCompoundedRates(inflationRates)
+          ipcaReturn = accumulatedInflation * 100
         }
       }
     }
 
-    // Target data (IPCA + targetValue)
+    // Target data (Inflation + expectedReturn)
+    // Use actual inflation data for each month + expected return
     let targetReturn = null
-    if (firstPeriod && targetValue > 0 && marketData.ipcaData.length > 0) {
+    if (firstPeriod && expectedReturn !== undefined && marketData.inflationData.length > 0) {
       const firstDate = periodToDate(firstPeriod)
       const currentDate = periodToDate(currentPeriod)
 
-      const periodIpca = marketData.ipcaData.filter(ipca => {
-        const ipcaDate = periodToDate(ipca.period)
-        return ipcaDate >= firstDate && ipcaDate <= currentDate
+      const periodInflation = marketData.inflationData.filter(inflation => {
+        const inflationDate = periodToDate(inflation.period)
+        return inflationDate >= firstDate && inflationDate <= currentDate
       })
 
-      if (periodIpca.length > 0) {
+      if (periodInflation.length > 0) {
+        // Convert yearly expected return to monthly
+        const monthlyExpectedReturn = yearlyReturnRateToMonthlyReturnRate(expectedReturn / 100)
+        // Calculate monthly rates: Inflation + monthly expected return
+        const monthlyRates = periodInflation.map(inflation => {
+          const monthlyInflation = inflation.monthlyRate
+          // Compound inflation + expected return for each month
+          return calculateCompoundedRates([monthlyInflation, monthlyExpectedReturn])
+        })
+        // Compound all monthly rates
+        const accumulatedTarget = calculateCompoundedRates(monthlyRates)
+        targetReturn = accumulatedTarget * 100
+      }
+    } else if (firstPeriod && targetValue > 0 && marketData.inflationData.length > 0) {
+      // Fallback to old method if expectedReturn is not provided
+      const firstDate = periodToDate(firstPeriod)
+      const currentDate = periodToDate(currentPeriod)
+
+      const periodInflation = marketData.inflationData.filter(inflation => {
+        const inflationDate = periodToDate(inflation.period)
+        return inflationDate >= firstDate && inflationDate <= currentDate
+      })
+
+      if (periodInflation.length > 0) {
         // Use financial-math function to convert yearly target to monthly
         const monthlyTargetRate = yearlyReturnRateToMonthlyReturnRate(targetValue)
-        // Calculate monthly rates: IPCA + monthly target rate
-        const monthlyRates = periodIpca.map(ipca => {
-          const monthlyIpca = ipca.monthlyRate
-          return monthlyIpca + monthlyTargetRate
+        // Calculate monthly rates: Inflation + monthly target rate
+        const monthlyRates = periodInflation.map(inflation => {
+          const monthlyInflation = inflation.monthlyRate
+          return monthlyInflation + monthlyTargetRate
         })
         // Use financial-math function to compound target rates
         // Rates are already decimals, no need to multiply by 100
@@ -585,7 +646,7 @@ export function PerformanceChart({ consolidatedData, targetReturnIpcaPlus }: Per
       ipcaReturn
     }
     })
-  }, [chartData, marketData, targetValue])
+  }, [chartData, marketData, targetValue, expectedReturn])
 
   /**
    * Calculates optimal Y axis scale based on visible indicators
@@ -594,12 +655,12 @@ export function PerformanceChart({ consolidatedData, targetReturnIpcaPlus }: Per
     const portfolioValues = chartDataWithIndicators.map(item => item.accumulatedReturn)
     const cdiValues = chartDataWithIndicators.map(item => item.cdiReturn).filter(v => v !== null && v !== 0) as number[]
     const targetValues = chartDataWithIndicators.map(item => item.targetReturn).filter(v => v !== null && v !== 0) as number[]
-    const ipcaValues = chartDataWithIndicators.map(item => item.ipcaReturn).filter(v => v !== null && v !== 0) as number[]
+    const inflationValues = chartDataWithIndicators.map(item => item.ipcaReturn).filter(v => v !== null && v !== 0) as number[]
 
     let allValues = [...portfolioValues]
     if (selectedIndicators.cdi) allValues = [...allValues, ...cdiValues]
     if (selectedIndicators.target) allValues = [...allValues, ...targetValues]
-    if (selectedIndicators.ipca) allValues = [...allValues, ...ipcaValues]
+    if (selectedIndicators.ipca) allValues = [...allValues, ...inflationValues]
 
     const minValue = Math.min(...allValues, 0)
     const maxValue = Math.max(...allValues)
@@ -749,8 +810,8 @@ export function PerformanceChart({ consolidatedData, targetReturnIpcaPlus }: Per
                           }
                         />
                         <label htmlFor="target" className="text-sm">
-                          {t('portfolioPerformance.performanceChart.target')} {targetReturnIpcaPlus 
-                            ? `(${targetReturnIpcaPlus.includes('ipca_plus') ? targetReturnIpcaPlus.replace('ipca_plus_', 'IPCA+').replace('_', '') + '%' : targetReturnIpcaPlus})` 
+                          {t('portfolioPerformance.performanceChart.target')} {targetReturnIpcaPlusText || targetReturnIpcaPlus
+                            ? `(${targetReturnIpcaPlusText || (targetReturnIpcaPlus?.includes('ipca_plus') ? targetReturnIpcaPlus.replace('ipca_plus_', 'IPCA+').replace('_', '') + '%' : targetReturnIpcaPlus)})` 
                             : t('portfolioPerformance.performanceChart.targetNotAvailable')}
                         </label>
                       </div>
@@ -762,7 +823,11 @@ export function PerformanceChart({ consolidatedData, targetReturnIpcaPlus }: Per
                             setSelectedIndicators(prev => ({ ...prev, ipca: checked as boolean }))
                           }
                         />
-                        <label htmlFor="ipca" className="text-sm">{t('portfolioPerformance.performanceChart.tooltips.ipca')}</label>
+                        <label htmlFor="ipca" className="text-sm">
+                          {currency === 'USD' ? t('portfolioPerformance.performanceChart.tooltips.usCpi') || 'US CPI' :
+                           currency === 'EUR' ? t('portfolioPerformance.performanceChart.tooltips.euroCpi') || 'Euro CPI' :
+                           t('portfolioPerformance.performanceChart.tooltips.ipca')}
+                        </label>
                       </div>
                     </div>
                   </div>
@@ -1499,7 +1564,7 @@ export function PerformanceChart({ consolidatedData, targetReturnIpcaPlus }: Per
           // Modos "Retorno Acumulado" - todos os bullets
           chartDataWithIndicators.length > 1 && summaryMetrics && (
             <div className="mt-6 grid grid-cols-1 md:grid-cols-3 gap-4">
-              {targetReturnIpcaPlus && (
+              {(targetReturnIpcaPlusText || targetReturnIpcaPlus) && (
                 <div className="bg-card border border-border rounded-lg p-4">
                   <div className="flex items-center justify-between">
                     <div>
@@ -1512,7 +1577,7 @@ export function PerformanceChart({ consolidatedData, targetReturnIpcaPlus }: Per
                       <p className="text-xs text-muted-foreground">
                         {summaryMetrics.targetDifference >= 0 
                           ? t('portfolioPerformance.performanceChart.metrics.aboveTarget')
-                          : t('portfolioPerformance.performanceChart.metrics.belowTarget')} {t('portfolioPerformance.performanceChart.metrics.ofTarget')} ({targetReturnIpcaPlus.includes('ipca_plus') ? targetReturnIpcaPlus.replace('ipca_plus_', 'IPCA+').replace('_', '') + '%' : targetReturnIpcaPlus})
+                          : t('portfolioPerformance.performanceChart.metrics.belowTarget')} {t('portfolioPerformance.performanceChart.metrics.ofTarget')} ({targetReturnIpcaPlusText || (targetReturnIpcaPlus?.includes('ipca_plus') ? targetReturnIpcaPlus.replace('ipca_plus_', 'IPCA+').replace('_', '') + '%' : targetReturnIpcaPlus)})
                       </p>
                     </div>
                     <div className={`text-sm px-2 py-1 rounded ${

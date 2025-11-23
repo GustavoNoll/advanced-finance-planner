@@ -43,7 +43,7 @@ export function IssuerExposure({ performanceData }: IssuerExposureProps) {
     .sort((a, b) => b.exposure - a.exposure)
     .slice(0, 15)
 
-  const getBarColor = (value: number) => value > LIMIT ? 'hsl(var(--destructive))' : 'hsl(var(--accent))'
+  const getBarColor = (value: number) => value > LIMIT ? 'hsl(var(--destructive))' : '#22c55e'
 
   const formatMaturityDates = (dates: string[]) => {
     if (!dates || dates.length === 0) return t(`${TRANSLATION_BASE}.noMaturities`)
@@ -94,7 +94,7 @@ export function IssuerExposure({ performanceData }: IssuerExposureProps) {
         <p className="text-sm text-muted-foreground">{limitDescription}</p>
         <div className="flex gap-4 text-xs">
           <div className="flex items-center gap-2">
-            <div className="w-3 h-3 rounded" style={{ backgroundColor: 'hsl(var(--accent))' }}></div>
+            <div className="w-3 h-3 rounded" style={{ backgroundColor: '#22c55e' }}></div>
             <span>{legendInside}</span>
           </div>
           <div className="flex items-center gap-2">
