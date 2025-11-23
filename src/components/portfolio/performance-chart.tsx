@@ -96,8 +96,6 @@ function getOriginalCurrency(currency?: string | null): 'USD' | 'BRL' {
  */
 export function PerformanceChart({ consolidatedData, targetReturnIpcaPlus, targetReturnIpcaPlusText }: PerformanceChartProps) {
   const { t } = useTranslation()
-  console.log('consolidatedData', consolidatedData)
-  console.log('targetReturnIpcaPlus', targetReturnIpcaPlus)
   const { convertValue, adjustReturnWithFX, formatCurrency } = useCurrency()
   const [selectedPeriod, setSelectedPeriod] = useState<PeriodType>('12months')
   const [customStartPeriod, setCustomStartPeriod] = useState<string>('')
@@ -550,7 +548,6 @@ export function PerformanceChart({ consolidatedData, targetReturnIpcaPlus, targe
         const cdiDate = periodToDate(cdi.period)
         return cdiDate >= firstDate && cdiDate <= currentDate
       })
-      console.log('periodCDI', periodCDI)
 
       if (periodCDI.length > 0) {
         if (currentPeriod === firstPeriod) {

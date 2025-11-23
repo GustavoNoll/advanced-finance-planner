@@ -11,7 +11,7 @@ import {
   STRATEGY_ORDER,
   type GroupedStrategyKey 
 } from "@/utils/benchmark-calculator"
-import { useMemo, useCallback } from "react"
+import { useMemo, useCallback, Fragment } from "react"
 import { useCurrency } from "@/contexts/CurrencyContext"
 
 interface InvestmentDetailsTableProps {
@@ -40,7 +40,6 @@ export function InvestmentDetailsTable({ performanceData }: InvestmentDetailsTab
   const { t } = useTranslation()
   const { currency, adjustReturnWithFX, convertValue } = useCurrency()
   const currentLocale = currency === 'BRL' ? 'pt-BR' : 'en-US'
-  console.log('performanceData', performanceData)
   
   /**
    * Traduz uma chave de estratégia agrupada usando i18n
@@ -287,8 +286,8 @@ export function InvestmentDetailsTable({ performanceData }: InvestmentDetailsTab
             <TableBody>
               {consolidated.length > 0 ? (
                 consolidated.map(item => (
-                  <>
-                    <TableRow key={item.name} className="border-border/50">
+                  <Fragment key={item.name}>
+                    <TableRow className="border-border/50">
                       <TableCell className="font-medium text-foreground flex items-center gap-2 py-2">
                         <div className="w-3 h-3 rounded-full" style={{ backgroundColor: getStrategyColorForName(item.name) }} />
                         {item.name}
@@ -319,7 +318,7 @@ export function InvestmentDetailsTable({ performanceData }: InvestmentDetailsTab
                         </span>
                       </TableCell>
                     </TableRow>
-                    <TableRow key={`${item.name}-benchmark`} className="border-border/50 bg-muted/20">
+                    <TableRow className="border-border/50 bg-muted/20">
                       <TableCell className="font-medium text-muted-foreground pl-8 py-1">
                         {item.benchmark 
                           ? (currentLocale === 'pt-BR' ? item.benchmark.name : item.benchmark.nameEn)
@@ -362,7 +361,7 @@ export function InvestmentDetailsTable({ performanceData }: InvestmentDetailsTab
                         ) : '-'}
                       </TableCell>
                     </TableRow>
-                  </>
+                  </Fragment>
                 ))
               ) : (
                 <TableRow className="border-border/50">
