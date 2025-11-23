@@ -6,6 +6,7 @@ import { generateProjectionData, YearlyProjectionData, ChartOptions } from '@/li
 import { FinancialRecord, InvestmentPlan, MicroInvestmentPlan, Goal, ProjectedEvent, Profile, ChartDataPoint } from '@/types/financial';
 import { formatCurrency, CurrencyCode } from "@/utils/currency";
 import { toast } from "@/components/ui/use-toast";
+import { buttonGreen } from "@/lib/gradient-classes";
 
 interface FutureProjectionTabProps {
   investmentPlan: InvestmentPlan;
@@ -180,6 +181,7 @@ export function FutureProjectionTab({
           onClick={() => downloadCSV(dataToShow, isSimulation ? 'simulation_projection' : 'future_projection')}
           variant="default"
           size="sm"
+          className={buttonGreen}
         >
           <Download className="mr-2 h-4 w-4" />
           {t('monthlyView.downloadCSV')}

@@ -259,7 +259,7 @@ export const ptBR = {
       }
     },
     charts: {
-      portfolioPerformance: "Criação de Plano Inicial"
+      portfolioPerformance: "Projeção Financeira"
     },
     nextSteps: {
       title: "Próximos Passos",
@@ -1353,6 +1353,7 @@ export const ptBR = {
     needReview: "precisam de revisão",
     title: 'Painel Administrativo',
     subtitle: 'Gerenciar consultores e monitorar métricas do sistema',
+    myProfile: 'Meu Perfil',
     createBroker: 'Criar Consultor',
     createBrokerDescription: 'Criar uma nova conta de consultor com email e senha.',
     brokerName: 'Nome do Consultor',

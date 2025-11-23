@@ -44,7 +44,7 @@ export function DashboardHighlights({ clientId, investmentPlan, activeMicroPlan 
               className={`flex items-center gap-3 p-3 rounded-lg shadow-sm hover:shadow-md transition-all duration-200 ${getHighlightBgClasses(index)}`}
             >
               <div className="p-2 rounded-lg bg-white/50 dark:bg-gray-800/80">
-                <IconComponent className="h-4 w-4" />
+                <IconComponent className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
               </div>
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-medium text-gray-700 dark:text-gray-100 truncate">

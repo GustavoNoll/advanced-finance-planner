@@ -44,7 +44,7 @@ export function DashboardNavigation({
             className="w-full h-14 flex flex-col items-center justify-center gap-1 bg-gradient-to-br from-white/95 via-slate-50/90 to-blue-50/80 dark:from-gray-900/90 dark:via-gray-900/80 dark:to-slate-800/70 backdrop-blur-sm hover:from-blue-50/95 dark:hover:from-gray-800 hover:via-blue-100/90 dark:hover:via-gray-800 hover:to-blue-200/80 dark:hover:to-slate-700 shadow-md hover:shadow-xl transition-all duration-200 border border-gray-100/50 dark:border-gray-800 rounded-xl"
           >
             <div className="flex items-center gap-2">
-              <History className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+              <History className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
               <span className="text-sm font-medium text-gray-700 dark:text-gray-200 whitespace-nowrap">
                 {t('dashboard.buttons.financialRecords')}
               </span>
@@ -59,7 +59,7 @@ export function DashboardNavigation({
             className="w-full h-14 flex flex-col items-center justify-center gap-1 bg-gradient-to-br from-white/95 via-slate-50/90 to-blue-50/80 dark:from-gray-900/90 dark:via-gray-900/80 dark:to-slate-800/70 backdrop-blur-sm hover:from-blue-50/95 dark:hover:from-gray-800 hover:via-blue-100/90 dark:hover:via-gray-800 hover:to-blue-200/80 dark:hover:to-slate-700 shadow-md hover:shadow-xl transition-all duration-200 border border-gray-100/50 dark:border-gray-800 rounded-xl"
           >
             <div className="flex items-center gap-2">
-              <TrendingUp className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+              <TrendingUp className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
               <span className="text-sm font-medium text-gray-700 dark:text-gray-200 whitespace-nowrap">
                 {t('dashboard.buttons.investmentPlan')}
               </span>
@@ -77,7 +77,7 @@ export function DashboardNavigation({
             className="w-full h-14 flex flex-col items-center justify-center gap-1 bg-gradient-to-br from-white/95 via-slate-50/90 to-blue-50/80 dark:from-gray-900/90 dark:via-gray-900/80 dark:to-slate-800/70 backdrop-blur-sm hover:from-blue-50/95 dark:hover:from-gray-800 hover:via-blue-100/90 dark:hover:via-gray-800 hover:to-blue-200/80 dark:hover:to-slate-700 shadow-md hover:shadow-xl transition-all duration-200 border border-gray-100/50 dark:border-gray-800 rounded-xl"
           >
             <div className="flex items-center gap-2">
-              <Target className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+              <Target className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
               <span className="text-sm font-medium text-gray-700 dark:text-gray-200 whitespace-nowrap">
                 {t('dashboard.buttons.financialGoals')}
               </span>
@@ -106,7 +106,7 @@ export function DashboardNavigation({
             className="w-full h-14 flex flex-col items-center justify-center gap-1 bg-gradient-to-br from-white/95 via-slate-50/90 to-blue-50/80 dark:from-gray-900/90 dark:via-gray-900/80 dark:to-slate-800/70 backdrop-blur-sm hover:from-blue-50/95 dark:hover:from-gray-800 hover:via-blue-100/90 dark:hover:via-gray-800 hover:to-blue-200/80 dark:hover:to-slate-700 shadow-md hover:shadow-xl transition-all duration-200 border border-gray-100/50 dark:border-gray-800 rounded-xl"
           >
             <div className="flex items-center gap-2">
-              <Calendar className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+              <Calendar className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
               <span className="text-sm font-medium text-gray-700 dark:text-gray-200 whitespace-nowrap">
                 {t('dashboard.buttons.events')}
               </span>

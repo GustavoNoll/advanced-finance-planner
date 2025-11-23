@@ -5,7 +5,7 @@
 // - src/types/financial/ - financial types (records, plans, goals, performance, imports)
 // - src/types/policies/ - policy types
 
-export * from './common'
+export * from './common/index'
 export * from './profiles'
-export * from './financial'
-export * from './policies'
+export * from './financial/index'
+export * from './policies/index'

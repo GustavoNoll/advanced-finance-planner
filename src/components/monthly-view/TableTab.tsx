@@ -5,6 +5,7 @@ import { Download } from "lucide-react";
 import { FinancialRecord, InvestmentPlan, Profile } from '@/types/financial';
 import { formatCurrency, CurrencyCode } from "@/utils/currency";
 import { toast } from "@/components/ui/use-toast";
+import { buttonGreen } from "@/lib/gradient-classes";
 
 interface TableTabProps {
   allFinancialRecords: FinancialRecord[];
@@ -116,6 +117,7 @@ export function TableTab({
           onClick={() => downloadCSV(localizedData, 'financial_records')}
           variant="default"
           size="sm"
+          className={buttonGreen}
         >
           <Download className="mr-2 h-4 w-4" />
           {t('monthlyView.downloadCSV')}

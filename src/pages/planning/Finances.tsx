@@ -10,12 +10,13 @@ import { Calculator } from "@/components/Calculator";
 import { InvestmentPlanDetails } from "@/components/InvestmentPlanDetails";
 import { EditPlanModal } from "@/components/EditPlanModal";
 import { ChartAdvancedOptionsModal } from "@/components/chart/ChartAdvancedOptionsModal";
-import { useIPCASync } from "@/hooks/useIPCASync";
-import { useChartOptions } from "@/hooks/useChartOptions";
-import { Profile, InvestmentPlan, MicroInvestmentPlan } from "@/types/financial";
-import { DashboardCard } from "@/components/DashboardCard";
-import { DashboardNavigation } from "@/components/dashboard/DashboardNavigation";
-import { DashboardHighlights } from "@/components/dashboard/DashboardHighlights";
+import { useIPCASync } from "@/hooks/useIPCASync"
+import { useChartOptions } from "@/hooks/useChartOptions"
+import { Profile } from "@/types/financial"
+import { InvestmentPlan, MicroInvestmentPlan } from "@/types/financial/investment-plans"
+import { DashboardCard } from "@/components/DashboardCard"
+import { DashboardNavigation } from "@/components/dashboard/DashboardNavigation"
+import { DashboardHighlights } from "@/components/dashboard/DashboardHighlights"
 import { DashboardMetrics } from "@/components/dashboard/DashboardMetrics";
 import { useFinancialRecords as useFinancialRecordsWithLinks } from "@/hooks/useFinancialRecordsManagement";
 import { useGoalsAndEvents } from "@/hooks/useFinancialData";
@@ -24,6 +25,7 @@ import { PlanProgressData } from "@/lib/plan-progress-calculator";
 import { ChartOptions } from "@/lib/chart-projections";
 import { calculateMicroPlanFutureValues } from '@/utils/investmentPlanCalculations';
 import { createDateWithoutTimezone } from '@/utils/dateUtils';
+import { gradientCard } from '@/lib/gradient-classes';
 
 type TimePeriod = 'all' | '6m' | '12m' | '24m';
 
@@ -194,7 +196,7 @@ const Finances = ({
         />
 
         {/* Gráfico de Projeção */}
-        <div className="transform transition-all duration-300 hover:scale-[1.01] hover:shadow-2xl bg-gradient-to-br from-white/95 via-slate-50/90 to-blue-50/80 dark:from-gray-900/90 dark:via-gray-900/80 dark:to-slate-800/70 backdrop-blur-sm rounded-xl shadow-lg p-6 border border-gray-100/50 dark:border-gray-800 hover:border-blue-100/50 dark:hover:border-gray-700">
+        <div className={`transform transition-all duration-300 hover:scale-[1.01] hover:shadow-2xl ${gradientCard} p-6`}>
           {/* Gráfico de Projeção com Opções, varia conforme as opções do gráfico */}
           {projectionDataWithOptions ? (
             <ExpenseChart 
@@ -276,7 +278,7 @@ const Finances = ({
         </div>
 
         {/* Visualização Mensal */}
-        <section className="transform transition-all duration-300 hover:scale-[1.01] hover:shadow-2xl bg-gradient-to-br from-white/95 via-slate-50/90 to-blue-50/80 dark:from-gray-900/90 dark:via-gray-900/80 dark:to-slate-800/70 backdrop-blur-sm rounded-xl shadow-lg border border-gray-100/50 dark:border-gray-800 hover:border-blue-100/50 dark:hover:border-gray-700">
+        <section className={`transform transition-all duration-300 hover:scale-[1.01] hover:shadow-2xl ${gradientCard}`}>
           {projectionDataWithOptions ? (
             <MonthlyView 
               userId={clientId} 

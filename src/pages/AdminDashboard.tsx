@@ -4,7 +4,7 @@ import { supabase } from '@/lib/supabase';
 import { useToast } from '@/components/ui/use-toast';
 import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui/button';
-import { LogOut, Search, Plus, UserX, UserCheck, Users, Wallet, Target, Activity, Eye, EyeOff, Key, TrendingUp, AlertTriangle, Clock, PieChart as PieChartIcon, LineChart as LineChartIcon, Zap, ArrowUpRight, ArrowDownRight, Percent } from 'lucide-react';
+import { LogOut, Search, Plus, UserX, UserCheck, Users, Wallet, Target, Activity, Eye, EyeOff, Key, TrendingUp, AlertTriangle, Clock, PieChart as PieChartIcon, LineChart as LineChartIcon, Zap, ArrowUpRight, ArrowDownRight, Percent, Shield, Upload } from 'lucide-react';
 import { Logo } from '@/components/ui/logo';
 import { Avatar } from '@/components/ui/avatar-initial';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -113,6 +113,7 @@ export const AdminDashboard = () => {
   const [loading, setLoading] = useState(true);
   const [isDark, setIsDark] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [adminProfile, setAdminProfile] = useState<{ id: string; name: string } | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [isCreatingBroker, setIsCreatingBroker] = useState(false);
   const [isChangingPassword, setIsChangingPassword] = useState(false);
@@ -639,7 +640,7 @@ export const AdminDashboard = () => {
     try {
       const { data: profile, error } = await supabase
         .from('profiles')
-        .select('is_admin')
+        .select('is_admin, id, name')
         .eq('id', user.id)
         .single();
 
@@ -656,6 +657,7 @@ export const AdminDashboard = () => {
       }
 
       setIsAdmin(true);
+      setAdminProfile({ id: profile.id, name: profile.name || 'Admin' });
       fetchBrokerMetrics();
     } catch (error) {
       console.error('Error checking admin status:', error);
@@ -681,7 +683,8 @@ export const AdminDashboard = () => {
     // Apply search filter
     if (searchQuery.trim() !== '') {
       filtered = filtered.filter(broker => 
-        broker.name.toLowerCase().includes(searchQuery.toLowerCase())
+        broker.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        broker.email.toLowerCase().includes(searchQuery.toLowerCase())
       );
     }
     
@@ -1128,26 +1131,45 @@ export const AdminDashboard = () => {
   const totalPages = Math.ceil(filteredBrokers.length / itemsPerPage);
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-background to-muted">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Header */}
-        <div className="bg-card rounded-2xl shadow-sm border border-border p-6 mb-8">
-          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-6">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 dark:from-slate-900 dark:via-slate-800 dark:to-slate-900">
+      {/* Fixed Task Bar - Nubank Style */}
+      <div className="fixed top-0 left-0 right-0 z-50 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md border-b border-slate-200 dark:border-slate-700 shadow-sm">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex items-center justify-between h-16">
+            {/* Logo and Title */}
             <div className="flex items-center gap-4">
-              <Logo variant="minimal" />
-              <div>
-                <h1 className="text-2xl font-bold text-foreground tracking-tight">{t('adminDashboard.title')}</h1>
-                <p className="text-sm text-muted-foreground mt-1">{t('adminDashboard.subtitle')}</p>
+              <div className="relative">
+                <Logo variant="minimal" />
+              </div>
+              <div className="hidden sm:block">
+                <h1 className="text-lg font-semibold text-slate-900 dark:text-slate-100">
+                  {t('adminDashboard.title')}
+                </h1>
+                <p className="text-xs text-slate-600 dark:text-slate-400">
+                  {adminProfile?.name || 'Admin'}
+                </p>
               </div>
             </div>
-            
-            <div className="flex items-center gap-3">
+
+            {/* Action Buttons - Nubank Style */}
+            <div className="flex items-center gap-1">
+              {/* Criar Broker */}
               <Dialog open={isCreatingBroker} onOpenChange={setIsCreatingBroker}>
                 <DialogTrigger asChild>
-                  <Button variant="default" className="flex items-center gap-2">
-                    <Plus className="h-4 w-4" />
-                    {t('adminDashboard.createBroker')}
-                  </Button>
+                  <div 
+                    className="group flex items-center rounded-full bg-transparent hover:bg-blue-50/50 dark:hover:bg-blue-900/30 px-2 py-1 transition-all duration-300 ease-out cursor-pointer"
+                  >
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-10 w-10 rounded-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white transition-all duration-200 shadow-md hover:shadow-lg hover:scale-105 pointer-events-none"
+                    >
+                      <Plus className="h-5 w-5" />
+                    </Button>
+                    <span className="ml-2 whitespace-nowrap text-sm text-slate-700 dark:text-slate-300 font-medium opacity-0 group-hover:opacity-100 w-0 group-hover:w-auto overflow-hidden transition-all duration-300 ease-out transform translate-x-[-10px] group-hover:translate-x-0">
+                      {t('adminDashboard.createBroker')}
+                    </span>
+                  </div>
                 </DialogTrigger>
                 <DialogContent>
                   <DialogHeader>
@@ -1219,16 +1241,24 @@ export const AdminDashboard = () => {
                   </DialogFooter>
                 </DialogContent>
               </Dialog>
-              
+
+              {/* Alterar Senha */}
               <Dialog open={isChangingPassword} onOpenChange={setIsChangingPassword}>
                 <DialogTrigger asChild>
-                  <Button 
-                    variant="default" 
-                    className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white"
+                  <div 
+                    className="group flex items-center rounded-full bg-transparent hover:bg-blue-50/50 dark:hover:bg-blue-900/30 px-2 py-1 transition-all duration-300 ease-out cursor-pointer"
                   >
-                    <Key className="h-4 w-4" />
-                    {t('adminDashboard.changePassword')}
-                  </Button>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-10 w-10 rounded-full hover:bg-transparent text-blue-600 dark:text-blue-400 transition-all duration-200 pointer-events-none"
+                    >
+                      <Key className="h-5 w-5" />
+                    </Button>
+                    <span className="ml-2 whitespace-nowrap text-sm text-slate-700 dark:text-slate-300 font-medium opacity-0 group-hover:opacity-100 w-0 group-hover:w-auto overflow-hidden transition-all duration-300 ease-out transform translate-x-[-10px] group-hover:translate-x-0">
+                      {t('adminDashboard.changePassword')}
+                    </span>
+                  </div>
                 </DialogTrigger>
                 <DialogContent>
                   <DialogHeader>
@@ -1289,20 +1319,30 @@ export const AdminDashboard = () => {
                   </DialogFooter>
                 </DialogContent>
               </Dialog>
-              
-              <Button 
-                variant="outline" 
-                size="default"
+
+              {/* Sair */}
+              <div 
+                className="group flex items-center rounded-full bg-transparent hover:bg-red-50/50 dark:hover:bg-red-900/30 px-2 py-1 transition-all duration-300 ease-out cursor-pointer"
                 onClick={handleLogout}
-                className="flex items-center gap-2 hover:bg-red-50 hover:text-red-600 hover:border-red-200 transition-all duration-200"
               >
-                <LogOut className="h-4 w-4" />
-                {t('common.logout')}
-              </Button>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-10 w-10 rounded-full hover:bg-transparent text-red-600 dark:text-red-400 transition-all duration-200 pointer-events-none"
+                >
+                  <LogOut className="h-5 w-5" />
+                </Button>
+                <span className="ml-2 whitespace-nowrap text-sm text-slate-700 dark:text-slate-300 font-medium opacity-0 group-hover:opacity-100 w-0 group-hover:w-auto overflow-hidden transition-all duration-300 ease-out transform translate-x-[-10px] group-hover:translate-x-0">
+                  {t('common.logout')}
+                </span>
+              </div>
             </div>
           </div>
         </div>
+      </div>
 
+      {/* Content with padding for fixed bar */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-24 pb-8">
         {/* Search and Filter Bar */}
         <div className="mb-8 flex flex-col sm:flex-row gap-4">
           <div className="relative flex-1">
@@ -1375,7 +1415,16 @@ export const AdminDashboard = () => {
                   {paginatedBrokers.map((broker) => (
                     <tr key={broker.id} className="hover:bg-muted">
                       <td className="px-4 py-4">
-                        <div className="flex items-center">
+                        <div 
+                          className="flex items-center cursor-pointer hover:opacity-80 transition-opacity"
+                          onClick={() => {
+                            if (searchQuery === broker.email) {
+                              setSearchQuery('');
+                            } else {
+                              setSearchQuery(broker.email);
+                            }
+                          }}
+                        >
                           <Avatar initial={broker.name[0]} color="bluePrimary" />
                           <div className="ml-3">
                             <div className="text-sm font-medium text-foreground truncate max-w-[180px]">{broker.name}</div>
@@ -1597,12 +1646,38 @@ export const AdminDashboard = () => {
 
         {/* Tabs for different sections */}
         <Tabs defaultValue="planning" className="mb-8">
-          <TabsList className="grid w-full grid-cols-4">
-            <TabsTrigger value="planning">{t('adminDashboard.tabs.planning')}</TabsTrigger>
-            <TabsTrigger value="imports">{t('adminDashboard.tabs.imports')}</TabsTrigger>
-            <TabsTrigger value="policy">{t('adminDashboard.tabs.policy')}</TabsTrigger>
-            <TabsTrigger value="access">{t('adminDashboard.tabs.access')}</TabsTrigger>
-          </TabsList>
+          <div className="bg-white/95 dark:bg-slate-900/95 backdrop-blur-md border border-slate-200 dark:border-slate-700 rounded-xl shadow-sm p-1">
+            <TabsList className="grid w-full grid-cols-4 bg-transparent gap-1 h-auto">
+              <TabsTrigger 
+                value="planning"
+                className="rounded-lg data-[state=active]:bg-white dark:data-[state=active]:bg-slate-800 data-[state=active]:text-slate-900 dark:data-[state=active]:text-slate-100 data-[state=active]:shadow-sm text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 transition-all duration-200 py-2.5 flex items-center justify-center gap-2"
+              >
+                <Target className="h-4 w-4" />
+                {t('adminDashboard.tabs.planning')}
+              </TabsTrigger>
+              <TabsTrigger 
+                value="imports"
+                className="rounded-lg data-[state=active]:bg-white dark:data-[state=active]:bg-slate-800 data-[state=active]:text-slate-900 dark:data-[state=active]:text-slate-100 data-[state=active]:shadow-sm text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 transition-all duration-200 py-2.5 flex items-center justify-center gap-2"
+              >
+                <Upload className="h-4 w-4" />
+                {t('adminDashboard.tabs.imports')}
+              </TabsTrigger>
+              <TabsTrigger 
+                value="policy"
+                className="rounded-lg data-[state=active]:bg-white dark:data-[state=active]:bg-slate-800 data-[state=active]:text-slate-900 dark:data-[state=active]:text-slate-100 data-[state=active]:shadow-sm text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 transition-all duration-200 py-2.5 flex items-center justify-center gap-2"
+              >
+                <Shield className="h-4 w-4" />
+                {t('adminDashboard.tabs.policy')}
+              </TabsTrigger>
+              <TabsTrigger 
+                value="access"
+                className="rounded-lg data-[state=active]:bg-white dark:data-[state=active]:bg-slate-800 data-[state=active]:text-slate-900 dark:data-[state=active]:text-slate-100 data-[state=active]:shadow-sm text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 transition-all duration-200 py-2.5 flex items-center justify-center gap-2"
+              >
+                <Eye className="h-4 w-4" />
+                {t('adminDashboard.tabs.access')}
+              </TabsTrigger>
+            </TabsList>
+          </div>
 
           <TabsContent value="planning" className="mt-6">
             {/* Enhanced Metrics Cards */}

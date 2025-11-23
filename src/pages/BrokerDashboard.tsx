@@ -3,7 +3,7 @@ import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/lib/supabase';
 import { useToast } from '@/components/ui/use-toast';
-import { Plus, LogOut, Share2, Trash2, Calculator, FileText, Users } from 'lucide-react';
+import { Plus, LogOut, Share2, Trash2, Calculator, FileText, Users, Target, Shield, Eye } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { createDateWithoutTimezone } from '@/utils/dateUtils';
 
@@ -852,11 +852,31 @@ export const BrokerDashboard = () => {
 
         {/* Tabs for different sections */}
         <Tabs defaultValue="planning" className="mb-8">
-          <TabsList className="grid w-full grid-cols-3">
-            <TabsTrigger value="planning">{t('brokerDashboard.tabs.planning')}</TabsTrigger>
-            <TabsTrigger value="policy">{t('brokerDashboard.tabs.policy')}</TabsTrigger>
-            <TabsTrigger value="access">{t('brokerDashboard.tabs.access')}</TabsTrigger>
-          </TabsList>
+          <div className="bg-white/95 dark:bg-slate-900/95 backdrop-blur-md border border-slate-200 dark:border-slate-700 rounded-xl shadow-sm p-1">
+            <TabsList className="grid w-full grid-cols-3 bg-transparent gap-1 h-auto">
+              <TabsTrigger 
+                value="planning"
+                className="rounded-lg data-[state=active]:bg-white dark:data-[state=active]:bg-slate-800 data-[state=active]:text-slate-900 dark:data-[state=active]:text-slate-100 data-[state=active]:shadow-sm text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 transition-all duration-200 py-2.5 flex items-center justify-center gap-2"
+              >
+                <Target className="h-4 w-4" />
+                {t('brokerDashboard.tabs.planning')}
+              </TabsTrigger>
+              <TabsTrigger 
+                value="policy"
+                className="rounded-lg data-[state=active]:bg-white dark:data-[state=active]:bg-slate-800 data-[state=active]:text-slate-900 dark:data-[state=active]:text-slate-100 data-[state=active]:shadow-sm text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 transition-all duration-200 py-2.5 flex items-center justify-center gap-2"
+              >
+                <Shield className="h-4 w-4" />
+                {t('brokerDashboard.tabs.policy')}
+              </TabsTrigger>
+              <TabsTrigger 
+                value="access"
+                className="rounded-lg data-[state=active]:bg-white dark:data-[state=active]:bg-slate-800 data-[state=active]:text-slate-900 dark:data-[state=active]:text-slate-100 data-[state=active]:shadow-sm text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 transition-all duration-200 py-2.5 flex items-center justify-center gap-2"
+              >
+                <Eye className="h-4 w-4" />
+                {t('brokerDashboard.tabs.access')}
+              </TabsTrigger>
+            </TabsList>
+          </div>
 
           <TabsContent value="planning" className="mt-6">
             {/* Advanced Analytics Grid */}

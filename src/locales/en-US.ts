@@ -259,7 +259,7 @@ export const enUS = {
       }
     },
     charts: {
-      portfolioPerformance: "Initial Plan Creation"
+      portfolioPerformance: "Financial Projection"
     },
     nextSteps: {
       title: "Next Steps",
@@ -1353,6 +1353,7 @@ export const enUS = {
     needReview: "need review",
     title: 'Administrative Panel',
     subtitle: 'Manage wealth advisors and monitor system metrics',
+    myProfile: 'My Profile',
     createBroker: 'Create Wealth Advisor',
     createBrokerDescription: 'Create a new wealth advisor account with email and password.',
     brokerName: 'Wealth Advisor Name',
