@@ -5,6 +5,7 @@ import { BarChart } from "lucide-react";
 import { YearlyProjectionData } from '@/lib/chart-projections';
 import { FinancialRecord, InvestmentPlan, MicroInvestmentPlan, Goal, ProjectedEvent, Profile } from '@/types/financial';
 import { ReturnChartTab, TableTab, FutureProjectionTab } from "./monthly-view";
+import { tabTriggerActiveGreen } from "@/lib/gradient-classes";
 
 export const MonthlyView = ({ 
   userId, 
@@ -39,20 +40,20 @@ export const MonthlyView = ({
           {allFinancialRecords.length > 0 && (
             <TabsTrigger 
               value="returnChart"
-              className="data-[state=active]:bg-white dark:data-[state=active]:bg-gray-800 data-[state=active]:text-blue-600 dark:data-[state=active]:text-blue-400 text-gray-700 dark:text-gray-300"
+              className={`${tabTriggerActiveGreen} text-gray-700 dark:text-gray-300 rounded-full transition-all`}
             >
               {t('monthlyView.tabs.returnChart')}
             </TabsTrigger>
           )}
           <TabsTrigger 
             value="table"
-            className="data-[state=active]:bg-white dark:data-[state=active]:bg-gray-800 data-[state=active]:text-blue-600 dark:data-[state=active]:text-blue-400 text-gray-700 dark:text-gray-300"
+            className={`${tabTriggerActiveGreen} text-gray-700 dark:text-gray-300 rounded-full transition-all`}
           >
             {t('monthlyView.tabs.table')}
           </TabsTrigger>
           <TabsTrigger 
             value="futureProjection"
-            className="data-[state=active]:bg-white dark:data-[state=active]:bg-gray-800 data-[state=active]:text-blue-600 dark:data-[state=active]:text-blue-400 text-gray-700 dark:text-gray-300"
+            className={`${tabTriggerActiveGreen} text-gray-700 dark:text-gray-300 rounded-full transition-all`}
           >
             {t('monthlyView.tabs.futureProjection')}
           </TabsTrigger>

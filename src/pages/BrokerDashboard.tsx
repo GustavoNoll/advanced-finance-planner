@@ -1,9 +1,9 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/lib/supabase';
 import { useToast } from '@/components/ui/use-toast';
-import { Plus, LogOut, Share2, Trash2, Calculator, FileText } from 'lucide-react';
+import { Plus, LogOut, Share2, Trash2, Calculator, FileText, Users, Target, Shield, Eye } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { createDateWithoutTimezone } from '@/utils/dateUtils';
 
@@ -19,8 +19,10 @@ import { Avatar } from '@/components/ui/avatar-initial';
 import { useAuth } from '@/components/auth/AuthProvider';
 import { Spinner } from '@/components/ui/spinner';
 import { ClientAccessAnalysis } from '@/components/shared/ClientAccessAnalysis';
-import { useClientAccessData } from '@/hooks/useClientAccessData';
+import { useAccessData } from '@/hooks/useAccessData';
 import { BrokerPDFImportDialog } from '@/pages/performance/components/BrokerPDFImportDialog';
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
+import { InvestmentPolicyInsights } from '@/components/admin/InvestmentPolicyInsights';
 
 /**
  * Main broker dashboard component that displays client metrics and management tools
@@ -135,8 +137,19 @@ export const BrokerDashboard = () => {
 
   const [isPDFImportDialogOpen, setIsPDFImportDialogOpen] = useState(false);
 
+  // Ref for client list section
+  const clientListRef = useRef<HTMLDivElement>(null);
+
   // Client access data using shared hook
-  const { clientAccessData, fetchClientAccessData, processClientData } = useClientAccessData();
+  const { clientAccessData, fetchClientAccessData, processClientData } = useAccessData({ 
+    type: 'client',
+    brokerId: currentBroker || undefined
+  });
+
+  // Scroll to client list
+  const scrollToClientList = useCallback(() => {
+    clientListRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }, []);
 
 
 
@@ -693,136 +706,219 @@ export const BrokerDashboard = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 dark:from-slate-900 dark:via-slate-800 dark:to-slate-900">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Futuristic Header Section */}
-        <div className="relative overflow-hidden bg-gradient-to-r from-white via-blue-50 to-indigo-100 dark:from-slate-900 dark:via-slate-800 dark:to-slate-900 rounded-3xl shadow-2xl border border-blue-200 dark:border-slate-700 p-8 mb-8">
-          <div className="absolute inset-0 bg-gradient-to-r from-blue-500/10 via-purple-500/5 to-transparent" />
-          <div className="absolute top-0 right-0 w-96 h-96 bg-gradient-to-br from-blue-400/20 to-purple-400/20 rounded-full -translate-y-48 translate-x-48" />
-          <div className="absolute bottom-0 left-0 w-64 h-64 bg-gradient-to-tr from-indigo-400/20 to-cyan-400/20 rounded-full translate-y-32 -translate-x-32" />
-          
-          <div className="relative z-10">
-            <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-8">
-              <div className="flex items-center gap-6">
-                <div className="relative">
-                  <Logo variant="minimal" />
-                  <div className="absolute -top-2 -right-2 w-4 h-4 bg-green-500 rounded-full animate-pulse" />
-                </div>
-                <div>
-                  <h1 className="text-4xl font-bold bg-gradient-to-r from-blue-600 via-purple-600 to-indigo-600 bg-clip-text text-transparent tracking-tight">
-                    {t('brokerDashboard.title')}
-                  </h1>
-                  <p className="text-lg text-gray-600 dark:text-gray-300 mt-2">
-                    {brokerProfile?.name || 'Welcome back'}
-                  </p>
-                </div>
+      {/* Fixed Task Bar - Nubank Style */}
+      <div className="fixed top-0 left-0 right-0 z-50 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md border-b border-slate-200 dark:border-slate-700 shadow-sm">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex items-center justify-between h-16">
+            {/* Logo and Title */}
+            <div className="flex items-center gap-4">
+              <div className="relative">
+                <Logo variant="minimal" />
               </div>
-              
-              <div className="flex flex-col gap-4">
-                {/* Primeira linha: Meu Perfil e Sair */}
-                <div className="flex flex-wrap items-center gap-4">
-                  <Button 
-                    variant="outline" 
-                    size="lg"
-                    onClick={() => navigate(`/client-profile/${brokerProfile?.id}`)}
-                    className="flex items-center gap-3 hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-all duration-300 border-blue-200 dark:border-blue-800"
-                  >
-                    <Avatar 
-                      initial={brokerProfile?.name?.[0] || ''} 
-                      color="bluePrimary"
-                    />
-                    <span className="font-medium">{t('brokerDashboard.myProfile')}</span>
-                  </Button>
-                  
-                  <Button 
-                    variant="outline" 
-                    size="lg"
-                    onClick={handleLogout}
-                    className="flex items-center gap-3 bg-red-50 hover:bg-red-100 text-red-600 border-red-200 hover:border-red-300 dark:bg-red-900/20 dark:hover:bg-red-900/30 dark:text-red-400 dark:border-red-700 dark:hover:border-red-600 transition-all duration-300"
-                  >
-                    <LogOut className="h-5 w-5" />
-                    {t('common.logout')}
-                  </Button>
-                </div>
-                
-                {/* Segunda linha: Novo Cliente e Simular Projeção */}
-                <div className="flex flex-wrap items-center gap-4">
-                  <Button
-                    variant="default"
-                    size="lg"
-                    onClick={() => navigate('/create-client')}
-                    className="flex items-center gap-3 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white shadow-lg hover:shadow-xl transition-all duration-300"
-                  >
-                    <Plus className="h-5 w-5" />
-                    {t('brokerDashboard.buttons.newClient')}
-                  </Button>
-                  
-                  <Button
-                    variant="outline"
-                    size="lg"
-                    onClick={handleSimulationClick}
-                    className="flex items-center gap-3 bg-green-50 hover:bg-green-100 text-green-600 border-green-200 hover:border-green-300 dark:bg-green-900/20 dark:hover:bg-green-900/30 dark:text-green-400 dark:border-green-700 dark:hover:border-green-600 transition-all duration-300"
-                  >
-                    <Calculator className="h-5 w-5" />
-                    {t('brokerDashboard.buttons.simulation')}
-                  </Button>
-                  
-                  <Button
-                    variant="outline"
-                    size="lg"
-                    onClick={() => setIsPDFImportDialogOpen(true)}
-                    className="flex items-center gap-3 bg-purple-50 hover:bg-purple-100 text-purple-600 border-purple-200 hover:border-purple-300 dark:bg-purple-900/20 dark:hover:bg-purple-900/30 dark:text-purple-400 dark:border-purple-700 dark:hover:border-purple-600 transition-all duration-300"
-                  >
-                    <FileText className="h-5 w-5" />
-                    {t('brokerDashboard.buttons.importPDF') || 'Importar PDF'}
-                  </Button>
-                </div>
+              <div className="hidden sm:block">
+                <h1 className="text-lg font-semibold text-slate-900 dark:text-slate-100">
+                  {t('brokerDashboard.title')}
+                </h1>
+                <p className="text-xs text-slate-600 dark:text-slate-400">
+                  {brokerProfile?.name || 'Welcome back'}
+                </p>
+              </div>
+            </div>
+
+            {/* Action Buttons - Nubank Style */}
+            <div className="flex items-center gap-1">
+              {/* Meu Perfil */}
+              <div 
+                className="group flex items-center rounded-full bg-transparent hover:bg-blue-50/50 dark:hover:bg-blue-900/30 px-2 py-1 transition-all duration-300 ease-out cursor-pointer"
+                onClick={() => navigate(`/client-profile/${brokerProfile?.id}`)}
+              >
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-10 w-10 rounded-full hover:bg-transparent transition-all duration-200 pointer-events-none"
+                >
+                  <Avatar 
+                    initial={brokerProfile?.name?.[0] || ''} 
+                    color="bluePrimary"
+                    size="sm"
+                  />
+                </Button>
+                <span className="ml-2 whitespace-nowrap text-sm text-slate-700 dark:text-slate-300 font-medium opacity-0 group-hover:opacity-100 w-0 group-hover:w-auto overflow-hidden transition-all duration-300 ease-out transform translate-x-[-10px] group-hover:translate-x-0">
+                  {t('brokerDashboard.myProfile')}
+                </span>
+              </div>
+
+              {/* Novo Cliente */}
+              <div 
+                className="group flex items-center rounded-full bg-transparent hover:bg-blue-50/50 dark:hover:bg-blue-900/30 px-2 py-1 transition-all duration-300 ease-out cursor-pointer"
+                onClick={() => navigate('/create-client')}
+              >
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-10 w-10 rounded-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white transition-all duration-200 shadow-md hover:shadow-lg hover:scale-105 pointer-events-none"
+                >
+                  <Plus className="h-5 w-5" />
+                </Button>
+                <span className="ml-2 whitespace-nowrap text-sm text-slate-700 dark:text-slate-300 font-medium opacity-0 group-hover:opacity-100 w-0 group-hover:w-auto overflow-hidden transition-all duration-300 ease-out transform translate-x-[-10px] group-hover:translate-x-0">
+                  {t('brokerDashboard.buttons.newClient')}
+                </span>
+              </div>
+
+              {/* Simular Projeção */}
+              <div 
+                className="group flex items-center rounded-full bg-transparent hover:bg-green-50/50 dark:hover:bg-green-900/30 px-2 py-1 transition-all duration-300 ease-out cursor-pointer"
+                onClick={handleSimulationClick}
+              >
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-10 w-10 rounded-full hover:bg-transparent text-green-600 dark:text-green-400 transition-all duration-200 pointer-events-none"
+                >
+                  <Calculator className="h-5 w-5" />
+                </Button>
+                <span className="ml-2 whitespace-nowrap text-sm text-slate-700 dark:text-slate-300 font-medium opacity-0 group-hover:opacity-100 w-0 group-hover:w-auto overflow-hidden transition-all duration-300 ease-out transform translate-x-[-10px] group-hover:translate-x-0">
+                  {t('brokerDashboard.buttons.simulation')}
+                </span>
+              </div>
+
+              {/* Importar PDF */}
+              <div 
+                className="group flex items-center rounded-full bg-transparent hover:bg-purple-50/50 dark:hover:bg-purple-900/30 px-2 py-1 transition-all duration-300 ease-out cursor-pointer"
+                onClick={() => setIsPDFImportDialogOpen(true)}
+              >
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-10 w-10 rounded-full hover:bg-transparent text-purple-600 dark:text-purple-400 transition-all duration-200 pointer-events-none"
+                >
+                  <FileText className="h-5 w-5" />
+                </Button>
+                <span className="ml-2 whitespace-nowrap text-sm text-slate-700 dark:text-slate-300 font-medium opacity-0 group-hover:opacity-100 w-0 group-hover:w-auto overflow-hidden transition-all duration-300 ease-out transform translate-x-[-10px] group-hover:translate-x-0">
+                  {t('brokerDashboard.buttons.importPDF') || 'Importar PDF'}
+                </span>
+              </div>
+
+              {/* Ir para Lista de Clientes */}
+              <div 
+                className="group flex items-center rounded-full bg-transparent hover:bg-indigo-50/50 dark:hover:bg-indigo-900/30 px-2 py-1 transition-all duration-300 ease-out cursor-pointer"
+                onClick={scrollToClientList}
+              >
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-10 w-10 rounded-full hover:bg-transparent text-indigo-600 dark:text-indigo-400 transition-all duration-200 pointer-events-none"
+                >
+                  <Users className="h-5 w-5" />
+                </Button>
+                <span className="ml-2 whitespace-nowrap text-sm text-slate-700 dark:text-slate-300 font-medium opacity-0 group-hover:opacity-100 w-0 group-hover:w-auto overflow-hidden transition-all duration-300 ease-out transform translate-x-[-10px] group-hover:translate-x-0">
+                  {t('brokerDashboard.buttons.scrollToClients')}
+                </span>
+              </div>
+
+              {/* Sair */}
+              <div 
+                className="group flex items-center rounded-full bg-transparent hover:bg-red-50/50 dark:hover:bg-red-900/30 px-2 py-1 transition-all duration-300 ease-out cursor-pointer"
+                onClick={handleLogout}
+              >
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-10 w-10 rounded-full hover:bg-transparent text-red-600 dark:text-red-400 transition-all duration-200 pointer-events-none"
+                >
+                  <LogOut className="h-5 w-5" />
+                </Button>
+                <span className="ml-2 whitespace-nowrap text-sm text-slate-700 dark:text-slate-300 font-medium opacity-0 group-hover:opacity-100 w-0 group-hover:w-auto overflow-hidden transition-all duration-300 ease-out transform translate-x-[-10px] group-hover:translate-x-0">
+                  {t('common.logout')}
+                </span>
               </div>
             </div>
           </div>
         </div>
+      </div>
 
-        {/* Summary Metrics */}
+      {/* Content with padding for fixed bar */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-24 pb-8">
+
+        {/* Summary Metrics - Always visible */}
         <div className="mb-8 dark:bg-gray-900 rounded-2xl shadow-xl border border-gray-100 dark:border-gray-800 p-8 mb-8">
           <SummaryMetrics metrics={metrics} />
         </div>
 
-        {/* Performance Metrics */}
+        {/* Performance Metrics - Always visible */}
         <div className="mb-8 dark:bg-gray-900 rounded-2xl shadow-xl border border-gray-100 dark:border-gray-800 p-8 mb-8">
           <PerformanceMetrics metrics={enhancedMetrics} />
         </div>
 
-        {/* Advanced Analytics Grid */}
-        <div className="grid grid-cols-1 xl:grid-cols-2 gap-8 mb-8">
-          {/* Wealth Distribution Chart */}
-          <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-xl border border-gray-100 dark:border-gray-800 overflow-hidden">
-            <AdvancedWealthChart data={enhancedMetrics.wealthDistribution} />
+        {/* Tabs for different sections */}
+        <Tabs defaultValue="planning" className="mb-8">
+          <div className="bg-white/95 dark:bg-slate-900/95 backdrop-blur-md border border-slate-200 dark:border-slate-700 rounded-xl shadow-sm p-1">
+            <TabsList className="grid w-full grid-cols-3 bg-transparent gap-1 h-auto">
+              <TabsTrigger 
+                value="planning"
+                className="rounded-lg data-[state=active]:bg-white dark:data-[state=active]:bg-slate-800 data-[state=active]:text-slate-900 dark:data-[state=active]:text-slate-100 data-[state=active]:shadow-sm text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 transition-all duration-200 py-2.5 flex items-center justify-center gap-2"
+              >
+                <Target className="h-4 w-4" />
+                {t('brokerDashboard.tabs.planning')}
+              </TabsTrigger>
+              <TabsTrigger 
+                value="policy"
+                className="rounded-lg data-[state=active]:bg-white dark:data-[state=active]:bg-slate-800 data-[state=active]:text-slate-900 dark:data-[state=active]:text-slate-100 data-[state=active]:shadow-sm text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 transition-all duration-200 py-2.5 flex items-center justify-center gap-2"
+              >
+                <Shield className="h-4 w-4" />
+                {t('brokerDashboard.tabs.policy')}
+              </TabsTrigger>
+              <TabsTrigger 
+                value="access"
+                className="rounded-lg data-[state=active]:bg-white dark:data-[state=active]:bg-slate-800 data-[state=active]:text-slate-900 dark:data-[state=active]:text-slate-100 data-[state=active]:shadow-sm text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 transition-all duration-200 py-2.5 flex items-center justify-center gap-2"
+              >
+                <Eye className="h-4 w-4" />
+                {t('brokerDashboard.tabs.access')}
+              </TabsTrigger>
+            </TabsList>
           </div>
 
-          {/* Smart Alerts */}
-          <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-xl border border-gray-100 dark:border-gray-800 p-8">
-            <SmartAlerts 
-              clients={searchResults} 
-              onClientSelect={handleUserSelect}
-            />
-          </div>
-        </div>
+          <TabsContent value="planning" className="mt-6">
+            {/* Advanced Analytics Grid */}
+            <div className="grid grid-cols-1 xl:grid-cols-2 gap-8 mb-8">
+              {/* Wealth Distribution Chart */}
+              <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-xl border border-gray-100 dark:border-gray-800 overflow-hidden">
+                <AdvancedWealthChart data={enhancedMetrics.wealthDistribution} />
+              </div>
 
-        {/* Contribution Trends Chart */}
-        <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-xl border border-gray-100 dark:border-gray-800 overflow-hidden mb-8">
-          <ContributionTrendChart data={contributionTrendData} />
-        </div>
+              {/* Smart Alerts */}
+              <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-xl border border-gray-100 dark:border-gray-800 p-8">
+                <SmartAlerts 
+                  clients={searchResults} 
+                  onClientSelect={handleUserSelect}
+                />
+              </div>
+            </div>
 
-        {/* Client Access Analysis */}
-        <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-xl border border-gray-100 dark:border-gray-800 overflow-hidden mb-8 p-8">
-          <ClientAccessAnalysis 
-            clientAccessData={clientAccessData} 
-            title={t('brokerDashboard.clientAccessAnalysis.title')}
-            showTitle={true}
-          />
-        </div>
+            {/* Contribution Trends Chart */}
+            <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-xl border border-gray-100 dark:border-gray-800 overflow-hidden mb-8">
+              <ContributionTrendChart data={contributionTrendData} />
+            </div>
+          </TabsContent>
 
-        {/* Client List */}
-        <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-xl border border-gray-100 dark:border-gray-800 overflow-hidden">
+          <TabsContent value="policy" className="mt-6">
+            <InvestmentPolicyInsights activeBrokerIds={currentBroker ? [currentBroker] : undefined} />
+          </TabsContent>
+
+          <TabsContent value="access" className="mt-6">
+            {/* Client Access Analysis */}
+            <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-xl border border-gray-100 dark:border-gray-800 overflow-hidden mb-8 p-8">
+              <ClientAccessAnalysis 
+                clientAccessData={clientAccessData} 
+                title={t('brokerDashboard.clientAccessAnalysis.title')}
+                showTitle={true}
+              />
+            </div>
+          </TabsContent>
+        </Tabs>
+
+        {/* Client List - Always visible */}
+        <div ref={clientListRef} className="bg-white dark:bg-gray-900 rounded-2xl shadow-xl border border-gray-100 dark:border-gray-800 overflow-hidden mt-8">
           <ClientList
             clients={searchResults}
             onClientSelect={handleUserSelect}
@@ -834,6 +930,7 @@ export const BrokerDashboard = () => {
           />
         </div>
       </div>
+
 
       {/* PDF Import Dialog */}
       <BrokerPDFImportDialog

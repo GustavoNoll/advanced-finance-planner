@@ -11,6 +11,7 @@ import type { ConsolidatedPerformance } from "@/types/financial"
 import { fetchIPCARates, fetchCDIRates } from "@/lib/bcb-api"
 import { useCurrency } from "@/contexts/CurrencyContext"
 import { calculateCompoundedRates, yearlyReturnRateToMonthlyReturnRate } from "@/lib/financial-math"
+import { buttonSelectedOrange, gradientCard, iconContainerRentabilidade, iconContainerPatrimonio, iconContainerCrescimento } from "@/lib/gradient-classes"
 
 interface PerformanceChartProps {
   consolidatedData: ConsolidatedPerformance[]
@@ -671,7 +672,7 @@ export function PerformanceChart({ consolidatedData, targetReturnIpcaPlus }: Per
   }
 
   return (
-    <Card className="bg-gradient-card border-border/50 shadow-elegant-md">
+    <Card className={gradientCard}>
       <CardHeader className="pb-4">
         <div className="flex items-center justify-between">
           <div
@@ -684,10 +685,10 @@ export function PerformanceChart({ consolidatedData, targetReturnIpcaPlus }: Per
           >
             <div className={`h-12 w-12 rounded-lg flex items-center justify-center group-hover:scale-110 transition-transform shadow-md ${
               viewMode === 'rentabilidade' 
-                ? 'bg-gradient-to-br from-emerald-400 via-emerald-500 to-teal-500 dark:from-emerald-600 dark:via-emerald-700 dark:to-teal-700' 
+                ? iconContainerRentabilidade
                 : viewMode === 'patrimonio' 
-                ? 'bg-gradient-to-br from-blue-400 via-blue-500 to-indigo-500 dark:from-blue-600 dark:via-blue-700 dark:to-indigo-700'
-                : 'bg-gradient-to-br from-purple-400 via-purple-500 to-pink-500 dark:from-purple-600 dark:via-purple-700 dark:to-pink-700'
+                ? iconContainerPatrimonio
+                : iconContainerCrescimento
             }`}>
               {viewMode === 'rentabilidade' ? (
                 <TrendingUp className="h-6 w-6 text-white" />
@@ -775,7 +776,11 @@ export function PerformanceChart({ consolidatedData, targetReturnIpcaPlus }: Per
                   variant={showOnlyGeneratedIncome ? "default" : "outline"}
                   size="sm"
                   onClick={() => setShowOnlyGeneratedIncome(!showOnlyGeneratedIncome)}
-                  className="gap-2 text-xs px-3 py-1 h-8 mr-2"
+                  className={`gap-2 text-xs px-3 py-1 h-8 mr-2 rounded-full transition-all ${
+                    showOnlyGeneratedIncome
+                      ? buttonSelectedOrange
+                      : ''
+                  }`}
                 >
                   <Wallet className="h-4 w-4" />
                   {showOnlyGeneratedIncome 
@@ -795,7 +800,11 @@ export function PerformanceChart({ consolidatedData, targetReturnIpcaPlus }: Per
                       setShowCustomSelector(true)
                     }
                   }}
-                  className="text-xs px-3 py-1 h-8"
+                  className={`text-xs px-3 py-1 h-8 rounded-full transition-all ${
+                    selectedPeriod === button.id
+                      ? buttonSelectedOrange
+                      : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100'
+                  }`}
                 >
                   {button.label}
                 </Button>
@@ -1150,38 +1159,39 @@ export function PerformanceChart({ consolidatedData, targetReturnIpcaPlus }: Per
                 <Line
                   type="monotone"
                   dataKey="accumulatedReturn"
-                  stroke="hsl(var(--primary))"
+                  stroke="#3b82f6"
                   strokeWidth={3}
                   dot={{
-                    fill: 'hsl(var(--primary))',
+                    fill: '#3b82f6',
                     strokeWidth: 2,
-                    stroke: 'hsl(var(--background))',
+                    stroke: '#ffffff',
                     r: 4
                   }}
                   activeDot={{
                     r: 6,
-                    fill: 'hsl(var(--primary))',
+                    fill: '#3b82f6',
                     strokeWidth: 3,
-                    stroke: 'hsl(var(--background))'
+                    stroke: '#ffffff'
                   }}
                 />
                 {selectedIndicators.cdi && (
                   <Line
                     type="monotone"
                     dataKey="cdiReturn"
-                    stroke="hsl(var(--muted-foreground))"
+                    stroke="#6b7280"
                     strokeWidth={2}
+                    strokeDasharray="5 5"
                     dot={{
-                      fill: 'hsl(var(--muted-foreground))',
+                      fill: '#6b7280',
                       strokeWidth: 1,
-                      stroke: 'hsl(var(--background))',
+                      stroke: '#ffffff',
                       r: 3
                     }}
                     activeDot={{
                       r: 5,
-                      fill: 'hsl(var(--muted-foreground))',
+                      fill: '#6b7280',
                       strokeWidth: 2,
-                      stroke: 'hsl(var(--background))'
+                      stroke: '#ffffff'
                     }}
                   />
                 )}
@@ -1189,20 +1199,21 @@ export function PerformanceChart({ consolidatedData, targetReturnIpcaPlus }: Per
                   <Line
                     type="monotone"
                     dataKey="targetReturn"
-                    stroke="hsl(0 84% 60%)"
+                    stroke="#ef4444"
                     strokeWidth={2}
+                    strokeDasharray="8 4"
                     connectNulls={false}
                     dot={{
-                      fill: "hsl(0 84% 60%)",
+                      fill: "#ef4444",
                       strokeWidth: 1,
-                      stroke: 'hsl(var(--background))',
+                      stroke: '#ffffff',
                       r: 3
                     }}
                     activeDot={{
                       r: 5,
-                      fill: "hsl(0 84% 60%)",
+                      fill: "#ef4444",
                       strokeWidth: 2,
-                      stroke: 'hsl(var(--background))'
+                      stroke: '#ffffff'
                     }}
                   />
                 )}
@@ -1210,20 +1221,21 @@ export function PerformanceChart({ consolidatedData, targetReturnIpcaPlus }: Per
                   <Line
                     type="monotone"
                     dataKey="ipcaReturn"
-                    stroke="hsl(var(--info))"
+                    stroke="#06b6d4"
                     strokeWidth={2}
+                    strokeDasharray="3 3"
                     connectNulls={false}
                     dot={{
-                      fill: 'hsl(var(--info))',
+                      fill: '#06b6d4',
                       strokeWidth: 1,
-                      stroke: 'hsl(var(--background))',
+                      stroke: '#ffffff',
                       r: 3
                     }}
                     activeDot={{
                       r: 5,
-                      fill: 'hsl(var(--info))',
+                      fill: '#06b6d4',
                       strokeWidth: 2,
-                      stroke: 'hsl(var(--background))'
+                      stroke: '#ffffff'
                     }}
                   />
                 )}
@@ -1290,38 +1302,39 @@ export function PerformanceChart({ consolidatedData, targetReturnIpcaPlus }: Per
                 <Line
                   type="monotone"
                   dataKey="appliedPatrimony"
-                  stroke="hsl(var(--muted-foreground))"
+                  stroke="#f59e0b"
                   strokeWidth={2.5}
+                  strokeDasharray="5 5"
                   dot={{
-                    fill: 'hsl(var(--muted-foreground))',
+                    fill: '#f59e0b',
                     strokeWidth: 2,
-                    stroke: 'hsl(var(--background))',
+                    stroke: '#ffffff',
                     r: 4
                   }}
                   activeDot={{
                     r: 5,
-                    fill: 'hsl(var(--muted-foreground))',
+                    fill: '#f59e0b',
                     strokeWidth: 2,
-                    stroke: 'hsl(var(--background))'
+                    stroke: '#ffffff'
                   }}
                 />
                 {/* Current Patrimony Line */}
                 <Line
                   type="monotone"
                   dataKey="currentPatrimony"
-                  stroke="hsl(var(--primary))"
+                  stroke="#10b981"
                   strokeWidth={3}
                   dot={{
-                    fill: 'hsl(var(--primary))',
+                    fill: '#10b981',
                     strokeWidth: 2,
-                    stroke: 'hsl(var(--background))',
+                    stroke: '#ffffff',
                     r: 4
                   }}
                   activeDot={{
                     r: 6,
-                    fill: 'hsl(var(--primary))',
+                    fill: '#10b981',
                     strokeWidth: 3,
-                    stroke: 'hsl(var(--background))'
+                    stroke: '#ffffff'
                   }}
                 />
               </LineChart>

@@ -4,7 +4,7 @@ import { supabase } from '@/lib/supabase';
 import { useToast } from '@/components/ui/use-toast';
 import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui/button';
-import { LogOut, Search, Plus, UserX, UserCheck, Users, Wallet, Target, Activity, Eye, EyeOff, Key, TrendingUp, AlertTriangle, Clock, PieChart as PieChartIcon, LineChart as LineChartIcon, Zap, ArrowUpRight, ArrowDownRight, Percent } from 'lucide-react';
+import { LogOut, Search, Plus, UserX, UserCheck, Users, Wallet, Target, Activity, Eye, EyeOff, Key, TrendingUp, AlertTriangle, Clock, PieChart as PieChartIcon, LineChart as LineChartIcon, Zap, ArrowUpRight, ArrowDownRight, Percent, Shield, Upload } from 'lucide-react';
 import { Logo } from '@/components/ui/logo';
 import { Avatar } from '@/components/ui/avatar-initial';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -28,7 +28,11 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { ClientAccessAnalysis } from '@/components/shared/ClientAccessAnalysis';
-import { useClientAccessData } from '@/hooks/useClientAccessData';
+import { useAccessData } from '@/hooks/useAccessData';
+import { useAdminStatementImports } from '@/hooks/useStatementImports';
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
+import { InvestmentPolicyInsights } from '@/components/admin/InvestmentPolicyInsights';
+import { BrokerAccessAnalysis } from '@/components/admin/BrokerAccessAnalysis';
 
 interface BrokerMetrics {
   id: string;
@@ -103,11 +107,13 @@ const CHART_COLORS = [
 export const AdminDashboard = () => {
   const [brokers, setBrokers] = useState<BrokerMetrics[]>([]);
   const [filteredBrokers, setFilteredBrokers] = useState<BrokerMetrics[]>([]);
+  const [activeBrokerIds, setActiveBrokerIds] = useState<string[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'inactive'>('active');
   const [loading, setLoading] = useState(true);
   const [isDark, setIsDark] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [adminProfile, setAdminProfile] = useState<{ id: string; name: string } | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [isCreatingBroker, setIsCreatingBroker] = useState(false);
   const [isChangingPassword, setIsChangingPassword] = useState(false);
@@ -210,8 +216,26 @@ export const AdminDashboard = () => {
     percentage: number;
   }>>([]);
   
-  // Client access data using shared hook
-  const { clientAccessData, fetchClientAccessData } = useClientAccessData();
+  // Access data using unified hook
+  const { 
+    clientAccessData, 
+    brokerAccessData,
+    fetchClientAccessData,
+    fetchBrokerAccessData
+  } = useAccessData({ 
+    type: 'client',
+    activeBrokerIds 
+  });
+  
+  // Statement imports data using hook
+  const {
+    statementImports,
+    statementImportsByDay,
+    statementImportsStats,
+    loading: statementImportsLoading,
+    error: statementImportsError,
+    refetch: refetchStatementImports
+  } = useAdminStatementImports(30);
   
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -231,61 +255,61 @@ export const AdminDashboard = () => {
     return () => window.removeEventListener('themechange', updateTheme)
   }, [])
 
-  // Generate growth trend data for the last 12 months
+  // Generate growth trend data for the last 12 months - OPTIMIZED: Single query instead of 36
   const generateGrowthTrendData = useCallback(async (brokers: BrokerMetrics[]) => {
-    const months = [];
     const today = new Date();
+    const twelveMonthsAgo = new Date(today.getFullYear(), today.getMonth() - 11, 1);
     
+    // Single query to get all clients created in the last 12 months
+    const { data: allClients, error: clientsError } = await supabase
+      .from('profiles')
+      .select('id, created_at')
+      .eq('is_broker', false)
+      .gte('created_at', twelveMonthsAgo.toISOString());
+    
+    if (clientsError) {
+      console.error('Error fetching clients for trend:', clientsError);
+      return [];
+    }
+    
+    // Single query to get all balance data
+    const { data: allBalanceData, error: balanceError } = await supabase
+      .from('user_profiles_investment')
+      .select('ending_balance, financial_created_at')
+      .not('financial_created_at', 'is', null);
+    
+    if (balanceError) {
+      console.error('Error fetching balance for trend:', balanceError);
+    }
+    
+    // Process data in memory
+    const months = [];
     for (let i = 11; i >= 0; i--) {
       const date = new Date(today.getFullYear(), today.getMonth() - i, 1);
       const monthName = date.toLocaleDateString('pt-BR', { month: 'short' });
       const year = date.getFullYear();
       
-      // Get real data for this month
       const startOfMonth = new Date(year, date.getMonth(), 1);
       const endOfMonth = new Date(year, date.getMonth() + 1, 0);
       
-      // Count clients created in this month
-      const { data: clientsCreated, error: clientsError } = await supabase
-        .from('profiles')
-        .select('id, created_at')
-        .eq('is_broker', false)
-        .gte('created_at', startOfMonth.toISOString())
-        .lte('created_at', endOfMonth.toISOString());
+      // Count clients created in this month (from in-memory data)
+      const newClients = allClients?.filter(client => {
+        const createdAt = new Date(client.created_at);
+        return createdAt >= startOfMonth && createdAt <= endOfMonth;
+      }).length || 0;
       
-      if (clientsError) {
-        console.error('Error fetching clients for month:', clientsError);
-        continue;
-      }
+      // Count total clients up to this month (from in-memory data)
+      const totalClients = allClients?.filter(client => {
+        const createdAt = new Date(client.created_at);
+        return createdAt <= endOfMonth;
+      }).length || 0;
       
-      const newClients = clientsCreated?.length || 0;
-      
-      // Get total clients up to this month
-      const { data: totalClientsData, error: totalError } = await supabase
-        .from('profiles')
-        .select('id')
-        .eq('is_broker', false)
-        .lte('created_at', endOfMonth.toISOString());
-      
-      if (totalError) {
-        console.error('Error fetching total clients for month:', totalError);
-        continue;
-      }
-      
-      const totalClients = totalClientsData?.length || 0;
-      
-      // Get total balance for this month (from user_profiles_investment view)
-      const { data: balanceData, error: balanceError } = await supabase
-        .from('user_profiles_investment')
-        .select('ending_balance')
-        .lte('financial_created_at', endOfMonth.toISOString());
-      
-      if (balanceError) {
-        console.error('Error fetching balance for month:', balanceError);
-        continue;
-      }
-      
-      const totalBalance = balanceData?.reduce((sum, client) => sum + (client.ending_balance || 0), 0) || 0;
+      // Calculate total balance for this month (from in-memory data)
+      const totalBalance = allBalanceData?.filter(balance => {
+        if (!balance.financial_created_at) return false;
+        const createdAt = new Date(balance.financial_created_at);
+        return createdAt <= endOfMonth;
+      }).reduce((sum, client) => sum + (client.ending_balance || 0), 0) || 0;
       
       months.push({
         month: monthName,
@@ -417,9 +441,9 @@ export const AdminDashboard = () => {
     const usersWithVolatilityData = users.filter(user => user.return_volatility !== null && user.return_volatility !== undefined);
     const usersWithSharpeData = users.filter(user => user.sharpe_ratio !== null && user.sharpe_ratio !== undefined);
     const usersWithEngagementData = users.filter(user => user.engagement_score !== null && user.engagement_score !== undefined);
-    
+
     const averageReturn = usersWithReturnData.length > 0 
-      ? usersWithReturnData.reduce((sum, user) => sum + user.average_monthly_return_rate!, 0) / usersWithReturnData.length 
+      ? usersWithReturnData.reduce((sum, user) => sum + user.average_monthly_return_rate/100, 0) / usersWithReturnData.length 
       : 0;
 
     const averageVolatility = usersWithVolatilityData.length > 0 
@@ -616,7 +640,7 @@ export const AdminDashboard = () => {
     try {
       const { data: profile, error } = await supabase
         .from('profiles')
-        .select('is_admin')
+        .select('is_admin, id, name')
         .eq('id', user.id)
         .single();
 
@@ -633,6 +657,7 @@ export const AdminDashboard = () => {
       }
 
       setIsAdmin(true);
+      setAdminProfile({ id: profile.id, name: profile.name || 'Admin' });
       fetchBrokerMetrics();
     } catch (error) {
       console.error('Error checking admin status:', error);
@@ -658,7 +683,8 @@ export const AdminDashboard = () => {
     // Apply search filter
     if (searchQuery.trim() !== '') {
       filtered = filtered.filter(broker => 
-        broker.name.toLowerCase().includes(searchQuery.toLowerCase())
+        broker.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        broker.email.toLowerCase().includes(searchQuery.toLowerCase())
       );
     }
     
@@ -690,17 +716,29 @@ export const AdminDashboard = () => {
         return acc;
       }, {} as Record<string, string>) || {};
 
+      // OPTIMIZED: Get all clients in a single query instead of N queries (one per broker)
+      const brokerIds = brokers.map(broker => broker.id);
+      const { data: allClientsData, error: allClientsError } = await supabase
+        .from('user_profiles_investment')
+        .select('*')
+        .in('broker_id', brokerIds);
+
+      if (allClientsError) throw allClientsError;
+
+      // Group clients by broker_id in memory
+      const clientsByBroker = (allClientsData || []).reduce((acc, client) => {
+        const brokerId = client.broker_id;
+        if (!acc[brokerId]) {
+          acc[brokerId] = [];
+        }
+        acc[brokerId].push(client);
+        return acc;
+      }, {} as Record<string, typeof allClients>);
+
+      // Process broker metrics in parallel (no more queries, just calculations)
       const brokerMetrics = await Promise.all(
         brokers.map(async (broker) => {
-          // Get all clients for this broker using the enhanced view
-          const { data: clients, error: clientsError } = await supabase
-            .from('user_profiles_investment')
-            .select('*')
-            .eq('broker_id', broker.id);
-
-          if (clientsError) throw clientsError;
-
-          const clientList = clients || [];
+          const clientList = clientsByBroker[broker.id] || [];
           
           // Calculate enhanced metrics for this broker's clients
           const enhancedMetrics = await calculateEnhancedMetrics(clientList);
@@ -738,24 +776,32 @@ export const AdminDashboard = () => {
 
       // Calculate overall metrics across only active brokers
       const activeBrokers = brokerMetrics.filter(broker => broker.active);
+      const activeBrokerIdsList = activeBrokers.map(broker => broker.id);
+      setActiveBrokerIds(activeBrokerIdsList);
       const allClients = activeBrokers.flatMap(broker => broker.clients);
-      const overallMetrics = await calculateEnhancedMetrics(allClients);
+      
+      // OPTIMIZED: Run independent operations in parallel
+      const [overallMetrics, trendData] = await Promise.all([
+        calculateEnhancedMetrics(allClients),
+        generateGrowthTrendData(activeBrokers)
+      ]);
+      
       setOverallMetrics(overallMetrics);
-
-      // Generate trend data using only active brokers
-      const trendData = await generateGrowthTrendData(activeBrokers);
       setGrowthTrendData(trendData);
 
-      // Generate broker performance data using only active brokers
+      // Generate broker performance data using only active brokers (synchronous, no queries)
       const performanceData = generateBrokerPerformanceData(activeBrokers);
       setBrokerPerformanceData(performanceData);
 
-      // Generate age distribution data
+      // Generate age distribution data (synchronous, no queries)
       const ageData = generateAgeDistributionData(activeBrokers);
       setAgeDistributionData(ageData);
 
-      // Fetch client access data
-      await fetchClientAccessData();
+      // Fetch client and broker access data (runs in parallel with statement imports hook)
+      fetchClientAccessData();
+      fetchBrokerAccessData();
+
+      // Statement imports are fetched automatically by the hook
 
     } catch (error) {
       console.error('Error fetching broker metrics:', error);
@@ -1008,22 +1054,22 @@ export const AdminDashboard = () => {
   // System-wide metrics for charts
   const systemMetricsData = [
     {
-      name: 'Clientes Ativos',
+      name: t('adminDashboard.charts.systemMetrics.activeClients'),
       value: overallMetrics.clientsWithActiveRecords,
       color: MODERN_COLORS.success
     },
     {
-      name: 'Clientes Inativos',
+      name: t('adminDashboard.charts.systemMetrics.inactiveClients'),
       value: overallMetrics.inactiveClients,
       color: MODERN_COLORS.danger
     },
     {
-      name: 'Clientes em Risco',
+      name: t('adminDashboard.charts.systemMetrics.atRiskClients'),
       value: overallMetrics.activityDistribution.atRisk,
       color: MODERN_COLORS.warning
     },
     {
-      name: 'Clientes Stale',
+      name: t('adminDashboard.charts.systemMetrics.staleClients'),
       value: overallMetrics.activityDistribution.stale,
       color: MODERN_COLORS.info
     }
@@ -1032,17 +1078,17 @@ export const AdminDashboard = () => {
   // Plan maturity distribution
   const planMaturityData = [
     {
-      name: 'Planos Novos',
+      name: t('adminDashboard.charts.planMaturity.new'),
       value: overallMetrics.planMaturity.new,
       color: MODERN_COLORS.primary
     },
     {
-      name: 'Planos Estabelecidos',
+      name: t('adminDashboard.charts.planMaturity.established'),
       value: overallMetrics.planMaturity.established,
       color: MODERN_COLORS.success
     },
     {
-      name: 'Planos Maduros',
+      name: t('adminDashboard.charts.planMaturity.mature'),
       value: overallMetrics.planMaturity.mature,
       color: MODERN_COLORS.warning
     }
@@ -1051,25 +1097,25 @@ export const AdminDashboard = () => {
   // Performance metrics by category
   const performanceMetricsData = [
     {
-      name: 'Retorno Médio',
+      name: t('adminDashboard.charts.performanceMetrics.averageReturn'),
       value: (overallMetrics.averageReturn * 100).toFixed(1),
       unit: '%',
       color: MODERN_COLORS.success
     },
     {
-      name: 'Volatilidade Média',
+      name: t('adminDashboard.charts.performanceMetrics.averageVolatility'),
       value: overallMetrics.averageVolatility.toFixed(2),
       unit: '',
       color: MODERN_COLORS.warning
     },
     {
-      name: 'Sharpe Ratio Médio',
+      name: t('adminDashboard.charts.performanceMetrics.averageSharpeRatio'),
       value: overallMetrics.averageSharpeRatio.toFixed(2),
       unit: '',
       color: MODERN_COLORS.info
     },
     {
-      name: 'Engajamento Médio',
+      name: t('adminDashboard.charts.performanceMetrics.averageEngagement'),
       value: overallMetrics.averageEngagementScore.toFixed(1),
       unit: '/100',
       color: MODERN_COLORS.primary
@@ -1085,26 +1131,45 @@ export const AdminDashboard = () => {
   const totalPages = Math.ceil(filteredBrokers.length / itemsPerPage);
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-background to-muted">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Header */}
-        <div className="bg-card rounded-2xl shadow-sm border border-border p-6 mb-8">
-          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-6">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 dark:from-slate-900 dark:via-slate-800 dark:to-slate-900">
+      {/* Fixed Task Bar - Nubank Style */}
+      <div className="fixed top-0 left-0 right-0 z-50 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md border-b border-slate-200 dark:border-slate-700 shadow-sm">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex items-center justify-between h-16">
+            {/* Logo and Title */}
             <div className="flex items-center gap-4">
-              <Logo variant="minimal" />
-              <div>
-                <h1 className="text-2xl font-bold text-foreground tracking-tight">{t('adminDashboard.title')}</h1>
-                <p className="text-sm text-muted-foreground mt-1">{t('adminDashboard.subtitle')}</p>
+              <div className="relative">
+                <Logo variant="minimal" />
+              </div>
+              <div className="hidden sm:block">
+                <h1 className="text-lg font-semibold text-slate-900 dark:text-slate-100">
+                  {t('adminDashboard.title')}
+                </h1>
+                <p className="text-xs text-slate-600 dark:text-slate-400">
+                  {adminProfile?.name || 'Admin'}
+                </p>
               </div>
             </div>
-            
-            <div className="flex items-center gap-3">
+
+            {/* Action Buttons - Nubank Style */}
+            <div className="flex items-center gap-1">
+              {/* Criar Broker */}
               <Dialog open={isCreatingBroker} onOpenChange={setIsCreatingBroker}>
                 <DialogTrigger asChild>
-                  <Button variant="default" className="flex items-center gap-2">
-                    <Plus className="h-4 w-4" />
-                    {t('adminDashboard.createBroker')}
-                  </Button>
+                  <div 
+                    className="group flex items-center rounded-full bg-transparent hover:bg-blue-50/50 dark:hover:bg-blue-900/30 px-2 py-1 transition-all duration-300 ease-out cursor-pointer"
+                  >
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-10 w-10 rounded-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white transition-all duration-200 shadow-md hover:shadow-lg hover:scale-105 pointer-events-none"
+                    >
+                      <Plus className="h-5 w-5" />
+                    </Button>
+                    <span className="ml-2 whitespace-nowrap text-sm text-slate-700 dark:text-slate-300 font-medium opacity-0 group-hover:opacity-100 w-0 group-hover:w-auto overflow-hidden transition-all duration-300 ease-out transform translate-x-[-10px] group-hover:translate-x-0">
+                      {t('adminDashboard.createBroker')}
+                    </span>
+                  </div>
                 </DialogTrigger>
                 <DialogContent>
                   <DialogHeader>
@@ -1176,16 +1241,24 @@ export const AdminDashboard = () => {
                   </DialogFooter>
                 </DialogContent>
               </Dialog>
-              
+
+              {/* Alterar Senha */}
               <Dialog open={isChangingPassword} onOpenChange={setIsChangingPassword}>
                 <DialogTrigger asChild>
-                  <Button 
-                    variant="default" 
-                    className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white"
+                  <div 
+                    className="group flex items-center rounded-full bg-transparent hover:bg-blue-50/50 dark:hover:bg-blue-900/30 px-2 py-1 transition-all duration-300 ease-out cursor-pointer"
                   >
-                    <Key className="h-4 w-4" />
-                    {t('adminDashboard.changePassword')}
-                  </Button>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-10 w-10 rounded-full hover:bg-transparent text-blue-600 dark:text-blue-400 transition-all duration-200 pointer-events-none"
+                    >
+                      <Key className="h-5 w-5" />
+                    </Button>
+                    <span className="ml-2 whitespace-nowrap text-sm text-slate-700 dark:text-slate-300 font-medium opacity-0 group-hover:opacity-100 w-0 group-hover:w-auto overflow-hidden transition-all duration-300 ease-out transform translate-x-[-10px] group-hover:translate-x-0">
+                      {t('adminDashboard.changePassword')}
+                    </span>
+                  </div>
                 </DialogTrigger>
                 <DialogContent>
                   <DialogHeader>
@@ -1246,20 +1319,30 @@ export const AdminDashboard = () => {
                   </DialogFooter>
                 </DialogContent>
               </Dialog>
-              
-              <Button 
-                variant="outline" 
-                size="default"
+
+              {/* Sair */}
+              <div 
+                className="group flex items-center rounded-full bg-transparent hover:bg-red-50/50 dark:hover:bg-red-900/30 px-2 py-1 transition-all duration-300 ease-out cursor-pointer"
                 onClick={handleLogout}
-                className="flex items-center gap-2 hover:bg-red-50 hover:text-red-600 hover:border-red-200 transition-all duration-200"
               >
-                <LogOut className="h-4 w-4" />
-                {t('common.logout')}
-              </Button>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-10 w-10 rounded-full hover:bg-transparent text-red-600 dark:text-red-400 transition-all duration-200 pointer-events-none"
+                >
+                  <LogOut className="h-5 w-5" />
+                </Button>
+                <span className="ml-2 whitespace-nowrap text-sm text-slate-700 dark:text-slate-300 font-medium opacity-0 group-hover:opacity-100 w-0 group-hover:w-auto overflow-hidden transition-all duration-300 ease-out transform translate-x-[-10px] group-hover:translate-x-0">
+                  {t('common.logout')}
+                </span>
+              </div>
             </div>
           </div>
         </div>
+      </div>
 
+      {/* Content with padding for fixed bar */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-24 pb-8">
         {/* Search and Filter Bar */}
         <div className="mb-8 flex flex-col sm:flex-row gap-4">
           <div className="relative flex-1">
@@ -1332,7 +1415,16 @@ export const AdminDashboard = () => {
                   {paginatedBrokers.map((broker) => (
                     <tr key={broker.id} className="hover:bg-muted">
                       <td className="px-4 py-4">
-                        <div className="flex items-center">
+                        <div 
+                          className="flex items-center cursor-pointer hover:opacity-80 transition-opacity"
+                          onClick={() => {
+                            if (searchQuery === broker.email) {
+                              setSearchQuery('');
+                            } else {
+                              setSearchQuery(broker.email);
+                            }
+                          }}
+                        >
                           <Avatar initial={broker.name[0]} color="bluePrimary" />
                           <div className="ml-3">
                             <div className="text-sm font-medium text-foreground truncate max-w-[180px]">{broker.name}</div>
@@ -1436,7 +1528,7 @@ export const AdminDashboard = () => {
             <CardHeader className="pb-2">
               <div className="flex items-center justify-between">
                 <CardTitle className="text-sm font-medium text-muted-foreground">
-                  Brokers Ativos
+                  {t('adminDashboard.cards.activeBrokers')}
                 </CardTitle>
                 <Avatar 
                   icon={Users} 
@@ -1552,13 +1644,49 @@ export const AdminDashboard = () => {
           </Card>
         </div>
 
-        {/* Enhanced Metrics Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+        {/* Tabs for different sections */}
+        <Tabs defaultValue="planning" className="mb-8">
+          <div className="bg-white/95 dark:bg-slate-900/95 backdrop-blur-md border border-slate-200 dark:border-slate-700 rounded-xl shadow-sm p-1">
+            <TabsList className="grid w-full grid-cols-4 bg-transparent gap-1 h-auto">
+              <TabsTrigger 
+                value="planning"
+                className="rounded-lg data-[state=active]:bg-white dark:data-[state=active]:bg-slate-800 data-[state=active]:text-slate-900 dark:data-[state=active]:text-slate-100 data-[state=active]:shadow-sm text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 transition-all duration-200 py-2.5 flex items-center justify-center gap-2"
+              >
+                <Target className="h-4 w-4" />
+                {t('adminDashboard.tabs.planning')}
+              </TabsTrigger>
+              <TabsTrigger 
+                value="imports"
+                className="rounded-lg data-[state=active]:bg-white dark:data-[state=active]:bg-slate-800 data-[state=active]:text-slate-900 dark:data-[state=active]:text-slate-100 data-[state=active]:shadow-sm text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 transition-all duration-200 py-2.5 flex items-center justify-center gap-2"
+              >
+                <Upload className="h-4 w-4" />
+                {t('adminDashboard.tabs.imports')}
+              </TabsTrigger>
+              <TabsTrigger 
+                value="policy"
+                className="rounded-lg data-[state=active]:bg-white dark:data-[state=active]:bg-slate-800 data-[state=active]:text-slate-900 dark:data-[state=active]:text-slate-100 data-[state=active]:shadow-sm text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 transition-all duration-200 py-2.5 flex items-center justify-center gap-2"
+              >
+                <Shield className="h-4 w-4" />
+                {t('adminDashboard.tabs.policy')}
+              </TabsTrigger>
+              <TabsTrigger 
+                value="access"
+                className="rounded-lg data-[state=active]:bg-white dark:data-[state=active]:bg-slate-800 data-[state=active]:text-slate-900 dark:data-[state=active]:text-slate-100 data-[state=active]:shadow-sm text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 transition-all duration-200 py-2.5 flex items-center justify-center gap-2"
+              >
+                <Eye className="h-4 w-4" />
+                {t('adminDashboard.tabs.access')}
+              </TabsTrigger>
+            </TabsList>
+          </div>
+
+          <TabsContent value="planning" className="mt-6">
+            {/* Enhanced Metrics Cards */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
           <Card className="hover:shadow-lg transition-all duration-200 border-border">
             <CardHeader className="pb-2">
               <div className="flex items-center justify-between">
                 <CardTitle className="text-sm font-medium text-muted-foreground">
-                  Performance Média
+                  {t('adminDashboard.cards.averagePerformance')}
                 </CardTitle>
                 <Avatar 
                   icon={TrendingUp} 
@@ -1574,11 +1702,11 @@ export const AdminDashboard = () => {
                 <p className="text-3xl font-bold text-foreground">
                   {(overallMetrics.averageReturn * 100).toFixed(1)}%
                 </p>
-                <p className="text-sm text-muted-foreground">retorno/mês</p>
+                <p className="text-sm text-muted-foreground">{t('adminDashboard.cards.returnPerMonth')}</p>
               </div>
               <div className="mt-2">
                 <p className="text-sm text-muted-foreground">
-                  Sharpe: {overallMetrics.averageSharpeRatio.toFixed(2)}
+                  {t('adminDashboard.cards.sharpe')} {overallMetrics.averageSharpeRatio.toFixed(2)}
                 </p>
               </div>
             </CardContent>
@@ -1588,7 +1716,7 @@ export const AdminDashboard = () => {
             <CardHeader className="pb-2">
               <div className="flex items-center justify-between">
                 <CardTitle className="text-sm font-medium text-muted-foreground">
-                  Clientes Prioritários
+                  {t('adminDashboard.cards.priorityClients')}
                 </CardTitle>
                 <Avatar 
                   icon={AlertTriangle} 
@@ -1604,11 +1732,11 @@ export const AdminDashboard = () => {
                 <p className="text-3xl font-bold text-foreground">
                   {overallMetrics.urgentClients + overallMetrics.highPriorityClients}
                 </p>
-                <p className="text-sm text-muted-foreground">urgentes</p>
+                <p className="text-sm text-muted-foreground">{t('adminDashboard.cards.urgentClients')}</p>
               </div>
               <div className="mt-2">
                 <p className="text-sm text-muted-foreground">
-                  {overallMetrics.urgentClients} urgentes, {overallMetrics.highPriorityClients} alta prioridade
+                  {overallMetrics.urgentClients} {t('adminDashboard.cards.urgent')}, {overallMetrics.highPriorityClients} {t('adminDashboard.cards.highPriority')}
                 </p>
               </div>
             </CardContent>
@@ -1618,7 +1746,7 @@ export const AdminDashboard = () => {
             <CardHeader className="pb-2">
               <div className="flex items-center justify-between">
                 <CardTitle className="text-sm font-medium text-muted-foreground">
-                  Idade Média
+                  {t('adminDashboard.cards.averageAge')}
                 </CardTitle>
                 <Avatar 
                   icon={Clock} 
@@ -1634,11 +1762,11 @@ export const AdminDashboard = () => {
                 <p className="text-3xl font-bold text-foreground">
                   {overallMetrics.averageAge.toFixed(0)}
                 </p>
-                <p className="text-sm text-muted-foreground">anos</p>
+                <p className="text-sm text-muted-foreground">{t('adminDashboard.cards.years')}</p>
               </div>
               <div className="mt-2">
                 <p className="text-sm text-muted-foreground">
-                  {overallMetrics.averageYearsToRetirement.toFixed(0)} anos para aposentadoria
+                  {overallMetrics.averageYearsToRetirement.toFixed(0)} {t('adminDashboard.cards.yearsToRetirement')}
                 </p>
               </div>
             </CardContent>
@@ -1648,7 +1776,7 @@ export const AdminDashboard = () => {
             <CardHeader className="pb-2">
               <div className="flex items-center justify-between">
                 <CardTitle className="text-sm font-medium text-muted-foreground">
-                  Engajamento
+                  {t('adminDashboard.cards.engagement')}
               </CardTitle>
                 <Avatar 
                   icon={Activity} 
@@ -1668,7 +1796,7 @@ export const AdminDashboard = () => {
               </div>
               <div className="mt-2">
                 <p className="text-sm text-muted-foreground">
-                  {overallMetrics.activityDistribution.active} ativos
+                  {overallMetrics.activityDistribution.active} {t('adminDashboard.cards.active')}
                 </p>
               </div>
             </CardContent>
@@ -1685,9 +1813,9 @@ export const AdminDashboard = () => {
                   <TrendingUp className="h-6 w-6 text-white" />
                 </div>
                 <div>
-                  <span className="text-slate-900 dark:text-slate-100">Crescimento Mensal</span>
+                  <span className="text-slate-900 dark:text-slate-100">{t('adminDashboard.charts.growthTrend.title')}</span>
                   <p className="text-sm font-normal text-slate-600 dark:text-slate-400 mt-1">
-                    Tendência dos últimos 12 meses
+                    {t('adminDashboard.charts.growthTrend.description')}
                   </p>
                 </div>
               </CardTitle>
@@ -1695,7 +1823,7 @@ export const AdminDashboard = () => {
             <CardContent>
               <div className="h-[320px]">
                 <ResponsiveContainer width="100%" height="100%">
-                  <AreaChart data={growthTrendData.length > 0 ? growthTrendData : [{ month: 'Nenhum dado', totalClients: 0, newClients: 0 }]}>
+                  <AreaChart data={growthTrendData.length > 0 ? growthTrendData : [{ month: t('adminDashboard.charts.growthTrend.noData'), totalClients: 0, newClients: 0 }]}>
                     <defs>
                       <linearGradient id="clientGradient" x1="0" y1="0" x2="0" y2="1">
                         <stop offset="5%" stopColor={MODERN_COLORS.primary} stopOpacity={0.3}/>
@@ -1734,7 +1862,7 @@ export const AdminDashboard = () => {
                               <div className="flex items-center gap-3">
                                 <div className="w-3 h-3 rounded-full bg-gradient-to-r from-indigo-500 to-purple-500" />
                                 <div>
-                                  <p className="text-sm text-slate-600 dark:text-slate-400">Total Clientes</p>
+                                  <p className="text-sm text-slate-600 dark:text-slate-400">{t('adminDashboard.charts.growthTrend.totalClients')}</p>
                                   <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">
                                     {formatLargeNumber(data?.totalClients || 0)}
                                   </p>
@@ -1743,7 +1871,7 @@ export const AdminDashboard = () => {
                               <div className="flex items-center gap-3">
                                 <div className="w-3 h-3 rounded-full bg-gradient-to-r from-emerald-500 to-teal-500" />
                                 <div>
-                                  <p className="text-sm text-slate-600 dark:text-slate-400">Patrimônio Total</p>
+                                  <p className="text-sm text-slate-600 dark:text-slate-400">{t('adminDashboard.charts.growthTrend.totalPatrimony')}</p>
                                   <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">
                                     {formatCurrency(data?.totalBalance || 0)}
                                   </p>
@@ -1752,7 +1880,7 @@ export const AdminDashboard = () => {
                               <div className="flex items-center gap-3">
                                 <div className="w-3 h-3 rounded-full bg-gradient-to-r from-amber-500 to-orange-500" />
                                 <div>
-                                  <p className="text-sm text-slate-600 dark:text-slate-400">Novos Clientes</p>
+                                  <p className="text-sm text-slate-600 dark:text-slate-400">{t('adminDashboard.charts.growthTrend.newClients')}</p>
                                   <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">
                                     {formatLargeNumber(data?.newClients || 0)}
                                   </p>
@@ -1769,7 +1897,7 @@ export const AdminDashboard = () => {
                       stroke={MODERN_COLORS.primary}
                       strokeWidth={3}
                       fill="url(#clientGradient)"
-                      name="Total Clientes"
+                      name={t('adminDashboard.charts.growthTrend.totalClients')}
                     />
                     <Area 
                       type="monotone" 
@@ -1777,7 +1905,7 @@ export const AdminDashboard = () => {
                       stroke={MODERN_COLORS.warning}
                       strokeWidth={2}
                       fill="url(#balanceGradient)"
-                      name="Novos Clientes"
+                      name={t('adminDashboard.charts.growthTrend.newClients')}
                     />
                   </AreaChart>
                 </ResponsiveContainer>
@@ -1793,9 +1921,9 @@ export const AdminDashboard = () => {
                   <PieChartIcon className="h-6 w-6 text-white" />
                 </div>
                 <div>
-                  <span className="text-slate-900 dark:text-slate-100">Distribuição de Riqueza</span>
+                  <span className="text-slate-900 dark:text-slate-100">{t('adminDashboard.charts.wealthDistribution.title')}</span>
                   <p className="text-sm font-normal text-slate-600 dark:text-slate-400 mt-1">
-                    Por faixas de patrimônio
+                    {t('adminDashboard.charts.wealthDistribution.description')}
                   </p>
                 </div>
               </CardTitle>
@@ -1837,19 +1965,19 @@ export const AdminDashboard = () => {
                             <p className="text-sm font-semibold text-slate-900 dark:text-slate-100 mb-2">{range}</p>
                             <div className="space-y-1">
                               <div className="flex justify-between items-center">
-                                <span className="text-sm text-slate-600 dark:text-slate-400">Clientes:</span>
+                                <span className="text-sm text-slate-600 dark:text-slate-400">{t('adminDashboard.charts.wealthDistribution.clients')}</span>
                                 <span className="text-sm font-semibold text-slate-900 dark:text-slate-100">
                                   {count}
                                 </span>
                               </div>
                               <div className="flex justify-between items-center">
-                                <span className="text-sm text-slate-600 dark:text-slate-400">Percentual:</span>
+                                <span className="text-sm text-slate-600 dark:text-slate-400">{t('adminDashboard.charts.wealthDistribution.percentage')}</span>
                                 <span className="text-sm font-semibold text-slate-900 dark:text-slate-100">
                                   {percentage.toFixed(1)}%
                                 </span>
                               </div>
                               <div className="flex justify-between items-center">
-                                <span className="text-sm text-slate-600 dark:text-slate-400">Total:</span>
+                                <span className="text-sm text-slate-600 dark:text-slate-400">{t('adminDashboard.charts.wealthDistribution.total')}</span>
                                 <span className="text-sm font-semibold text-slate-900 dark:text-slate-100">
                                   {formatCurrency(total)}
                                 </span>
@@ -1883,9 +2011,9 @@ export const AdminDashboard = () => {
                   <Users className="h-6 w-6 text-white" />
                 </div>
                 <div>
-                  <span className="text-slate-900 dark:text-slate-100">Status dos Clientes</span>
+                  <span className="text-slate-900 dark:text-slate-100">{t('adminDashboard.charts.clientStatus.title')}</span>
                   <p className="text-sm font-normal text-slate-600 dark:text-slate-400 mt-1">
-                    Visão geral do sistema
+                    {t('adminDashboard.charts.clientStatus.description')}
                   </p>
                 </div>
               </CardTitle>
@@ -1915,7 +2043,7 @@ export const AdminDashboard = () => {
                             <div className="flex items-center gap-3">
                               <div className="w-3 h-3 rounded-full" style={{ backgroundColor: payload[0].color }} />
                               <p className="text-sm text-slate-600 dark:text-slate-400">
-                                Clientes: <span className="font-semibold text-slate-900 dark:text-slate-100">{payload[0].value}</span>
+                                {t('adminDashboard.charts.clientStatus.clients')} <span className="font-semibold text-slate-900 dark:text-slate-100">{payload[0].value}</span>
                               </p>
                             </div>
                           </div>
@@ -1941,9 +2069,9 @@ export const AdminDashboard = () => {
                   <Target className="h-6 w-6 text-white" />
                 </div>
                 <div>
-                  <span className="text-slate-900 dark:text-slate-100">Maturidade dos Planos</span>
+                  <span className="text-slate-900 dark:text-slate-100">{t('adminDashboard.charts.planMaturityChart.title')}</span>
                   <p className="text-sm font-normal text-slate-600 dark:text-slate-400 mt-1">
-                    Distribuição por estágio
+                    {t('adminDashboard.charts.planMaturityChart.description')}
                   </p>
                 </div>
               </CardTitle>
@@ -1978,7 +2106,7 @@ export const AdminDashboard = () => {
                             <p className="text-sm font-semibold text-slate-900 dark:text-slate-100 mb-2">{label}</p>
                             <div className="space-y-1">
                               <div className="flex justify-between items-center">
-                                <span className="text-sm text-slate-600 dark:text-slate-400">Planos:</span>
+                                <span className="text-sm text-slate-600 dark:text-slate-400">{t('adminDashboard.charts.planMaturityChart.plans')}:</span>
                                 <span className="text-sm font-semibold text-slate-900 dark:text-slate-100">
                                   {payload[0].value}
                                 </span>
@@ -2014,9 +2142,9 @@ export const AdminDashboard = () => {
                   <Users className="h-6 w-6 text-white" />
                 </div>
                 <div>
-                  <span className="text-slate-900 dark:text-slate-100">Distribuição por Idade</span>
+                  <span className="text-slate-900 dark:text-slate-100">{t('adminDashboard.charts.ageDistribution.title')}</span>
                   <p className="text-sm font-normal text-slate-600 dark:text-slate-400 mt-1">
-                    Faixas etárias dos clientes
+                    {t('adminDashboard.charts.ageDistribution.description')}
                   </p>
                 </div>
               </CardTitle>
@@ -2048,13 +2176,13 @@ export const AdminDashboard = () => {
                             </p>
                             <div className="space-y-1">
                               <div className="flex justify-between items-center">
-                                <span className="text-sm text-slate-600 dark:text-slate-400">Clientes:</span>
+                                <span className="text-sm text-slate-600 dark:text-slate-400">{t('adminDashboard.charts.ageDistribution.clients')}:</span>
                                 <span className="text-sm font-semibold text-slate-900 dark:text-slate-100">
                                   {data.count}
                                 </span>
                               </div>
                               <div className="flex justify-between items-center">
-                                <span className="text-sm text-slate-600 dark:text-slate-400">Percentual:</span>
+                                <span className="text-sm text-slate-600 dark:text-slate-400">{t('adminDashboard.charts.ageDistribution.percentage')}:</span>
                                 <span className="text-sm font-semibold text-slate-900 dark:text-slate-100">
                                   {data.percentage}%
                                 </span>
@@ -2083,9 +2211,9 @@ export const AdminDashboard = () => {
                   <Activity className="h-6 w-6 text-white" />
                 </div>
                 <div>
-                  <span className="text-slate-900 dark:text-slate-100">Status de Atividade</span>
+                  <span className="text-slate-900 dark:text-slate-100">{t('adminDashboard.charts.activityStatus.title')}</span>
                   <p className="text-sm font-normal text-slate-600 dark:text-slate-400 mt-1">
-                    Distribuição por status
+                    {t('adminDashboard.charts.activityStatus.description')}
                   </p>
                 </div>
               </CardTitle>
@@ -2100,25 +2228,25 @@ export const AdminDashboard = () => {
                     outerRadius="90%" 
                     data={[
                       { 
-                        name: 'Ativos', 
+                        name: t('adminDashboard.charts.activityStatus.active'), 
                         value: overallMetrics.activityDistribution.active || 0, 
                         fill: MODERN_COLORS.success,
                         percentage: overallMetrics.totalClients > 0 ? (((overallMetrics.activityDistribution.active || 0) / overallMetrics.totalClients) * 100).toFixed(1) : '0.0'
                       },
                       { 
-                        name: 'Em Risco', 
+                        name: t('adminDashboard.charts.activityStatus.atRisk'), 
                         value: overallMetrics.activityDistribution.atRisk || 0, 
                         fill: MODERN_COLORS.warning,
                         percentage: overallMetrics.totalClients > 0 ? (((overallMetrics.activityDistribution.atRisk || 0) / overallMetrics.totalClients) * 100).toFixed(1) : '0.0'
                       },
                       { 
-                        name: 'Inativos', 
+                        name: t('adminDashboard.charts.activityStatus.inactive'), 
                         value: overallMetrics.activityDistribution.inactive || 0, 
                         fill: MODERN_COLORS.danger,
                         percentage: overallMetrics.totalClients > 0 ? (((overallMetrics.activityDistribution.inactive || 0) / overallMetrics.totalClients) * 100).toFixed(1) : '0.0'
                       },
                       { 
-                        name: 'Stale', 
+                        name: t('adminDashboard.charts.activityStatus.stale'), 
                         value: overallMetrics.activityDistribution.stale || 0, 
                         fill: MODERN_COLORS.info,
                         percentage: overallMetrics.totalClients > 0 ? (((overallMetrics.activityDistribution.stale || 0) / overallMetrics.totalClients) * 100).toFixed(1) : '0.0'
@@ -2139,13 +2267,13 @@ export const AdminDashboard = () => {
                             <p className="text-sm font-semibold text-slate-900 dark:text-slate-100 mb-2">{data.name}</p>
                             <div className="space-y-1">
                               <div className="flex justify-between items-center">
-                                <span className="text-sm text-slate-600 dark:text-slate-400">Clientes:</span>
+                                <span className="text-sm text-slate-600 dark:text-slate-400">{t('adminDashboard.charts.activityStatus.clients')}:</span>
                                 <span className="text-sm font-semibold text-slate-900 dark:text-slate-100">
                                   {data.value}
                                 </span>
                               </div>
                               <div className="flex justify-between items-center">
-                                <span className="text-sm text-slate-600 dark:text-slate-400">Percentual:</span>
+                                <span className="text-sm text-slate-600 dark:text-slate-400">{t('adminDashboard.charts.activityStatus.percentage')}:</span>
                                 <span className="text-sm font-semibold text-slate-900 dark:text-slate-100">
                                   {data.percentage}%
                                 </span>
@@ -2179,9 +2307,9 @@ export const AdminDashboard = () => {
                   <TrendingUp className="h-6 w-6 text-white" />
                 </div>
                 <div>
-                  <span className="text-slate-900 dark:text-slate-100">Métricas de Performance</span>
+                  <span className="text-slate-900 dark:text-slate-100">{t('adminDashboard.charts.performanceMetricsChart.title')}</span>
                   <p className="text-sm font-normal text-slate-600 dark:text-slate-400 mt-1">
-                    Indicadores do sistema
+                    {t('adminDashboard.charts.performanceMetricsChart.description')}
                   </p>
                 </div>
               </CardTitle>
@@ -2212,7 +2340,7 @@ export const AdminDashboard = () => {
                             <div className="flex items-center gap-3">
                               <div className="w-3 h-3 rounded-full" style={{ backgroundColor: payload[0].color }} />
                               <p className="text-sm text-slate-600 dark:text-slate-400">
-                                Valor: <span className="font-semibold text-slate-900 dark:text-slate-100">{payload[0].value}{data?.unit}</span>
+                                {t('adminDashboard.charts.performanceMetricsChart.value')} <span className="font-semibold text-slate-900 dark:text-slate-100">{payload[0].value}{data?.unit}</span>
                               </p>
                             </div>
                           </div>
@@ -2242,9 +2370,9 @@ export const AdminDashboard = () => {
                   <Zap className="h-6 w-6 text-white" />
                 </div>
                 <div>
-                  <span className="text-slate-900 dark:text-slate-100">Eficiência dos Brokers</span>
+                  <span className="text-slate-900 dark:text-slate-100">{t('adminDashboard.charts.brokerEfficiency.title')}</span>
                   <p className="text-sm font-normal text-slate-600 dark:text-slate-400 mt-1">
-                    Clientes ativos vs total
+                    {t('adminDashboard.charts.brokerEfficiency.description')}
                   </p>
                 </div>
               </CardTitle>
@@ -2252,7 +2380,7 @@ export const AdminDashboard = () => {
             <CardContent>
               <div className="h-[320px]">
                 <ResponsiveContainer width="100%" height="100%">
-                  <ComposedChart data={brokerPerformanceData.length > 0 ? brokerPerformanceData : [{ name: 'Nenhum dado', totalClients: 0, activeClients: 0, efficiency: 0, efficiencyFormatted: '0' }]}>
+                  <ComposedChart data={brokerPerformanceData.length > 0 ? brokerPerformanceData : [{ name: t('adminDashboard.charts.growthRate.noData'), totalClients: 0, activeClients: 0, efficiency: 0, efficiencyFormatted: '0' }]}>
                     <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" opacity={0.3} />
                     <XAxis 
                       dataKey="name" 
@@ -2278,19 +2406,19 @@ export const AdminDashboard = () => {
                             <p className="text-sm font-semibold text-slate-900 dark:text-slate-100 mb-3">{label}</p>
                             <div className="space-y-2">
                               <div className="flex justify-between items-center">
-                                <span className="text-sm text-slate-600 dark:text-slate-400">Total Clientes:</span>
+                                <span className="text-sm text-slate-600 dark:text-slate-400">{t('adminDashboard.charts.brokerEfficiency.totalClients')}</span>
                                 <span className="text-sm font-semibold text-slate-900 dark:text-slate-100">
                                   {data?.totalClients}
                                 </span>
                             </div>
                               <div className="flex justify-between items-center">
-                                <span className="text-sm text-slate-600 dark:text-slate-400">Clientes Ativos:</span>
+                                <span className="text-sm text-slate-600 dark:text-slate-400">{t('adminDashboard.charts.brokerEfficiency.activeClients')}</span>
                                 <span className="text-sm font-semibold text-slate-900 dark:text-slate-100">
                                   {data?.activeClients}
                                 </span>
                             </div>
                               <div className="flex justify-between items-center">
-                                <span className="text-sm text-slate-600 dark:text-slate-400">Eficiência:</span>
+                                <span className="text-sm text-slate-600 dark:text-slate-400">{t('adminDashboard.charts.brokerEfficiency.efficiency')}</span>
                                 <span className="text-sm font-semibold text-slate-900 dark:text-slate-100">
                                   {data?.efficiencyFormatted}%
                                 </span>
@@ -2303,13 +2431,13 @@ export const AdminDashboard = () => {
                     <Bar 
                       dataKey="totalClients" 
                       fill={MODERN_COLORS.info}
-                      name="Total Clientes"
+                      name={t('adminDashboard.charts.brokerEfficiency.totalClientsLabel')}
                       radius={[4, 4, 0, 0]}
                     />
                     <Bar 
                       dataKey="activeClients" 
                       fill={MODERN_COLORS.success}
-                      name="Clientes Ativos"
+                      name={t('adminDashboard.charts.brokerEfficiency.activeClientsLabel')}
                       radius={[4, 4, 0, 0]}
                     />
                     <Line 
@@ -2317,7 +2445,7 @@ export const AdminDashboard = () => {
                       dataKey="efficiency" 
                       stroke={MODERN_COLORS.warning}
                       strokeWidth={3}
-                      name="Eficiência (%)"
+                      name={t('adminDashboard.charts.brokerEfficiency.efficiencyLabel')}
                     />
                   </ComposedChart>
                 </ResponsiveContainer>
@@ -2333,9 +2461,9 @@ export const AdminDashboard = () => {
                   <ArrowUpRight className="h-6 w-6 text-white" />
                 </div>
                 <div>
-                  <span className="text-slate-900 dark:text-slate-100">Taxa de Crescimento</span>
+                  <span className="text-slate-900 dark:text-slate-100">{t('adminDashboard.charts.growthRate.title')}</span>
                   <p className="text-sm font-normal text-slate-600 dark:text-slate-400 mt-1">
-                    Performance por broker
+                    {t('adminDashboard.charts.growthRate.description')}
                   </p>
                 </div>
               </CardTitle>
@@ -2343,7 +2471,7 @@ export const AdminDashboard = () => {
             <CardContent>
               <div className="h-[320px]">
                 <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={brokerPerformanceData.length > 0 ? brokerPerformanceData : [{ name: 'Nenhum dado', growth: 0, growthFormatted: '0' }]}>
+                  <BarChart data={brokerPerformanceData.length > 0 ? brokerPerformanceData : [{ name: t('adminDashboard.charts.growthRate.noData'), growth: 0, growthFormatted: '0' }]}>
                     <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" opacity={0.3} />
                     <XAxis 
                       dataKey="name" 
@@ -2370,13 +2498,13 @@ export const AdminDashboard = () => {
                             <p className="text-sm font-semibold text-slate-900 dark:text-slate-100 mb-3">{label}</p>
                             <div className="space-y-2">
                               <div className="flex justify-between items-center">
-                                <span className="text-sm text-slate-600 dark:text-slate-400">Crescimento:</span>
+                                <span className="text-sm text-slate-600 dark:text-slate-400">{t('adminDashboard.charts.growthRate.growth')}:</span>
                                 <span className="text-sm font-semibold text-slate-900 dark:text-slate-100">
                                   {data?.growthFormatted}%
                                 </span>
                               </div>
                               <div className="flex justify-between items-center">
-                                <span className="text-sm text-slate-600 dark:text-slate-400">Engajamento:</span>
+                                <span className="text-sm text-slate-600 dark:text-slate-400">{t('adminDashboard.charts.growthRate.engagement')}:</span>
                                 <span className="text-sm font-semibold text-slate-900 dark:text-slate-100">
                                   {data?.engagementFormatted}/100
                                 </span>
@@ -2389,7 +2517,7 @@ export const AdminDashboard = () => {
                     <Bar 
                       dataKey="growth" 
                       fill="url(#growthGradient)"
-                      name="Taxa de Crescimento (%)"
+                      name={t('adminDashboard.charts.growthRate.growthRateLabel')}
                       radius={[4, 4, 0, 0]}
                     />
                     <defs>
@@ -2405,8 +2533,363 @@ export const AdminDashboard = () => {
           </Card>
         </div>
 
-        {/* Client Access Analysis */}
-        <ClientAccessAnalysis clientAccessData={clientAccessData} />
+          </TabsContent>
+
+          <TabsContent value="imports" className="mt-6">
+            {/* Statement Imports Analysis */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+          {/* Statement Imports Overview */}
+          <Card className="hover:shadow-lg transition-all duration-300 border-0 bg-gradient-to-br from-white to-slate-50 dark:from-slate-900 dark:to-slate-800 shadow-xl">
+            <CardHeader className="pb-4">
+              <CardTitle className="flex items-center gap-3 text-xl">
+                <div className="p-2 rounded-lg bg-gradient-to-r from-blue-500 to-cyan-500">
+                  <LineChartIcon className="h-6 w-6 text-white" />
+                </div>
+                <div>
+                  <span className="text-slate-900 dark:text-slate-100">{t('adminDashboard.statementImports.title')}</span>
+                  <p className="text-sm font-normal text-slate-600 dark:text-slate-400 mt-1">
+                    {t('adminDashboard.statementImports.last14Days')}
+                  </p>
+                </div>
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="h-[320px]">
+                <ResponsiveContainer width="100%" height="100%">
+                  <AreaChart data={statementImportsByDay}>
+                    <defs>
+                      <linearGradient id="importsTotalGradient" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor={MODERN_COLORS.primary} stopOpacity={0.3}/>
+                        <stop offset="95%" stopColor={MODERN_COLORS.primary} stopOpacity={0.05}/>
+                      </linearGradient>
+                      <linearGradient id="importsSuccessGradient" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor={MODERN_COLORS.success} stopOpacity={0.3}/>
+                        <stop offset="95%" stopColor={MODERN_COLORS.success} stopOpacity={0.05}/>
+                      </linearGradient>
+                      <linearGradient id="importsFailedGradient" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor={MODERN_COLORS.danger} stopOpacity={0.3}/>
+                        <stop offset="95%" stopColor={MODERN_COLORS.danger} stopOpacity={0.05}/>
+                      </linearGradient>
+                    </defs>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" opacity={0.3} />
+                    <XAxis 
+                      dataKey="date" 
+                      tick={{ fontSize: 12, fill: '#64748b' }}
+                      axisLine={false}
+                      tickLine={false}
+                    />
+                    <YAxis 
+                      tick={{ fontSize: 12, fill: '#64748b' }}
+                      axisLine={false}
+                      tickLine={false}
+                    />
+                    <Tooltip 
+                      content={({ active, payload, label }) => {
+                        if (!active || !payload || !payload.length) return null;
+                        const data = statementImportsByDay.find(d => d.date === label);
+                        return (
+                          <div className="bg-white dark:bg-slate-800 p-4 rounded-xl shadow-xl border border-slate-200 dark:border-slate-700">
+                            <p className="text-sm font-semibold text-slate-900 dark:text-slate-100 mb-3">{label}</p>
+                            <div className="space-y-2">
+                              <div className="flex items-center gap-3">
+                                <div className="w-3 h-3 rounded-full bg-gradient-to-r from-indigo-500 to-purple-500" />
+                                <div>
+                                  <p className="text-sm text-slate-600 dark:text-slate-400">{t('adminDashboard.statementImports.total')}</p>
+                                  <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">
+                                    {data?.total || 0}
+                                  </p>
+                                </div>
+                              </div>
+                              <div className="flex items-center gap-3">
+                                <div className="w-3 h-3 rounded-full bg-gradient-to-r from-emerald-500 to-teal-500" />
+                                <div>
+                                  <p className="text-sm text-slate-600 dark:text-slate-400">{t('adminDashboard.statementImports.success')}</p>
+                                  <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">
+                                    {data?.success || 0}
+                                  </p>
+                                </div>
+                              </div>
+                              <div className="flex items-center gap-3">
+                                <div className="w-3 h-3 rounded-full bg-gradient-to-r from-red-500 to-pink-500" />
+                                <div>
+                                  <p className="text-sm text-slate-600 dark:text-slate-400">{t('adminDashboard.statementImports.failures')}</p>
+                                  <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">
+                                    {data?.failed || 0}
+                                  </p>
+                                </div>
+                              </div>
+                              {data && (data.running > 0 || data.created > 0) && (
+                                <>
+                                  {data.running > 0 && (
+                                    <div className="flex items-center gap-3">
+                                      <div className="w-3 h-3 rounded-full bg-gradient-to-r from-amber-500 to-orange-500" />
+                                      <div>
+                                        <p className="text-sm text-slate-600 dark:text-slate-400">{t('adminDashboard.statementImports.running')}</p>
+                                        <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">
+                                          {data.running}
+                                        </p>
+                                      </div>
+                                    </div>
+                                  )}
+                                  {data.created > 0 && (
+                                    <div className="flex items-center gap-3">
+                                      <div className="w-3 h-3 rounded-full bg-gradient-to-r from-blue-500 to-cyan-500" />
+                                      <div>
+                                        <p className="text-sm text-slate-600 dark:text-slate-400">{t('adminDashboard.statementImports.created')}</p>
+                                        <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">
+                                          {data.created}
+                                        </p>
+                                      </div>
+                                    </div>
+                                  )}
+                                </>
+                              )}
+                            </div>
+                          </div>
+                        );
+                      }}
+                    />
+                    <Area 
+                      type="monotone" 
+                      dataKey="total" 
+                      stroke={MODERN_COLORS.primary}
+                      strokeWidth={3}
+                      fill="url(#importsTotalGradient)"
+                      name={t('adminDashboard.statementImports.chartLabels.total')}
+                    />
+                    <Area 
+                      type="monotone" 
+                      dataKey="success" 
+                      stroke={MODERN_COLORS.success}
+                      strokeWidth={2}
+                      fill="url(#importsSuccessGradient)"
+                      name={t('adminDashboard.statementImports.chartLabels.success')}
+                    />
+                    <Area 
+                      type="monotone" 
+                      dataKey="failed" 
+                      stroke={MODERN_COLORS.danger}
+                      strokeWidth={2}
+                      fill="url(#importsFailedGradient)"
+                      name={t('adminDashboard.statementImports.chartLabels.failures')}
+                    />
+                  </AreaChart>
+                </ResponsiveContainer>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Statement Imports Status Distribution */}
+          <Card className="hover:shadow-lg transition-all duration-300 border-0 bg-gradient-to-br from-white to-slate-50 dark:from-slate-900 dark:to-slate-800 shadow-xl">
+            <CardHeader className="pb-4">
+              <CardTitle className="flex items-center gap-3 text-xl">
+                <div className="p-2 rounded-lg bg-gradient-to-r from-violet-500 to-purple-500">
+                  <PieChartIcon className="h-6 w-6 text-white" />
+                </div>
+                <div>
+                  <span className="text-slate-900 dark:text-slate-100">{t('adminDashboard.statementImports.statusDistribution')}</span>
+                  <p className="text-sm font-normal text-slate-600 dark:text-slate-400 mt-1">
+                    {t('adminDashboard.statementImports.last30Days')}
+                  </p>
+                </div>
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="h-[320px]">
+                <ResponsiveContainer width="100%" height="100%">
+                  <PieChart>
+                    <Pie
+                      data={[
+                        { name: t('adminDashboard.statementImports.chartLabels.success'), value: statementImportsStats.success, color: MODERN_COLORS.success },
+                        { name: t('adminDashboard.statementImports.chartLabels.failures'), value: statementImportsStats.failed, color: MODERN_COLORS.danger },
+                        { name: t('adminDashboard.statementImports.chartLabels.running'), value: statementImportsStats.running, color: MODERN_COLORS.warning },
+                        { name: t('adminDashboard.statementImports.chartLabels.created'), value: statementImportsStats.created, color: MODERN_COLORS.info }
+                      ].filter(item => item.value > 0)}
+                      cx="50%"
+                      cy="50%"
+                      innerRadius={60}
+                      outerRadius={120}
+                      paddingAngle={5}
+                      dataKey="value"
+                      nameKey="name"
+                    >
+                      {[
+                        { name: t('adminDashboard.statementImports.chartLabels.success'), value: statementImportsStats.success, color: MODERN_COLORS.success },
+                        { name: t('adminDashboard.statementImports.chartLabels.failures'), value: statementImportsStats.failed, color: MODERN_COLORS.danger },
+                        { name: t('adminDashboard.statementImports.chartLabels.running'), value: statementImportsStats.running, color: MODERN_COLORS.warning },
+                        { name: t('adminDashboard.statementImports.chartLabels.created'), value: statementImportsStats.created, color: MODERN_COLORS.info }
+                      ].filter(item => item.value > 0).map((entry, index) => (
+                        <Cell 
+                          key={`cell-${index}`} 
+                          fill={entry.color} 
+                        />
+                      ))}
+                    </Pie>
+                    <Tooltip 
+                      content={({ active, payload }) => {
+                        if (!active || !payload || !payload.length) return null;
+                        const data = payload[0]?.payload;
+                        const total = statementImportsStats.total;
+                        const percentage = total > 0 ? ((data?.value || 0) / total * 100).toFixed(1) : '0.0';
+                        return (
+                          <div className="bg-white dark:bg-slate-800 p-4 rounded-xl shadow-xl border border-slate-200 dark:border-slate-700">
+                            <p className="text-sm font-semibold text-slate-900 dark:text-slate-100 mb-2">{data?.name}</p>
+                            <div className="space-y-1">
+                              <div className="flex justify-between items-center">
+                                <span className="text-sm text-slate-600 dark:text-slate-400">{t('adminDashboard.statementImports.quantity')}:</span>
+                                <span className="text-sm font-semibold text-slate-900 dark:text-slate-100">
+                                  {data?.value || 0}
+                                </span>
+                              </div>
+                              <div className="flex justify-between items-center">
+                                <span className="text-sm text-slate-600 dark:text-slate-400">{t('adminDashboard.statementImports.percentage')}:</span>
+                                <span className="text-sm font-semibold text-slate-900 dark:text-slate-100">
+                                  {percentage}%
+                                </span>
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      }}
+                    />
+                    <Legend 
+                      verticalAlign="bottom" 
+                      height={60}
+                      formatter={(value) => (
+                        <span className="text-sm text-slate-600 dark:text-slate-400">{value}</span>
+                      )}
+                    />
+                  </PieChart>
+                </ResponsiveContainer>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Statement Imports Summary Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+          <Card className="hover:shadow-lg transition-all duration-200 border-border">
+            <CardHeader className="pb-2">
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-sm font-medium text-muted-foreground">
+                  {t('adminDashboard.statementImports.totalImports')}
+                </CardTitle>
+                <Avatar 
+                  icon={LineChartIcon} 
+                  size="md" 
+                  variant="square"
+                  iconClassName="h-5 w-5"
+                  color="blue"
+                />
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className="flex items-baseline gap-2">
+                <p className="text-3xl font-bold text-foreground">
+                  {statementImportsStats.total}
+                </p>
+                <p className="text-sm text-muted-foreground">{t('adminDashboard.statementImports.last30Days')}</p>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="hover:shadow-lg transition-all duration-200 border-border">
+            <CardHeader className="pb-2">
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-sm font-medium text-muted-foreground">
+                  {t('adminDashboard.statementImports.success')}
+                </CardTitle>
+                <Avatar 
+                  icon={TrendingUp} 
+                  size="md" 
+                  variant="square"
+                  iconClassName="h-5 w-5"
+                  color="green"
+                />
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className="flex items-baseline gap-2">
+                <p className="text-3xl font-bold text-foreground">
+                  {statementImportsStats.success}
+                </p>
+                <p className="text-sm text-muted-foreground">
+                  {statementImportsStats.total > 0 
+                    ? `${((statementImportsStats.success / statementImportsStats.total) * 100).toFixed(1)}%`
+                    : '0%'}
+                </p>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="hover:shadow-lg transition-all duration-200 border-border">
+            <CardHeader className="pb-2">
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-sm font-medium text-muted-foreground">
+                  {t('adminDashboard.statementImports.failures')}
+                </CardTitle>
+                <Avatar 
+                  icon={AlertTriangle} 
+                  size="md" 
+                  variant="square"
+                  iconClassName="h-5 w-5"
+                  color="red"
+                />
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className="flex items-baseline gap-2">
+                <p className="text-3xl font-bold text-foreground">
+                  {statementImportsStats.failed}
+                </p>
+                <p className="text-sm text-muted-foreground">
+                  {statementImportsStats.total > 0 
+                    ? `${((statementImportsStats.failed / statementImportsStats.total) * 100).toFixed(1)}%`
+                    : '0%'}
+                </p>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="hover:shadow-lg transition-all duration-200 border-border">
+            <CardHeader className="pb-2">
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-sm font-medium text-muted-foreground">
+                  {t('adminDashboard.statementImports.running')}
+                </CardTitle>
+                <Avatar 
+                  icon={Clock} 
+                  size="md" 
+                  variant="square"
+                  iconClassName="h-5 w-5"
+                  color="yellow"
+                />
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className="flex items-baseline gap-2">
+                <p className="text-3xl font-bold text-foreground">
+                  {statementImportsStats.running + statementImportsStats.created}
+                </p>
+                <p className="text-sm text-muted-foreground">{t('adminDashboard.statementImports.pending')}</p>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+          </TabsContent>
+
+          <TabsContent value="policy" className="mt-6">
+            <InvestmentPolicyInsights activeBrokerIds={activeBrokerIds} />
+          </TabsContent>
+
+          <TabsContent value="access" className="mt-6">
+            {/* Broker Access Analysis */}
+            <BrokerAccessAnalysis brokerAccessData={brokerAccessData} />
+            {/* Client Access Analysis */}
+            <ClientAccessAnalysis clientAccessData={clientAccessData} />
+          </TabsContent>
+        </Tabs>
       </div>
     </div>
   );

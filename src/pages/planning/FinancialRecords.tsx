@@ -3,7 +3,7 @@ import { useNavigate, useParams, useLocation } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { useState, useEffect } from "react";
 import { Spinner } from "@/components/ui/spinner";
-import { FinancialRecord, InvestmentPlan } from "@/types/financial";
+import { FinancialRecord } from "@/types/financial/financial-records";
 import { SuccessAnimation } from "@/components/ui/success-animation";
 import { AddRecordForm } from "@/components/financial-records/AddRecordForm";
 import { 

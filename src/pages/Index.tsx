@@ -1,4 +1,4 @@
-import { ArrowLeft, LogOut, Share2, User, Key } from "lucide-react";
+import { ArrowLeft, LogOut, Share2, User, Key, Target, TrendingUp, BarChart } from "lucide-react";
 import { Menu } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Link, useNavigate, useParams } from "react-router-dom";
@@ -10,6 +10,7 @@ import { useEffect, useCallback, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Spinner } from "@/components/ui/spinner";
 import { Logo } from '@/components/ui/logo';
+import { Avatar } from '@/components/ui/avatar-initial';
 import Finances from './planning/Finances';
 import InvestmentPolicy from './investment-policy/InvestmentPolicy';
 import PortfolioPerformance from './performance/PortfolioPerformance';
@@ -177,134 +178,193 @@ const Index = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-blue-50/50 dark:from-slate-900 dark:via-gray-950 dark:to-slate-900/50">
-      <header className="bg-white/95 dark:bg-gray-900/80 backdrop-blur-md border-b dark:border-gray-800 sticky top-0 z-50 shadow-lg">
-        <div className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3 min-w-0">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 dark:from-slate-900 dark:via-slate-800 dark:to-slate-900">
+      {/* Fixed Task Bar - Nubank Style */}
+      <div className="fixed top-0 left-0 right-0 z-50 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md border-b border-slate-200 dark:border-slate-700 shadow-sm">
+        <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex items-center justify-between h-16">
+            {/* Logo and Title */}
+            <div className="flex items-center gap-4">
               {brokerProfile && (
-                <Button 
-                  variant="ghost" 
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-10 w-10 rounded-full hover:bg-blue-50/50 dark:hover:bg-blue-900/30 text-slate-600 dark:text-slate-400 transition-all duration-200"
                   onClick={() => navigate('/broker-dashboard')}
-                  className="text-gray-600 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
                 >
-                  <ArrowLeft className="h-4 w-4" />
+                  <ArrowLeft className="h-5 w-5" />
                 </Button>
               )}
-              <Logo variant="minimal" className="h-6 shrink-0" />
+              <div className="relative">
+                <Logo variant="minimal" />
+              </div>
               {clientProfile && (
-                <p
-                  className="text-sm text-gray-700 dark:text-gray-300 font-medium hidden sm:block truncate max-w-[120px] sm:max-w-[180px] md:max-w-[240px] lg:max-w-none"
-                  title={clientProfile.name}
-                >
-                  {clientProfile.name}
-                </p>
+                <div className="hidden sm:block">
+                  <h1 className="text-lg font-semibold text-slate-900 dark:text-slate-100">
+                    {clientProfile.name}
+                  </h1>
+                  <p className="text-xs text-slate-600 dark:text-slate-400">
+                    {t('dashboard.title') || 'Dashboard'}
+                  </p>
+                </div>
               )}
             </div>
 
-            <div className="flex items-center gap-4">
-              {/* Desktop tabs */}
-              <div className="hidden md:flex space-x-1 bg-gray-100 dark:bg-gray-800 p-1 rounded-lg">
+            {/* Tabs - Desktop */}
+            <div className="hidden md:flex items-center gap-1">
+              <div className="bg-white/95 dark:bg-slate-900/95 backdrop-blur-md border border-slate-200 dark:border-slate-700 rounded-xl shadow-sm p-1">
+                <div className="flex space-x-1">
+                  {/* Política de Investimento - Azul/Roxo */}
+                  <div 
+                    className="group flex items-center rounded-lg bg-transparent hover:bg-indigo-50/50 dark:hover:bg-indigo-900/30 px-2 py-1 transition-all duration-300 ease-out cursor-pointer"
+                    onClick={() => setActiveView('policies')}
+                  >
+                    <Button
+                      variant="ghost"
+                      className={`rounded-lg p-2.5 transition-all duration-200 pointer-events-none flex items-center justify-center ${
+                        activeView === 'policies'
+                          ? 'bg-indigo-100 dark:bg-indigo-900/50 text-indigo-600 dark:text-indigo-400 shadow-sm'
+                          : 'text-indigo-500 dark:text-indigo-400'
+                      }`}
+                    >
+                      <Target className="h-5 w-5" />
+                    </Button>
+                    <span className="ml-2 whitespace-nowrap text-sm text-slate-700 dark:text-slate-300 font-medium opacity-0 group-hover:opacity-100 w-0 group-hover:w-auto overflow-hidden transition-all duration-300 ease-out transform translate-x-[-10px] group-hover:translate-x-0">
+                      {t('dashboard.navigation.investmentPolicy')}
+                    </span>
+                  </div>
+                  
+                  {/* Planejamento - Verde */}
+                  <div 
+                    className="group flex items-center rounded-lg bg-transparent hover:bg-emerald-50/50 dark:hover:bg-emerald-900/30 px-2 py-1 transition-all duration-300 ease-out cursor-pointer"
+                    onClick={() => setActiveView('finances')}
+                  >
+                    <Button
+                      variant="ghost"
+                      className={`rounded-lg p-2.5 transition-all duration-200 pointer-events-none flex items-center justify-center ${
+                        activeView === 'finances'
+                          ? 'bg-emerald-100 dark:bg-emerald-900/50 text-emerald-600 dark:text-emerald-400 shadow-sm'
+                          : 'text-emerald-500 dark:text-emerald-400'
+                      }`}
+                    >
+                      <TrendingUp className="h-5 w-5" />
+                    </Button>
+                    <span className="ml-2 whitespace-nowrap text-sm text-slate-700 dark:text-slate-300 font-medium opacity-0 group-hover:opacity-100 w-0 group-hover:w-auto overflow-hidden transition-all duration-300 ease-out transform translate-x-[-10px] group-hover:translate-x-0">
+                      {t('dashboard.navigation.planning')}
+                    </span>
+                  </div>
+                  
+                  {/* Performance - Laranja */}
+                  <div 
+                    className="group flex items-center rounded-lg bg-transparent hover:bg-orange-50/50 dark:hover:bg-orange-900/30 px-2 py-1 transition-all duration-300 ease-out cursor-pointer"
+                    onClick={() => setActiveView('portfolio-performance')}
+                  >
+                    <Button
+                      variant="ghost"
+                      className={`rounded-lg p-2.5 transition-all duration-200 pointer-events-none flex items-center justify-center ${
+                        activeView === 'portfolio-performance'
+                          ? 'bg-orange-100 dark:bg-orange-900/50 text-orange-600 dark:text-orange-400 shadow-sm'
+                          : 'text-orange-500 dark:text-orange-400'
+                      }`}
+                    >
+                      <BarChart className="h-5 w-5" />
+                    </Button>
+                    <span className="ml-2 whitespace-nowrap text-sm text-slate-700 dark:text-slate-300 font-medium opacity-0 group-hover:opacity-100 w-0 group-hover:w-auto overflow-hidden transition-all duration-300 ease-out transform translate-x-[-10px] group-hover:translate-x-0">
+                      {t('dashboard.navigation.portfolioPerformance')}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Action Buttons - Nubank Style */}
+            <div className="flex items-center gap-1">
+              {brokerProfile && (
+                <div 
+                  className="group flex items-center rounded-full bg-transparent hover:bg-blue-50/50 dark:hover:bg-blue-900/30 px-2 py-1 transition-all duration-300 ease-out cursor-pointer"
+                  onClick={handleShareClient}
+                >
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-10 w-10 rounded-full hover:bg-transparent text-blue-600 dark:text-blue-400 transition-all duration-200 pointer-events-none"
+                  >
+                    <Share2 className="h-5 w-5" />
+                  </Button>
+                  <span className="ml-2 whitespace-nowrap text-sm text-slate-700 dark:text-slate-300 font-medium opacity-0 group-hover:opacity-100 w-0 group-hover:w-auto overflow-hidden transition-all duration-300 ease-out transform translate-x-[-10px] group-hover:translate-x-0">
+                    {t('brokerDashboard.shareWithClient')}
+                  </span>
+                </div>
+              )}
+              
+              <div 
+                className="group flex items-center rounded-full bg-transparent hover:bg-blue-50/50 dark:hover:bg-blue-900/30 px-2 py-1 transition-all duration-300 ease-out cursor-pointer"
+                onClick={() => navigate(`/client-profile/${clientId}`)}
+              >
                 <Button
                   variant="ghost"
-                  className={`px-3 py-1 text-sm font-medium rounded-md ${
-                    activeView === 'policies'
-                      ? 'text-blue-600 dark:text-blue-400 bg-white dark:bg-gray-900 shadow-sm'
-                      : 'text-gray-500 dark:text-gray-300 hover:text-gray-700 dark:hover:text-gray-100'
-                  }`}
-                  onClick={() => {
-                    setActiveView('policies');
-                  }}
+                  size="icon"
+                  className="h-10 w-10 rounded-full hover:bg-transparent text-blue-600 dark:text-blue-400 transition-all duration-200 pointer-events-none"
                 >
-                  {t('dashboard.navigation.investmentPolicy')}
+                  <Key className="h-5 w-5" />
                 </Button>
+                <span className="ml-2 whitespace-nowrap text-sm text-slate-700 dark:text-slate-300 font-medium opacity-0 group-hover:opacity-100 w-0 group-hover:w-auto overflow-hidden transition-all duration-300 ease-out transform translate-x-[-10px] group-hover:translate-x-0">
+                  {t('clientProfile.buttons.changePassword')}
+                </span>
+              </div>
+
+              <div 
+                className="group flex items-center rounded-full bg-transparent hover:bg-red-50/50 dark:hover:bg-red-900/30 px-2 py-1 transition-all duration-300 ease-out cursor-pointer"
+                onClick={handleLogout}
+              >
                 <Button
                   variant="ghost"
-                  className={`px-3 py-1 text-sm font-medium rounded-md ${
-                    activeView === 'finances'
-                      ? 'text-blue-600 dark:text-blue-400 bg-white dark:bg-gray-900 shadow-sm'
-                      : 'text-gray-500 dark:text-gray-300 hover:text-gray-700 dark:hover:text-gray-100'
-                  }`}
-                  onClick={() => {
-                    setActiveView('finances');
-                  }}
+                  size="icon"
+                  className="h-10 w-10 rounded-full hover:bg-transparent text-red-600 dark:text-red-400 transition-all duration-200 pointer-events-none"
                 >
-                  {t('dashboard.navigation.planning')}
+                  <LogOut className="h-5 w-5" />
                 </Button>
-                <Button
-                  variant="ghost"
-                  className={`px-3 py-1 text-sm font-medium rounded-md ${
-                    activeView === 'portfolio-performance'
-                      ? 'text-blue-600 dark:text-blue-400 bg-white dark:bg-gray-900 shadow-sm'
-                      : 'text-gray-500 dark:text-gray-300 hover:text-gray-700 dark:hover:text-gray-100'
-                  }`}
-                  onClick={() => {
-                    setActiveView('portfolio-performance');
-                  }}
-                >
-                  {t('dashboard.navigation.portfolioPerformance')}
-                </Button>
+                <span className="ml-2 whitespace-nowrap text-sm text-slate-700 dark:text-slate-300 font-medium opacity-0 group-hover:opacity-100 w-0 group-hover:w-auto overflow-hidden transition-all duration-300 ease-out transform translate-x-[-10px] group-hover:translate-x-0">
+                  {t('common.logout')}
+                </span>
               </div>
 
               {/* Mobile menu */}
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" className="md:hidden">
-                    <Menu className="h-5 w-5" />
-                  </Button>
+                  <div className="group flex items-center rounded-full bg-transparent hover:bg-blue-50/50 dark:hover:bg-blue-900/30 px-2 py-1 transition-all duration-300 ease-out cursor-pointer md:hidden">
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-10 w-10 rounded-full hover:bg-transparent text-slate-600 dark:text-slate-400 transition-all duration-200 pointer-events-none"
+                    >
+                      <Menu className="h-5 w-5" />
+                    </Button>
+                  </div>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align="center" className="w-56">
+                <DropdownMenuContent align="end" className="w-56">
                   <DropdownMenuItem onClick={() => setActiveView('policies')}>
+                    <Target className="h-4 w-4 mr-2" />
                     {t('dashboard.navigation.investmentPolicy')}
                   </DropdownMenuItem>
                   <DropdownMenuItem onClick={() => setActiveView('finances')}>
+                    <TrendingUp className="h-4 w-4 mr-2" />
                     {t('dashboard.navigation.planning')}
                   </DropdownMenuItem>
                   <DropdownMenuItem onClick={() => setActiveView('portfolio-performance')}>
+                    <BarChart className="h-4 w-4 mr-2" />
                     {t('dashboard.navigation.portfolioPerformance')}
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
             </div>
-
-            <div className="flex items-center gap-2">
-              {brokerProfile && (
-                <Button 
-                  variant="ghost" 
-                  size="sm"
-                  onClick={handleShareClient}
-                  className="text-gray-600 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
-                  aria-label={t('brokerDashboard.shareWithClient')}
-                >
-                  <Share2 className="h-4 w-4" />
-                  <span className="hidden md:inline ml-1">{t('brokerDashboard.shareWithClient')}</span>
-                </Button>
-              )}
-              <Button 
-                variant="ghost" 
-                size="sm"
-                onClick={() => navigate(`/client-profile/${clientId}`)}
-                className="text-gray-600 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
-                aria-label={t('clientProfile.buttons.changePassword')}
-              >
-                <Key className="h-4 w-4" />
-                <span className="hidden md:inline ml-1">{t('clientProfile.buttons.changePassword')}</span>
-              </Button>
-              <Button 
-                variant="ghost" 
-                size="sm"
-                onClick={handleLogout}
-                className="text-gray-600 dark:text-gray-300 hover:text-red-600 dark:hover:text-red-500 transition-colors"
-                aria-label={t('common.logout')}
-              >
-                <LogOut className="h-4 w-4" />
-              </Button>
-            </div>
           </div>
         </div>
-      </header>
+      </div>
 
-      {activeView === 'finances' && (
+      {/* Content with padding for fixed bar */}
+      <div className="pt-24">
+        {activeView === 'finances' && (
         <Finances
           clientId={clientId}
           clientProfile={clientProfile}
@@ -339,6 +399,7 @@ const Index = () => {
           onShareClient={handleShareClient}
         />
       )}
+      </div>
     </div>
   );
 };

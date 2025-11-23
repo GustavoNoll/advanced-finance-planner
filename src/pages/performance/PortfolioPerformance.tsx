@@ -1,7 +1,7 @@
 import { useTranslation } from "react-i18next";
 import { useState, useCallback, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
-import { InvestmentPlan, Profile } from "@/types/financial";
+import { Profile } from "@/types/financial";
 import { Spinner } from "@/components/ui/spinner";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { DollarSign, Target, Building2, Calendar, CheckCircle2, XCircle, Clock, Loader2, History } from "lucide-react";
@@ -23,15 +23,16 @@ import { PerformanceChart } from "@/components/portfolio/performance-chart";
 import { AssetReturnsTable } from "@/components/portfolio/asset-returns-table";
 import { useCurrency } from "@/contexts/CurrencyContext";
 import { formatMaturityDate } from "@/utils/dateUtils";
+import { buttonOrange, iconContainerOrange, iconContainerGreen, iconContainerBlue, iconContainerPurple, gradientCard } from "@/lib/gradient-classes";
 import {
   calculateInstitutionCardData,
   calculateDiversificationCount,
   getNextMaturityDate,
   formatPercentage
 } from "./helpers/portfolio-performance.helpers";
-import { MicroInvestmentPlan } from "@/types/financial";
 import { fetchIPCARates, fetchUSCPIRates, fetchEuroCPIRates } from "@/lib/bcb-api";
 import { calculateCompoundedRates, yearlyReturnRateToMonthlyReturnRate } from "@/lib/financial-math";
+import { InvestmentPlan, MicroInvestmentPlan } from "@/types/financial/investment-plans";
 
 interface PortfolioPerformanceProps {
   clientId: string;
@@ -266,8 +267,7 @@ function PortfolioPerformance({
   return (
     <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-8">
       <div className="space-y-6">
-        <div className="flex justify-between items-center">
-          <div></div>
+        <div className="flex justify-end items-center mb-6">
           <div className="flex items-center gap-2">
             <CurrencyToggle />
             {isBroker && (
@@ -275,7 +275,7 @@ function PortfolioPerformance({
                 <Button 
                   variant="outline" 
                   onClick={openImportsHistory}
-                  className="flex items-center gap-2"
+                  className="flex items-center gap-2 rounded-full border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800 transition-all"
                 >
                   {latestImport ? (
                     <>
@@ -291,7 +291,11 @@ function PortfolioPerformance({
                     </>
                   )}
                 </Button>
-                <Button variant="default" onClick={openDataManagement}>
+                <Button 
+                  variant="default" 
+                  onClick={openDataManagement}
+                  className={buttonOrange}
+                >
                   {t('portfolioPerformance.kpi.manageData')}
                 </Button>
               </>
@@ -300,12 +304,12 @@ function PortfolioPerformance({
         </div>
         {/* KPI cards styled similar to InvestmentDashboard */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-          <Card className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 shadow-sm">
+          <Card className={gradientCard}>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium text-gray-600 dark:text-gray-300">
                 {t('portfolioPerformance.kpi.totalAssets')}
               </CardTitle>
-              <div className="h-10 w-10 rounded-lg bg-gradient-to-br from-amber-400 via-amber-500 to-orange-500 dark:from-amber-600 dark:via-amber-700 dark:to-orange-700 flex items-center justify-center shadow-md">
+              <div className={iconContainerOrange}>
                 <DollarSign className="h-5 w-5 text-white" />
               </div>
             </CardHeader>
@@ -325,12 +329,12 @@ function PortfolioPerformance({
             </CardContent>
           </Card>
 
-          <Card className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 shadow-sm">
+          <Card className={gradientCard}>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium text-gray-600 dark:text-gray-300">
                 {t('portfolioPerformance.kpi.monthlyYield')}
               </CardTitle>
-              <div className="h-10 w-10 rounded-lg bg-gradient-to-br from-emerald-400 via-emerald-500 to-teal-500 dark:from-emerald-600 dark:via-emerald-700 dark:to-teal-700 flex items-center justify-center shadow-md">
+              <div className={iconContainerGreen}>
                 <Target className="h-5 w-5 text-white" />
               </div>
             </CardHeader>
@@ -354,14 +358,14 @@ function PortfolioPerformance({
           </Card>
 
           <Card 
-            className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 shadow-sm cursor-pointer hover:shadow-md transition-shadow"
+            className={`${gradientCard} cursor-pointer hover:shadow-xl transition-shadow`}
             onClick={() => setDiversificationDialogOpen(true)}
           >
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium text-gray-600 dark:text-gray-300">
                 {t('portfolioPerformance.kpi.diversification')}
               </CardTitle>
-              <div className="h-10 w-10 rounded-lg bg-gradient-to-br from-blue-400 via-blue-500 to-indigo-500 dark:from-blue-600 dark:via-blue-700 dark:to-indigo-700 flex items-center justify-center shadow-md">
+              <div className={iconContainerBlue}>
                 <Building2 className="h-5 w-5 text-white" />
               </div>
             </CardHeader>
@@ -376,14 +380,14 @@ function PortfolioPerformance({
           </Card>
 
           <Card 
-            className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 shadow-sm cursor-pointer hover:shadow-md transition-shadow"
+            className={`${gradientCard} cursor-pointer hover:shadow-xl transition-shadow`}
             onClick={() => setMaturityDialogOpen(true)}
           >
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium text-gray-600 dark:text-gray-300">
                 {t('portfolioPerformance.kpi.nextMaturity')}
               </CardTitle>
-              <div className="h-10 w-10 rounded-lg bg-gradient-to-br from-purple-400 via-purple-500 to-pink-500 dark:from-purple-600 dark:via-purple-700 dark:to-pink-700 flex items-center justify-center shadow-md">
+              <div className={iconContainerPurple}>
                 <Calendar className="h-5 w-5 text-white" />
               </div>
             </CardHeader>

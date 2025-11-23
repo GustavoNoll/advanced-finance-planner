@@ -46,7 +46,7 @@ export function ClientDataDisplay({ consolidatedData, performanceData, loading, 
   if (loading) {
     return (
       <div className="grid grid-cols-1 gap-6 mb-8">
-        <Card className="bg-gradient-card border-border/50 shadow-elegant-md">
+        <Card className="bg-gradient-to-br from-white/95 via-slate-50/90 to-blue-50/80 dark:from-gray-900/90 dark:via-gray-900/80 dark:to-slate-800/70 backdrop-blur-sm rounded-xl shadow-lg border border-gray-100/50 dark:border-gray-800 hover:border-blue-100/50 dark:hover:border-gray-700">
           <CardHeader>
             <CardTitle className="text-sm text-muted-foreground">{t('portfolioPerformance.kpi.clientDataDisplay.loading')}</CardTitle>
           </CardHeader>
@@ -65,7 +65,7 @@ export function ClientDataDisplay({ consolidatedData, performanceData, loading, 
   return (
     <div className="space-y-6 mb-8">
       {latestRows.length > 0 && (
-        <Card className="bg-gradient-card border-border/50 shadow-elegant-md">
+        <Card className="bg-gradient-to-br from-white/95 via-slate-50/90 to-blue-50/80 dark:from-gray-900/90 dark:via-gray-900/80 dark:to-slate-800/70 backdrop-blur-sm rounded-xl shadow-lg border border-gray-100/50 dark:border-gray-800 hover:border-blue-100/50 dark:hover:border-gray-700">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">{t('portfolioPerformance.kpi.clientDataDisplay.title')}</CardTitle>
           </CardHeader>
@@ -125,7 +125,7 @@ export function ClientDataDisplay({ consolidatedData, performanceData, loading, 
       )}
 
       {consolidatedData.length === 0 && performanceData.length === 0 && (
-        <Card className="bg-gradient-card border-border/50 shadow-elegant-md">
+        <Card className="bg-gradient-to-br from-white/95 via-slate-50/90 to-blue-50/80 dark:from-gray-900/90 dark:via-gray-900/80 dark:to-slate-800/70 backdrop-blur-sm rounded-xl shadow-lg border border-gray-100/50 dark:border-gray-800 hover:border-blue-100/50 dark:hover:border-gray-700">
           <CardHeader>
             <CardTitle className="text-sm text-muted-foreground">{t('portfolioPerformance.kpi.clientDataDisplay.noData.title')}</CardTitle>
           </CardHeader>

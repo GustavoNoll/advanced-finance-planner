@@ -259,7 +259,7 @@ export const enUS = {
       }
     },
     charts: {
-      portfolioPerformance: "Initial Plan Creation"
+      portfolioPerformance: "Financial Projection"
     },
     nextSteps: {
       title: "Next Steps",
@@ -376,7 +376,13 @@ export const enUS = {
       simulation: "Simulate Projection",
       logout: "Logout",
       search: "Search",
-      importPDF: "Import PDF"
+      importPDF: "Import PDF",
+      scrollToClients: "Go to Client List"
+    },
+    tabs: {
+      planning: "Planning Information",
+      policy: "Investment Policy",
+      access: "Access"
     },
     clientAccessAnalysis: {
       title: "Client Access Analysis",
@@ -1347,6 +1353,7 @@ export const enUS = {
     needReview: "need review",
     title: 'Administrative Panel',
     subtitle: 'Manage wealth advisors and monitor system metrics',
+    myProfile: 'My Profile',
     createBroker: 'Create Wealth Advisor',
     createBrokerDescription: 'Create a new wealth advisor account with email and password.',
     brokerName: 'Wealth Advisor Name',
@@ -1441,6 +1448,250 @@ export const enUS = {
         inactive: 'Inactive',
         never: 'Never'
       }
+    },
+    brokerAccessAnalysis: {
+      title: 'Broker Access Analysis',
+      consultants: 'Consultants',
+      activityStatus: {
+        title: 'Activity Status',
+        description: 'Distribution by inactivity time',
+        today: 'Today',
+        thisWeek: 'This Week',
+        thisMonth: 'This Month',
+        inactive: 'Inactive'
+      },
+      accessSummary: {
+        title: 'Access Summary',
+        description: 'Last access statistics',
+        totalConsultants: 'Total Consultants',
+        accessedToday: 'Accessed today',
+        accessedThisWeek: 'Accessed this week',
+        inactive30Days: 'Inactive for 30+ days',
+        totalClients: 'Total Clients',
+        activeClients: 'Active Clients'
+      },
+      recentAccess: {
+        title: 'Recent Broker Access',
+        description: 'Last 50 brokers who accessed the platform',
+        consultant: 'Consultant',
+        lastAccess: 'Last Access',
+        status: 'Status',
+        totalClients: 'Total Clients',
+        activeClients: 'Active Clients',
+        today: 'Today',
+        yesterday: 'Yesterday',
+        days: 'days',
+        inactive: 'Inactive',
+        never: 'Never'
+      }
+    },
+    statementImports: {
+      title: 'Statement Imports',
+      last14Days: 'Last 14 days',
+      last30Days: 'Last 30 days',
+      statusDistribution: 'Status Distribution',
+      totalImports: 'Total Imports',
+      success: 'Success',
+      failures: 'Failures',
+      running: 'Running',
+      created: 'Created',
+      pending: 'pending',
+      total: 'Total',
+      clients: 'Clients',
+      percentage: 'Percentage',
+      quantity: 'Quantity',
+      chartLabels: {
+        total: 'Total',
+        success: 'Success',
+        failures: 'Failures',
+        running: 'Running',
+        created: 'Created'
+      },
+      tooltips: {
+        totalClients: 'Total Clients',
+        successClients: 'Success',
+        failedClients: 'Failures',
+        runningClients: 'Running',
+        createdClients: 'Created'
+      }
+    },
+    tabs: {
+      planning: 'Planning Information',
+      imports: 'Imports',
+      policy: 'Investment Policy',
+      access: 'Access'
+    },
+    policyInsights: {
+      noData: 'No data available',
+      clients: 'clients',
+      count: 'Count',
+      percentage: 'Percentage',
+      professional: {
+        occupations: 'Occupations',
+        workLocations: 'Companies',
+        workRegimes: 'Work Regimes'
+      },
+      budget: {
+        title: 'Budget Insights',
+        totalIncomes: 'Total Incomes',
+        totalExpenses: 'Total Expenses',
+        averageIncome: 'Average Income',
+        averageExpense: 'Average Expense',
+        averageBonus: 'Average Bonus',
+        averageDividends: 'Average Dividends',
+        averageSavings: 'Average Savings',
+        totalBonus: 'Total Bonus',
+        totalDividends: 'Total Dividends',
+        totalSavings: 'Total Savings'
+      },
+      life: {
+        stages: 'Life Stages'
+      },
+      family: {
+        maritalStatus: 'Marital Status',
+        withChildren: 'With Children',
+        noChildren: 'No Children',
+        averageChildren: 'Average Children'
+      },
+      preferences: {
+        riskProfiles: 'Risk Profiles',
+        targetReturns: 'Target Returns'
+      },
+      values: {
+        maritalStatus: {
+          single: 'Single',
+          total_separation: 'Total Separation',
+          partial_community: 'Partial Community',
+          total_community: 'Total Community'
+        },
+        lifeStage: {
+          accumulation: 'Accumulation',
+          enjoyment: 'Enjoyment',
+          consolidation: 'Consolidation'
+        },
+        riskProfile: {
+          conservative: 'Conservative',
+          moderate: 'Moderate',
+          aggressive: 'Aggressive'
+        },
+        workRegime: {
+          pj: 'PJ',
+          clt: 'CLT',
+          public_servant: 'Public Servant'
+        },
+        targetReturn: {
+          ipca_plus_0: 'IPCA + 0%',
+          ipca_plus_1: 'IPCA + 1%',
+          ipca_plus_2: 'IPCA + 2%',
+          ipca_plus_3: 'IPCA + 3%',
+          ipca_plus_4: 'IPCA + 4%',
+          ipca_plus_5: 'IPCA + 5%',
+          ipca_plus_6: 'IPCA + 6%',
+          ipca_plus_7: 'IPCA + 7%',
+          ipca_plus_8: 'IPCA + 8%',
+          ipca_plus_9: 'IPCA + 9%',
+          ipca_plus_10: 'IPCA + 10%',
+          ipca_plus_11: 'IPCA + 11%'
+        }
+      }
+    },
+    charts: {
+      systemMetrics: {
+        activeClients: 'Active Clients',
+        inactiveClients: 'Inactive Clients',
+        atRiskClients: 'At Risk Clients',
+        staleClients: 'Stale Clients'
+      },
+      planMaturity: {
+        new: 'New Plans',
+        established: 'Established Plans',
+        mature: 'Mature Plans'
+      },
+      performanceMetrics: {
+        averageReturn: 'Average Return',
+        averageVolatility: 'Average Volatility',
+        averageSharpeRatio: 'Average Sharpe Ratio',
+        averageEngagement: 'Average Engagement'
+      },
+      growthTrend: {
+        title: 'Monthly Growth',
+        description: 'Last 12 months trend',
+        totalClients: 'Total Clients',
+        totalPatrimony: 'Total Patrimony',
+        newClients: 'New Clients',
+        noData: 'No data'
+      },
+      wealthDistribution: {
+        title: 'Wealth Distribution',
+        description: 'By patrimony ranges',
+        clients: 'Clients:',
+        percentage: 'Percentage:',
+        total: 'Total:'
+      },
+      clientStatus: {
+        title: 'Client Status',
+        description: 'System overview',
+        clients: 'Clients:'
+      },
+      planMaturityChart: {
+        title: 'Plan Maturity',
+        description: 'Distribution by stage',
+        plans: 'Plans:'
+      },
+      ageDistribution: {
+        title: 'Age Distribution',
+        description: 'Client age ranges',
+        clients: 'Clients:',
+        percentage: 'Percentage:'
+      },
+      activityStatus: {
+        title: 'Activity Status',
+        description: 'Distribution by status',
+        active: 'Active',
+        atRisk: 'At Risk',
+        inactive: 'Inactive',
+        stale: 'Stale',
+        clients: 'Clients:',
+        percentage: 'Percentage:'
+      },
+      performanceMetricsChart: {
+        title: 'Performance Metrics',
+        description: 'System indicators',
+        value: 'Value:'
+      },
+      brokerEfficiency: {
+        title: 'Broker Efficiency',
+        description: 'Active clients vs total',
+        totalClients: 'Total Clients:',
+        activeClients: 'Active Clients:',
+        efficiency: 'Efficiency:',
+        totalClientsLabel: 'Total Clients',
+        activeClientsLabel: 'Active Clients',
+        efficiencyLabel: 'Efficiency (%)'
+      },
+      growthRate: {
+        title: 'Growth Rate',
+        description: 'Performance by broker',
+        growth: 'Growth:',
+        engagement: 'Engagement:',
+        growthRateLabel: 'Growth Rate (%)',
+        noData: 'No data'
+      }
+    },
+    cards: {
+      activeBrokers: 'Active Brokers',
+      averagePerformance: 'Average Performance',
+      priorityClients: 'Priority Clients',
+      averageAge: 'Average Age',
+      engagement: 'Engagement',
+      returnPerMonth: 'return/month',
+      urgent: 'urgent',
+      urgentClients: 'urgent',
+      highPriority: 'high priority',
+      years: 'years',
+      yearsToRetirement: 'years to retirement',
+      active: 'active',
+      sharpe: 'Sharpe:'
     },
   },
   familyStructure: {

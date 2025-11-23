@@ -1,9 +1,13 @@
-import { useTranslation } from "react-i18next";
-import { ChartDataPoint, FinancialRecord, Goal, ProjectedEvent, MonthNumber, InvestmentPlan, MicroInvestmentPlan, Profile, FinancialItemFormValues } from '@/types/financial';
-import { generateChartProjections, YearlyProjectionData } from '@/lib/chart-projections';
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { supabase } from "@/lib/supabase";
-import { GoalsEventsService } from "@/services/goals-events.service";
+import { useTranslation } from "react-i18next"
+import { MonthNumber, Profile } from '@/types/financial'
+import { InvestmentPlan, MicroInvestmentPlan } from '@/types/financial/investment-plans'
+import { FinancialItemFormValues, Goal } from '@/types/financial/goals-events'
+import { ProjectedEvent } from '@/types/financial/goals-events'
+import { ChartDataPoint, FinancialRecord }  from '@/types/financial/financial-records'
+import { generateChartProjections, YearlyProjectionData } from '@/lib/chart-projections'
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
+import { supabase } from "@/lib/supabase"
+import { GoalsEventsService } from "@/services/goals-events.service"
 import { useState } from "react";
 import { ChartPointDialog } from "@/components/chart/ChartPointDialog";
 import { TrendingUp } from "lucide-react";
@@ -12,6 +16,7 @@ import { CurrencyCode } from "@/utils/currency";
 import { EditFinancialItemDialog } from "@/components/chart/EditFinancialItemDialog";
 import PatrimonialProjectionChart from "@/components/chart/PatrimonialProjectionChart"
 import { toast } from '@/components/ui/use-toast'
+import { buttonSelectedGreen } from '@/lib/gradient-classes'
 
 interface ChartPoint {
   age: string;
@@ -64,10 +69,6 @@ interface EventFormValues {
   payment_mode: 'none' | 'installment' | 'repeat';
   installment_count?: string;
   installment_interval?: string;
-}
-
-interface IconProps {
-  viewBox?: ViewBox;
 }
 
 /**
@@ -601,7 +602,7 @@ export const ExpenseChart = ({
     <div className="space-y-4">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-4">
         <h2 className="text-lg font-semibold flex items-center gap-2">
-          <TrendingUp className="w-5 h-5 text-blue-500" />
+          <TrendingUp className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
           {t('dashboard.charts.portfolioPerformance')}
         </h2>
         
@@ -610,9 +611,9 @@ export const ExpenseChart = ({
           <div className="inline-flex items-center rounded-md border border-gray-200 dark:border-gray-700 p-1 bg-gray-50 dark:bg-gray-900/80">
             <button
               onClick={() => setZoomLevel('1y')}
-              className={`px-3 py-1.5 text-sm font-medium rounded-md transition-colors ${
+              className={`px-3 py-1.5 text-sm font-medium rounded-full transition-all ${
                 zoomLevel === '1y' 
-                  ? 'bg-white dark:bg-gray-800 text-blue-600 dark:text-blue-400 shadow-sm' 
+                  ? buttonSelectedGreen
                   : 'text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100'
               }`}
             >
@@ -620,9 +621,9 @@ export const ExpenseChart = ({
             </button>
             <button
               onClick={() => setZoomLevel('5y')}
-              className={`px-3 py-1.5 text-sm font-medium rounded-md transition-colors ${
+              className={`px-3 py-1.5 text-sm font-medium rounded-full transition-all ${
                 zoomLevel === '5y' 
-                  ? 'bg-white dark:bg-gray-800 text-blue-600 dark:text-blue-400 shadow-sm' 
+                  ? buttonSelectedGreen
                   : 'text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100'
               }`}
             >
@@ -630,9 +631,9 @@ export const ExpenseChart = ({
             </button>
             <button
               onClick={() => setZoomLevel('10y')}
-              className={`px-3 py-1.5 text-sm font-medium rounded-md transition-colors ${
+              className={`px-3 py-1.5 text-sm font-medium rounded-full transition-all ${
                 zoomLevel === '10y' 
-                  ? 'bg-white dark:bg-gray-800 text-blue-600 dark:text-blue-400 shadow-sm' 
+                  ? buttonSelectedGreen
                   : 'text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100'
               }`}
             >
@@ -640,9 +641,9 @@ export const ExpenseChart = ({
             </button>
             <button
               onClick={() => setZoomLevel('all')}
-              className={`px-3 py-1.5 text-sm font-medium rounded-md transition-colors ${
+              className={`px-3 py-1.5 text-sm font-medium rounded-full transition-all ${
                 zoomLevel === 'all' 
-                  ? 'bg-white dark:bg-gray-800 text-blue-600 dark:text-blue-400 shadow-sm' 
+                  ? buttonSelectedGreen
                   : 'text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100'
               }`}
             >
@@ -650,9 +651,9 @@ export const ExpenseChart = ({
             </button>
             <button
               onClick={() => setZoomLevel('custom')}
-              className={`px-3 py-1.5 text-sm font-medium rounded-md transition-colors ${
+              className={`px-3 py-1.5 text-sm font-medium rounded-full transition-all ${
                 zoomLevel === 'custom' 
-                  ? 'bg-white dark:bg-gray-800 text-blue-600 dark:text-blue-400 shadow-sm' 
+                  ? buttonSelectedGreen
                   : 'text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100'
               }`}
             >
@@ -763,8 +764,12 @@ export const ExpenseChart = ({
             const foundEvent = events?.find(e => e.id === item.id)
             if (foundEvent) return handleEditItem(foundEvent)
           }}
-          onSubmitGoal={createGoal.mutateAsync}
-          onSubmitEvent={createEvent.mutateAsync}
+          onSubmitGoal={async (values) => {
+            await createGoal.mutateAsync(values);
+          }}
+          onSubmitEvent={async (values) => {
+            await createEvent.mutateAsync(values);
+          }}
           currency={investmentPlan.currency}
           birthDate={profile.birth_date}
           zoomLevel={zoomLevel}
@@ -778,8 +783,12 @@ export const ExpenseChart = ({
         onOpenChange={setShowDialog}
         selectedPoint={selectedPoint}
         currency={investmentPlan?.currency as CurrencyCode}
-        onSubmitGoal={createGoal.mutateAsync}
-        onSubmitEvent={createEvent.mutateAsync}
+        onSubmitGoal={async (values) => {
+          await createGoal.mutateAsync(values);
+        }}
+        onSubmitEvent={async (values) => {
+          await createEvent.mutateAsync(values);
+        }}
         onCancel={handleDialogClose}
         type={'goal'}
         planInitialDate={investmentPlan?.plan_initial_date}

@@ -9,6 +9,7 @@ import { CartesianGrid, Line, Tooltip, LineChart as RechartsLineChart, XAxis, YA
 import { ResponsiveContainer } from "recharts";
 import { calculateCompoundedRates, yearlyReturnRateToMonthlyReturnRate } from "@/lib/financial-math";
 import { createDateWithoutTimezone, createDateFromYearMonth } from '@/utils/dateUtils';
+import { buttonSelectedGreen } from "@/lib/gradient-classes";
 
 interface ReturnChartTabProps {
   allFinancialRecords: FinancialRecord[];
@@ -363,9 +364,9 @@ export function ReturnChartTab({
           <div className="inline-flex items-center rounded-md border border-gray-200 dark:border-gray-700 p-1 bg-gray-50 dark:bg-gray-900/80">
             <button
               onClick={() => setZoomLevel('6m')}
-              className={`px-3 py-1.5 text-sm font-medium rounded-md transition-colors ${
+              className={`px-3 py-1.5 text-sm font-medium rounded-full transition-all ${
                 zoomLevel === '6m' 
-                  ? 'bg-white dark:bg-gray-800 text-blue-600 dark:text-blue-400 shadow-sm' 
+                  ? buttonSelectedGreen
                   : 'text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100'
               }`}
             >
@@ -373,9 +374,9 @@ export function ReturnChartTab({
             </button>
             <button
               onClick={() => setZoomLevel('12m')}
-              className={`px-3 py-1.5 text-sm font-medium rounded-md transition-colors ${
+              className={`px-3 py-1.5 text-sm font-medium rounded-full transition-all ${
                 zoomLevel === '12m' 
-                  ? 'bg-white dark:bg-gray-800 text-blue-600 dark:text-blue-400 shadow-sm' 
+                  ? buttonSelectedGreen
                   : 'text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100'
               }`}
             >
@@ -383,9 +384,9 @@ export function ReturnChartTab({
             </button>
             <button
               onClick={() => setZoomLevel('24m')}
-              className={`px-3 py-1.5 text-sm font-medium rounded-md transition-colors ${
+              className={`px-3 py-1.5 text-sm font-medium rounded-full transition-all ${
                 zoomLevel === '24m' 
-                  ? 'bg-white dark:bg-gray-800 text-blue-600 dark:text-blue-400 shadow-sm' 
+                  ? buttonSelectedGreen
                   : 'text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100'
               }`}
             >
@@ -393,9 +394,9 @@ export function ReturnChartTab({
             </button>
             <button
               onClick={() => setZoomLevel('all')}
-              className={`px-3 py-1.5 text-sm font-medium rounded-md transition-colors ${
+              className={`px-3 py-1.5 text-sm font-medium rounded-full transition-all ${
                 zoomLevel === 'all' 
-                  ? 'bg-white dark:bg-gray-800 text-blue-600 dark:text-blue-400 shadow-sm' 
+                  ? buttonSelectedGreen
                   : 'text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100'
               }`}
             >
@@ -403,9 +404,9 @@ export function ReturnChartTab({
             </button>
             <button
               onClick={() => setZoomLevel('custom')}
-              className={`px-3 py-1.5 text-sm font-medium rounded-md transition-colors ${
+              className={`px-3 py-1.5 text-sm font-medium rounded-full transition-all ${
                 zoomLevel === 'custom' 
-                  ? 'bg-white dark:bg-gray-800 text-blue-600 dark:text-blue-400 shadow-sm' 
+                  ? buttonSelectedGreen
                   : 'text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100'
               }`}
             >

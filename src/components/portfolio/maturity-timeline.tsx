@@ -5,6 +5,7 @@ import { useMemo, useState, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { PerformanceData } from "@/types/financial"
 import { useCurrency } from "@/contexts/CurrencyContext"
+import { buttonSelectedOrange, gradientCard } from "@/lib/gradient-classes"
 
 interface MaturityTimelineProps {
   performanceData: PerformanceData[]
@@ -159,7 +160,7 @@ export function MaturityTimeline({ performanceData }: MaturityTimelineProps) {
   }
 
   return (
-    <Card className="bg-white dark:bg-gray-900 rounded-xl shadow-lg border border-gray-100 dark:border-gray-800">
+    <Card className={gradientCard}>
       <CardHeader>
         <div className="flex items-center justify-between">
           <div>
@@ -178,7 +179,11 @@ export function MaturityTimeline({ performanceData }: MaturityTimelineProps) {
                   variant={selectedAssetClass === option.key ? 'default' : 'ghost'}
                   size="sm"
                   onClick={() => setSelectedAssetClass(option.key)}
-                  className="text-xs px-3 py-1 h-8"
+                  className={`text-xs px-3 py-1 h-8 rounded-full transition-all ${
+                    selectedAssetClass === option.key
+                      ? buttonSelectedOrange
+                      : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100'
+                  }`}
                 >
                   {option.label}
                 </Button>

@@ -68,7 +68,7 @@ export function CompetenceSelector({ consolidatedData, performanceData, onFilter
   }
 
   return (
-    <Card className="bg-gradient-card border-border/50 shadow-elegant-md mb-6">
+    <Card className="bg-gradient-to-br from-white/95 via-slate-50/90 to-blue-50/80 dark:from-gray-900/90 dark:via-gray-900/80 dark:to-slate-800/70 backdrop-blur-sm rounded-xl shadow-lg border border-gray-100/50 dark:border-gray-800 hover:border-blue-100/50 dark:hover:border-gray-700 mb-6">
       <CardContent className="p-4">
         {availablePeriods.length === 0 ? (
           <div className="flex items-center space-x-4">
