@@ -3091,7 +3091,7 @@ export const ptBR = {
     },
     type: {
       consolidated: 'Consolidado',
-      detailed: 'Detalhado'
+      assets: 'Ativos'
     },
     table: {
       title: 'Importações',

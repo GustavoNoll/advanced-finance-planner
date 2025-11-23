@@ -43,12 +43,13 @@ export default function StatementImportsHistory() {
     }
   }
 
-  const getImportTypeLabel = (type: string) => {
+  const getImportTypeLabel = (type: string | null) => {
+    if (!type) return '-'
     switch (type) {
       case 'consolidated':
         return t('statementImports.type.consolidated') || 'Consolidado'
-      case 'detailed':
-        return t('statementImports.type.detailed') || 'Detalhado'
+      case 'assets':
+        return t('statementImports.type.assets') || 'Ativos'
       default:
         return type
     }
