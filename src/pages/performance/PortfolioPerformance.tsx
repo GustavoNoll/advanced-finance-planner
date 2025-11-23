@@ -114,8 +114,6 @@ function PortfolioPerformance({
     if (!activeMicroPlan || !currentMonthInflation) return null
     const inflation = currentMonthInflation
     
-    console.log('inflation', inflation)
-    console.log('expectedReturn', activeMicroPlan.expected_return/100)
     const targetConverted = parseFloat((
       calculateCompoundedRates([
         inflation/100, 
