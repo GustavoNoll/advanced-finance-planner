@@ -376,7 +376,13 @@ export const ptBR = {
       simulation: "Simular Projeção",
       logout: "Sair",
       search: "Buscar",
-      importPDF: "Importar PDF"
+      importPDF: "Importar PDF",
+      scrollToClients: "Ir para Lista de Clientes"
+    },
+    tabs: {
+      planning: "Informações de Planejamento",
+      policy: "Política de Investimento",
+      access: "Acessos"
     },
     clientAccessAnalysis: {
       title: "Análise de Acessos dos Clientes",
@@ -1441,6 +1447,250 @@ export const ptBR = {
         inactive: 'Inativo',
         never: 'Nunca'
       }
+    },
+    brokerAccessAnalysis: {
+      title: 'Análise de Acessos dos Consultores',
+      consultants: 'Consultores',
+      activityStatus: {
+        title: 'Status de Atividade',
+        description: 'Distribuição por tempo de inatividade',
+        today: 'Hoje',
+        thisWeek: 'Esta Semana',
+        thisMonth: 'Este Mês',
+        inactive: 'Inativos'
+      },
+      accessSummary: {
+        title: 'Resumo de Acessos',
+        description: 'Estatísticas dos últimos acessos',
+        totalConsultants: 'Total de Consultores',
+        accessedToday: 'Acessaram hoje',
+        accessedThisWeek: 'Acessaram esta semana',
+        inactive30Days: 'Inativos há 30+ dias',
+        totalClients: 'Total de Clientes',
+        activeClients: 'Clientes Ativos'
+      },
+      recentAccess: {
+        title: 'Últimos Acessos de Consultores',
+        description: 'Últimos 50 consultores que acessaram a plataforma',
+        consultant: 'Consultor',
+        lastAccess: 'Último Acesso',
+        status: 'Status',
+        totalClients: 'Total de Clientes',
+        activeClients: 'Clientes Ativos',
+        today: 'Hoje',
+        yesterday: 'Ontem',
+        days: 'dias',
+        inactive: 'Inativo',
+        never: 'Nunca'
+      }
+    },
+    statementImports: {
+      title: 'Importações de Extratos',
+      last14Days: 'Últimos 14 dias',
+      last30Days: 'Últimos 30 dias',
+      statusDistribution: 'Distribuição por Status',
+      totalImports: 'Total de Importações',
+      success: 'Sucesso',
+      failures: 'Falhas',
+      running: 'Em Execução',
+      created: 'Criadas',
+      pending: 'pendentes',
+      total: 'Total',
+      clients: 'Clientes',
+      percentage: 'Percentual',
+      quantity: 'Quantidade',
+      chartLabels: {
+        total: 'Total',
+        success: 'Sucesso',
+        failures: 'Falhas',
+        running: 'Em Execução',
+        created: 'Criadas'
+      },
+      tooltips: {
+        totalClients: 'Total Clientes',
+        successClients: 'Sucesso',
+        failedClients: 'Falhas',
+        runningClients: 'Em Execução',
+        createdClients: 'Criadas'
+      }
+    },
+    tabs: {
+      planning: 'Informações de Planejamento',
+      imports: 'Importações',
+      policy: 'Política de Investimento',
+      access: 'Acessos'
+    },
+    policyInsights: {
+      noData: 'Nenhum dado disponível',
+      clients: 'clientes',
+      count: 'Quantidade',
+      percentage: 'Percentual',
+      professional: {
+        occupations: 'Profissões',
+        workLocations: 'Empresas',
+        workRegimes: 'Regimes de Trabalho'
+      },
+      budget: {
+        title: 'Insights de Orçamento',
+        totalIncomes: 'Total de Rendas',
+        totalExpenses: 'Total de Despesas',
+        averageIncome: 'Renda Média',
+        averageExpense: 'Despesa Média',
+        averageBonus: 'Bônus Médio',
+        averageDividends: 'Dividendos Médios',
+        averageSavings: 'Poupança Média',
+        totalBonus: 'Total de Bônus',
+        totalDividends: 'Total de Dividendos',
+        totalSavings: 'Total de Poupança'
+      },
+      life: {
+        stages: 'Estágios de Vida'
+      },
+      family: {
+        maritalStatus: 'Estado Civil',
+        withChildren: 'Com Filhos',
+        noChildren: 'Sem Filhos',
+        averageChildren: 'Média de Filhos'
+      },
+      preferences: {
+        riskProfiles: 'Perfis de Risco',
+        targetReturns: 'Retornos Alvo'
+      },
+      values: {
+        maritalStatus: {
+          single: 'Solteiro',
+          total_separation: 'Separação Total',
+          partial_community: 'Comunhão Parcial',
+          total_community: 'Comunhão Total'
+        },
+        lifeStage: {
+          accumulation: 'Acumulação',
+          enjoyment: 'Usufruto',
+          consolidation: 'Consolidação'
+        },
+        riskProfile: {
+          conservative: 'Conservador',
+          moderate: 'Moderado',
+          aggressive: 'Arrojado'
+        },
+        workRegime: {
+          pj: 'PJ',
+          clt: 'CLT',
+          public_servant: 'Funcionário Público'
+        },
+        targetReturn: {
+          ipca_plus_0: 'IPCA + 0%',
+          ipca_plus_1: 'IPCA + 1%',
+          ipca_plus_2: 'IPCA + 2%',
+          ipca_plus_3: 'IPCA + 3%',
+          ipca_plus_4: 'IPCA + 4%',
+          ipca_plus_5: 'IPCA + 5%',
+          ipca_plus_6: 'IPCA + 6%',
+          ipca_plus_7: 'IPCA + 7%',
+          ipca_plus_8: 'IPCA + 8%',
+          ipca_plus_9: 'IPCA + 9%',
+          ipca_plus_10: 'IPCA + 10%',
+          ipca_plus_11: 'IPCA + 11%'
+        }
+      }
+    },
+    charts: {
+      systemMetrics: {
+        activeClients: 'Clientes Ativos',
+        inactiveClients: 'Clientes Inativos',
+        atRiskClients: 'Clientes em Risco',
+        staleClients: 'Clientes Stale'
+      },
+      planMaturity: {
+        new: 'Planos Novos',
+        established: 'Planos Estabelecidos',
+        mature: 'Planos Maduros'
+      },
+      performanceMetrics: {
+        averageReturn: 'Retorno Médio',
+        averageVolatility: 'Volatilidade Média',
+        averageSharpeRatio: 'Sharpe Ratio Médio',
+        averageEngagement: 'Engajamento Médio'
+      },
+      growthTrend: {
+        title: 'Crescimento Mensal',
+        description: 'Tendência dos últimos 12 meses',
+        totalClients: 'Total Clientes',
+        totalPatrimony: 'Patrimônio Total',
+        newClients: 'Novos Clientes',
+        noData: 'Nenhum dado'
+      },
+      wealthDistribution: {
+        title: 'Distribuição de Riqueza',
+        description: 'Por faixas de patrimônio',
+        clients: 'Clientes:',
+        percentage: 'Percentual:',
+        total: 'Total:'
+      },
+      clientStatus: {
+        title: 'Status dos Clientes',
+        description: 'Visão geral do sistema',
+        clients: 'Clientes:'
+      },
+      planMaturityChart: {
+        title: 'Maturidade dos Planos',
+        description: 'Distribuição por estágio',
+        plans: 'Planos:'
+      },
+      ageDistribution: {
+        title: 'Distribuição por Idade',
+        description: 'Faixas etárias dos clientes',
+        clients: 'Clientes:',
+        percentage: 'Percentual:'
+      },
+      activityStatus: {
+        title: 'Status de Atividade',
+        description: 'Distribuição por status',
+        active: 'Ativos',
+        atRisk: 'Em Risco',
+        inactive: 'Inativos',
+        stale: 'Stale',
+        clients: 'Clientes:',
+        percentage: 'Percentual:'
+      },
+      performanceMetricsChart: {
+        title: 'Métricas de Performance',
+        description: 'Indicadores do sistema',
+        value: 'Valor:'
+      },
+      brokerEfficiency: {
+        title: 'Eficiência dos Brokers',
+        description: 'Clientes ativos vs total',
+        totalClients: 'Total Clientes:',
+        activeClients: 'Clientes Ativos:',
+        efficiency: 'Eficiência:',
+        totalClientsLabel: 'Total Clientes',
+        activeClientsLabel: 'Clientes Ativos',
+        efficiencyLabel: 'Eficiência (%)'
+      },
+      growthRate: {
+        title: 'Taxa de Crescimento',
+        description: 'Performance por broker',
+        growth: 'Crescimento:',
+        engagement: 'Engajamento:',
+        growthRateLabel: 'Taxa de Crescimento (%)',
+        noData: 'Nenhum dado'
+      }
+    },
+    cards: {
+      activeBrokers: 'Brokers Ativos',
+      averagePerformance: 'Performance Média',
+      priorityClients: 'Clientes Prioritários',
+      averageAge: 'Idade Média',
+      engagement: 'Engajamento',
+      returnPerMonth: 'retorno/mês',
+      urgent: 'urgentes',
+      urgentClients: 'urgentes',
+      highPriority: 'alta prioridade',
+      years: 'anos',
+      yearsToRetirement: 'anos para aposentadoria',
+      active: 'ativos',
+      sharpe: 'Sharpe:'
     },
   },
   familyStructure: {

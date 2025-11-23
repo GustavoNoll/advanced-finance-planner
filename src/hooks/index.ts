@@ -9,8 +9,11 @@ export { useProfileData, usePlanCreation, usePlanCalculations, useAgeOptions } f
 export { useLinkedItems } from './useLinkedItems'
 export { useLastActive } from './useLastActive'
 export { usePerformanceData } from './usePerformanceData'
-export { useStatementImports, useStatementImportsHistory } from './useStatementImports'
+export { useStatementImports, useStatementImportsHistory, useAdminStatementImports } from './useStatementImports'
 export { usePortfolioVerificationSettings, usePortfolioVerificationSettingsMutations } from './usePortfolioVerificationSettings'
+export { useInvestmentPolicyInsights } from './useInvestmentPolicy'
+export { useAccessData } from './useAccessData'
+export type { BrokerAccessData } from './useAccessData'
 
 export type { GoalsStats, EventsStats } from './useGoalsEventsManagement'
 export type { InvestmentPlanStats } from './useInvestmentPlan'

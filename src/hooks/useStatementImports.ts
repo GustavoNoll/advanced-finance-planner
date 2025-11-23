@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { StatementImportsService } from '@/services/statement-imports.service'
-import type { StatementImport } from '@/types/financial'
+import { supabase } from '@/lib/supabase'
+import type { StatementImport } from '@/types/financial/statement-imports'
 
 export function useStatementImports(profileId: string | null) {
   const [latestImport, setLatestImport] = useState<StatementImport | null>(null)
@@ -74,5 +75,134 @@ export function useStatementImportsHistory(profileId: string | null) {
     error,
     refetch: fetchImports
   }
+}
+
+interface StatementImportsByDay {
+  date: string;
+  total: number;
+  success: number;
+  failed: number;
+  running: number;
+  created: number;
+}
+
+interface StatementImportsStats {
+  total: number;
+  success: number;
+  failed: number;
+  running: number;
+  created: number;
+  consolidated: number;
+  detailed: number;
+}
+
+interface UseAdminStatementImportsReturn {
+  statementImports: StatementImport[];
+  statementImportsByDay: StatementImportsByDay[];
+  statementImportsStats: StatementImportsStats;
+  loading: boolean;
+  error: string | null;
+  refetch: () => Promise<void>;
+}
+
+export function useAdminStatementImports(days: number = 30): UseAdminStatementImportsReturn {
+  const [statementImports, setStatementImports] = useState<StatementImport[]>([]);
+  const [statementImportsByDay, setStatementImportsByDay] = useState<StatementImportsByDay[]>([]);
+  const [statementImportsStats, setStatementImportsStats] = useState<StatementImportsStats>({
+    total: 0,
+    success: 0,
+    failed: 0,
+    running: 0,
+    created: 0,
+    consolidated: 0,
+    detailed: 0
+  });
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const fetchStatementImports = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+
+    try {
+      // Get imports from the last N days
+      const daysAgo = new Date();
+      daysAgo.setDate(daysAgo.getDate() - days);
+      
+      const { data: imports, error: fetchError } = await supabase
+        .from('statement_imports')
+        .select('*')
+        .gte('created_at', daysAgo.toISOString())
+        .order('created_at', { ascending: false });
+
+      if (fetchError) throw fetchError;
+
+      setStatementImports(imports || []);
+
+      // Calculate stats
+      const stats: StatementImportsStats = {
+        total: imports?.length || 0,
+        success: imports?.filter(i => i.status === 'success').length || 0,
+        failed: imports?.filter(i => i.status === 'failed').length || 0,
+        running: imports?.filter(i => i.status === 'running').length || 0,
+        created: imports?.filter(i => i.status === 'created').length || 0,
+        consolidated: imports?.filter(i => i.import_type === 'consolidated').length || 0,
+        detailed: imports?.filter(i => i.import_type === 'detailed').length || 0
+      };
+      setStatementImportsStats(stats);
+
+      // Group by day for the last 14 days
+      const daysData: Record<string, StatementImportsByDay> = {};
+
+      // Initialize last 14 days
+      for (let i = 13; i >= 0; i--) {
+        const date = new Date();
+        date.setDate(date.getDate() - i);
+        const dateKey = date.toISOString().split('T')[0];
+        daysData[dateKey] = {
+          date: date.toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' }),
+          total: 0,
+          success: 0,
+          failed: 0,
+          running: 0,
+          created: 0
+        };
+      }
+
+      // Count imports by day
+      imports?.forEach(importItem => {
+        const importDate = new Date(importItem.created_at);
+        const dateKey = importDate.toISOString().split('T')[0];
+        
+        if (daysData[dateKey]) {
+          daysData[dateKey].total++;
+          if (importItem.status === 'success') daysData[dateKey].success++;
+          if (importItem.status === 'failed') daysData[dateKey].failed++;
+          if (importItem.status === 'running') daysData[dateKey].running++;
+          if (importItem.status === 'created') daysData[dateKey].created++;
+        }
+      });
+
+      setStatementImportsByDay(Object.values(daysData));
+    } catch (err) {
+      console.error('Error fetching statement imports:', err);
+      setError(err instanceof Error ? err.message : 'Erro ao carregar importações');
+    } finally {
+      setLoading(false);
+    }
+  }, [days]);
+
+  useEffect(() => {
+    fetchStatementImports();
+  }, [fetchStatementImports]);
+
+  return {
+    statementImports,
+    statementImportsByDay,
+    statementImportsStats,
+    loading,
+    error,
+    refetch: fetchStatementImports
+  };
 }
 

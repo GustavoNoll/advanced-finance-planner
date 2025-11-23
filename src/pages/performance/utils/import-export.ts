@@ -1,5 +1,5 @@
 import { PerformanceImportService } from "@/services/performance-import.service"
-import type { ConsolidatedPerformance, PerformanceData } from "@/types/financial"
+import type { ConsolidatedPerformance, PerformanceData } from "@/types/financial/performance"
 
 export type ImportResult = {
   success: number
