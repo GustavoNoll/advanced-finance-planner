@@ -16,6 +16,7 @@ import {
 } from "@/utils/benchmark-calculator"
 import type { PerformanceData } from "@/types/financial"
 import { useCurrency } from "@/contexts/CurrencyContext"
+import { calculateCompoundedRates } from "@/lib/financial-math"
 
 interface AssetReturnsTableProps {
   performanceData: PerformanceData[]
@@ -114,14 +115,18 @@ export function AssetReturnsTable({ performanceData }: AssetReturnsTableProps) {
     return value
   }
 
+  // Helper function to normalize currency to 'BRL' | 'USD'
+  const normalizeCurrency = (currency: string | null | undefined): 'BRL' | 'USD' => {
+    if (currency === 'USD' || currency === 'Dolar') return 'USD'
+    return 'BRL'
+  }
+
   // Helper function to calculate compound return
+  // Uses the financial-math function which correctly compounds rates starting from 1
   const calculateCompoundReturn = useCallback((returns: number[]): number => {
     if (returns.length === 0) return 0
-    const result = returns.reduce((acc, r) => {
-      const validR = ensureValidNumber(r)
-      return (1 + acc) * (1 + validR) - 1
-    }, 0)
-    return ensureValidNumber(result)
+    const validReturns = returns.map(r => ensureValidNumber(r))
+    return ensureValidNumber(calculateCompoundedRates(validReturns))
   }, [])
 
   // Pre-compute asset returns for all assets
@@ -154,12 +159,19 @@ export function AssetReturnsTable({ performanceData }: AssetReturnsTableProps) {
       }
       
       // Month return: return from most recent competencia
+      // Use yield if available (already adjusted), otherwise use rate
       const lastMonthData = allAssetData.find(item => item.period === mostRecentCompetencia)
-      const originalCurrency = (lastMonthData?.currency === 'USD' || lastMonthData?.currency === 'Dolar') ? 'USD' : 'BRL'
+      const originalCurrency = normalizeCurrency(lastMonthData?.currency)
       let monthReturn = 0
-      if (lastMonthData && lastMonthData.rate) {
-        const rateValue = safeParseFloat(lastMonthData.rate) / 100
-        monthReturn = ensureValidNumber(adjustReturnWithFX(rateValue, mostRecentCompetencia, originalCurrency))
+      if (lastMonthData) {
+        // Prefer yield over rate as yield is already calculated and may be more accurate
+        if (lastMonthData.yield !== null && lastMonthData.yield !== undefined) {
+          const yieldValue = safeParseFloat(String(lastMonthData.yield))
+          monthReturn = ensureValidNumber(adjustReturnWithFX(yieldValue, mostRecentCompetencia, originalCurrency))
+        } else if (lastMonthData.rate) {
+          const rateValue = safeParseFloat(lastMonthData.rate) / 100
+          monthReturn = ensureValidNumber(adjustReturnWithFX(rateValue, mostRecentCompetencia, originalCurrency))
+        }
       }
       
       // Year return: compound return for the year of most recent competencia
@@ -171,10 +183,16 @@ export function AssetReturnsTable({ performanceData }: AssetReturnsTableProps) {
       })
       
       const yearMonthlyReturns = sortedYearData.map(item => {
-        const moeda = (item.currency === 'USD' || item.currency === 'Dolar') ? 'USD' : 'BRL'
-        if (!item.rate) return 0
-        const rateValue = safeParseFloat(item.rate) / 100
-        return ensureValidNumber(adjustReturnWithFX(rateValue, item.period || '', moeda))
+        const moeda = normalizeCurrency(item.currency)
+        // Prefer yield over rate as yield is already calculated and may be more accurate
+        if (item.yield !== null && item.yield !== undefined) {
+          const yieldValue = safeParseFloat(String(item.yield))
+          return ensureValidNumber(adjustReturnWithFX(yieldValue, item.period || '', moeda))
+        } else if (item.rate) {
+          const rateValue = safeParseFloat(item.rate) / 100
+          return ensureValidNumber(adjustReturnWithFX(rateValue, item.period || '', moeda))
+        }
+        return 0
       })
       const yearReturn = calculateCompoundReturn(yearMonthlyReturns)
       
@@ -187,10 +205,16 @@ export function AssetReturnsTable({ performanceData }: AssetReturnsTableProps) {
         })
       
       const inceptionMonthlyReturns = sortedAllData.map(item => {
-        const moeda = (item.currency === 'USD' || item.currency === 'Dolar') ? 'USD' : 'BRL'
-        if (!item.rate) return 0
-        const rateValue = safeParseFloat(item.rate) / 100
-        return ensureValidNumber(adjustReturnWithFX(rateValue, item.period || '', moeda))
+        const moeda = normalizeCurrency(item.currency)
+        // Prefer yield over rate as yield is already calculated and may be more accurate
+        if (item.yield !== null && item.yield !== undefined) {
+          const yieldValue = safeParseFloat(String(item.yield))
+          return ensureValidNumber(adjustReturnWithFX(yieldValue, item.period || '', moeda))
+        } else if (item.rate) {
+          const rateValue = safeParseFloat(item.rate) / 100
+          return ensureValidNumber(adjustReturnWithFX(rateValue, item.period || '', moeda))
+        }
+        return 0
       })
       const inceptionReturn = calculateCompoundReturn(inceptionMonthlyReturns)
       
@@ -223,7 +247,7 @@ export function AssetReturnsTable({ performanceData }: AssetReturnsTableProps) {
   // Calculate total patrimonio for allocation percentage
   const totalPatrimonio = useMemo(() => {
     return finalPeriodData.reduce((sum, item) => {
-      const originalCurrency = (item.currency === 'USD' || item.currency === 'Dolar') ? 'USD' : 'BRL'
+      const originalCurrency = normalizeCurrency(item.currency)
       return sum + convertValue(item.position || 0, item.period || '', originalCurrency)
     }, 0)
   }, [finalPeriodData, convertValue])
@@ -333,12 +357,16 @@ export function AssetReturnsTable({ performanceData }: AssetReturnsTableProps) {
     // Get only assets from the most recent competencia for monthly return calculation
     const lastMonthAssets = allStrategyData.filter(item => item.period === mostRecentCompetencia)
     
-    // Calculate weighted return with FX adjustments
+      // Calculate weighted return with FX adjustments
       const lastMonthWeightedReturn = lastMonthAssets.reduce((sum, asset) => {
-        const moedaOriginal = (asset.currency === 'USD' || asset.currency === 'Dolar') ? 'USD' : 'BRL'
+        const moedaOriginal = normalizeCurrency(asset.currency)
         const posicaoConvertida = ensureValidNumber(convertValue(asset.position || 0, mostRecentCompetencia, moedaOriginal))
         let rendimentoAjustado = 0
-        if (asset.rate) {
+        // Prefer yield over rate as yield is already calculated and may be more accurate
+        if (asset.yield !== null && asset.yield !== undefined) {
+          const yieldValue = safeParseFloat(String(asset.yield))
+          rendimentoAjustado = ensureValidNumber(adjustReturnWithFX(yieldValue, mostRecentCompetencia, moedaOriginal))
+        } else if (asset.rate) {
           const rateValue = safeParseFloat(asset.rate) / 100
           rendimentoAjustado = ensureValidNumber(adjustReturnWithFX(rateValue, mostRecentCompetencia, moedaOriginal))
         }
@@ -346,7 +374,7 @@ export function AssetReturnsTable({ performanceData }: AssetReturnsTableProps) {
       }, 0)
       
       const lastMonthTotalPosition = lastMonthAssets.reduce((sum, asset) => {
-        const moedaOriginal = (asset.currency === 'USD' || asset.currency === 'Dolar') ? 'USD' : 'BRL'
+        const moedaOriginal = normalizeCurrency(asset.currency)
         return sum + ensureValidNumber(convertValue(asset.position || 0, mostRecentCompetencia, moedaOriginal))
       }, 0)
       
@@ -376,10 +404,14 @@ export function AssetReturnsTable({ performanceData }: AssetReturnsTableProps) {
         const competenciaAssets = competenciaGroups[competencia]
         
         const weightedReturn = competenciaAssets.reduce((sum, asset) => {
-          const moedaOriginal = (asset.currency === 'USD' || asset.currency === 'Dolar') ? 'USD' : 'BRL'
+          const moedaOriginal = normalizeCurrency(asset.currency)
           const posicaoConvertida = ensureValidNumber(convertValue(asset.position || 0, competencia, moedaOriginal))
           let rendimentoAjustado = 0
-          if (asset.rate) {
+          // Prefer yield over rate as yield is already calculated and may be more accurate
+          if (asset.yield !== null && asset.yield !== undefined) {
+            const yieldValue = safeParseFloat(String(asset.yield))
+            rendimentoAjustado = ensureValidNumber(adjustReturnWithFX(yieldValue, competencia, moedaOriginal))
+          } else if (asset.rate) {
             const rateValue = safeParseFloat(asset.rate) / 100
             rendimentoAjustado = ensureValidNumber(adjustReturnWithFX(rateValue, competencia, moedaOriginal))
           }
@@ -387,7 +419,7 @@ export function AssetReturnsTable({ performanceData }: AssetReturnsTableProps) {
         }, 0)
         
         const totalPosition = competenciaAssets.reduce((sum, asset) => {
-          const moedaOriginal = (asset.currency === 'USD' || asset.currency === 'Dolar') ? 'USD' : 'BRL'
+          const moedaOriginal = normalizeCurrency(asset.currency)
           return sum + ensureValidNumber(convertValue(asset.position || 0, competencia, moedaOriginal))
         }, 0)
         
@@ -402,10 +434,14 @@ export function AssetReturnsTable({ performanceData }: AssetReturnsTableProps) {
         const competenciaAssets = competenciaGroups[competencia]
         
         const weightedReturn = competenciaAssets.reduce((sum, asset) => {
-          const moedaOriginal = (asset.currency === 'USD' || asset.currency === 'Dolar') ? 'USD' : 'BRL'
+          const moedaOriginal = normalizeCurrency(asset.currency)
           const posicaoConvertida = ensureValidNumber(convertValue(asset.position || 0, competencia, moedaOriginal))
           let rendimentoAjustado = 0
-          if (asset.rate) {
+          // Prefer yield over rate as yield is already calculated and may be more accurate
+          if (asset.yield !== null && asset.yield !== undefined) {
+            const yieldValue = safeParseFloat(String(asset.yield))
+            rendimentoAjustado = ensureValidNumber(adjustReturnWithFX(yieldValue, competencia, moedaOriginal))
+          } else if (asset.rate) {
             const rateValue = safeParseFloat(asset.rate) / 100
             rendimentoAjustado = ensureValidNumber(adjustReturnWithFX(rateValue, competencia, moedaOriginal))
           }
@@ -413,7 +449,7 @@ export function AssetReturnsTable({ performanceData }: AssetReturnsTableProps) {
         }, 0)
         
         const totalPosition = competenciaAssets.reduce((sum, asset) => {
-          const moedaOriginal = (asset.currency === 'USD' || asset.currency === 'Dolar') ? 'USD' : 'BRL'
+          const moedaOriginal = normalizeCurrency(asset.currency)
           return sum + ensureValidNumber(convertValue(asset.position || 0, competencia, moedaOriginal))
         }, 0)
         
@@ -441,7 +477,7 @@ export function AssetReturnsTable({ performanceData }: AssetReturnsTableProps) {
   const strategyTotals = useMemo(() => {
     return Object.entries(groupedData).map(([strategy, assets]) => {
       const totalPosition = assets.reduce((sum, asset) => {
-        const moedaOriginal = (asset.currency === 'USD' || asset.currency === 'Dolar') ? 'USD' : 'BRL'
+        const moedaOriginal = normalizeCurrency(asset.currency)
         const posicaoConvertida = convertValue(asset.position || 0, asset.period || '', moedaOriginal)
         return sum + posicaoConvertida
       }, 0)
@@ -503,6 +539,10 @@ export function AssetReturnsTable({ performanceData }: AssetReturnsTableProps) {
     return null
   }
 
+  console.log('strategyTotals', strategyTotals)
+  console.log('performanceData', performanceData)
+  console.log('groupedData', groupedData)
+  
   return (
     <Card className="bg-gradient-to-br from-white/95 via-slate-50/90 to-blue-50/80 dark:from-gray-900/90 dark:via-gray-900/80 dark:to-slate-800/70 backdrop-blur-sm rounded-xl shadow-lg border border-gray-100/50 dark:border-gray-800 hover:border-blue-100/50 dark:hover:border-gray-700">
       <CardHeader>
@@ -757,14 +797,14 @@ export function AssetReturnsTable({ performanceData }: AssetReturnsTableProps) {
                                   </div>
                                   {visibleColumns.allocation && <div className="text-right text-foreground text-xs">
                                     {totalPatrimonio > 0 ? (() => {
-                                      const originalCurrency = (item.currency === 'USD' || item.currency === 'Dolar') ? 'USD' : 'BRL'
+                                      const originalCurrency = normalizeCurrency(item.currency)
                                       const posicaoConvertida = convertValue(item.position || 0, item.period || '', originalCurrency)
                                       return `${((posicaoConvertida / totalPatrimonio) * 100).toFixed(2)}%`
                                     })() : "-"}
                                   </div>}
                                   {visibleColumns.grossBalance && <div className="text-right text-foreground">
                                     {(() => {
-                                      const originalCurrency = (item.currency === 'USD' || item.currency === 'Dolar') ? 'USD' : 'BRL'
+                                      const originalCurrency = normalizeCurrency(item.currency)
                                       const posicaoConvertida = convertValue(item.position || 0, item.period || '', originalCurrency)
                                       return formatCurrency(posicaoConvertida)
                                     })()}
@@ -794,7 +834,7 @@ export function AssetReturnsTable({ performanceData }: AssetReturnsTableProps) {
                                     {item.maturity_date ? new Date(item.maturity_date).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' }) : "-"}
                                   </div>}
                                   {visibleColumns.currency && <div className="text-center text-foreground text-xs">
-                                    {item.currency === 'USD' || item.currency === 'Dolar' ? (
+                                    {normalizeCurrency(item.currency) === 'USD' ? (
                                       <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300">
                                         USD
                                       </span>

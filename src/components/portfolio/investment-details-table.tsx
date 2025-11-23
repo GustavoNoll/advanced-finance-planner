@@ -40,6 +40,7 @@ export function InvestmentDetailsTable({ performanceData }: InvestmentDetailsTab
   const { t } = useTranslation()
   const { currency, adjustReturnWithFX, convertValue } = useCurrency()
   const currentLocale = currency === 'BRL' ? 'pt-BR' : 'en-US'
+  console.log('performanceData', performanceData)
   
   /**
    * Traduz uma chave de estratégia agrupada usando i18n
@@ -150,7 +151,7 @@ export function InvestmentDetailsTable({ performanceData }: InvestmentDetailsTab
         const originalCurrency = (x.currency === 'USD' || x.currency === 'Dolar') ? 'USD' : 'BRL'
         const position = Number(x.position || 0)
         const positionConverted = convertValue(position, period, originalCurrency)
-        const yieldValue = Number(x.yield || 0) / 100 // Convert to decimal
+        const yieldValue = Number(x.yield || 0)
         const yieldAdjusted = adjustReturnWithFX(yieldValue, period, originalCurrency)
         return s + (yieldAdjusted * positionConverted)
       }, 0)

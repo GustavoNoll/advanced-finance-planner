@@ -56,7 +56,7 @@ function PortfolioPerformance({
   const { t } = useTranslation();
   const { isBroker } = useAuth();
   const { currency: displayCurrency, convertValue, adjustReturnWithFX, formatCurrency: formatCurrencyContext } = useCurrency();
-  const { consolidatedData, performanceData, loading, error, totalAssets, totalYield, previousAssets, assetsChangePercent, hasData, refetch } = usePerformanceData(profile?.id || null)
+  const { consolidatedData, performanceData, loading, error, totalAssets, totalYield, previousAssets, assetsChangePercent, hasData, refetch, mostRecentPeriod } = usePerformanceData(profile?.id || null)
   const { latestImport } = useStatementImports(profile?.id || null)
   const [filteredPeriodRange, setFilteredPeriodRange] = useState<{ start: string; end: string }>({ start: "", end: "" })
   const [yearTotals, setYearTotals] = useState<{ totalPatrimonio: number; totalRendimento: number } | null>(null)
@@ -65,14 +65,20 @@ function PortfolioPerformance({
   const navigate = useNavigate()
 
   // Get current month inflation rate based on investment plan currency
-  // Uses the most recent available month (inflation data may have delay)
+  // Uses the most recent period from performance data to get inflation for that specific month
   const currentMonthInflation = useMemo(() => {
-    if (!investmentPlan) return null
+    if (!investmentPlan || !mostRecentPeriod) return null
     
-    const now = new Date()
-    // Get last 3 months to ensure we have data (inflation data usually has 1-2 month delay)
-    const startDate = new Date(now.getFullYear(), now.getMonth() - 3, 1)
-    const endDate = new Date(now.getFullYear(), now.getMonth(), 1)
+    // Parse the period (MM/YYYY format) to get month and year
+    const [monthStr, yearStr] = mostRecentPeriod.split('/')
+    const month = parseInt(monthStr, 10)
+    const year = parseInt(yearStr, 10)
+    
+    if (isNaN(month) || isNaN(year)) return null
+    
+    // Create date range for that specific month
+    const startDate = new Date(year, month - 1, 1)
+    const endDate = new Date(year, month, 1) // First day of next month (exclusive)
     
     const startDateStr = `01/${String(startDate.getMonth() + 1).padStart(2, '0')}/${startDate.getFullYear()}`
     const endDateStr = `01/${String(endDate.getMonth() + 1).padStart(2, '0')}/${endDate.getFullYear()}`
@@ -93,10 +99,15 @@ function PortfolioPerformance({
     
     if (rates.length === 0) return null
     
-    // Get the most recent rate (last item in array, as rates are sorted by date)
-    const mostRecentRate = rates[rates.length - 1]
-    return mostRecentRate ? mostRecentRate.monthlyRate : null
-  }, [investmentPlan])
+    // Find the rate for the specific month we're looking for
+    const rateForPeriod = rates.find(rate => {
+      const rateDate = rate.date
+      return rateDate.getFullYear() === year && rateDate.getMonth() === month - 1
+    })
+    
+    // If exact match not found, use the most recent rate in the range
+    return rateForPeriod ? rateForPeriod.monthlyRate : (rates[rates.length - 1]?.monthlyRate ?? null)
+  }, [investmentPlan, mostRecentPeriod])
 
   // Calculate target return: Expected Return - Current Month Inflation
   const targetReturn = useMemo(() => {
@@ -414,6 +425,19 @@ function PortfolioPerformance({
           <PerformanceChart 
             consolidatedData={consolidatedData}
             targetReturnIpcaPlus={targetReturn !== null ? targetReturn.toString() : undefined}
+            targetReturnIpcaPlusText={(() => {
+              if (!investmentPlan || !activeMicroPlan) return undefined
+              const currency = investmentPlan.currency
+              const expectedReturn = activeMicroPlan.expected_return
+              
+              if (currency === 'USD') {
+                return `CPI+${expectedReturn}%`
+              } else if (currency === 'EUR') {
+                return `CPI+${expectedReturn}%`
+              } else {
+                return `IPCA+${expectedReturn}%`
+              }
+            })()}
           />
         )}
         
