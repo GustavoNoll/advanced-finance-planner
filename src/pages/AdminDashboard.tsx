@@ -33,6 +33,7 @@ import { useAdminStatementImports } from '@/hooks/useStatementImports';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { InvestmentPolicyInsights } from '@/components/admin/InvestmentPolicyInsights';
 import { BrokerAccessAnalysis } from '@/components/admin/BrokerAccessAnalysis';
+import { tabTriggerActiveBlue } from '@/lib/gradient-classes';
 
 interface BrokerMetrics {
   id: string;
@@ -1650,28 +1651,28 @@ export const AdminDashboard = () => {
             <TabsList className="grid w-full grid-cols-4 bg-transparent gap-1 h-auto">
               <TabsTrigger 
                 value="planning"
-                className="rounded-lg data-[state=active]:bg-white dark:data-[state=active]:bg-slate-800 data-[state=active]:text-slate-900 dark:data-[state=active]:text-slate-100 data-[state=active]:shadow-sm text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 transition-all duration-200 py-2.5 flex items-center justify-center gap-2"
+                className={`rounded-lg ${tabTriggerActiveBlue} text-slate-600 dark:text-slate-400 data-[state=active]:text-white dark:data-[state=active]:text-white hover:text-slate-900 dark:hover:text-slate-100 transition-all duration-200 py-2.5 flex items-center justify-center gap-2`}
               >
                 <Target className="h-4 w-4" />
                 {t('adminDashboard.tabs.planning')}
               </TabsTrigger>
               <TabsTrigger 
                 value="imports"
-                className="rounded-lg data-[state=active]:bg-white dark:data-[state=active]:bg-slate-800 data-[state=active]:text-slate-900 dark:data-[state=active]:text-slate-100 data-[state=active]:shadow-sm text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 transition-all duration-200 py-2.5 flex items-center justify-center gap-2"
+                className={`rounded-lg ${tabTriggerActiveBlue} text-slate-600 dark:text-slate-400 data-[state=active]:text-white dark:data-[state=active]:text-white hover:text-slate-900 dark:hover:text-slate-100 transition-all duration-200 py-2.5 flex items-center justify-center gap-2`}
               >
                 <Upload className="h-4 w-4" />
                 {t('adminDashboard.tabs.imports')}
               </TabsTrigger>
               <TabsTrigger 
                 value="policy"
-                className="rounded-lg data-[state=active]:bg-white dark:data-[state=active]:bg-slate-800 data-[state=active]:text-slate-900 dark:data-[state=active]:text-slate-100 data-[state=active]:shadow-sm text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 transition-all duration-200 py-2.5 flex items-center justify-center gap-2"
+                className={`rounded-lg ${tabTriggerActiveBlue} text-slate-600 dark:text-slate-400 data-[state=active]:text-white dark:data-[state=active]:text-white hover:text-slate-900 dark:hover:text-slate-100 transition-all duration-200 py-2.5 flex items-center justify-center gap-2`}
               >
                 <Shield className="h-4 w-4" />
                 {t('adminDashboard.tabs.policy')}
               </TabsTrigger>
               <TabsTrigger 
                 value="access"
-                className="rounded-lg data-[state=active]:bg-white dark:data-[state=active]:bg-slate-800 data-[state=active]:text-slate-900 dark:data-[state=active]:text-slate-100 data-[state=active]:shadow-sm text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 transition-all duration-200 py-2.5 flex items-center justify-center gap-2"
+                className={`rounded-lg ${tabTriggerActiveBlue} text-slate-600 dark:text-slate-400 data-[state=active]:text-white dark:data-[state=active]:text-white hover:text-slate-900 dark:hover:text-slate-100 transition-all duration-200 py-2.5 flex items-center justify-center gap-2`}
               >
                 <Eye className="h-4 w-4" />
                 {t('adminDashboard.tabs.access')}

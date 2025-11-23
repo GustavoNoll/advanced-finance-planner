@@ -93,6 +93,12 @@ export const tabTriggerActiveGreen =
   "data-[state=active]:bg-gradient-to-br data-[state=active]:from-emerald-400 data-[state=active]:via-emerald-500 data-[state=active]:to-teal-500 dark:data-[state=active]:from-emerald-600 dark:data-[state=active]:via-emerald-700 dark:data-[state=active]:to-teal-700 data-[state=active]:text-white data-[state=active]:shadow-md data-[state=active]:hover:shadow-lg"
 
 /**
+ * Active tab trigger with blue gradient - For TabsTrigger components in dashboards
+ */
+export const tabTriggerActiveBlue = 
+  "data-[state=active]:bg-gradient-to-br data-[state=active]:from-blue-500 data-[state=active]:via-blue-600 data-[state=active]:to-indigo-600 dark:data-[state=active]:from-blue-600 dark:data-[state=active]:via-blue-700 dark:data-[state=active]:to-indigo-700 data-[state=active]:text-white dark:data-[state=active]:text-white data-[state=active]:shadow-md"
+
+/**
  * Icon container for rentabilidade view mode (green)
  */
 export const iconContainerRentabilidade = 
