@@ -147,7 +147,7 @@ export function useAdminStatementImports(days: number = 30): UseAdminStatementIm
         running: imports?.filter(i => i.status === 'running').length || 0,
         created: imports?.filter(i => i.status === 'created').length || 0,
         consolidated: imports?.filter(i => i.import_type === 'consolidated').length || 0,
-        detailed: imports?.filter(i => i.import_type === 'detailed').length || 0
+        detailed: imports?.filter(i => i.import_type === 'assets').length || 0
       };
       setStatementImportsStats(stats);
 

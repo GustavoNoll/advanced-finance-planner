@@ -3091,7 +3091,7 @@ export const enUS = {
     },
     type: {
       consolidated: 'Consolidated',
-      detailed: 'Detailed'
+      assets: 'Assets'
     },
     table: {
       title: 'Imports',
