@@ -1,4 +1,4 @@
-import { useState, useRef } from "react"
+import { useState, useRef, useEffect } from "react"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -26,6 +26,14 @@ interface FormErrors {
   account_name?: string
 }
 
+function formatPeriodInput(value: string) {
+  const digitsOnly = value.replace(/\D/g, '').slice(0, 6)
+  if (digitsOnly.length <= 2) return digitsOnly
+  const month = digitsOnly.slice(0, 2)
+  const year = digitsOnly.slice(2)
+  return `${month}/${year}`
+}
+
 export function BrokerPDFImportDialog({ open, onOpenChange, clients }: BrokerPDFImportDialogProps) {
   const { t } = useTranslation()
   const { toast } = useToast()
@@ -42,6 +50,20 @@ export function BrokerPDFImportDialog({ open, onOpenChange, clients }: BrokerPDF
   })
   const [errors, setErrors] = useState<FormErrors>({})
   const pdfFileInputRef = useRef<HTMLInputElement>(null)
+
+  useEffect(() => {
+    if (!clients?.length) return
+    if (formData.cliente) return
+    const defaultClient = clients[0]
+    setFormData(prev => ({
+      ...prev,
+      cliente: defaultClient.id,
+      client_id: defaultClient.id
+    }))
+    if (errors.cliente) {
+      setErrors(prev => ({ ...prev, cliente: undefined }))
+    }
+  }, [clients, formData.cliente, errors.cliente])
 
   const handlePDFFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0]
@@ -92,10 +114,6 @@ export function BrokerPDFImportDialog({ open, onOpenChange, clients }: BrokerPDF
       if (!periodRegex.test(formData.period)) {
         newErrors.period = t('portfolioPerformance.dataManagement.importPDF.formErrors.periodInvalid') || 'Formato inválido. Use MM/YYYY'
       }
-    }
-
-    if (!formData.account_name) {
-      newErrors.account_name = t('portfolioPerformance.dataManagement.importPDF.formErrors.accountNameRequired') || 'Este campo é obrigatório'
     }
 
     setErrors(newErrors)
@@ -220,6 +238,7 @@ export function BrokerPDFImportDialog({ open, onOpenChange, clients }: BrokerPDF
                 onValueChange={handleClientChange}
                 placeholder={t('portfolioPerformance.dataManagement.importPDF.formPlaceholders.client') || 'Selecione o cliente'}
                 error={!!errors.cliente}
+                disabled
               />
               {errors.cliente && (
                 <p className="text-xs text-red-500">{errors.cliente}</p>
@@ -231,21 +250,18 @@ export function BrokerPDFImportDialog({ open, onOpenChange, clients }: BrokerPDF
               <Label htmlFor="institution">
                 {t('portfolioPerformance.dataManagement.importPDF.formLabels.institution') || 'Instituição'}
               </Label>
-              <Select
+              <ClientSelect
+                options={ACCEPTED_INSTITUTIONS.map(inst => ({
+                  id: inst.name,
+                  label: inst.name
+                }))}
                 value={formData.institution}
                 onValueChange={handleInstitutionChange}
-              >
-                <SelectTrigger id="institution" className={errors.institution ? 'border-red-500' : ''}>
-                  <SelectValue placeholder={t('portfolioPerformance.dataManagement.importPDF.formPlaceholders.institution') || 'Selecione a instituição'} />
-                </SelectTrigger>
-                <SelectContent>
-                  {ACCEPTED_INSTITUTIONS.map((inst) => (
-                    <SelectItem key={inst.name} value={inst.name}>
-                      {inst.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+                placeholder={t('portfolioPerformance.dataManagement.importPDF.formPlaceholders.institution') || 'Selecione a instituição'}
+                searchPlaceholder={t('portfolioPerformance.dataManagement.importPDF.searchInstitution') || 'Buscar instituição...'}
+                emptyMessage={t('portfolioPerformance.dataManagement.importPDF.noInstitutionFound') || 'Nenhuma instituição encontrada.'}
+                error={!!errors.institution}
+              />
               {errors.institution && (
                 <p className="text-xs text-red-500">{errors.institution}</p>
               )}
@@ -289,7 +305,8 @@ export function BrokerPDFImportDialog({ open, onOpenChange, clients }: BrokerPDF
                 placeholder="09/2025"
                 value={formData.period}
                 onChange={(e) => {
-                  setFormData(prev => ({ ...prev, period: e.target.value }))
+                  const formattedPeriod = formatPeriodInput(e.target.value)
+                  setFormData(prev => ({ ...prev, period: formattedPeriod }))
                   if (errors.period) {
                     setErrors(prev => ({ ...prev, period: undefined }))
                   }

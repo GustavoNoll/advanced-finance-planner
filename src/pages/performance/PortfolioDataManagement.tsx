@@ -10,7 +10,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Checkbox } from "@/components/ui/checkbox"
-import { ArrowLeft, Plus, Edit, Trash2, Save, X, CheckSquare, BarChart3, Info, CheckCircle2, AlertCircle, XCircle, Tag, DollarSign, Copy, ArrowUp, ArrowDown, ChevronDown, Settings2, ArrowRight, Settings } from "lucide-react"
+import { ArrowLeft, Plus, Edit, Trash2, Save, X, CheckSquare, BarChart3, Info, CheckCircle2, AlertCircle, XCircle, Tag, DollarSign, Copy, ArrowUp, ArrowDown, ChevronDown, Settings2, ArrowRight, Settings, FileText } from "lucide-react"
 import { useTranslation } from "react-i18next"
 import { PortfolioPerformanceService } from "@/services/portfolio-performance.service"
 import { useToast } from "@/hooks/use-toast"
@@ -26,12 +26,14 @@ import { usePortfolioDataManagement } from "./hooks/usePortfolioDataManagement"
 import { VerificationSummary } from "./components/VerificationSummary"
 import { ImportDialog } from "./components/ImportDialog"
 import { ExportDialog } from "./components/ExportDialog"
-import { Filter as FilterIcon } from "lucide-react"
+import { BrokerPDFImportDialog } from "./components/BrokerPDFImportDialog"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { Separator } from "@/components/ui/separator"
 import type { Filter as FilterType, FilterableField } from "./types/portfolio-data-management.types"
 import { operatorsByFieldType } from "./utils/filters"
 import { isValidAssetClass } from "./utils/valid-asset-classes"
+import { supabase } from "@/lib/supabase"
+import type { UserProfileInvestment } from "@/types/broker-dashboard"
 
 type ConsolidatedRow = ConsolidatedPerformance
 type PerformanceRow = PerformanceData
@@ -62,6 +64,8 @@ export default function PortfolioDataManagement() {
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false)
   const [deleteMultipleConfirmOpen, setDeleteMultipleConfirmOpen] = useState(false)
   const [itemToDelete, setItemToDelete] = useState<{ type: 'consolidated' | 'detailed', id: string } | null>(null)
+  const [isPdfDialogOpen, setIsPdfDialogOpen] = useState(false)
+  const [pdfClients, setPdfClients] = useState<UserProfileInvestment[]>([])
   
   // Export dialog
   const [isExportDialogOpen, setIsExportDialogOpen] = useState(false)
@@ -107,6 +111,40 @@ export default function PortfolioDataManagement() {
   }, [profileId, toast, t])
 
   useEffect(() => { fetchData() }, [fetchData])
+
+  useEffect(() => {
+    if (!profileId) return
+    let isMounted = true
+
+    const loadClientForPdfImport = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('user_profiles_investment')
+          .select('*')
+          .eq('profile_id', profileId)
+
+        if (error) throw error
+        if (!isMounted) return
+        setPdfClients(data || [])
+      } catch (error) {
+        if (!isMounted) return
+        console.error('Error fetching client for PDF import:', error)
+        toast({
+          title: t('brokerDashboard.messages.error.title') || t('portfolioPerformance.dataManagement.error') || 'Erro',
+          description: error instanceof Error
+            ? error.message
+            : t('brokerDashboard.messages.error.fetchClients') || 'Erro ao buscar clientes',
+          variant: 'destructive'
+        })
+      }
+    }
+
+    loadClientForPdfImport()
+
+    return () => {
+      isMounted = false
+    }
+  }, [profileId, toast, t])
 
   // Sincronizar valores temporários quando as configurações mudarem
   useEffect(() => {
@@ -1660,6 +1698,20 @@ export default function PortfolioDataManagement() {
                               <Button
                                 variant="ghost"
                                 size="sm"
+                                className="h-8 w-8 p-0 text-primary hover:text-primary"
+                                onClick={() => {
+                                  openEdit('detailed', {
+                                    ...r,
+                                    id: undefined
+                                  } as PerformanceRow)
+                                }}
+                                title={t('portfolioPerformance.dataManagement.createFromRecord') || 'Criar novo registro com base neste'}
+                              >
+                                <Copy className="h-4 w-4" />
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="sm"
                                 className="h-8 w-8 p-0"
                                 onClick={() => openEdit('detailed', r)}
                                 title={t('portfolioPerformance.dataManagement.edit') || 'Editar'}
@@ -1885,6 +1937,13 @@ export default function PortfolioDataManagement() {
         type={importDialogType}
         profileId={profileId || ''}
         onImportSuccess={fetchData}
+        onOpenPdfDialog={() => setIsPdfDialogOpen(true)}
+      />
+
+      <BrokerPDFImportDialog
+        open={isPdfDialogOpen}
+        onOpenChange={setIsPdfDialogOpen}
+        clients={pdfClients}
       />
 
       {/* Export Dialog */}
