@@ -50,20 +50,63 @@ export function BrokerPDFImportDialog({ open, onOpenChange, clients }: BrokerPDF
   })
   const [errors, setErrors] = useState<FormErrors>({})
   const pdfFileInputRef = useRef<HTMLInputElement>(null)
+  
+  // Auto-disable when there's only one client
 
+  console.log('clients', clients)
+  const isClientLocked = clients?.length === 1
+
+  // Reset form when dialog closes
   useEffect(() => {
-    if (!clients?.length) return
-    if (formData.cliente) return
-    const defaultClient = clients[0]
-    setFormData(prev => ({
-      ...prev,
-      cliente: defaultClient.id,
-      client_id: defaultClient.id
-    }))
-    if (errors.cliente) {
-      setErrors(prev => ({ ...prev, cliente: undefined }))
+    if (!open) {
+      setFormData({
+        cliente: '',
+        client_id: '',
+        types: ['Performance'],
+        institution: '',
+        currency: 'BRL',
+        period: '',
+        account_name: ''
+      })
+      setPdfFile(null)
+      setErrors({})
     }
-  }, [clients, formData.cliente, errors.cliente])
+  }, [open])
+
+  // Handle form initialization when dialog opens
+  useEffect(() => {
+    if (!open) return
+    
+    // Reset form when dialog opens
+    const resetForm = {
+      cliente: '',
+      client_id: '',
+      types: ['Performance'] as string[],
+      institution: '',
+      currency: 'BRL' as const,
+      period: '',
+      account_name: ''
+    }
+
+    // Pre-select client if there's only one
+    if (isClientLocked && clients?.length === 1) {
+      const defaultClient = clients[0]
+      if (defaultClient) {
+        setFormData({
+          ...resetForm,
+          cliente: defaultClient.id,
+          client_id: defaultClient.id
+        })
+      } else {
+        setFormData(resetForm)
+      }
+    } else {
+      // When there are multiple clients, keep form empty for user selection
+      setFormData(resetForm)
+    }
+    
+    setErrors({})
+  }, [open, isClientLocked, clients])
 
   const handlePDFFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0]
@@ -162,19 +205,8 @@ export function BrokerPDFImportDialog({ open, onOpenChange, clients }: BrokerPDF
         description: t('portfolioPerformance.dataManagement.import.pdfSuccessDescription') || 'O PDF foi enviado para processamento. Os dados serão importados em breve.',
       })
       setTimeout(() => {
-        onOpenChange(false)
         setIsImporting(false)
-        setPdfFile(null)
-        setFormData({
-          cliente: '',
-          client_id: '',
-          types: ['Performance'],
-          institution: '',
-          currency: 'BRL',
-          period: '',
-          account_name: ''
-        })
-        setErrors({})
+        onOpenChange(false)
       }, 2000)
     } catch (error) {
       console.error('PDF import error:', error)
@@ -238,7 +270,7 @@ export function BrokerPDFImportDialog({ open, onOpenChange, clients }: BrokerPDF
                 onValueChange={handleClientChange}
                 placeholder={t('portfolioPerformance.dataManagement.importPDF.formPlaceholders.client') || 'Selecione o cliente'}
                 error={!!errors.cliente}
-                disabled
+                disabled={isClientLocked}
               />
               {errors.cliente && (
                 <p className="text-xs text-red-500">{errors.cliente}</p>
@@ -347,17 +379,6 @@ export function BrokerPDFImportDialog({ open, onOpenChange, clients }: BrokerPDF
                 className="flex-1"
                 onClick={() => {
                   onOpenChange(false)
-                  setPdfFile(null)
-                  setFormData({
-                    cliente: '',
-                    client_id: '',
-                    types: ['Performance'],
-                    institution: '',
-                    currency: 'BRL',
-                    period: '',
-                    account_name: ''
-                  })
-                  setErrors({})
                 }}
                 disabled={isImporting}
               >
