@@ -1,45 +1,83 @@
 import { useState, useRef, useEffect } from "react"
 import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
 import { Check, ChevronDown, Search } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { useTranslation } from "react-i18next"
 import type { UserProfileInvestment } from "@/types/broker-dashboard"
 
+interface SelectOption {
+  id: string
+  label: string
+  searchTerms?: string[]
+}
+
 interface ClientSelectProps {
-  clients: UserProfileInvestment[]
+  clients?: UserProfileInvestment[]
+  options?: SelectOption[]
   value: string
   onValueChange: (value: string) => void
   placeholder?: string
   error?: boolean
+  searchPlaceholder?: string
+  emptyMessage?: string
+  disabled?: boolean
 }
 
-export function ClientSelect({ clients, value, onValueChange, placeholder, error }: ClientSelectProps) {
+export function ClientSelect({
+  clients = [],
+  options,
+  value,
+  onValueChange,
+  placeholder,
+  error,
+  searchPlaceholder,
+  emptyMessage,
+  disabled = false
+}: ClientSelectProps) {
   const { t } = useTranslation()
   const [open, setOpen] = useState(false)
   const [searchTerm, setSearchTerm] = useState("")
   const containerRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
 
-  const sortedClients = [...clients].sort((a, b) => {
-    const nameA = (a.profile_name || a.email || a.id).toLowerCase()
-    const nameB = (b.profile_name || b.email || b.id).toLowerCase()
-    return nameA.localeCompare(nameB)
+  const normalizedOptions: SelectOption[] = (options
+    ? options
+    : clients.map(client => ({
+        id: client.id,
+        label: client.profile_name || client.email || client.id,
+        searchTerms: [
+          client.profile_name || '',
+          client.email || '',
+          client.id
+        ].filter(Boolean)
+      }))
+  ).map(option => ({
+    ...option,
+    searchTerms: option.searchTerms && option.searchTerms.length > 0
+      ? option.searchTerms
+      : [option.label]
+  }))
+
+  const sortedOptions = [...normalizedOptions].sort((a, b) => {
+    const labelA = a.label.toLowerCase()
+    const labelB = b.label.toLowerCase()
+    return labelA.localeCompare(labelB)
   })
 
-  const selectedClient = sortedClients.find(client => client.id === value)
-  const displayValue = selectedClient 
-    ? (selectedClient.profile_name || selectedClient.email || selectedClient.id)
-    : ""
+  const selectedOption = sortedOptions.find(option => option.id === value)
+  const displayValue = selectedOption ? selectedOption.label : ""
 
-  // Filtrar clientes baseado no termo de busca
-  const filteredClients = sortedClients.filter((client) => {
-    const clientName = (client.profile_name || client.email || client.id).toLowerCase()
-    const email = (client.email || "").toLowerCase()
-    const id = client.id.toLowerCase()
+  const filteredOptions = sortedOptions.filter(option => {
     const search = searchTerm.toLowerCase()
-    return clientName.includes(search) || email.includes(search) || id.includes(search)
+    return option.searchTerms?.some(term => term.toLowerCase().includes(search))
   })
+
+  const resolvedPlaceholder = placeholder
+    || t('portfolioPerformance.dataManagement.importPDF.formPlaceholders.client')
+  const resolvedSearchPlaceholder = searchPlaceholder
+    || t('portfolioPerformance.dataManagement.importPDF.searchClient')
+  const resolvedEmptyMessage = emptyMessage
+    || t('portfolioPerformance.dataManagement.importPDF.noClientFound')
 
   // Fechar dropdown ao clicar fora
   useEffect(() => {
@@ -73,22 +111,30 @@ export function ClientSelect({ clients, value, onValueChange, placeholder, error
     <div ref={containerRef} className="relative w-full" onClick={(e) => e.stopPropagation()}>
       {/* Input de exibição */}
       <div
-        onClick={() => setOpen(!open)}
+        onClick={() => {
+          if (disabled) return
+          setOpen(!open)
+        }}
         className={cn(
-          "flex h-10 w-full items-center justify-between rounded-md border bg-background px-3 py-2 text-sm ring-offset-background cursor-pointer",
+          "flex h-10 w-full items-center justify-between rounded-md border bg-background px-3 py-2 text-sm ring-offset-background",
           "focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2",
+          disabled && "cursor-not-allowed bg-muted",
+          !disabled && "cursor-pointer",
           error && "border-red-500",
           !displayValue && "text-muted-foreground"
         )}
+        aria-disabled={disabled}
       >
         <span className="truncate">
-          {displayValue || placeholder || t('portfolioPerformance.dataManagement.importPDF.formPlaceholders.client')}
+          {displayValue || resolvedPlaceholder}
         </span>
-        <ChevronDown className={cn("h-4 w-4 shrink-0 opacity-50 transition-transform", open && "rotate-180")} />
+        {!disabled && (
+          <ChevronDown className={cn("h-4 w-4 shrink-0 opacity-50 transition-transform", open && "rotate-180")} />
+        )}
       </div>
 
       {/* Dropdown */}
-      {open && (
+      {open && !disabled && (
         <div className="absolute z-[100] mt-1 w-full rounded-md border bg-popover shadow-md">
           {/* Campo de busca */}
           <div className="border-b p-2">
@@ -97,7 +143,7 @@ export function ClientSelect({ clients, value, onValueChange, placeholder, error
               <Input
                 ref={inputRef}
                 type="text"
-                placeholder={t('portfolioPerformance.dataManagement.importPDF.searchClient') || "Buscar cliente..."}
+                placeholder={resolvedSearchPlaceholder || "Buscar..."}
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 onClick={(e) => e.stopPropagation()}
@@ -109,18 +155,17 @@ export function ClientSelect({ clients, value, onValueChange, placeholder, error
 
           {/* Lista de clientes */}
           <div className="max-h-[300px] overflow-y-auto p-1">
-            {filteredClients.length === 0 ? (
+            {filteredOptions.length === 0 ? (
               <div className="py-6 text-center text-sm text-muted-foreground">
-                {t('portfolioPerformance.dataManagement.importPDF.noClientFound') || "Nenhum cliente encontrado."}
+                {resolvedEmptyMessage || "Nenhum resultado encontrado."}
               </div>
             ) : (
-              filteredClients.map((client) => {
-                const clientName = client.profile_name || client.email || client.id
-                const isSelected = value === client.id
+              filteredOptions.map((option) => {
+                const isSelected = value === option.id
                 return (
                   <div
-                    key={client.id}
-                    onClick={() => handleSelect(client.id)}
+                    key={option.id}
+                    onClick={() => handleSelect(option.id)}
                     className={cn(
                       "relative flex w-full cursor-pointer select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none",
                       "hover:bg-accent hover:text-accent-foreground",
@@ -133,7 +178,7 @@ export function ClientSelect({ clients, value, onValueChange, placeholder, error
                         isSelected ? "opacity-100" : "opacity-0"
                       )}
                     />
-                    {clientName}
+                      {option.label}
                   </div>
                 )
               })
