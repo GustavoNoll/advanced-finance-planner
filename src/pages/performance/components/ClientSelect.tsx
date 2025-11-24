@@ -129,7 +129,7 @@ export function ClientSelect({
           {displayValue || resolvedPlaceholder}
         </span>
         {!disabled && (
-          <ChevronDown className={cn("h-4 w-4 shrink-0 opacity-50 transition-transform", open && "rotate-180")} />
+        <ChevronDown className={cn("h-4 w-4 shrink-0 opacity-50 transition-transform", open && "rotate-180")} />
         )}
       </div>
 

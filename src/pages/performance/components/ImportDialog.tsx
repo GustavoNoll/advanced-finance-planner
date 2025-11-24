@@ -154,35 +154,35 @@ export function ImportDialog({ open, onOpenChange, type, profileId, onImportSucc
               </div>
 
               {/* Opção 3: Importar extrato */}
-              <div className="border rounded-lg p-4 space-y-3">
-                <div className="flex items-start gap-3">
-                  <div className="flex-shrink-0 w-10 h-10 rounded-full bg-purple-100 dark:bg-purple-900/20 flex items-center justify-center">
-                    <FileText className="h-5 w-5 text-purple-600 dark:text-purple-400" />
-                  </div>
-                  <div className="flex-1">
-                    <h4 className="font-medium text-sm">
+                <div className="border rounded-lg p-4 space-y-3">
+                  <div className="flex items-start gap-3">
+                    <div className="flex-shrink-0 w-10 h-10 rounded-full bg-purple-100 dark:bg-purple-900/20 flex items-center justify-center">
+                      <FileText className="h-5 w-5 text-purple-600 dark:text-purple-400" />
+                    </div>
+                    <div className="flex-1">
+                      <h4 className="font-medium text-sm">
                       {t('portfolioPerformance.dataManagement.import.uploadPDF') || '3. Importar extrato'}
-                    </h4>
-                    <p className="text-xs text-muted-foreground mt-1">
+                      </h4>
+                      <p className="text-xs text-muted-foreground mt-1">
                       {t('portfolioPerformance.dataManagement.import.uploadPDFDescription') || 'Envie um extrato para processamento automático.'}
-                    </p>
+                      </p>
+                    </div>
                   </div>
-                </div>
-                <Button
-                  variant="default"
-                  className="w-full"
-                  disabled={isImporting}
-                  onClick={() => {
+                  <Button
+                    variant="default"
+                    className="w-full"
+                    disabled={isImporting}
+                    onClick={() => {
                     onOpenChange(false)
                     setTimeout(() => {
                       onOpenPdfDialog()
                     }, 150)
-                  }}
-                >
-                  <FileText className="mr-2 h-4 w-4" />
+                    }}
+                  >
+                    <FileText className="mr-2 h-4 w-4" />
                   {t('portfolioPerformance.dataManagement.import.selectPDF') || 'Importar extrato'}
-                </Button>
-              </div>
+                      </Button>
+                    </div>
             </div>
 
             {/* Informação adicional */}
