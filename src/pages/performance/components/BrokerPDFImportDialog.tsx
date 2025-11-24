@@ -52,8 +52,6 @@ export function BrokerPDFImportDialog({ open, onOpenChange, clients }: BrokerPDF
   const pdfFileInputRef = useRef<HTMLInputElement>(null)
   
   // Auto-disable when there's only one client
-
-  console.log('clients', clients)
   const isClientLocked = clients?.length === 1
 
   // Reset form when dialog closes
