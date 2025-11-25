@@ -1,4 +1,4 @@
-import { useMemo, useState, useEffect } from "react"
+import { useMemo, useState, useEffect, useCallback } from "react"
 import { useParams, useNavigate } from "react-router-dom"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -8,6 +8,9 @@ import { Checkbox } from "@/components/ui/checkbox"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { ArrowLeft, CheckCircle2, Settings2 } from "lucide-react"
 import { useTranslation } from "react-i18next"
+import { CurrencyToggle } from "@/components/portfolio/currency-toggle"
+import { useCurrency } from "@/contexts/CurrencyContext"
+import { getIndicatorCurrencyConfig, IndicatorCurrency } from "@/lib/bcb-api"
 import ipcaData from '../../data/ipca-historical.json'
 import cdiData from '../../data/cdi-historical.json'
 import ibovData from '../../data/ibov-historical.json'
@@ -18,6 +21,7 @@ import btcData from '../../data/btc-historical.json'
 import usCpiData from '../../data/us-cpi-historical.json'
 import euroCpiData from '../../data/euro-cpi-historical.json'
 import ptaxData from '../../data/ptax-historical.json'
+import ihfaData from '../../data/ihfa-historical.json'
 
 interface BCBResponse {
   data: string
@@ -45,10 +49,12 @@ interface ConsolidatedData {
   usCpiRaw: number | null
   euroCpiMonthly: number | null
   euroCpiRaw: number | null
+  ihfaMonthly: number | null
+  ihfaRaw: number | null
 }
 
 type ColumnKey = 'competence' | 'ptax' | 'cdiMonthly' | 'cdiAccumulated' | 'ipcaMonthly' | 'ipcaAccumulated' | 
-  'ibovMonthly' | 'sp500Monthly' | 'tBondMonthly' | 'goldMonthly' | 'btcMonthly' | 'usCpiMonthly' | 'euroCpiMonthly'
+  'ibovMonthly' | 'sp500Monthly' | 'tBondMonthly' | 'goldMonthly' | 'btcMonthly' | 'usCpiMonthly' | 'euroCpiMonthly' | 'ihfaMonthly'
 
 function parseBrazilianDate(dateStr: string): Date {
   const [day, month, year] = dateStr.split('/').map(Number)
@@ -65,6 +71,7 @@ export default function MarketDataAudit() {
   const { id: profileId } = useParams<{ id: string }>()
   const navigate = useNavigate()
   const { t } = useTranslation()
+  const { currency: displayCurrency, convertValue, adjustReturnWithFX, formatCurrency: formatCurrencyContext } = useCurrency()
 
   const [consolidatedData, setConsolidatedData] = useState<ConsolidatedData[]>([])
   const [loading, setLoading] = useState(true)
@@ -78,6 +85,7 @@ export default function MarketDataAudit() {
     btc: BCBResponse[]
     usCpi: BCBResponse[]
     euroCpi: BCBResponse[]
+    ihfa: BCBResponse[]
   }>({
     ptax: [],
     ibov: [],
@@ -85,7 +93,8 @@ export default function MarketDataAudit() {
     gold: [],
     btc: [],
     usCpi: [],
-    euroCpi: []
+    euroCpi: [],
+    ihfa: []
   })
   
   // Paginação
@@ -110,7 +119,8 @@ export default function MarketDataAudit() {
     goldMonthly: false,
     btcMonthly: false,
     usCpiMonthly: false,
-    euroCpiMonthly: false
+    euroCpiMonthly: false,
+    ihfaMonthly: false
   })
   const [showColumnSelector, setShowColumnSelector] = useState(false)
 
@@ -124,7 +134,8 @@ export default function MarketDataAudit() {
         gold: [],
         btc: [],
         usCpi: [],
-        euroCpi: []
+        euroCpi: [],
+        ihfa: []
       }
 
       try {
@@ -176,6 +187,13 @@ export default function MarketDataAudit() {
         // Arquivo não existe ainda
       }
 
+      try {
+        const ihfaRaw = await import('../../data/ihfa-raw-historical.json')
+        raw.ihfa = (ihfaRaw.default || ihfaRaw) as BCBResponse[]
+      } catch {
+        // Arquivo não existe ainda
+      }
+
       setRawData(raw)
     }
 
@@ -203,6 +221,8 @@ export default function MarketDataAudit() {
       usCpiRaw?: number
       euroCpiMonthly?: number
       euroCpiRaw?: number
+      ihfaMonthly?: number
+      ihfaRaw?: number
     }>()
     
     // Processar CDI
@@ -304,6 +324,17 @@ export default function MarketDataAudit() {
       dataMap.get(competence)!.euroCpiMonthly = value
     })
 
+    // Processar IHFA
+    ihfaData.forEach(item => {
+      const date = parseBrazilianDate(item.data)
+      const competence = formatCompetence(date)
+      const value = parseFloat(item.valor)
+      if (!dataMap.has(competence)) {
+        dataMap.set(competence, { competence })
+      }
+      dataMap.get(competence)!.ihfaMonthly = value
+    })
+
     // Processar PTAX
     ptaxData.forEach(item => {
       const date = parseBrazilianDate(item.data)
@@ -393,6 +424,17 @@ export default function MarketDataAudit() {
       dataMap.get(competence)!.euroCpiRaw = value
     })
 
+    // IHFA Raw
+    rawData.ihfa.forEach(item => {
+      const date = parseBrazilianDate(item.data)
+      const competence = formatCompetence(date)
+      const value = parseFloat(item.valor)
+      if (!dataMap.has(competence)) {
+        dataMap.set(competence, { competence })
+      }
+      dataMap.get(competence)!.ihfaRaw = value
+    })
+
     // Ordenar competências
     const sortedCompetences = Array.from(dataMap.keys()).sort((a, b) => {
       const [monthA, yearA] = a.split('/').map(Number)
@@ -462,7 +504,9 @@ export default function MarketDataAudit() {
         usCpiMonthly: entry.usCpiMonthly as number | null ?? null,
         usCpiRaw: entry.usCpiRaw as number | null ?? null,
         euroCpiMonthly: entry.euroCpiMonthly as number | null ?? null,
-        euroCpiRaw: entry.euroCpiRaw as number | null ?? null
+        euroCpiRaw: entry.euroCpiRaw as number | null ?? null,
+        ihfaMonthly: entry.ihfaMonthly as number | null ?? null,
+        ihfaRaw: entry.ihfaRaw as number | null ?? null
       }
     })
   }, [rawData])
@@ -477,9 +521,84 @@ export default function MarketDataAudit() {
     loadData()
   }, [processedData])
 
+  // Função helper para converter valor raw baseado na configuração
+  const convertRawValue = useCallback((
+    value: number | null,
+    indicatorName: string,
+    competence: string
+  ): number | null => {
+    if (value === null) return null
+    
+    const config = getIndicatorCurrencyConfig(indicatorName)
+    if (!config) return value
+    
+    // Se é índice, não converte
+    if (config.rawCurrency === 'INDEX') return value
+    
+    // Se a moeda original é igual à moeda de exibição, não converte
+    if (config.rawCurrency === displayCurrency) return value
+    
+    // Converter se necessário
+    const originalCurrency = config.rawCurrency === 'USD' ? 'USD' : 'BRL'
+    return convertValue(value, competence, originalCurrency)
+  }, [displayCurrency, convertValue])
+
+  // Função helper para ajustar porcentagem baseado na configuração
+  const adjustVariation = useCallback((
+    value: number | null,
+    indicatorName: string,
+    competence: string
+  ): number | null => {
+    if (value === null) return null
+    
+    const config = getIndicatorCurrencyConfig(indicatorName)
+    if (!config) return value
+    
+    // Se não precisa ajuste FX, retorna como está
+    if (!config.needsFXAdjustment) return value
+    
+    // Se a moeda da variação é igual à moeda de exibição, não ajusta
+    if (config.variationCurrency === displayCurrency) return value
+    
+    // Ajustar com efeito cambial
+    const originalCurrency = config.variationCurrency === 'USD' ? 'USD' : 'BRL'
+    return adjustReturnWithFX(value / 100, competence, originalCurrency) * 100
+  }, [displayCurrency, adjustReturnWithFX])
+
+  // Converter dados com base na moeda selecionada usando configuração centralizada
+  const convertedData = useMemo(() => {
+    return consolidatedData.map(item => {
+      const competence = item.competence
+      const converted = { ...item }
+
+      // Converter valores raw usando configuração centralizada
+      converted.sp500Raw = convertRawValue(converted.sp500Raw, 'sp500', competence)
+      converted.goldRaw = convertRawValue(converted.goldRaw, 'gold', competence)
+      converted.btcRaw = convertRawValue(converted.btcRaw, 'btc', competence)
+      converted.ptaxRaw = convertRawValue(converted.ptaxRaw, 'ptax', competence)
+      converted.ibovRaw = convertRawValue(converted.ibovRaw, 'ibov', competence)
+      converted.ihfaRaw = convertRawValue(converted.ihfaRaw, 'ihfa', competence)
+      converted.usCpiRaw = convertRawValue(converted.usCpiRaw, 'usCpi', competence)
+      converted.euroCpiRaw = convertRawValue(converted.euroCpiRaw, 'euroCpi', competence)
+
+      // Ajustar porcentagens usando configuração centralizada
+      converted.sp500Monthly = adjustVariation(converted.sp500Monthly, 'sp500', competence)
+      converted.goldMonthly = adjustVariation(converted.goldMonthly, 'gold', competence)
+      converted.btcMonthly = adjustVariation(converted.btcMonthly, 'btc', competence)
+      converted.ptax = adjustVariation(converted.ptax, 'ptax', competence)
+      converted.ibovMonthly = adjustVariation(converted.ibovMonthly, 'ibov', competence)
+      converted.ihfaMonthly = adjustVariation(converted.ihfaMonthly, 'ihfa', competence)
+      converted.usCpiMonthly = adjustVariation(converted.usCpiMonthly, 'usCpi', competence)
+      converted.euroCpiMonthly = adjustVariation(converted.euroCpiMonthly, 'euroCpi', competence)
+      converted.tBondMonthly = adjustVariation(converted.tBondMonthly, 'tBond', competence)
+
+      return converted
+    })
+  }, [consolidatedData, convertRawValue, adjustVariation])
+
   // Filtrar dados por ano
   const filteredData = useMemo(() => {
-    let filtered = consolidatedData
+    let filtered = convertedData
 
     if (filterStartYear) {
       const startYear = Number(filterStartYear)
@@ -498,7 +617,7 @@ export default function MarketDataAudit() {
     }
 
     return filtered
-  }, [consolidatedData, filterStartYear, filterEndYear])
+  }, [convertedData, filterStartYear, filterEndYear])
 
   // Dados paginados
   const paginatedData = useMemo(() => {
@@ -512,28 +631,29 @@ export default function MarketDataAudit() {
   // Estatísticas
   const stats = useMemo(() => {
     return {
-      ptax: consolidatedData.filter(d => d.ptax !== null).length,
-      cdi: consolidatedData.filter(d => d.cdiMonthly !== null).length,
-      ipca: consolidatedData.filter(d => d.ipcaMonthly !== null).length,
-      ibov: consolidatedData.filter(d => d.ibovMonthly !== null).length,
-      sp500: consolidatedData.filter(d => d.sp500Monthly !== null).length,
-      tBond: consolidatedData.filter(d => d.tBondMonthly !== null).length,
-      gold: consolidatedData.filter(d => d.goldMonthly !== null).length,
-      btc: consolidatedData.filter(d => d.btcMonthly !== null).length,
-      usCpi: consolidatedData.filter(d => d.usCpiMonthly !== null).length,
-      euroCpi: consolidatedData.filter(d => d.euroCpiMonthly !== null).length
+      ptax: convertedData.filter(d => d.ptax !== null).length,
+      cdi: convertedData.filter(d => d.cdiMonthly !== null).length,
+      ipca: convertedData.filter(d => d.ipcaMonthly !== null).length,
+      ibov: convertedData.filter(d => d.ibovMonthly !== null).length,
+      sp500: convertedData.filter(d => d.sp500Monthly !== null).length,
+      tBond: convertedData.filter(d => d.tBondMonthly !== null).length,
+      gold: convertedData.filter(d => d.goldMonthly !== null).length,
+      btc: convertedData.filter(d => d.btcMonthly !== null).length,
+      usCpi: convertedData.filter(d => d.usCpiMonthly !== null).length,
+      euroCpi: convertedData.filter(d => d.euroCpiMonthly !== null).length,
+      ihfa: convertedData.filter(d => d.ihfaMonthly !== null).length
     }
-  }, [consolidatedData])
+  }, [convertedData])
 
   // Lista de anos disponíveis para filtro
   const availableYears = useMemo(() => {
     const years = new Set<number>()
-    consolidatedData.forEach(d => {
+    convertedData.forEach(d => {
       const [, year] = d.competence.split('/').map(Number)
       years.add(year)
     })
     return Array.from(years).sort((a, b) => b - a)
-  }, [consolidatedData])
+  }, [convertedData])
 
   const formatPercentage = (value: number | null): string => {
     if (value === null) return '-'
@@ -543,22 +663,28 @@ export default function MarketDataAudit() {
 
   const formatCurrency = (value: number | null): string => {
     if (value === null) return '-'
-    return new Intl.NumberFormat('pt-BR', {
-      style: 'currency',
-      currency: 'BRL',
-      minimumFractionDigits: 4,
-      maximumFractionDigits: 4
-    }).format(value)
+    // Usar formatCurrencyContext mas com 4 decimais para PTAX
+    if (displayCurrency === 'BRL') {
+      return new Intl.NumberFormat('pt-BR', {
+        style: 'currency',
+        currency: 'BRL',
+        minimumFractionDigits: 4,
+        maximumFractionDigits: 4
+      }).format(value)
+    } else {
+      return new Intl.NumberFormat('en-US', {
+        style: 'currency',
+        currency: 'USD',
+        minimumFractionDigits: 4,
+        maximumFractionDigits: 4
+      }).format(value)
+    }
   }
 
   const formatCurrencyUSD = (value: number | null): string => {
     if (value === null) return '-'
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2
-    }).format(value)
+    // Usar formatCurrencyContext mas com 2 decimais para valores USD
+    return formatCurrencyContext(value)
   }
 
   const formatNumber = (value: number | null, decimals: number = 2): string => {
@@ -600,6 +726,25 @@ export default function MarketDataAudit() {
     return formatWithVariation(rawValue, variation, formatCurrencyUSD)
   }
 
+  // Formata PTAX sempre em BRL (não converte)
+  const formatPTAX = (value: number | null): string => {
+    if (value === null) return '-'
+    return new Intl.NumberFormat('pt-BR', {
+      style: 'currency',
+      currency: 'BRL',
+      minimumFractionDigits: 4,
+      maximumFractionDigits: 4
+    }).format(value)
+  }
+
+  // Formata PTAX com variação sempre em BRL
+  const formatPTAXWithVariation = (
+    rawValue: number | null,
+    variation: number | null
+  ): string => {
+    return formatWithVariation(rawValue, variation, formatPTAX)
+  }
+
   const columnLabels: Record<ColumnKey, string> = {
     competence: t('portfolioPerformance.marketDataAudit.competence'),
     ptax: t('portfolioPerformance.marketDataAudit.ptaxRate'),
@@ -613,7 +758,8 @@ export default function MarketDataAudit() {
     goldMonthly: t('portfolioPerformance.marketDataAudit.goldMonthly'),
     btcMonthly: t('portfolioPerformance.marketDataAudit.btcMonthly'),
     usCpiMonthly: t('portfolioPerformance.marketDataAudit.usCpiMonthly'),
-    euroCpiMonthly: t('portfolioPerformance.marketDataAudit.euroCpiMonthly')
+    euroCpiMonthly: t('portfolioPerformance.marketDataAudit.euroCpiMonthly'),
+    ihfaMonthly: t('portfolioPerformance.marketDataAudit.ihfaMonthly')
   }
 
   return (
@@ -629,6 +775,9 @@ export default function MarketDataAudit() {
               {t('portfolioPerformance.marketDataAudit.subtitle')}
             </p>
           </div>
+        </div>
+        <div className="flex items-center gap-2">
+          <CurrencyToggle />
         </div>
       </div>
 
@@ -685,7 +834,7 @@ export default function MarketDataAudit() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              {stats.sp500 + stats.tBond + stats.gold + stats.btc + stats.usCpi + stats.euroCpi}
+              {stats.sp500 + stats.tBond + stats.gold + stats.btc + stats.usCpi + stats.euroCpi + stats.ihfa}
             </div>
             <p className="text-xs text-muted-foreground">{t('portfolioPerformance.marketDataAudit.competencesLoaded')}</p>
           </CardContent>
@@ -853,6 +1002,9 @@ export default function MarketDataAudit() {
                   {visibleColumns.euroCpiMonthly && (
                     <TableHead>{t('portfolioPerformance.marketDataAudit.euroCpiMonthly')}</TableHead>
                   )}
+                  {visibleColumns.ihfaMonthly && (
+                    <TableHead>{t('portfolioPerformance.marketDataAudit.ihfaMonthly')}</TableHead>
+                  )}
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -876,7 +1028,7 @@ export default function MarketDataAudit() {
                       )}
                       {visibleColumns.ptax && (
                         <TableCell className={row.ptax !== null && row.ptax >= 0 ? 'text-green-600' : row.ptax !== null ? 'text-red-600' : ''}>
-                          {formatCurrencyWithVariation(row.ptaxRaw, row.ptax)}
+                          {formatPTAXWithVariation(row.ptaxRaw, row.ptax)}
                         </TableCell>
                       )}
                       {visibleColumns.cdiMonthly && (
@@ -932,6 +1084,11 @@ export default function MarketDataAudit() {
                       {visibleColumns.euroCpiMonthly && (
                         <TableCell className={row.euroCpiMonthly !== null && row.euroCpiMonthly >= 0 ? 'text-green-600' : row.euroCpiMonthly !== null ? 'text-red-600' : ''}>
                           {formatWithVariation(row.euroCpiRaw, row.euroCpiMonthly)}
+                        </TableCell>
+                      )}
+                      {visibleColumns.ihfaMonthly && (
+                        <TableCell className={row.ihfaMonthly !== null && row.ihfaMonthly >= 0 ? 'text-green-600' : row.ihfaMonthly !== null ? 'text-red-600' : ''}>
+                          {formatWithVariation(row.ihfaRaw, row.ihfaMonthly)}
                         </TableCell>
                       )}
                     </TableRow>

@@ -11,6 +11,8 @@ import {
   fetchBTCPrices,
   fetchIRFMRates,
   fetchIFIXRates,
+  getIndicatorCurrencyConfig,
+  getPTAXByCompetencia,
 } from '@/lib/bcb-api'
 import { calculateCompoundedRates } from '@/lib/financial-math'
 
@@ -434,6 +436,94 @@ function formatDateForBCB(date: Date): string {
 }
 
 /**
+ * Mapeia BenchmarkType para o nome do indicador usado na configuração
+ */
+function benchmarkTypeToIndicatorName(benchmarkType: BenchmarkType): string {
+  const mapping: Record<BenchmarkType, string> = {
+    'CDI': 'cdi',
+    'IPCA': 'ipca',
+    'US_CPI': 'usCpi',
+    'EUR_CPI': 'euroCpi',
+    'IRF-M': 'irfm',
+    'IFIX': 'ifix',
+    'IBOV': 'ibov',
+    'SP500': 'sp500',
+    'T-Bond': 'tBond',
+    'Gold': 'gold',
+    'BTC': 'btc',
+  }
+  return mapping[benchmarkType] || 'cdi'
+}
+
+/**
+ * Obtém competência anterior (mês anterior)
+ */
+function getPreviousCompetence(competence: string): string {
+  const [mes, ano] = competence.split('/').map(Number)
+  if (mes === 1) {
+    return `12/${ano - 1}`
+  }
+  const mesAnterior = mes - 1
+  return `${String(mesAnterior).padStart(2, '0')}/${ano}`
+}
+
+// Cache para getCotacaoByCompetencia
+let cachedGetCotacaoByCompetencia: ((competencia: string) => number | null) | null = null
+
+/**
+ * Ajusta retorno com efeito cambial baseado na configuração centralizada
+ */
+function adjustReturnWithFX(
+  returnPercent: number,
+  benchmarkType: BenchmarkType,
+  competence: string,
+  displayCurrency: CurrencyCode
+): number {
+  const indicatorName = benchmarkTypeToIndicatorName(benchmarkType)
+  const config = getIndicatorCurrencyConfig(indicatorName)
+  
+  if (!config) return returnPercent
+  
+  // Se não precisa ajuste FX, retorna como está
+  if (!config.needsFXAdjustment) return returnPercent
+  
+  // Se a moeda da variação é igual à moeda de exibição, não ajusta
+  if (config.variationCurrency === displayCurrency) return returnPercent
+  
+  // Se é índice, não ajusta
+  if (config.variationCurrency === 'INDEX') return returnPercent
+  
+  // Obter cotações PTAX (cache para evitar múltiplas chamadas)
+  if (!cachedGetCotacaoByCompetencia) {
+    cachedGetCotacaoByCompetencia = getPTAXByCompetencia()
+  }
+  const getCotacaoByCompetencia = cachedGetCotacaoByCompetencia
+  
+  const competenciaAnterior = getPreviousCompetence(competence)
+  const cotacaoAtual = getCotacaoByCompetencia(competence)
+  const cotacaoAnterior = getCotacaoByCompetencia(competenciaAnterior)
+  
+  if (!cotacaoAtual || !cotacaoAnterior) {
+    return returnPercent
+  }
+  
+  // Variação cambial no mês (decimal, não percentual)
+  const fxVariation = (cotacaoAtual - cotacaoAnterior) / cotacaoAnterior
+  
+  // USD → BRL: Adicionar efeito cambial
+  if (config.variationCurrency === 'USD' && displayCurrency === 'BRL') {
+    return (1 + returnPercent) * (1 + fxVariation) - 1
+  }
+  
+  // BRL → USD: Remover efeito cambial
+  if (config.variationCurrency === 'BRL' && displayCurrency === 'USD') {
+    return ((1 + returnPercent) / (1 + fxVariation)) - 1
+  }
+  
+  return returnPercent
+}
+
+/**
  * Calcula retornos mensais a partir de preços
  */
 function calculateReturnsFromPrices(
@@ -461,89 +551,182 @@ function calculateReturnsFromPrices(
 
 /**
  * Busca dados históricos do benchmark
+ * @param benchmarkType - Tipo do benchmark
+ * @param startDate - Data inicial (DD/MM/YYYY)
+ * @param endDate - Data final (DD/MM/YYYY)
+ * @param displayCurrency - Moeda de exibição (opcional, para ajuste FX)
  */
 function fetchBenchmarkData(
   benchmarkType: BenchmarkType,
   startDate: string,
-  endDate: string
-): Array<{ date: Date; return: number }> {
+  endDate: string,
+  displayCurrency?: CurrencyCode
+): Array<{ date: Date; return: number; competence: string }> {
   switch (benchmarkType) {
     case 'CDI': {
-      return fetchCDIRates(startDate, endDate).map(item => ({
-        date: item.date,
-        return: item.monthlyRate / 100, // CDI já vem em percentual
-      }))
+      return fetchCDIRates(startDate, endDate).map(item => {
+        const competence = `${String(item.date.getMonth() + 1).padStart(2, '0')}/${item.date.getFullYear()}`
+        let returnValue = item.monthlyRate / 100 // CDI já vem em percentual
+        if (displayCurrency) {
+          returnValue = adjustReturnWithFX(returnValue, benchmarkType, competence, displayCurrency)
+        }
+        return {
+          date: item.date,
+          return: returnValue,
+          competence
+        }
+      })
     }
     
     case 'IPCA': {
-      return fetchIPCARates(startDate, endDate).map(item => ({
-        date: item.date,
-        return: item.monthlyRate / 100, // IPCA já vem em percentual
-      }))
+      return fetchIPCARates(startDate, endDate).map(item => {
+        const competence = `${String(item.date.getMonth() + 1).padStart(2, '0')}/${item.date.getFullYear()}`
+        let returnValue = item.monthlyRate / 100 // IPCA já vem em percentual
+        if (displayCurrency) {
+          returnValue = adjustReturnWithFX(returnValue, benchmarkType, competence, displayCurrency)
+        }
+        return {
+          date: item.date,
+          return: returnValue,
+          competence
+        }
+      })
     }
     
     case 'US_CPI': {
-      return fetchUSCPIRates(startDate, endDate).map(item => ({
-        date: item.date,
-        return: item.monthlyRate / 100, // US CPI já vem em percentual
-      }))
+      return fetchUSCPIRates(startDate, endDate).map(item => {
+        const competence = `${String(item.date.getMonth() + 1).padStart(2, '0')}/${item.date.getFullYear()}`
+        let returnValue = item.monthlyRate / 100 // US CPI já vem em percentual
+        if (displayCurrency) {
+          returnValue = adjustReturnWithFX(returnValue, benchmarkType, competence, displayCurrency)
+        }
+        return {
+          date: item.date,
+          return: returnValue,
+          competence
+        }
+      })
     }
     
     case 'EUR_CPI': {
-      return fetchEuroCPIRates(startDate, endDate).map(item => ({
-        date: item.date,
-        return: item.monthlyRate / 100, // Euro CPI já vem em percentual
-      }))
+      return fetchEuroCPIRates(startDate, endDate).map(item => {
+        const competence = `${String(item.date.getMonth() + 1).padStart(2, '0')}/${item.date.getFullYear()}`
+        let returnValue = item.monthlyRate / 100 // Euro CPI já vem em percentual
+        if (displayCurrency) {
+          returnValue = adjustReturnWithFX(returnValue, benchmarkType, competence, displayCurrency)
+        }
+        return {
+          date: item.date,
+          return: returnValue,
+          competence
+        }
+      })
     }
     
     case 'IBOV': {
       // IBOV já vem como variação mensal percentual (calculada ao salvar)
-      return fetchIBOVRates(startDate, endDate).map(item => ({
-        date: item.date,
-        return: item.monthlyRate / 100, // IBOV já vem em percentual
-      }))
+      return fetchIBOVRates(startDate, endDate).map(item => {
+        const competence = `${String(item.date.getMonth() + 1).padStart(2, '0')}/${item.date.getFullYear()}`
+        let returnValue = item.monthlyRate / 100 // IBOV já vem em percentual
+        if (displayCurrency) {
+          returnValue = adjustReturnWithFX(returnValue, benchmarkType, competence, displayCurrency)
+        }
+        return {
+          date: item.date,
+          return: returnValue,
+          competence
+        }
+      })
     }
     
     case 'SP500': {
-      return fetchSP500Prices(startDate, endDate).map(item => ({
-        date: item.date,
-        return: item.monthlyRate/100, // SP500 já vem em percentual
-      })) 
+      return fetchSP500Prices(startDate, endDate).map(item => {
+        const competence = `${String(item.date.getMonth() + 1).padStart(2, '0')}/${item.date.getFullYear()}`
+        let returnValue = item.monthlyRate / 100 // SP500 já vem em percentual
+        if (displayCurrency) {
+          returnValue = adjustReturnWithFX(returnValue, benchmarkType, competence, displayCurrency)
+        }
+        return {
+          date: item.date,
+          return: returnValue,
+          competence
+        }
+      }) 
     }
     
     case 'T-Bond': {
-      return fetchTBondPrices(startDate, endDate).map(item => ({
-        date: item.date,
-        return: item.monthlyRate / 100, // T-Bond já vem em percentual
-      }))
+      return fetchTBondPrices(startDate, endDate).map(item => {
+        const competence = `${String(item.date.getMonth() + 1).padStart(2, '0')}/${item.date.getFullYear()}`
+        let returnValue = item.monthlyRate / 100 // T-Bond já vem em percentual
+        if (displayCurrency) {
+          returnValue = adjustReturnWithFX(returnValue, benchmarkType, competence, displayCurrency)
+        }
+        return {
+          date: item.date,
+          return: returnValue,
+          competence
+        }
+      })
     }
     
     case 'Gold': {
-      return fetchGoldPrices(startDate, endDate).map(item => ({
-        date: item.date,
-        return: item.monthlyRate / 100, // Gold já vem em percentual
-      }))
+      return fetchGoldPrices(startDate, endDate).map(item => {
+        const competence = `${String(item.date.getMonth() + 1).padStart(2, '0')}/${item.date.getFullYear()}`
+        let returnValue = item.monthlyRate / 100 // Gold já vem em percentual
+        if (displayCurrency) {
+          returnValue = adjustReturnWithFX(returnValue, benchmarkType, competence, displayCurrency)
+        }
+        return {
+          date: item.date,
+          return: returnValue,
+          competence
+        }
+      })
     }
 
     case "BTC": {
-      return fetchBTCPrices(startDate, endDate).map(item => ({
-        date: item.date,
-        return: item.monthlyRate / 100, // BTC já vem em percentual
-      }))
+      return fetchBTCPrices(startDate, endDate).map(item => {
+        const competence = `${String(item.date.getMonth() + 1).padStart(2, '0')}/${item.date.getFullYear()}`
+        let returnValue = item.monthlyRate / 100 // BTC já vem em percentual
+        if (displayCurrency) {
+          returnValue = adjustReturnWithFX(returnValue, benchmarkType, competence, displayCurrency)
+        }
+        return {
+          date: item.date,
+          return: returnValue,
+          competence
+        }
+      })
     }
     
     case 'IRF-M': {
-      return fetchIRFMRates(startDate, endDate).map(item => ({
-        date: item.date,
-        return: item.monthlyRate / 100, // IRF-M já vem em percentual
-      }))
+      return fetchIRFMRates(startDate, endDate).map(item => {
+        const competence = `${String(item.date.getMonth() + 1).padStart(2, '0')}/${item.date.getFullYear()}`
+        let returnValue = item.monthlyRate / 100 // IRF-M já vem em percentual
+        if (displayCurrency) {
+          returnValue = adjustReturnWithFX(returnValue, benchmarkType, competence, displayCurrency)
+        }
+        return {
+          date: item.date,
+          return: returnValue,
+          competence
+        }
+      })
     }
     
     case 'IFIX': {
-      return fetchIFIXRates(startDate, endDate).map(item => ({
-        date: item.date,
-        return: item.monthlyRate / 100, // IFIX já vem em percentual
-      }))
+      return fetchIFIXRates(startDate, endDate).map(item => {
+        const competence = `${String(item.date.getMonth() + 1).padStart(2, '0')}/${item.date.getFullYear()}`
+        let returnValue = item.monthlyRate / 100 // IFIX já vem em percentual
+        if (displayCurrency) {
+          returnValue = adjustReturnWithFX(returnValue, benchmarkType, competence, displayCurrency)
+        }
+        return {
+          date: item.date,
+          return: returnValue,
+          competence
+        }
+      })
     }
     
     default:
@@ -626,12 +809,14 @@ function getBenchmarkForGroupedStrategy(
 /**
  * Calcula os retornos do benchmark para os mesmos períodos da estratégia
  * Esta função pode receber tanto o nome da estratégia original quanto o groupedKey
+ * @param displayCurrency - Moeda de exibição (opcional, usa currency como padrão)
  */
 export function calculateBenchmarkReturns(
   strategyName: string,
   currency: CurrencyCode,
   periods: string[],
-  locale: 'pt-BR' | 'en-US' = 'pt-BR'
+  locale: 'pt-BR' | 'en-US' = 'pt-BR',
+  displayCurrency?: CurrencyCode
 ): BenchmarkData | null {
   if (periods.length === 0) return null
   
@@ -651,16 +836,19 @@ export function calculateBenchmarkReturns(
   // Determina o tipo de benchmark usando match flexível
   const benchmarkType: BenchmarkType = findBenchmarkForStrategy(strategyName, currency)
   
-  // Busca os dados históricos do benchmark
-  const benchmarkData = fetchBenchmarkData(benchmarkType, startDate, endDate)
+  // Usa displayCurrency se fornecido, senão usa currency
+  const finalDisplayCurrency = displayCurrency || currency
+  
+  // Busca os dados históricos do benchmark com ajuste FX se necessário
+  const benchmarkData = fetchBenchmarkData(benchmarkType, startDate, endDate, finalDisplayCurrency)
   
   if (benchmarkData.length === 0) return null
   
-  // Agrupa retornos por período (MM/YYYY)
+  // Agrupa retornos por período (MM/YYYY) usando a competence já calculada
   const returnsByPeriod = new Map<string, number[]>()
   
   benchmarkData.forEach(item => {
-    const periodKey = `${String(item.date.getMonth() + 1).padStart(2, '0')}/${item.date.getFullYear()}`
+    const periodKey = item.competence
     if (!returnsByPeriod.has(periodKey)) {
       returnsByPeriod.set(periodKey, [])
     }
@@ -723,13 +911,15 @@ export function calculateBenchmarkReturns(
  * @param currency - A moeda para determinar qual benchmark usar (BRL usa IFIX, USD usa T-Bond, etc.)
  * @param periods - Array de períodos no formato "MM/YYYY"
  * @param locale - Locale para tradução do nome do benchmark
+ * @param displayCurrency - Moeda de exibição (opcional, usa currency como padrão)
  * @returns Dados do benchmark ou null se não houver dados
  */
 export function calculateBenchmarkReturnsByGroupedKey(
   groupedKey: GroupedStrategyKey,
   currency: CurrencyCode,
   periods: string[],
-  locale: 'pt-BR' | 'en-US' = 'pt-BR'
+  locale: 'pt-BR' | 'en-US' = 'pt-BR',
+  displayCurrency?: CurrencyCode
 ): BenchmarkData | null {
   // Determina o tipo de benchmark baseado no groupedKey e currency
   const benchmarkType: BenchmarkType = getBenchmarkForGroupedStrategy(groupedKey, currency)
@@ -761,8 +951,11 @@ export function calculateBenchmarkReturnsByGroupedKey(
   const startDate = formatDateForBCB(periodToDate(firstPeriod))
   const endDate = formatDateForBCB(periodToDate(lastPeriod))
   
-  // Busca os dados históricos do benchmark
-  const benchmarkData = fetchBenchmarkData(benchmarkType, startDate, endDate)
+  // Usa displayCurrency se fornecido, senão usa currency
+  const finalDisplayCurrency = displayCurrency || currency
+  
+  // Busca os dados históricos do benchmark com ajuste FX se necessário
+  const benchmarkData = fetchBenchmarkData(benchmarkType, startDate, endDate, finalDisplayCurrency)
   
   // Se não houver dados, retorna o nome do benchmark com retornos null
   if (benchmarkData.length === 0) {
@@ -777,11 +970,11 @@ export function calculateBenchmarkReturnsByGroupedKey(
     }
   }
   
-  // Agrupa retornos por período (MM/YYYY)
+  // Agrupa retornos por período (MM/YYYY) usando a competence já calculada
   const returnsByPeriod = new Map<string, number[]>()
   
   benchmarkData.forEach(item => {
-    const periodKey = `${String(item.date.getMonth() + 1).padStart(2, '0')}/${item.date.getFullYear()}`
+    const periodKey = item.competence
     if (!returnsByPeriod.has(periodKey)) {
       returnsByPeriod.set(periodKey, [])
     }
