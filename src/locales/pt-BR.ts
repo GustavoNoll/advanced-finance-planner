@@ -2452,6 +2452,7 @@ export const ptBR = {
       btcMonthly: "Bitcoin Mensal",
       usCpiMonthly: "US CPI Mensal",
       euroCpiMonthly: "Euro CPI Mensal",
+      ihfaMonthly: "IHFA Mensal",
       loading: "Carregando...",
       noData: "Nenhum dado disponível",
       loadPtax: "Carregar PTAX",

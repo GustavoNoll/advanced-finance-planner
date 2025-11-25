@@ -9,10 +9,103 @@ import goldData from '../data/gold-historical.json';
 import btcData from '../data/btc-historical.json';
 import irfmData from '../data/irfm-historical.json';
 import ptaxRawData from '../data/ptax-raw-historical.json';
+import ihfaRawData from '../data/ihfa-raw-historical.json';
 
 interface RateData {
   data: string;
   valor: string;
+}
+
+/**
+ * Tipo de indicador para conversão de moeda
+ */
+export type IndicatorCurrency = 'BRL' | 'USD' | 'INDEX'
+
+/**
+ * Configuração de moeda e conversão para cada indicador
+ */
+export interface IndicatorConfig {
+  rawCurrency: IndicatorCurrency // Moeda do valor raw
+  variationCurrency: IndicatorCurrency // Moeda da variação (pode ser INDEX se não precisa ajuste FX)
+  needsFXAdjustment: boolean // Se precisa ajuste de FX nas porcentagens
+}
+
+/**
+ * Configuração centralizada de moedas para todos os indicadores
+ */
+export const INDICATOR_CURRENCY_CONFIG: Record<string, IndicatorConfig> = {
+  // Indicadores brasileiros em BRL
+  ptax: {
+    rawCurrency: 'BRL',
+    variationCurrency: 'INDEX', // PTAX é variação cambial, não precisa ajuste
+    needsFXAdjustment: false
+  },
+  cdi: {
+    rawCurrency: 'INDEX',
+    variationCurrency: 'INDEX',
+    needsFXAdjustment: false
+  },
+  ipca: {
+    rawCurrency: 'INDEX',
+    variationCurrency: 'INDEX',
+    needsFXAdjustment: false
+  },
+  ibov: {
+    rawCurrency: 'INDEX',
+    variationCurrency: 'INDEX',
+    needsFXAdjustment: false
+  },
+  ihfa: {
+    rawCurrency: 'INDEX',
+    variationCurrency: 'INDEX',
+    needsFXAdjustment: false
+  },
+  irfm: {
+    rawCurrency: 'INDEX',
+    variationCurrency: 'INDEX',
+    needsFXAdjustment: false
+  },
+  
+  // Indicadores em USD
+  sp500: {
+    rawCurrency: 'USD',
+    variationCurrency: 'USD',
+    needsFXAdjustment: true
+  },
+  gold: {
+    rawCurrency: 'USD',
+    variationCurrency: 'USD',
+    needsFXAdjustment: true
+  },
+  btc: {
+    rawCurrency: 'USD',
+    variationCurrency: 'USD',
+    needsFXAdjustment: true
+  },
+  tBond: {
+    rawCurrency: 'INDEX',
+    variationCurrency: 'INDEX',
+    needsFXAdjustment: false
+  },
+  
+  // Índices de inflação (não precisam conversão)
+  usCpi: {
+    rawCurrency: 'INDEX',
+    variationCurrency: 'INDEX',
+    needsFXAdjustment: false
+  },
+  euroCpi: {
+    rawCurrency: 'INDEX',
+    variationCurrency: 'INDEX',
+    needsFXAdjustment: false
+  }
+}
+
+/**
+ * Obtém a configuração de moeda de um indicador
+ */
+export function getIndicatorCurrencyConfig(indicatorName: string): IndicatorConfig | null {
+  return INDICATOR_CURRENCY_CONFIG[indicatorName.toLowerCase()] || null
 }
 
 function parseBrazilianDate(dateStr: string): Date {
@@ -144,6 +237,19 @@ export const fetchIRFMRates = (startDate: string, endDate: string) => {
     return filterDataByDateRange(irfmData, startDate, endDate);
   } catch (error) {
     console.error('Error fetching IRF-M rates:', error);
+    return [];
+  }
+};
+
+/**
+ * Fetches IHFA (Brazilian hedge fund index) raw values within a date range
+ * Returns the index values (not variations)
+ */
+export const fetchIHFARates = (startDate: string, endDate: string) => {
+  try {
+    return filterDataByDateRange(ihfaRawData as RateData[], startDate, endDate);
+  } catch (error) {
+    console.error('Error fetching IHFA rates:', error);
     return [];
   }
 };

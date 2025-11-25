@@ -2452,6 +2452,7 @@ export const enUS = {
       btcMonthly: "Monthly Bitcoin",
       usCpiMonthly: "Monthly US CPI",
       euroCpiMonthly: "Monthly Euro CPI",
+      ihfaMonthly: "Monthly IHFA",
       loading: "Loading...",
       noData: "No data available",
       loadPtax: "Load PTAX",
