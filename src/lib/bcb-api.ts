@@ -7,9 +7,10 @@ import tBondData from '../data/t-bond-historical.json';
 import ibovData from '../data/ibov-historical.json';
 import goldData from '../data/gold-historical.json';
 import btcData from '../data/btc-historical.json';
-import irfmData from '../data/irfm-historical.json';
+import irfmRawData from '../data/irfm-raw-historical.json';
 import ptaxRawData from '../data/ptax-raw-historical.json';
 import ihfaRawData from '../data/ihfa-raw-historical.json';
+import imabRawData from '../data/imab-raw-historical.json';
 
 interface RateData {
   data: string;
@@ -61,6 +62,11 @@ export const INDICATOR_CURRENCY_CONFIG: Record<string, IndicatorConfig> = {
     needsFXAdjustment: false
   },
   irfm: {
+    rawCurrency: 'INDEX',
+    variationCurrency: 'INDEX',
+    needsFXAdjustment: false
+  },
+  imab: {
     rawCurrency: 'INDEX',
     variationCurrency: 'INDEX',
     needsFXAdjustment: false
@@ -130,6 +136,69 @@ function filterDataByDateRange(
       date: parseBrazilianDate(item.data),
       monthlyRate: parseFloat(item.valor)
     }));
+}
+
+/**
+ * Filtra dados por intervalo de datas e calcula variações mensais a partir de valores raw
+ * Útil para índices que vêm como valores absolutos e precisam ter variações calculadas
+ * Inclui o mês anterior ao intervalo para poder calcular a primeira variação
+ */
+function filterDataByDateRangeWithVariation(
+  data: RateData[],
+  startDate: string,
+  endDate: string
+) {
+  const start = parseBrazilianDate(startDate);
+  const end = parseBrazilianDate(endDate);
+
+  // Calcular o mês anterior ao início para poder calcular a primeira variação
+  const previousMonth = new Date(start);
+  previousMonth.setMonth(previousMonth.getMonth() - 1);
+
+  // Filtrar dados incluindo o mês anterior e ordenar
+  const allData = data
+    .map(item => ({
+      date: parseBrazilianDate(item.data),
+      value: parseFloat(item.valor)
+    }))
+    .sort((a, b) => a.date.getTime() - b.date.getTime());
+
+  // Encontrar o índice do primeiro mês que precisamos (mês anterior ao início)
+  let startIndex = 0
+  for (let i = 0; i < allData.length; i++) {
+    if (allData[i].date >= previousMonth) {
+      startIndex = Math.max(0, i - 1) // Incluir o mês anterior se existir
+      break
+    }
+  }
+
+  // Filtrar dados do mês anterior até o fim do intervalo
+  const filteredData = allData
+    .slice(startIndex)
+    .filter(item => item.date <= end);
+
+  if (filteredData.length < 2) {
+    return [];
+  }
+
+  // Calcular variações mensais apenas para os meses dentro do intervalo solicitado
+  const variations: Array<{ date: Date; monthlyRate: number }> = [];
+  
+  for (let i = 1; i < filteredData.length; i++) {
+    const current = filteredData[i];
+    const previous = filteredData[i - 1];
+    
+    // Só incluir variações para meses dentro do intervalo solicitado
+    if (current.date >= start && current.date <= end && previous.value > 0) {
+      const variation = ((current.value - previous.value) / previous.value) * 100;
+      variations.push({
+        date: current.date,
+        monthlyRate: variation
+      });
+    }
+  }
+
+  return variations;
 }
 
 export const fetchCDIRates = (startDate: string, endDate: string) => {
@@ -231,12 +300,26 @@ export const fetchBTCPrices = (startDate: string, endDate: string) => {
 
 /**
  * Fetches IRF-M (Brazilian fixed-rate bond index) monthly rates within a date range
+ * Calculates monthly variations from raw index values
  */
 export const fetchIRFMRates = (startDate: string, endDate: string) => {
   try {
-    return filterDataByDateRange(irfmData, startDate, endDate);
+    return filterDataByDateRangeWithVariation(irfmRawData as RateData[], startDate, endDate);
   } catch (error) {
     console.error('Error fetching IRF-M rates:', error);
+    return [];
+  }
+};
+
+/**
+ * Fetches IMAB (Brazilian bond index) monthly rates within a date range
+ * Calculates monthly variations from raw index values
+ */
+export const fetchIMABRates = (startDate: string, endDate: string) => {
+  try {
+    return filterDataByDateRangeWithVariation(imabRawData as RateData[], startDate, endDate);
+  } catch (error) {
+    console.error('Error fetching IMAB rates:', error);
     return [];
   }
 };

@@ -22,6 +22,8 @@ import usCpiData from '../../data/us-cpi-historical.json'
 import euroCpiData from '../../data/euro-cpi-historical.json'
 import ptaxData from '../../data/ptax-historical.json'
 import ihfaData from '../../data/ihfa-historical.json'
+import irfmData from '../../data/irfm-historical.json'
+import imabData from '../../data/imab-historical.json'
 
 interface BCBResponse {
   data: string
@@ -51,10 +53,14 @@ interface ConsolidatedData {
   euroCpiRaw: number | null
   ihfaMonthly: number | null
   ihfaRaw: number | null
+  irfmMonthly: number | null
+  irfmRaw: number | null
+  imabMonthly: number | null
+  imabRaw: number | null
 }
 
 type ColumnKey = 'competence' | 'ptax' | 'cdiMonthly' | 'cdiAccumulated' | 'ipcaMonthly' | 'ipcaAccumulated' | 
-  'ibovMonthly' | 'sp500Monthly' | 'tBondMonthly' | 'goldMonthly' | 'btcMonthly' | 'usCpiMonthly' | 'euroCpiMonthly' | 'ihfaMonthly'
+  'ibovMonthly' | 'sp500Monthly' | 'tBondMonthly' | 'goldMonthly' | 'btcMonthly' | 'usCpiMonthly' | 'euroCpiMonthly' | 'ihfaMonthly' | 'irfmMonthly' | 'imabMonthly'
 
 function parseBrazilianDate(dateStr: string): Date {
   const [day, month, year] = dateStr.split('/').map(Number)
@@ -86,6 +92,8 @@ export default function MarketDataAudit() {
     usCpi: BCBResponse[]
     euroCpi: BCBResponse[]
     ihfa: BCBResponse[]
+    irfm: BCBResponse[]
+    imab: BCBResponse[]
   }>({
     ptax: [],
     ibov: [],
@@ -94,7 +102,9 @@ export default function MarketDataAudit() {
     btc: [],
     usCpi: [],
     euroCpi: [],
-    ihfa: []
+    ihfa: [],
+    irfm: [],
+    imab: []
   })
   
   // Paginação
@@ -120,7 +130,9 @@ export default function MarketDataAudit() {
     btcMonthly: false,
     usCpiMonthly: false,
     euroCpiMonthly: false,
-    ihfaMonthly: false
+    ihfaMonthly: false,
+    irfmMonthly: false,
+    imabMonthly: false
   })
   const [showColumnSelector, setShowColumnSelector] = useState(false)
 
@@ -135,7 +147,9 @@ export default function MarketDataAudit() {
         btc: [],
         usCpi: [],
         euroCpi: [],
-        ihfa: []
+        ihfa: [],
+        irfm: [],
+        imab: []
       }
 
       try {
@@ -194,6 +208,20 @@ export default function MarketDataAudit() {
         // Arquivo não existe ainda
       }
 
+      try {
+        const irfmRaw = await import('../../data/irfm-raw-historical.json')
+        raw.irfm = (irfmRaw.default || irfmRaw) as BCBResponse[]
+      } catch {
+        // Arquivo não existe ainda
+      }
+
+      try {
+        const imabRaw = await import('../../data/imab-raw-historical.json')
+        raw.imab = (imabRaw.default || imabRaw) as BCBResponse[]
+      } catch {
+        // Arquivo não existe ainda
+      }
+
       setRawData(raw)
     }
 
@@ -223,6 +251,10 @@ export default function MarketDataAudit() {
       euroCpiRaw?: number
       ihfaMonthly?: number
       ihfaRaw?: number
+      irfmMonthly?: number
+      irfmRaw?: number
+      imabMonthly?: number
+      imabRaw?: number
     }>()
     
     // Processar CDI
@@ -335,6 +367,28 @@ export default function MarketDataAudit() {
       dataMap.get(competence)!.ihfaMonthly = value
     })
 
+    // Processar IRFM
+    irfmData.forEach(item => {
+      const date = parseBrazilianDate(item.data)
+      const competence = formatCompetence(date)
+      const value = parseFloat(item.valor)
+      if (!dataMap.has(competence)) {
+        dataMap.set(competence, { competence })
+      }
+      dataMap.get(competence)!.irfmMonthly = value
+    })
+
+    // Processar IMAB
+    imabData.forEach(item => {
+      const date = parseBrazilianDate(item.data)
+      const competence = formatCompetence(date)
+      const value = parseFloat(item.valor)
+      if (!dataMap.has(competence)) {
+        dataMap.set(competence, { competence })
+      }
+      dataMap.get(competence)!.imabMonthly = value
+    })
+
     // Processar PTAX
     ptaxData.forEach(item => {
       const date = parseBrazilianDate(item.data)
@@ -435,6 +489,28 @@ export default function MarketDataAudit() {
       dataMap.get(competence)!.ihfaRaw = value
     })
 
+    // IRFM Raw
+    rawData.irfm.forEach(item => {
+      const date = parseBrazilianDate(item.data)
+      const competence = formatCompetence(date)
+      const value = parseFloat(item.valor)
+      if (!dataMap.has(competence)) {
+        dataMap.set(competence, { competence })
+      }
+      dataMap.get(competence)!.irfmRaw = value
+    })
+
+    // IMAB Raw
+    rawData.imab.forEach(item => {
+      const date = parseBrazilianDate(item.data)
+      const competence = formatCompetence(date)
+      const value = parseFloat(item.valor)
+      if (!dataMap.has(competence)) {
+        dataMap.set(competence, { competence })
+      }
+      dataMap.get(competence)!.imabRaw = value
+    })
+
     // Ordenar competências
     const sortedCompetences = Array.from(dataMap.keys()).sort((a, b) => {
       const [monthA, yearA] = a.split('/').map(Number)
@@ -506,7 +582,11 @@ export default function MarketDataAudit() {
         euroCpiMonthly: entry.euroCpiMonthly as number | null ?? null,
         euroCpiRaw: entry.euroCpiRaw as number | null ?? null,
         ihfaMonthly: entry.ihfaMonthly as number | null ?? null,
-        ihfaRaw: entry.ihfaRaw as number | null ?? null
+        ihfaRaw: entry.ihfaRaw as number | null ?? null,
+        irfmMonthly: entry.irfmMonthly as number | null ?? null,
+        irfmRaw: entry.irfmRaw as number | null ?? null,
+        imabMonthly: entry.imabMonthly as number | null ?? null,
+        imabRaw: entry.imabRaw as number | null ?? null
       }
     })
   }, [rawData])
@@ -578,6 +658,8 @@ export default function MarketDataAudit() {
       converted.ptaxRaw = convertRawValue(converted.ptaxRaw, 'ptax', competence)
       converted.ibovRaw = convertRawValue(converted.ibovRaw, 'ibov', competence)
       converted.ihfaRaw = convertRawValue(converted.ihfaRaw, 'ihfa', competence)
+      converted.irfmRaw = convertRawValue(converted.irfmRaw, 'irfm', competence)
+      converted.imabRaw = convertRawValue(converted.imabRaw, 'imab', competence)
       converted.usCpiRaw = convertRawValue(converted.usCpiRaw, 'usCpi', competence)
       converted.euroCpiRaw = convertRawValue(converted.euroCpiRaw, 'euroCpi', competence)
 
@@ -588,6 +670,8 @@ export default function MarketDataAudit() {
       converted.ptax = adjustVariation(converted.ptax, 'ptax', competence)
       converted.ibovMonthly = adjustVariation(converted.ibovMonthly, 'ibov', competence)
       converted.ihfaMonthly = adjustVariation(converted.ihfaMonthly, 'ihfa', competence)
+      converted.irfmMonthly = adjustVariation(converted.irfmMonthly, 'irfm', competence)
+      converted.imabMonthly = adjustVariation(converted.imabMonthly, 'imab', competence)
       converted.usCpiMonthly = adjustVariation(converted.usCpiMonthly, 'usCpi', competence)
       converted.euroCpiMonthly = adjustVariation(converted.euroCpiMonthly, 'euroCpi', competence)
       converted.tBondMonthly = adjustVariation(converted.tBondMonthly, 'tBond', competence)
@@ -641,7 +725,9 @@ export default function MarketDataAudit() {
       btc: convertedData.filter(d => d.btcMonthly !== null).length,
       usCpi: convertedData.filter(d => d.usCpiMonthly !== null).length,
       euroCpi: convertedData.filter(d => d.euroCpiMonthly !== null).length,
-      ihfa: convertedData.filter(d => d.ihfaMonthly !== null).length
+      ihfa: convertedData.filter(d => d.ihfaMonthly !== null).length,
+      irfm: convertedData.filter(d => d.irfmMonthly !== null).length,
+      imab: convertedData.filter(d => d.imabMonthly !== null).length
     }
   }, [convertedData])
 
@@ -759,7 +845,9 @@ export default function MarketDataAudit() {
     btcMonthly: t('portfolioPerformance.marketDataAudit.btcMonthly'),
     usCpiMonthly: t('portfolioPerformance.marketDataAudit.usCpiMonthly'),
     euroCpiMonthly: t('portfolioPerformance.marketDataAudit.euroCpiMonthly'),
-    ihfaMonthly: t('portfolioPerformance.marketDataAudit.ihfaMonthly')
+    ihfaMonthly: t('portfolioPerformance.marketDataAudit.ihfaMonthly'),
+    irfmMonthly: t('portfolioPerformance.marketDataAudit.irfmMonthly'),
+    imabMonthly: t('portfolioPerformance.marketDataAudit.imabMonthly')
   }
 
   return (
@@ -834,7 +922,7 @@ export default function MarketDataAudit() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              {stats.sp500 + stats.tBond + stats.gold + stats.btc + stats.usCpi + stats.euroCpi + stats.ihfa}
+              {stats.sp500 + stats.tBond + stats.gold + stats.btc + stats.usCpi + stats.euroCpi + stats.ihfa + stats.irfm + stats.imab}
             </div>
             <p className="text-xs text-muted-foreground">{t('portfolioPerformance.marketDataAudit.competencesLoaded')}</p>
           </CardContent>
@@ -1005,6 +1093,12 @@ export default function MarketDataAudit() {
                   {visibleColumns.ihfaMonthly && (
                     <TableHead>{t('portfolioPerformance.marketDataAudit.ihfaMonthly')}</TableHead>
                   )}
+                  {visibleColumns.irfmMonthly && (
+                    <TableHead>{t('portfolioPerformance.marketDataAudit.irfmMonthly')}</TableHead>
+                  )}
+                  {visibleColumns.imabMonthly && (
+                    <TableHead>{t('portfolioPerformance.marketDataAudit.imabMonthly')}</TableHead>
+                  )}
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -1089,6 +1183,16 @@ export default function MarketDataAudit() {
                       {visibleColumns.ihfaMonthly && (
                         <TableCell className={row.ihfaMonthly !== null && row.ihfaMonthly >= 0 ? 'text-green-600' : row.ihfaMonthly !== null ? 'text-red-600' : ''}>
                           {formatWithVariation(row.ihfaRaw, row.ihfaMonthly)}
+                        </TableCell>
+                      )}
+                      {visibleColumns.irfmMonthly && (
+                        <TableCell className={row.irfmMonthly !== null && row.irfmMonthly >= 0 ? 'text-green-600' : row.irfmMonthly !== null ? 'text-red-600' : ''}>
+                          {formatWithVariation(row.irfmRaw, row.irfmMonthly)}
+                        </TableCell>
+                      )}
+                      {visibleColumns.imabMonthly && (
+                        <TableCell className={row.imabMonthly !== null && row.imabMonthly >= 0 ? 'text-green-600' : row.imabMonthly !== null ? 'text-red-600' : ''}>
+                          {formatWithVariation(row.imabRaw, row.imabMonthly)}
                         </TableCell>
                       )}
                     </TableRow>
