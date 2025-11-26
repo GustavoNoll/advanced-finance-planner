@@ -2501,6 +2501,8 @@ export const enUS = {
       usCpiMonthly: "Monthly US CPI",
       euroCpiMonthly: "Monthly Euro CPI",
       ihfaMonthly: "Monthly IHFA",
+      irfmMonthly: "Monthly IRFM",
+      imabMonthly: "Monthly IMAB",
       loading: "Loading...",
       noData: "No data available",
       loadPtax: "Load PTAX",

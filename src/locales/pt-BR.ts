@@ -2501,6 +2501,8 @@ export const ptBR = {
       usCpiMonthly: "US CPI Mensal",
       euroCpiMonthly: "Euro CPI Mensal",
       ihfaMonthly: "IHFA Mensal",
+      irfmMonthly: "IRFM Mensal",
+      imabMonthly: "IMAB Mensal",
       loading: "Carregando...",
       noData: "Nenhum dado disponível",
       loadPtax: "Carregar PTAX",
