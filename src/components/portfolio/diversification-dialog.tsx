@@ -10,6 +10,7 @@ import {
   STRATEGY_ORDER,
   type GroupedStrategyKey 
 } from "@/utils/benchmark-calculator"
+import { translateGroupedStrategy, groupAndTranslateStrategy } from "@/utils/i18n-helpers"
 import type { PerformanceData } from "@/types/financial"
 
 interface DiversificationDialogProps {
@@ -53,21 +54,6 @@ interface CurrentMetrics {
 }
 
 const TRANSLATION_BASE = 'portfolioPerformance.kpi.diversificationDialog'
-
-/**
- * Translates a grouped strategy key using i18n
- */
-function translateGroupedStrategy(key: GroupedStrategyKey, t: (key: string) => string): string {
-  return t(`${TRANSLATION_BASE}.strategiesOrder.${key}`)
-}
-
-/**
- * Groups and translates a strategy name
- */
-function groupAndTranslateStrategy(strategy: string | null, t: (key: string) => string): string {
-  const groupedKey = groupStrategyName(strategy)
-  return translateGroupedStrategy(groupedKey, t)
-}
 
 /**
  * Sorts periods in "MM/YYYY" format chronologically

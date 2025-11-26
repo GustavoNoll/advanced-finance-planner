@@ -11,43 +11,36 @@ import {
   fetchBTCPrices,
   fetchIRFMRates,
   fetchIFIXRates,
+  fetchIMABRates,
+  fetchIHFARates,
   getIndicatorCurrencyConfig,
   getPTAXByCompetencia,
 } from '@/lib/bcb-api'
 import { calculateCompoundedRates } from '@/lib/financial-math'
+import type { ValidAssetClass } from '@/pages/performance/utils/valid-asset-classes'
 
-export type BenchmarkType = 'CDI' | 'IPCA' | 'US_CPI' | 'EUR_CPI' | 'IRF-M' | 'IFIX' | 'IBOV' | 'SP500' | 'T-Bond' | 'Gold' | 'BTC'
+export type BenchmarkType = 'CDI' | 'IPCA' | 'US_CPI' | 'EUR_CPI' | 'IRF-M' | 'IFIX' | 'IBOV' | 'SP500' | 'T-Bond' | 'Gold' | 'BTC' | 'IMA-B' | 'IHFA' | 'AGGG' | 'MSCI_ACWI'
 
 /**
  * Chaves padronizadas para estratégias agrupadas
- * Essas chaves são usadas para tradução via i18n
+ * Essas chaves são baseadas nas chaves de asset class, agrupando _bonds e _funds
  */
 export type GroupedStrategyKey = 
-  | 'postFixedLiquidity'
-  | 'postFixed'
+  | 'cdi_liquidity'
+  | 'cdi'
   | 'inflation'
-  | 'preFixed'
+  | 'pre_fixed'
   | 'multimarket'
-  | 'realEstate'
+  | 'real_estate'
   | 'stocks'
-  | 'stocksLongBias'
-  | 'privateEquity'
-  | 'foreignFixedIncome'
-  | 'foreignStocks'
+  | 'stocks_long_biased'
+  | 'private_equity'
+  | 'foreign_fixed_income'
+  | 'foreign_stocks'
   | 'coe'
   | 'gold'
   | 'crypto'
   | 'others'
-
-interface StrategyPattern {
-  keywords: string[] // Palavras-chave em português e inglês
-  benchmark: {
-    BRL: BenchmarkType
-    USD: BenchmarkType
-    EUR: BenchmarkType
-  }
-  groupedKey: GroupedStrategyKey // Chave padronizada para agrupamento
-}
 
 // Fallback para estratégias não mapeadas
 const DEFAULT_BENCHMARK_MAP = {
@@ -56,239 +49,92 @@ const DEFAULT_BENCHMARK_MAP = {
   EUR: 'EUR_CPI',
 } as const
 
-/**
- * Remove acentos de uma string
- */
-function removeAccents(str: string): string {
-  return str.normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+// Mapeamento direto de chaves de asset class para GroupedStrategyKey
+// Agrupa _bonds e _funds no mesmo grupo base
+const ASSET_CLASS_TO_GROUPED_KEY: Record<ValidAssetClass, GroupedStrategyKey> = {
+  'cdi_liquidity': 'cdi_liquidity',
+  'cdi_bonds': 'cdi',
+  'cdi_funds': 'cdi',
+  'inflation_bonds': 'inflation',
+  'inflation_funds': 'inflation',
+  'pre_fixed_bonds': 'pre_fixed',
+  'pre_fixed_funds': 'pre_fixed',
+  'multimarket': 'multimarket',
+  'real_estate_assets': 'real_estate',
+  'real_estate_funds': 'real_estate',
+  'stocks_assets': 'stocks',
+  'stocks_etfs': 'stocks',
+  'stocks_funds': 'stocks',
+  'stocks_long_biased': 'stocks_long_biased',
+  'private_equity': 'private_equity',
+  'foreign_fixed_income': 'foreign_fixed_income',
+  'foreign_stocks': 'foreign_stocks',
+  'coe': 'coe',
+  'crypto': 'crypto',
+  'gold': 'gold',
+  'others': 'others'
 }
 
 /**
- * Normaliza uma string para comparação (remove acentos, converte para minúsculas, remove espaços extras e múltiplos espaços)
- */
-function normalizeString(str: string): string {
-  return removeAccents(str.toLowerCase().trim().replace(/\s+/g, ' '))
-}
-
-/**
- * Normaliza um array de palavras-chave para comparação
- * Remove acentos, converte para minúsculas e remove espaços extras
- */
-function normalizeKeywords(keywords: string[]): string[] {
-  return keywords.map(keyword => normalizeString(keyword))
-}
-
-/**
- * Cria um padrão de estratégia com keywords já normalizadas
- */
-function createStrategyPattern(
-  keywords: string[],
-  benchmark: StrategyPattern['benchmark'],
-  groupedKey: GroupedStrategyKey
-): StrategyPattern {
-  return {
-    keywords: normalizeKeywords(keywords),
-    benchmark,
-    groupedKey,
-  }
-}
-
-// Mapeamento de padrões de estratégias para benchmarks
-// As palavras-chave são normalizadas automaticamente (sem acentos, case-insensitive)
-// IMPORTANTE: Padrões mais específicos devem vir primeiro para priorizar matches precisos
-const STRATEGY_PATTERNS: StrategyPattern[] = [
-  // Exterior - Renda Fixa (mais específico primeiro)
-  createStrategyPattern(
-    ['exterior - renda fixa', 'foreign - fixed income', 'exterior renda fixa', 'foreign fixed income'],
-    { BRL: 'T-Bond', USD: 'T-Bond', EUR: 'T-Bond' },
-    'foreignFixedIncome'
-  ),
-  // Exterior - Ações / Renda Variável (mais específico primeiro)
-  createStrategyPattern(
-    [
-      'exterior - ações',
-      'exterior - acoes',
-      'exterior - renda variável',
-      'exterior - renda variavel',
-      'exterior ações',
-      'exterior acoes',
-      'exterior renda variável',
-      'exterior renda variavel',
-      'foreign - stocks',
-      'foreign - variable income',
-      'foreign stocks',
-      'foreign variable income',
-      'exterior stocks',
-      'exterior - stocks',
-    ],
-    { BRL: 'SP500', USD: 'SP500', EUR: 'SP500' },
-    'foreignStocks'
-  ),
-  // Pós Fixado - Liquidez (mais específico)
-  createStrategyPattern(
-    ['pós fixado - liquidez', 'pos fixado liquidez', 'post fixed - liquidity', 'post-fixed liquidity', 'pos-fixado liquidez', 'cdi - liquidez'],
-    { BRL: 'CDI', USD: 'US_CPI', EUR: 'EUR_CPI' },
-    'postFixedLiquidity'
-  ),
-  // Ações - Long Bias (mais específico)
-  createStrategyPattern(
-    ['ações - long bias', 'acoes long bias', 'stocks - long bias', 'stocks long bias', 'long biased', 'long-biased'],
-    { BRL: 'IBOV', USD: 'SP500', EUR: 'SP500' },
-    'stocksLongBias'
-  ),
-  // Renda Fixa - Inflação (mais específico)
-  createStrategyPattern(
-    ['renda fixa - inflação', 'fixed income - inflation', 'renda fixa inflacao', 'inflação - titulos', 'inflação - fundos', 'inflacao titulos', 'inflacao fundos'],
-    { BRL: 'IPCA', USD: 'US_CPI', EUR: 'EUR_CPI' },
-    'inflation'
-  ),
-  // Renda Fixa - Pré Fixado (mais específico)
-  createStrategyPattern(
-    ['renda fixa - pré fixado', 'renda fixa - pre fixado', 'fixed income - pre fixed', 'fixed income - pre-fixed', 'renda fixa pre fixado', 'pré fixado - titulos', 'pré fixado - títulos', 'pré fixado - titulo', 'pré fixado - fundos', 'pre fixado titulos', 'pre fixado titulo', 'pre fixado fundos'],
-    { BRL: 'IRF-M', USD: 'T-Bond', EUR: 'T-Bond' },
-    'preFixed'
-  ),
-  // Criptoativos (específico)
-  createStrategyPattern(
-    ['criptoativos', 'crypto', 'cryptocurrency', 'bitcoin', 'btc'],
-    { BRL: 'BTC', USD: 'BTC', EUR: 'BTC' },
-    'crypto'
-  ),
-  // Ouro (específico)
-  createStrategyPattern(
-    ['ouro', 'gold'],
-    { BRL: 'Gold', USD: 'Gold', EUR: 'Gold' },
-    'gold'
-  ),
-  // Private Equity (específico)
-  createStrategyPattern(
-    ['private equity', 'venture capital', 'special sits'],
-    { BRL: 'CDI', USD: 'US_CPI', EUR: 'EUR_CPI' },
-    'privateEquity'
-  ),
-  // COE (específico)
-  createStrategyPattern(
-    ['coe'],
-    { BRL: 'CDI', USD: 'US_CPI', EUR: 'EUR_CPI' },
-    'coe'
-  ),
-  // Multimercado (específico)
-  createStrategyPattern(
-    ['multimercado', 'multimarket'],
-    { BRL: 'CDI', USD: 'US_CPI', EUR: 'EUR_CPI' },
-    'multimarket'
-  ),
-  // Imobiliário (geral)
-  createStrategyPattern(
-    ['imobiliário', 'imobiliario', 'real estate', 'realestate', 'imobiliário - ativos', 'imobiliário - fundos', 'imobiliario ativos', 'imobiliario fundos'],
-    { BRL: 'IFIX', USD: 'T-Bond', EUR: 'T-Bond' },
-    'realEstate'
-  ),
-  // Inflação (geral)
-  createStrategyPattern(
-    ['inflação', 'inflacao', 'inflation'],
-    { BRL: 'IPCA', USD: 'US_CPI', EUR: 'EUR_CPI' },
-    'inflation'
-  ),
-  // Pré Fixado (geral)
-  createStrategyPattern(
-    ['pré fixado', 'pre fixado', 'pre-fixed', 'pre fixed'],
-    { BRL: 'IRF-M', USD: 'T-Bond', EUR: 'T-Bond' },
-    'preFixed'
-  ),
-  // Pós Fixado (geral - depois do mais específico)
-  createStrategyPattern(
-    ['pós fixado', 'pos fixado', 'post fixed', 'post-fixed', 'pos-fixado', 'cdi - fundos', 'cdi - titulos'],
-    { BRL: 'CDI', USD: 'US_CPI', EUR: 'EUR_CPI' },
-    'postFixed'
-  ),
-  // Renda Variável (geral)
-  createStrategyPattern(
-    ['renda variável', 'renda variavel', 'variable income'],
-    { BRL: 'IBOV', USD: 'SP500', EUR: 'SP500' },
-    'stocks'
-  ),
-  // Ações / Stocks (geral - último pois pode aparecer em outros contextos)
-  createStrategyPattern(
-    ['ações', 'acoes', 'stocks', 'ações - ativos', 'ações - fundos', 'ações - etfs', 'acoes ativos', 'acoes fundos', 'acoes etfs'],
-    { BRL: 'IBOV', USD: 'SP500', EUR: 'SP500' },
-    'stocks'
-  ),
-]
-
-/**
- * Encontra o padrão de estratégia correspondente usando match flexível
- * Suporta nomes em português e inglês com variações
- * A ordem dos padrões é importante: mais específicos primeiro
- * As comparações são case-insensitive e ignoram acentos
+ * Agrupa uma classe de ativo (chave padronizada) em uma chave de estratégia agrupada
  * 
- * @returns O padrão encontrado ou null se não houver match
- */
-function findStrategyPattern(strategyName: string | null): StrategyPattern | null {
-  if (!strategyName) return null
-  
-  const normalizedStrategy = normalizeString(strategyName)
-  
-  // Tenta fazer match com cada padrão (ordem importa - mais específicos primeiro)
-  // As keywords já estão normalizadas, então não precisamos normalizar novamente
-  for (const pattern of STRATEGY_PATTERNS) {
-    // Verifica se alguma palavra-chave do padrão está contida no nome da estratégia
-    const hasMatch = pattern.keywords.some(keyword => {
-      // Match exato
-      if (normalizedStrategy === keyword) {
-        return true
-      }
-      
-      // Match por contenção: verifica se a palavra-chave está contida no nome da estratégia
-      // Isso permite matches flexíveis como "Pós Fixado - Liquidez" contendo "pós fixado"
-      if (normalizedStrategy.includes(keyword)) {
-        return true
-      }
-      
-      return false
-    })
-    
-    if (hasMatch) {
-      return pattern
-    }
-  }
-  
-  return null
-}
-
-/**
- * Encontra o benchmark correspondente para uma estratégia usando match flexível
- * Suporta nomes em português e inglês com variações
- * A ordem dos padrões é importante: mais específicos primeiro
- * As comparações são case-insensitive e ignoram acentos
- */
-function findBenchmarkForStrategy(strategyName: string, currency: CurrencyCode): BenchmarkType {
-  const pattern = findStrategyPattern(strategyName)
-  
-  if (pattern) {
-    return pattern.benchmark[currency]
-  }
-  
-  // Fallback padrão para estratégias não mapeadas
-  return DEFAULT_BENCHMARK_MAP[currency]
-}
-
-/**
- * Agrupa o nome de uma estratégia em uma chave padronizada
- * Esta função centraliza a lógica de agrupamento de estratégias
- * e retorna uma chave que pode ser usada para tradução via i18n
- * 
- * @param strategyName - Nome da estratégia (pode ser null)
+ * @param assetClassOrStrategyName - Chave padronizada de asset class (ex: 'cdi_liquidity')
  * @returns Chave padronizada para a estratégia agrupada
  * 
  * @example
- * groupStrategyName('CDI - Liquidez') // 'postFixedLiquidity'
- * groupStrategyName('Ações - Long Bias') // 'stocksLongBias'
+ * groupStrategyName('cdi_liquidity') // 'cdi_liquidity'
+ * groupStrategyName('pre_fixed_bonds') // 'pre_fixed'
+ * groupStrategyName('stocks_long_biased') // 'stocks_long_biased'
  * groupStrategyName(null) // 'others'
  */
-export function groupStrategyName(strategyName: string | null): GroupedStrategyKey {
-  const pattern = findStrategyPattern(strategyName)
-  return pattern?.groupedKey || 'others'
+export function groupStrategyName(assetClassOrStrategyName: string | null): GroupedStrategyKey {
+  if (!assetClassOrStrategyName) return 'others'
+  
+  // Se é uma chave padronizada, usa mapeamento direto
+  if (assetClassOrStrategyName in ASSET_CLASS_TO_GROUPED_KEY) {
+    return ASSET_CLASS_TO_GROUPED_KEY[assetClassOrStrategyName as ValidAssetClass]
+  }
+  
+  // Se não for uma chave padronizada, retorna 'others'
+  return 'others'
+}
+
+/**
+ * Encontra o benchmark diretamente a partir de uma chave de asset class padronizada
+ * Esta função é mais eficiente quando já temos a chave padronizada
+ * 
+ * @param assetClassKey - Chave padronizada de asset class (ex: 'cdi_liquidity')
+ * @param currency - Moeda para determinar o benchmark correto
+ * @returns Tipo de benchmark correspondente
+ */
+export function findBenchmarkForAssetClass(
+  assetClassKey: ValidAssetClass,
+  currency: CurrencyCode
+): BenchmarkType {
+  const groupedKey = ASSET_CLASS_TO_GROUPED_KEY[assetClassKey]
+  return getBenchmarkForGroupedStrategy(groupedKey, currency)
+}
+
+/**
+ * Calcula os retornos do benchmark diretamente a partir de uma chave de asset class padronizada
+ * Esta função é mais eficiente quando já temos a chave padronizada, evitando o match flexível
+ * 
+ * @param assetClassKey - Chave padronizada de asset class (ex: 'cdi_liquidity')
+ * @param currency - Moeda para determinar o benchmark correto
+ * @param periods - Array de períodos no formato "MM/YYYY"
+ * @param locale - Locale para tradução do nome do benchmark
+ * @param displayCurrency - Moeda de exibição (opcional, usa currency como padrão)
+ * @returns Dados do benchmark ou null se não houver dados
+ */
+export function calculateBenchmarkReturnsByAssetClass(
+  assetClassKey: ValidAssetClass,
+  currency: CurrencyCode,
+  periods: string[],
+  locale: 'pt-BR' | 'en-US' = 'pt-BR',
+  displayCurrency?: CurrencyCode
+): BenchmarkData | null {
+  const groupedKey = ASSET_CLASS_TO_GROUPED_KEY[assetClassKey]
+  return calculateBenchmarkReturnsByGroupedKey(groupedKey, currency, periods, locale, displayCurrency)
 }
 
 /**
@@ -296,17 +142,17 @@ export function groupStrategyName(strategyName: string | null): GroupedStrategyK
  * Esta ordem é usada para ordenação consistente em todos os componentes
  */
 export const STRATEGY_ORDER: GroupedStrategyKey[] = [
-  'postFixedLiquidity',
-  'postFixed',
+  'cdi_liquidity',
+  'cdi',
   'inflation',
-  'preFixed',
+  'pre_fixed',
   'multimarket',
-  'realEstate',
+  'real_estate',
   'stocks',
-  'stocksLongBias',
-  'privateEquity',
-  'foreignFixedIncome',
-  'foreignStocks',
+  'stocks_long_biased',
+  'private_equity',
+  'foreign_fixed_income',
+  'foreign_stocks',
   'coe',
   'gold',
   'crypto',
@@ -319,17 +165,17 @@ export const STRATEGY_ORDER: GroupedStrategyKey[] = [
  * Usa uma paleta consistente em todos os componentes
  */
 export const STRATEGY_COLORS: Record<GroupedStrategyKey, string> = {
-  postFixedLiquidity: '#3b82f6',    // Blue
-  postFixed: '#10b981',              // Emerald
+  cdi_liquidity: '#3b82f6',    // Blue
+  cdi: '#10b981',              // Emerald
   inflation: '#f59e0b',              // Amber
-  preFixed: '#ef4444',               // Red
+  pre_fixed: '#ef4444',               // Red
   multimarket: '#8b5cf6',            // Violet
-  realEstate: '#06b6d4',             // Cyan
+  real_estate: '#06b6d4',             // Cyan
   stocks: '#ec4899',                 // Pink
-  stocksLongBias: '#14b8a6',         // Teal
-  privateEquity: '#f97316',          // Orange
-  foreignFixedIncome: '#84cc16',     // Lime
-  foreignStocks: '#6366f1',          // Indigo
+  stocks_long_biased: '#14b8a6',         // Teal
+  private_equity: '#f97316',          // Orange
+  foreign_fixed_income: '#84cc16',     // Lime
+  foreign_stocks: '#6366f1',          // Indigo
   coe: '#22c55e',                    // Green
   gold: '#a855f7',                   // Purple
   crypto: '#eab308',                 // Yellow
@@ -341,35 +187,55 @@ export const STRATEGY_COLORS: Record<GroupedStrategyKey, string> = {
  * Usada em componentes que precisam de cores mais sutis
  */
 export const STRATEGY_COLORS_SOFT: Record<GroupedStrategyKey, string> = {
-  postFixedLiquidity: 'hsl(210 16% 82%)',  // Light blue-gray
-  postFixed: 'hsl(32 25% 72%)',           // Light beige
+  cdi_liquidity: 'hsl(210 16% 82%)',  // Light blue-gray
+  cdi: 'hsl(32 25% 72%)',           // Light beige
   inflation: 'hsl(45 20% 85%)',          // Very light beige
-  preFixed: 'hsl(210 11% 71%)',           // Medium gray
+  pre_fixed: 'hsl(210 11% 71%)',           // Medium gray
   multimarket: 'hsl(210 16% 58%)',        // Darker gray
-  realEstate: 'hsl(207 26% 50%)',         // Blue-gray
+  real_estate: 'hsl(207 26% 50%)',         // Blue-gray
   stocks: 'hsl(158 64% 25%)',             // Dark forest green
-  stocksLongBias: 'hsl(159 61% 33%)',     // Medium forest green
-  privateEquity: 'hsl(210 29% 24%)',      // Dark blue-gray
-  foreignFixedIncome: 'hsl(25 28% 53%)',  // Medium brown
-  foreignStocks: 'hsl(40 23% 77%)',      // Light tan
+  stocks_long_biased: 'hsl(159 61% 33%)',     // Medium forest green
+  private_equity: 'hsl(210 29% 24%)',      // Dark blue-gray
+  foreign_fixed_income: 'hsl(25 28% 53%)',  // Medium brown
+  foreign_stocks: 'hsl(40 23% 77%)',      // Light tan
   coe: 'hsl(210 14% 53%)',                // Medium blue-gray
   gold: 'hsl(35 31% 65%)',                // Warm beige
   crypto: 'hsl(210 24% 40%)',             // Darker blue-gray
   others: 'hsl(210 16% 58%)',             // Default gray
 }
 
+// Mapeamento direto de GroupedStrategyKey para benchmarks por currency
+const GROUPED_STRATEGY_BENCHMARK_BY_CURRENCY: Record<GroupedStrategyKey, { BRL: BenchmarkType; USD: BenchmarkType; EUR: BenchmarkType }> = {
+  cdi_liquidity: { BRL: 'CDI', USD: 'US_CPI', EUR: 'EUR_CPI' },
+  cdi: { BRL: 'CDI', USD: 'US_CPI', EUR: 'EUR_CPI' },
+  inflation: { BRL: 'IMA-B', USD: 'US_CPI', EUR: 'EUR_CPI' },
+  pre_fixed: { BRL: 'IRF-M', USD: 'T-Bond', EUR: 'T-Bond' },
+  multimarket: { BRL: 'IHFA', USD: 'US_CPI', EUR: 'EUR_CPI' },
+  real_estate: { BRL: 'IFIX', USD: 'T-Bond', EUR: 'T-Bond' },
+  stocks: { BRL: 'IBOV', USD: 'SP500', EUR: 'SP500' },
+  stocks_long_biased: { BRL: 'IBOV', USD: 'SP500', EUR: 'SP500' },
+  private_equity: { BRL: 'CDI', USD: 'US_CPI', EUR: 'EUR_CPI' },
+  foreign_fixed_income: { BRL: 'AGGG', USD: 'AGGG', EUR: 'AGGG' },
+  foreign_stocks: { BRL: 'MSCI_ACWI', USD: 'MSCI_ACWI', EUR: 'MSCI_ACWI' },
+  coe: { BRL: 'CDI', USD: 'US_CPI', EUR: 'EUR_CPI' },
+  gold: { BRL: 'Gold', USD: 'Gold', EUR: 'Gold' },
+  crypto: { BRL: 'BTC', USD: 'BTC', EUR: 'BTC' },
+  others: { BRL: 'CDI', USD: 'US_CPI', EUR: 'EUR_CPI' },
+}
+
+// Mantido para compatibilidade (usa BRL como padrão)
 const GROUPED_STRATEGY_BENCHMARK: Record<GroupedStrategyKey, BenchmarkType> = {
-  postFixedLiquidity: 'CDI',
-  postFixed: 'CDI',
-  inflation: 'IPCA',
-  preFixed: 'IRF-M',
-  multimarket: 'CDI',
-  realEstate: 'IFIX',
+  cdi_liquidity: 'CDI',
+  cdi: 'CDI',
+  inflation: 'IMA-B',
+  pre_fixed: 'IRF-M',
+  multimarket: 'IHFA',
+  real_estate: 'IFIX',
   stocks: 'IBOV',
-  stocksLongBias: 'IBOV',
-  privateEquity: 'CDI',
-  foreignFixedIncome: 'T-Bond',
-  foreignStocks: 'SP500',
+  stocks_long_biased: 'IBOV',
+  private_equity: 'CDI',
+  foreign_fixed_income: 'AGGG',
+  foreign_stocks: 'MSCI_ACWI',
   coe: 'CDI',
   gold: 'Gold',
   crypto: 'BTC',
@@ -402,14 +268,15 @@ export function getStrategyBenchmarkLabelByKey(
   locale: 'pt-BR' | 'en-US' = 'pt-BR'
 ): string {
   const benchmarkType = GROUPED_STRATEGY_BENCHMARK[key] || 'CDI'
-  const benchmarkName = getBenchmarkName(benchmarkType, locale)
+  const nameKey = getBenchmarkNameKey(benchmarkType)
   const prefix = benchmarkType === 'CDI' ? '%' : '±'
-  return `${prefix} ${benchmarkName}`
+  // Retorna a chave de i18n - o componente deve usar t() para traduzir
+  return `${prefix} ${nameKey}`
 }
 
 export interface BenchmarkData {
-  name: string
-  nameEn: string
+  nameKey: string // Chave de i18n para tradução do nome do benchmark
+  benchmarkType: BenchmarkType // Tipo do benchmark para referência
   monthReturn: number | null
   yearReturn: number | null
   sixMonthsReturn: number | null
@@ -451,6 +318,10 @@ function benchmarkTypeToIndicatorName(benchmarkType: BenchmarkType): string {
     'T-Bond': 'tBond',
     'Gold': 'gold',
     'BTC': 'btc',
+    'IMA-B': 'imab',
+    'IHFA': 'ihfa',
+    'AGGG': 'aggg',
+    'MSCI_ACWI': 'msciAcwi',
   }
   return mapping[benchmarkType] || 'cdi'
 }
@@ -623,6 +494,19 @@ function fetchBenchmarkData(
     case 'IFIX':
       rawData = fetchIFIXRates(startDate, endDate)
       break
+    case 'IMA-B':
+      rawData = fetchIMABRates(startDate, endDate)
+      break
+    case 'IHFA':
+      rawData = fetchIHFARates(startDate, endDate)
+      break
+    case 'AGGG':
+      // AGGG não tem dados ainda, usar T-Bond como fallback temporário
+      rawData = fetchTBondPrices(startDate, endDate)
+      break
+    case 'MSCI_ACWI':
+      // MSCI ACWI não tem dados ainda
+      break
     default:
       return []
   }
@@ -630,41 +514,30 @@ function fetchBenchmarkData(
   return processBenchmarkData(rawData, benchmarkType, displayCurrency)
 }
 
+// Mapeamento de BenchmarkType para chave de i18n
+const BENCHMARK_I18N_KEY: Record<BenchmarkType, string> = {
+  CDI: 'portfolioPerformance.benchmarks.cdi',
+  IPCA: 'portfolioPerformance.benchmarks.ipca',
+  US_CPI: 'portfolioPerformance.benchmarks.usCpi',
+  EUR_CPI: 'portfolioPerformance.benchmarks.euroCpi',
+  'IRF-M': 'portfolioPerformance.benchmarks.irfm',
+  IFIX: 'portfolioPerformance.benchmarks.ifix',
+  IBOV: 'portfolioPerformance.benchmarks.ibov',
+  SP500: 'portfolioPerformance.benchmarks.sp500',
+  'T-Bond': 'portfolioPerformance.benchmarks.tBond',
+  Gold: 'portfolioPerformance.benchmarks.gold',
+  BTC: 'portfolioPerformance.benchmarks.btc',
+  'IMA-B': 'portfolioPerformance.benchmarks.imab',
+  IHFA: 'portfolioPerformance.benchmarks.ihfa',
+  AGGG: 'portfolioPerformance.benchmarks.aggg',
+  MSCI_ACWI: 'portfolioPerformance.benchmarks.msciAcwi',
+}
+
 /**
- * Obtém o nome do benchmark traduzido
+ * Obtém a chave de i18n para um benchmark
  */
-function getBenchmarkName(benchmarkType: BenchmarkType, locale: 'pt-BR' | 'en-US'): string {
-  const names = {
-    pt: {
-      CDI: 'CDI',
-      IPCA: 'IPCA',
-      US_CPI: 'US CPI',
-      EUR_CPI: 'Euro CPI',
-      'IRF-M': 'IRF-M',
-      IFIX: 'IFIX',
-      IBOV: 'IBOVESPA',
-      SP500: 'S&P 500',
-      'T-Bond': 'T-Bond 10Y',
-      Gold: 'Ouro',
-      BTC: 'Bitcoin',
-    },
-    en: {
-      CDI: 'CDI',
-      IPCA: 'IPCA',
-      US_CPI: 'US CPI',
-      EUR_CPI: 'Euro CPI',
-      'IRF-M': 'IRF-M',
-      IFIX: 'IFIX',
-      IBOV: 'IBOVESPA',
-      SP500: 'S&P 500',
-      'T-Bond': 'T-Bond 10Y',
-      Gold: 'Gold',
-      BTC: 'Bitcoin',
-    },
-  }
-  
-  const lang = locale === 'pt-BR' ? 'pt' : 'en'
-  return names[lang][benchmarkType] || benchmarkType
+export function getBenchmarkNameKey(benchmarkType: BenchmarkType): string {
+  return BENCHMARK_I18N_KEY[benchmarkType] || 'portfolioPerformance.benchmarks.unknown'
 }
 
 /**
@@ -675,36 +548,34 @@ function getBenchmarkForGroupedStrategy(
   groupedKey: GroupedStrategyKey,
   currency: CurrencyCode
 ): BenchmarkType {
-  // Para estratégias que têm benchmarks diferentes por currency, usar o mapeamento do padrão
-  const strategyPattern = STRATEGY_PATTERNS.find(pattern => pattern.groupedKey === groupedKey)
-  
-  if (strategyPattern) {
-    return strategyPattern.benchmark[currency]
+  // Usa mapeamento direto por currency
+  const benchmarkMap = GROUPED_STRATEGY_BENCHMARK_BY_CURRENCY[groupedKey]
+  return benchmarkMap ? benchmarkMap[currency] : DEFAULT_BENCHMARK_MAP[currency]
+}
+
+/**
+ * Encontra o benchmark correspondente para uma chave de asset class padronizada
+ * 
+ * @param strategyNameOrKey - Chave padronizada (ex: 'cdi_liquidity')
+ * @param currency - Moeda para determinar o benchmark correto
+ * @returns Tipo de benchmark correspondente
+ */
+function findBenchmarkForStrategy(strategyNameOrKey: string, currency: CurrencyCode): BenchmarkType {
+  // Se é uma chave padronizada, usa mapeamento direto
+  if (strategyNameOrKey in ASSET_CLASS_TO_GROUPED_KEY) {
+    const groupedKey = ASSET_CLASS_TO_GROUPED_KEY[strategyNameOrKey as ValidAssetClass]
+    return getBenchmarkForGroupedStrategy(groupedKey, currency)
   }
   
-  // Fallback para o mapeamento padrão
-  const defaultBenchmark = GROUPED_STRATEGY_BENCHMARK[groupedKey] || 'CDI'
-  
-  // Se o benchmark padrão não varia por currency, retornar direto
-  // Caso contrário, usar o padrão do currency
-  if (defaultBenchmark === 'IFIX' && currency !== 'BRL') {
-    return 'T-Bond' // IFIX só existe para BRL, usar T-Bond para USD/EUR
-  }
-  
-  if (defaultBenchmark === 'IRF-M' && currency !== 'BRL') {
-    return 'T-Bond' // IRF-M só existe para BRL, usar T-Bond para USD/EUR
-  }
-  
-  if (defaultBenchmark === 'IBOV' && currency !== 'BRL') {
-    return 'SP500' // IBOV só existe para BRL, usar SP500 para USD/EUR
-  }
-  
-  return defaultBenchmark
+  // Fallback padrão para estratégias não mapeadas
+  return DEFAULT_BENCHMARK_MAP[currency]
 }
 
 /**
  * Calcula os retornos do benchmark para os mesmos períodos da estratégia
- * Esta função pode receber tanto o nome da estratégia original quanto o groupedKey
+ * Esta função pode receber tanto o nome da estratégia original quanto uma chave padronizada
+ * Se receber uma chave padronizada (ValidAssetClass), usa o caminho direto (mais eficiente)
+ * Caso contrário, usa match flexível com palavras-chave (backward compatibility)
  * @param displayCurrency - Moeda de exibição (opcional, usa currency como padrão)
  */
 export function calculateBenchmarkReturns(
@@ -714,6 +585,17 @@ export function calculateBenchmarkReturns(
   locale: 'pt-BR' | 'en-US' = 'pt-BR',
   displayCurrency?: CurrencyCode
 ): BenchmarkData | null {
+  // Se é uma chave padronizada, usa o caminho direto (mais eficiente)
+  if (strategyName in ASSET_CLASS_TO_GROUPED_KEY) {
+    return calculateBenchmarkReturnsByAssetClass(
+      strategyName as ValidAssetClass,
+      currency,
+      periods,
+      locale,
+      displayCurrency
+    )
+  }
+  
   if (periods.length === 0) return null
   
   // Ordena os períodos cronologicamente
@@ -729,7 +611,7 @@ export function calculateBenchmarkReturns(
   const startDate = formatDateForBCB(periodToDate(firstPeriod))
   const endDate = formatDateForBCB(periodToDate(lastPeriod))
   
-  // Determina o tipo de benchmark usando match flexível
+  // Determina o tipo de benchmark usando match flexível (para valores antigos)
   const benchmarkType: BenchmarkType = findBenchmarkForStrategy(strategyName, currency)
   
   // Usa displayCurrency se fornecido, senão usa currency
@@ -786,11 +668,11 @@ export function calculateBenchmarkReturns(
     ? calculateCompoundedRates(periodReturns)
     : 0
   
-  const benchmarkName = getBenchmarkName(benchmarkType, locale)
+  const nameKey = getBenchmarkNameKey(benchmarkType)
   
   return {
-    name: `± ${benchmarkName}`,
-    nameEn: `± ${getBenchmarkName(benchmarkType, 'en-US')}`,
+    nameKey,
+    benchmarkType,
     monthReturn: lastMonthReturn * 100, // Converte para percentual
     yearReturn: yearReturn * 100,
     sixMonthsReturn: sixMonthsReturn * 100,
@@ -803,7 +685,7 @@ export function calculateBenchmarkReturns(
  * Calcula os retornos do benchmark usando o groupedKey diretamente
  * Esta função centraliza toda a lógica de determinação de benchmark baseado no currency
  * 
- * @param groupedKey - A chave da estratégia agrupada (ex: 'realEstate', 'preFixed')
+ * @param groupedKey - A chave da estratégia agrupada (ex: 'real_estate', 'pre_fixed')
  * @param currency - A moeda para determinar qual benchmark usar (BRL usa IFIX, USD usa T-Bond, etc.)
  * @param periods - Array de períodos no formato "MM/YYYY"
  * @param locale - Locale para tradução do nome do benchmark
@@ -819,13 +701,13 @@ export function calculateBenchmarkReturnsByGroupedKey(
 ): BenchmarkData | null {
   // Determina o tipo de benchmark baseado no groupedKey e currency
   const benchmarkType: BenchmarkType = getBenchmarkForGroupedStrategy(groupedKey, currency)
-  const benchmarkName = getBenchmarkName(benchmarkType, locale)
+  const nameKey = getBenchmarkNameKey(benchmarkType)
   
   // Sempre retorna pelo menos o nome do benchmark, mesmo sem dados
   if (periods.length === 0) {
     return {
-      name: `± ${benchmarkName}`,
-      nameEn: `± ${getBenchmarkName(benchmarkType, 'en-US')}`,
+      nameKey,
+      benchmarkType,
       monthReturn: null,
       yearReturn: null,
       sixMonthsReturn: null,
@@ -856,8 +738,8 @@ export function calculateBenchmarkReturnsByGroupedKey(
   // Se não houver dados, retorna o nome do benchmark com retornos null
   if (benchmarkData.length === 0) {
     return {
-      name: `± ${benchmarkName}`,
-      nameEn: `± ${getBenchmarkName(benchmarkType, 'en-US')}`,
+      nameKey,
+      benchmarkType,
       monthReturn: null,
       yearReturn: null,
       sixMonthsReturn: null,
@@ -887,8 +769,8 @@ export function calculateBenchmarkReturnsByGroupedKey(
   // Se não houver retornos calculados, retorna o nome do benchmark com retornos null
   if (periodReturns.length === 0) {
     return {
-      name: `± ${benchmarkName}`,
-      nameEn: `± ${getBenchmarkName(benchmarkType, 'en-US')}`,
+      nameKey,
+      benchmarkType,
       monthReturn: null,
       yearReturn: null,
       sixMonthsReturn: null,
@@ -923,10 +805,9 @@ export function calculateBenchmarkReturnsByGroupedKey(
     ? calculateCompoundedRates(periodReturns)
     : 0
   
-  // benchmarkName já foi declarado no início da função
   return {
-    name: `± ${benchmarkName}`,
-    nameEn: `± ${getBenchmarkName(benchmarkType, 'en-US')}`,
+    nameKey,
+    benchmarkType,
     monthReturn: lastMonthReturn * 100, // Converte para percentual
     yearReturn: yearReturn * 100,
     sixMonthsReturn: sixMonthsReturn * 100,

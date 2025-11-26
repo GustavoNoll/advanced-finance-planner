@@ -1,11 +1,13 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from 'recharts'
-import { useMemo, useState, useEffect } from 'react'
+import { useMemo, useState, useEffect, useCallback } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { PerformanceData } from "@/types/financial"
 import { useCurrency } from "@/contexts/CurrencyContext"
 import { buttonSelectedOrange, gradientCard } from "@/lib/gradient-classes"
+import { groupStrategyName, type GroupedStrategyKey, STRATEGY_ORDER, getStrategyColor, getStrategyOrder } from "@/utils/benchmark-calculator"
+import { translateGroupedStrategy } from "@/utils/i18n-helpers"
 
 interface MaturityTimelineProps {
   performanceData: PerformanceData[]
@@ -19,8 +21,8 @@ interface MaturityYearDataItem {
   totalInvestments: number
 }
 
-interface AssetClassOption {
-  key: string
+interface GroupedStrategyOption {
+  key: GroupedStrategyKey
   label: string
 }
 
@@ -28,49 +30,64 @@ export function MaturityTimeline({ performanceData }: MaturityTimelineProps) {
   const { t } = useTranslation()
   const { currency, convertValue, formatCurrency, getCurrencySymbol } = useCurrency()
   
-  // Extract unique asset classes with maturity dates from performance data
-  const assetClassOptions = useMemo<AssetClassOption[]>(() => {
+  /**
+   * Traduz uma chave de estratégia agrupada usando i18n
+   * Todas as traduções estão em portfolioPerformance.common.*
+   */
+  const translateGroupedStrategyMemo = useCallback((key: GroupedStrategyKey): string => {
+    return translateGroupedStrategy(key, t)
+  }, [t])
+  
+  // Extract unique grouped strategies with maturity dates from performance data
+  const groupedStrategyOptions = useMemo<GroupedStrategyOption[]>(() => {
     const now = new Date()
     
-    // Get all unique asset classes that have maturity dates in the future
-    const uniqueClasses = Array.from(new Set(
+    // Get all unique grouped strategies that have maturity dates in the future
+    const uniqueGroupedKeys = Array.from(new Set(
       performanceData
         .filter(item => item.maturity_date)
         .filter(item => new Date(item.maturity_date as string) >= now)
-        .map(item => item.asset_class)
-        .filter((assetClass): assetClass is string => !!assetClass)
+        .map(item => groupStrategyName(item.asset_class))
     ))
     
-    // Create options using the class name directly
-    return uniqueClasses.map((className) => ({
-      key: className,
-      label: className
-    })).sort((a, b) => a.label.localeCompare(b.label))
-  }, [performanceData])
+    // Create options using grouped keys, translating for display
+    // Sort by strategy order
+    return uniqueGroupedKeys
+      .map((groupedKey) => ({
+        key: groupedKey,
+        label: translateGroupedStrategyMemo(groupedKey)
+      }))
+      .sort((a, b) => {
+        const orderA = getStrategyOrder(a.key)
+        const orderB = getStrategyOrder(b.key)
+        if (orderA !== orderB) return orderA - orderB
+        return a.label.localeCompare(b.label)
+      })
+  }, [performanceData, translateGroupedStrategyMemo])
 
-  const [selectedAssetClass, setSelectedAssetClass] = useState<string>(() => {
+  const [selectedGroupedStrategy, setSelectedGroupedStrategy] = useState<GroupedStrategyKey | ''>(() => {
     // Initialize with first option key, or empty string if no options
-    return assetClassOptions.length > 0 ? assetClassOptions[0].key : ''
+    return groupedStrategyOptions.length > 0 ? groupedStrategyOptions[0].key : ''
   })
 
-  // Update selected asset class when options change
+  // Update selected grouped strategy when options change
   useEffect(() => {
-    if (assetClassOptions.length > 0 && (!selectedAssetClass || !assetClassOptions.find(opt => opt.key === selectedAssetClass))) {
-      setSelectedAssetClass(assetClassOptions[0].key)
+    if (groupedStrategyOptions.length > 0 && (!selectedGroupedStrategy || !groupedStrategyOptions.find(opt => opt.key === selectedGroupedStrategy))) {
+      setSelectedGroupedStrategy(groupedStrategyOptions[0].key)
     }
-  }, [assetClassOptions, selectedAssetClass])
+  }, [groupedStrategyOptions, selectedGroupedStrategy])
 
   const filteredData = useMemo(() => {
-    if (!selectedAssetClass || assetClassOptions.length === 0) return []
+    if (!selectedGroupedStrategy || groupedStrategyOptions.length === 0) return []
     
     const now = new Date()
     
-    // Filter by exact asset_class name
+    // Filter by grouped strategy key
     return performanceData
       .filter(item => item.maturity_date)
       .filter(item => new Date(item.maturity_date as string) >= now)
-      .filter(item => item.asset_class === selectedAssetClass)
-  }, [performanceData, selectedAssetClass, assetClassOptions])
+      .filter(item => groupStrategyName(item.asset_class) === selectedGroupedStrategy)
+  }, [performanceData, selectedGroupedStrategy, groupedStrategyOptions])
 
   const maturityData = useMemo(() => {
     const grouped = filteredData
@@ -78,7 +95,9 @@ export function MaturityTimeline({ performanceData }: MaturityTimelineProps) {
       .reduce((acc, investment) => {
         const maturityDate = new Date(investment.maturity_date as string)
         const maturityYear = maturityDate.getFullYear().toString()
-        const strategy = investment.asset_class || 'N/A'
+        // Use grouped strategy key instead of individual asset class
+        const groupedKey = groupStrategyName(investment.asset_class)
+        const strategy = translateGroupedStrategyMemo(groupedKey)
 
         if (!acc[maturityYear]) {
           acc[maturityYear] = {
@@ -125,7 +144,7 @@ export function MaturityTimeline({ performanceData }: MaturityTimelineProps) {
       .sort((a, b) => parseInt(a.year) - parseInt(b.year))
 
     return chartReady
-  }, [filteredData, convertValue])
+  }, [filteredData, convertValue, translateGroupedStrategyMemo])
 
   /**
    * Custom tooltip component for the maturity timeline chart
@@ -172,15 +191,15 @@ export function MaturityTimeline({ performanceData }: MaturityTimelineProps) {
             </p>
           </div>
           <div className="flex items-center gap-1 flex-wrap">
-            {assetClassOptions.length > 0 ? (
-              assetClassOptions.map(option => (
+            {groupedStrategyOptions.length > 0 ? (
+              groupedStrategyOptions.map(option => (
                 <Button
                   key={option.key}
-                  variant={selectedAssetClass === option.key ? 'default' : 'ghost'}
+                  variant={selectedGroupedStrategy === option.key ? 'default' : 'ghost'}
                   size="sm"
-                  onClick={() => setSelectedAssetClass(option.key)}
+                  onClick={() => setSelectedGroupedStrategy(option.key)}
                   className={`text-xs px-3 py-1 h-8 rounded-full transition-all ${
-                    selectedAssetClass === option.key
+                    selectedGroupedStrategy === option.key
                       ? buttonSelectedOrange
                       : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100'
                   }`}
@@ -201,7 +220,7 @@ export function MaturityTimeline({ performanceData }: MaturityTimelineProps) {
           <div className="flex items-center justify-center h-[400px] text-muted-foreground">
             <p>
               {t('portfolioPerformance.kpi.maturityTimeline.emptyFor', {
-                assetClass: assetClassOptions.find(opt => opt.key === selectedAssetClass)?.label || selectedAssetClass
+                assetClass: groupedStrategyOptions.find(opt => opt.key === selectedGroupedStrategy)?.label || selectedGroupedStrategy
               })}
             </p>
           </div>
@@ -229,7 +248,8 @@ export function MaturityTimeline({ performanceData }: MaturityTimelineProps) {
                 radius={[4, 4, 0, 0]}
               >
                 {maturityData.map((entry, index) => {
-                  const colors = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#06b6d4', '#ec4899', '#14b8a6']
+                  // Use strategy colors from benchmark-calculator
+                  const colors = STRATEGY_ORDER.map(key => getStrategyColor(key))
                   return (
                     <Cell key={`cell-${index}`} fill={colors[index % colors.length]} />
                   )

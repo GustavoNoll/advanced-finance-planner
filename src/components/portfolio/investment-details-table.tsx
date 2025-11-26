@@ -4,13 +4,15 @@ import type { PerformanceData } from "@/types/financial"
 import { calculateCompoundedRates } from "@/lib/financial-math"
 import { useTranslation } from "react-i18next"
 import { 
-  calculateBenchmarkReturnsByGroupedKey,
+  calculateBenchmarkReturnsByAssetClass,
   groupStrategyName, 
   getStrategyColor,
   getStrategyOrder,
   STRATEGY_ORDER,
   type GroupedStrategyKey 
 } from "@/utils/benchmark-calculator"
+import { translateGroupedStrategy } from "@/utils/i18n-helpers"
+import { isValidAssetClass, type ValidAssetClass } from "@/pages/performance/utils/valid-asset-classes"
 import { useMemo, useCallback, Fragment } from "react"
 import { useCurrency } from "@/contexts/CurrencyContext"
 
@@ -43,10 +45,10 @@ export function InvestmentDetailsTable({ performanceData }: InvestmentDetailsTab
   
   /**
    * Traduz uma chave de estratégia agrupada usando i18n
+   * Todas as traduções estão em portfolioPerformance.common.*
    */
-  const translateGroupedStrategy = useCallback((key: GroupedStrategyKey): string => {
-    const strategiesOrder = 'portfolioPerformance.kpi.diversificationDialog.strategiesOrder'
-    return t(`${strategiesOrder}.${key}`)
+  const translateGroupedStrategyMemo = useCallback((key: GroupedStrategyKey): string => {
+    return translateGroupedStrategy(key, t)
   }, [t])
 
   /**
@@ -54,16 +56,15 @@ export function InvestmentDetailsTable({ performanceData }: InvestmentDetailsTab
    */
   const groupStrategy = useCallback((strategy: string | null): string => {
     const groupedKey = groupStrategyName(strategy)
-    return translateGroupedStrategy(groupedKey)
-  }, [translateGroupedStrategy])
+    return translateGroupedStrategyMemo(groupedKey)
+  }, [translateGroupedStrategyMemo])
 
   /**
    * Obtém a ordem de uma estratégia traduzida
    */
   const getStrategyOrderForName = useCallback((strategyName: string): number => {
-    const strategiesOrder = 'portfolioPerformance.kpi.diversificationDialog.strategiesOrder'
     for (const key of STRATEGY_ORDER) {
-      if (t(`${strategiesOrder}.${key}`) === strategyName) {
+      if (t(`portfolioPerformance.common.${key}`) === strategyName) {
         return getStrategyOrder(key)
       }
     }
@@ -74,9 +75,8 @@ export function InvestmentDetailsTable({ performanceData }: InvestmentDetailsTab
    * Obtém a cor de uma estratégia traduzida
    */
   const getStrategyColorForName = useCallback((strategyName: string): string => {
-    const strategiesOrder = 'portfolioPerformance.kpi.diversificationDialog.strategiesOrder'
     for (const key of STRATEGY_ORDER) {
-      if (t(`${strategiesOrder}.${key}`) === strategyName) {
+      if (t(`portfolioPerformance.common.${key}`) === strategyName) {
         return getStrategyColor(key, true) // Use soft colors for this component
       }
     }
@@ -196,25 +196,24 @@ export function InvestmentDetailsTable({ performanceData }: InvestmentDetailsTab
             .filter(Boolean) as string[]
         )]
         
-        // Get the grouped key for this strategy
-        // Find the first asset's original class to get the grouped key
+        // Get the first asset's original class to calculate benchmark
         const firstAssetClass = strategyAssets
           .map(p => p.asset_class)
           .find(Boolean) || null
         
-        const groupedKey = groupStrategyName(firstAssetClass)
-        
         // Determine locale based on the currency prop
         const benchmarkLocale: 'pt-BR' | 'en-US' = currency === 'BRL' ? 'pt-BR' : 'en-US'
         
-        // Calculate benchmark returns using the grouped key and currency
-        // This function centralizes the logic: IFIX for BRL Real Estate, T-Bond for USD Real Estate, etc.
-        const benchmark = calculateBenchmarkReturnsByGroupedKey(
-          groupedKey,
-          currency,
-          strategyPeriods,
-          benchmarkLocale
-        )
+        // Calculate benchmark returns directly from asset class if it's a standardized key
+        // Otherwise fallback to grouped key (for backward compatibility)
+        const benchmark = firstAssetClass && isValidAssetClass(firstAssetClass)
+          ? calculateBenchmarkReturnsByAssetClass(
+              firstAssetClass as ValidAssetClass,
+              currency,
+              strategyPeriods,
+              benchmarkLocale
+            )
+          : null
         
         return {
           ...item,
@@ -321,7 +320,11 @@ export function InvestmentDetailsTable({ performanceData }: InvestmentDetailsTab
                     <TableRow className="border-border/50 bg-muted/20">
                       <TableCell className="font-medium text-muted-foreground pl-8 py-1">
                         {item.benchmark 
-                          ? (currentLocale === 'pt-BR' ? item.benchmark.name : item.benchmark.nameEn)
+                          ? (() => {
+                              const prefix = item.benchmark.benchmarkType === 'CDI' ? '%' : '±'
+                              const translatedName = t(item.benchmark.nameKey)
+                              return `${prefix} ${translatedName}`
+                            })()
                           : '-'
                         }
                       </TableCell>

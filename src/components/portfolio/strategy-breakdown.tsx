@@ -10,6 +10,7 @@ import {
   STRATEGY_ORDER,
   type GroupedStrategyKey 
 } from "@/utils/benchmark-calculator"
+import { translateGroupedStrategy } from "@/utils/i18n-helpers"
 import { useCurrency } from "@/contexts/CurrencyContext"
 
 interface StrategyBreakdownProps {
@@ -31,10 +32,10 @@ export function StrategyBreakdown({ performanceData }: StrategyBreakdownProps) {
 
   /**
    * Traduz uma chave de estratégia agrupada usando i18n
+   * Todas as traduções estão em portfolioPerformance.common.*
    */
-  const translateGroupedStrategy = useCallback((key: GroupedStrategyKey): string => {
-    const strategiesOrder = 'portfolioPerformance.kpi.diversificationDialog.strategiesOrder'
-    return t(`${strategiesOrder}.${key}`)
+  const translateGroupedStrategyMemo = useCallback((key: GroupedStrategyKey): string => {
+    return translateGroupedStrategy(key, t)
   }, [t])
 
   /**
@@ -42,16 +43,15 @@ export function StrategyBreakdown({ performanceData }: StrategyBreakdownProps) {
    */
   const groupStrategy = useCallback((strategy: string | null): string => {
     const groupedKey = groupStrategyName(strategy)
-    return translateGroupedStrategy(groupedKey)
-  }, [translateGroupedStrategy])
+    return translateGroupedStrategyMemo(groupedKey)
+  }, [translateGroupedStrategyMemo])
 
   /**
    * Obtém a ordem de uma estratégia traduzida
    */
   const getStrategyOrderForName = useCallback((strategyName: string): number => {
-    const strategiesOrder = 'portfolioPerformance.kpi.diversificationDialog.strategiesOrder'
     for (const key of STRATEGY_ORDER) {
-      if (t(`${strategiesOrder}.${key}`) === strategyName) {
+      if (t(`portfolioPerformance.common.${key}`) === strategyName) {
         return getStrategyOrder(key)
       }
     }
@@ -62,9 +62,8 @@ export function StrategyBreakdown({ performanceData }: StrategyBreakdownProps) {
    * Obtém a cor de uma estratégia traduzida
    */
   const getStrategyColorForName = useCallback((strategyName: string): string => {
-    const strategiesOrder = 'portfolioPerformance.kpi.diversificationDialog.strategiesOrder'
     for (const key of STRATEGY_ORDER) {
-      if (t(`${strategiesOrder}.${key}`) === strategyName) {
+      if (t(`portfolioPerformance.common.${key}`) === strategyName) {
         return getStrategyColor(key, true) // Use soft colors for this component
       }
     }

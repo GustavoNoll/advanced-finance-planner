@@ -9,6 +9,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { AssetClassSelect } from "./components/AssetClassSelect"
 import { Checkbox } from "@/components/ui/checkbox"
 import { ArrowLeft, Plus, Edit, Trash2, Save, X, CheckSquare, BarChart3, Info, CheckCircle2, AlertCircle, XCircle, Tag, DollarSign, Copy, ArrowUp, ArrowDown, ChevronDown, Settings2, ArrowRight, Settings, FileText } from "lucide-react"
 import { useTranslation } from "react-i18next"
@@ -31,7 +32,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Separator } from "@/components/ui/separator"
 import type { Filter as FilterType, FilterableField } from "./types/portfolio-data-management.types"
 import { operatorsByFieldType } from "./utils/filters"
-import { isValidAssetClass } from "./utils/valid-asset-classes"
+import { isValidAssetClass, translateAssetClassForDisplay } from "./utils/valid-asset-classes"
 import { supabase } from "@/lib/supabase"
 import type { UserProfileInvestment } from "@/types/broker-dashboard"
 
@@ -1586,7 +1587,7 @@ export default function PortfolioDataManagement() {
                         {visibleColumnsDetailed.has('account_name') && <TableCell>{r.account_name || '-'}</TableCell>}
                         {visibleColumnsDetailed.has('asset') && <TableCell>{r.asset}</TableCell>}
                         {visibleColumnsDetailed.has('issuer') && <TableCell>{r.issuer}</TableCell>}
-                        {visibleColumnsDetailed.has('asset_class') && <TableCell>{r.asset_class}</TableCell>}
+                        {visibleColumnsDetailed.has('asset_class') && <TableCell>{translateAssetClassForDisplay(r.asset_class, t)}</TableCell>}
                         {visibleColumnsDetailed.has('position') && <TableCell>{formatCurrency(r.position || 0, (r.currency as CurrencyCode) || 'BRL')}</TableCell>}
                         {visibleColumnsDetailed.has('rate') && <TableCell>{r.rate || '-'}</TableCell>}
                         {visibleColumnsDetailed.has('maturity') && <TableCell>{formatMaturityDate(r.maturity_date)}</TableCell>}
@@ -1626,7 +1627,7 @@ export default function PortfolioDataManagement() {
                                         <div className="text-sm space-y-1">
                                           <div className="flex justify-between">
                                             <span className="text-muted-foreground">{t('portfolioPerformance.dataManagement.table.assetClass') || 'Classe do Ativo:'}</span>
-                                            <span className="font-medium">{r.asset_class || '-'}</span>
+                                            <span className="font-medium">{translateAssetClassForDisplay(r.asset_class, t)}</span>
                                           </div>
                                           <div className="flex justify-between">
                                             <span className="text-muted-foreground">{t('portfolioPerformance.verification.status') || 'Status:'}</span>
@@ -1899,7 +1900,11 @@ export default function PortfolioDataManagement() {
                 </div>
                 <div>
                   <Label>{t('portfolioPerformance.dataManagement.editDialog.assetClassLabel')}</Label>
-                  <Input value={editItem.asset_class || ''} onChange={(e) => setEditItem(p => ({ ...p, asset_class: e.target.value }))} className="h-12" />
+                  <AssetClassSelect
+                    value={editItem.asset_class || ''}
+                    onValueChange={(value) => setEditItem(p => ({ ...p, asset_class: value }))}
+                    placeholder={t('portfolioPerformance.dataManagement.editDialog.assetClassLabel') || 'Selecione a classe de ativo'}
+                  />
                 </div>
                 <div>
                   <Label>{t('portfolioPerformance.dataManagement.editDialog.positionLabel')}</Label>
