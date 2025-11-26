@@ -1,5 +1,7 @@
 import { PerformanceImportService } from "@/services/performance-import.service"
 import type { ConsolidatedPerformance, PerformanceData } from "@/types/financial/performance"
+import { supabase } from "@/lib/supabase"
+import type { PdfImportInstitution } from "@/hooks/usePdfImportInstitutions"
 
 export type ImportResult = {
   success: number
@@ -13,26 +15,37 @@ export type DataType = 'consolidated' | 'detailed'
 export interface AcceptedInstitution {
   name: string
   defaultCurrency: 'BRL' | 'USD' | 'EUR'
+  requiresAdditionalFile?: boolean
 }
 
 /**
- * List of accepted institutions with their default currencies
+ * Fetches accepted institutions from database
+ * @returns Promise with list of accepted institutions
  */
-export const ACCEPTED_INSTITUTIONS: AcceptedInstitution[] = [
-  { name: 'Avenue', defaultCurrency: 'USD' },
-  { name: 'B3', defaultCurrency: 'BRL' },
-  { name: 'BB', defaultCurrency: 'BRL' },
-  { name: 'Bradesco', defaultCurrency: 'BRL' },
-  { name: 'BTG', defaultCurrency: 'BRL' },
-  { name: 'C6', defaultCurrency: 'BRL' },
-  { name: 'Fidelity', defaultCurrency: 'USD' },
-  { name: 'IB', defaultCurrency: 'USD' },
-  { name: 'Itau', defaultCurrency: 'BRL' },
-  { name: 'Santander', defaultCurrency: 'BRL' },
-  { name: 'Smart', defaultCurrency: 'BRL' },
-  { name: 'Warren', defaultCurrency: 'BRL' },
-  { name: 'XP', defaultCurrency: 'BRL' }
-]
+export async function fetchAcceptedInstitutions(): Promise<AcceptedInstitution[]> {
+  const { data, error } = await supabase
+    .from('pdf_import_institutions')
+    .select('name, default_currency, requires_additional_file')
+    .order('name', { ascending: true })
+
+  if (error) {
+    console.error('Error fetching institutions:', error)
+    // Fallback to empty array if database query fails
+    return []
+  }
+
+  return (data || []).map((inst: PdfImportInstitution) => ({
+    name: inst.name,
+    defaultCurrency: inst.default_currency,
+    requiresAdditionalFile: inst.requires_additional_file
+  }))
+}
+
+/**
+ * @deprecated Use fetchAcceptedInstitutions() instead
+ * Kept for backward compatibility during migration
+ */
+export const ACCEPTED_INSTITUTIONS: AcceptedInstitution[] = []
 
 export interface PDFImportParams {
   client_id: string
@@ -41,6 +54,7 @@ export interface PDFImportParams {
   currency: 'BRL' | 'USD' | 'EUR'
   period: string // MM/YYYY format
   account_name: string
+  additional_file?: File // Optional additional file for institutions that require it
 }
 
 /**
@@ -153,6 +167,11 @@ export async function handlePDFImport(
   formData.append('currency', params.currency)
   formData.append('period', params.period)
   formData.append('account_name', params.account_name)
+  
+  // Append additional file if provided
+  if (params.additional_file) {
+    formData.append('additional_file', params.additional_file)
+  }
 
   const response = await fetch(n8nUrl, {
     method: 'POST',

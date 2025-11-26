@@ -706,6 +706,7 @@ export const enUS = {
         enUS: "English (United States)"
       }
     },
+    noData: "No data available",
     actions: "Actions",
     confirmDeleteTitle: "Confirm deletion",
     confirmDeleteMessage: "Are you sure you want to delete this item? This action cannot be undone.",
@@ -1445,6 +1446,11 @@ export const enUS = {
     confirmPasswordPlaceholder: 'Enter your new password again',
     passwordChanged: 'Password changed successfully',
     marketDataAudit: 'Market Data Audit',
+    filteringByBroker: 'Filtering by selected broker',
+    brokersSelected: 'brokers selected',
+    selectAll: 'Select all',
+    select: 'Select',
+    deselect: 'Deselect',
     clientAccessAnalysis: {
       title: 'Client Access Analysis',
       activityStatus: {
@@ -1564,6 +1570,25 @@ export const enUS = {
         runningClients: 'Running',
         createdClients: 'Created'
       }
+    },
+    pdfInstitutions: {
+      title: 'Manage PDF Import Institutions',
+      description: 'Manage institutions accepted for PDF imports',
+      manage: 'Manage PDF Institutions',
+      create: 'Create Institution',
+      edit: 'Edit Institution',
+      name: 'Name',
+      namePlaceholder: 'Ex: XP Investimentos',
+      defaultCurrency: 'Default Currency',
+      requiresAdditionalFile: 'Requires Additional File',
+      created: 'Institution created successfully',
+      updated: 'Institution updated successfully',
+      deleted: 'Institution deleted successfully',
+      createDescription: 'Add a new institution for PDF imports',
+      editDescription: 'Update institution information',
+      confirmDelete: 'Confirm Deletion',
+      confirmDeleteDescription: 'Are you sure you want to delete this institution? This action cannot be undone.',
+      noInstitutions: 'No institutions registered'
     },
     tabs: {
       planning: 'Planning Information',
@@ -2445,15 +2470,19 @@ export const enUS = {
           institution: "Institution",
           currency: "Currency",
           period: "Period (MM/YYYY)",
-          accountName: "Account Name"
+          accountName: "Account Name",
+          additionalFile: "Additional File"
         },
         formPlaceholders: {
           client: "Select client",
           institution: "Select institution",
           accountName: "Ex: Account 12345"
         },
+        selectAdditionalFile: "Select additional file",
+        additionalFileDescription: "This institution requires an additional file for processing.",
         formErrors: {
           filesRequired: "This field is required",
+          additionalFileRequired: "Additional file is required for this institution",
           clientRequired: "This field is required",
           institutionRequired: "This field is required",
           currencyRequired: "This field is required",
