@@ -11,9 +11,11 @@ import {
   getStrategyColor,
   getStrategyOrder,
   STRATEGY_ORDER,
-  calculateBenchmarkReturnsByGroupedKey,
+  calculateBenchmarkReturnsByAssetClass,
   type GroupedStrategyKey 
 } from "@/utils/benchmark-calculator"
+import { translateGroupedStrategy } from "@/utils/i18n-helpers"
+import { isValidAssetClass, type ValidAssetClass } from "@/pages/performance/utils/valid-asset-classes"
 import type { PerformanceData } from "@/types/financial"
 import { useCurrency } from "@/contexts/CurrencyContext"
 import { calculateCompoundedRates } from "@/lib/financial-math"
@@ -280,10 +282,10 @@ export function AssetReturnsTable({ performanceData }: AssetReturnsTableProps) {
 
   /**
    * Traduz uma chave de estratégia agrupada usando i18n
+   * Todas as traduções estão em portfolioPerformance.common.*
    */
-  const translateGroupedStrategy = useCallback((key: GroupedStrategyKey): string => {
-    const strategiesOrder = 'portfolioPerformance.kpi.diversificationDialog.strategiesOrder'
-    return t(`${strategiesOrder}.${key}`)
+  const translateGroupedStrategyMemo = useCallback((key: GroupedStrategyKey): string => {
+    return translateGroupedStrategy(key, t)
   }, [t])
 
   /**
@@ -291,16 +293,15 @@ export function AssetReturnsTable({ performanceData }: AssetReturnsTableProps) {
    */
   const groupStrategy = useCallback((strategy: string | null): string => {
     const groupedKey = groupStrategyName(strategy)
-    return translateGroupedStrategy(groupedKey)
-  }, [translateGroupedStrategy])
+    return translateGroupedStrategyMemo(groupedKey)
+  }, [translateGroupedStrategyMemo])
 
   /**
    * Obtém a ordem de uma estratégia traduzida
    */
   const getStrategyOrderForName = useCallback((strategyName: string): number => {
-    const strategiesOrder = 'portfolioPerformance.kpi.diversificationDialog.strategiesOrder'
     for (const key of STRATEGY_ORDER) {
-      if (t(`${strategiesOrder}.${key}`) === strategyName) {
+      if (t(`portfolioPerformance.common.${key}`) === strategyName) {
         return getStrategyOrder(key)
       }
     }
@@ -311,9 +312,8 @@ export function AssetReturnsTable({ performanceData }: AssetReturnsTableProps) {
    * Obtém a cor de uma estratégia traduzida
    */
   const getStrategyColorForName = useCallback((strategyName: string): string => {
-    const strategiesOrder = 'portfolioPerformance.kpi.diversificationDialog.strategiesOrder'
     for (const key of STRATEGY_ORDER) {
-      if (t(`${strategiesOrder}.${key}`) === strategyName) {
+      if (t(`portfolioPerformance.common.${key}`) === strategyName) {
         return getStrategyColor(key, true) // Use soft colors for this component
       }
     }
@@ -491,23 +491,24 @@ export function AssetReturnsTable({ performanceData }: AssetReturnsTableProps) {
           .filter(Boolean) as string[]
       )]
       
-      // Get the grouped key for this strategy
+      // Get the first asset's original class to calculate benchmark
       const firstAssetClass = assets
         .map(p => p.asset_class)
         .find(Boolean) || null
       
-      const groupedKey = groupStrategyName(firstAssetClass)
-      
       // Determine locale based on the currency
       const benchmarkLocale: 'pt-BR' | 'en-US' = currency === 'BRL' ? 'pt-BR' : 'en-US'
       
-      // Calculate benchmark returns using the grouped key and currency
-      const benchmark = calculateBenchmarkReturnsByGroupedKey(
-        groupedKey,
-        currency,
-        strategyPeriods,
-        benchmarkLocale
-      )
+      // Calculate benchmark returns directly from asset class if it's a standardized key
+      // Otherwise fallback to grouped key (for backward compatibility)
+      const benchmark = firstAssetClass && isValidAssetClass(firstAssetClass)
+        ? calculateBenchmarkReturnsByAssetClass(
+            firstAssetClass as ValidAssetClass,
+            currency,
+            strategyPeriods,
+            benchmarkLocale
+          )
+        : null
       
       return {
         strategy,
@@ -749,7 +750,11 @@ export function AssetReturnsTable({ performanceData }: AssetReturnsTableProps) {
                           <div className={`grid gap-4 p-3 border-b border-border/30 bg-muted/10 text-sm`} style={{ gridTemplateColumns: getGridTemplateColumns() }}>
                             <div className="text-left text-muted-foreground">
                               {benchmark 
-                                ? (currentLocale === 'pt-BR' ? benchmark.name : benchmark.nameEn)
+                                ? (() => {
+                                    const prefix = benchmark.benchmarkType === 'CDI' ? '%' : '±'
+                                    const translatedName = t(benchmark.nameKey)
+                                    return `${prefix} ${translatedName}`
+                                  })()
                                 : '-'}
                             </div>
                             {visibleColumns.allocation && <div className="text-right text-muted-foreground">-</div>}

@@ -104,6 +104,17 @@ export const INDICATOR_CURRENCY_CONFIG: Record<string, IndicatorConfig> = {
     rawCurrency: 'INDEX',
     variationCurrency: 'INDEX',
     needsFXAdjustment: false
+  },
+  // Novos indicadores
+  aggg: {
+    rawCurrency: 'USD',
+    variationCurrency: 'USD',
+    needsFXAdjustment: true
+  },
+  msciAcwi: {
+    rawCurrency: 'USD',
+    variationCurrency: 'USD',
+    needsFXAdjustment: true
   }
 }
 
