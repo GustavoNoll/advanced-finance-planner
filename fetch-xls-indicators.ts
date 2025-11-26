@@ -280,7 +280,7 @@ export async function fetchByDownload(
 }
 
 /**
- * Exemplo de uso para IHFA
+ * Exemplo de uso para IHFA, IRFM e IMAB
  */
 async function main() {
   console.log('📥 Baixando indicadores de arquivos XLS...\n')
@@ -291,6 +291,30 @@ async function main() {
     'https://s3-data-prd-use1-precos.s3.us-east-1.amazonaws.com/arquivos/indices-historico/IHFA-HISTORICO.xls',
     'IHFA',
     'ihfa',
+    {
+      dateColumn: 1, // Segunda coluna: "Data de Referência" (DD/MM/YYYY)
+      valueColumn: 2, // Terceira coluna: "Número Índice" (valor do índice)
+      skipRows: 1 // Pular primeira linha (cabeçalho)
+    }
+  )
+  
+  // IRFM (IRF-M) - Download de arquivo XLS
+  await fetchByDownload(
+    'https://s3-data-prd-use1-precos.s3.us-east-1.amazonaws.com/arquivos/indices-historico/IRFM-HISTORICO.xls',
+    'IRFM',
+    'irfm',
+    {
+      dateColumn: 1, // Segunda coluna: "Data de Referência" (DD/MM/YYYY)
+      valueColumn: 2, // Terceira coluna: "Número Índice" (valor do índice)
+      skipRows: 1 // Pular primeira linha (cabeçalho)
+    }
+  )
+  
+  // IMAB - Download de arquivo XLS
+  await fetchByDownload(
+    'https://s3-data-prd-use1-precos.s3.us-east-1.amazonaws.com/arquivos/indices-historico/IMAB-HISTORICO.xls',
+    'IMAB',
+    'imab',
     {
       dateColumn: 1, // Segunda coluna: "Data de Referência" (DD/MM/YYYY)
       valueColumn: 2, // Terceira coluna: "Número Índice" (valor do índice)

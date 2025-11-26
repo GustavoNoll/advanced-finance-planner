@@ -251,13 +251,35 @@ export class PortfolioPerformanceService {
    * Deleta um registro consolidado
    */
   static async deleteConsolidatedRecord(id: string): Promise<void> {
-    const { error } = await supabase
+    // Primeiro verifica se o registro existe
+    const { data: existingRecord, error: checkError } = await supabase
+      .from('consolidated_performance')
+      .select('id')
+      .eq('id', id)
+      .single()
+
+    if (checkError && checkError.code !== 'PGRST116') {
+      throw new Error(`Erro ao verificar registro consolidado: ${checkError.message}`)
+    }
+
+    if (!existingRecord) {
+      throw new Error('Registro consolidado não encontrado')
+    }
+
+    // Deleta o registro e verifica se foi deletado
+    const { data: deletedData, error } = await supabase
       .from('consolidated_performance')
       .delete()
       .eq('id', id)
+      .select()
 
     if (error) {
       throw new Error(`Erro ao deletar registro consolidado: ${error.message}`)
+    }
+
+    // Verifica se realmente deletou algo
+    if (!deletedData || deletedData.length === 0) {
+      throw new Error('Nenhum registro foi deletado. Verifique as permissões ou políticas RLS.')
     }
   }
 
@@ -267,13 +289,26 @@ export class PortfolioPerformanceService {
   static async deleteMultipleConsolidatedRecords(ids: string[]): Promise<void> {
     if (ids.length === 0) return
 
-    const { error } = await supabase
+    const { data: deletedData, error } = await supabase
       .from('consolidated_performance')
       .delete()
       .in('id', ids)
+      .select()
 
     if (error) {
       throw new Error(`Erro ao deletar registros consolidados: ${error.message}`)
+    }
+
+    // Verifica se realmente deletou algo
+    if (!deletedData || deletedData.length === 0) {
+      throw new Error('Nenhum registro foi deletado. Verifique as permissões ou políticas RLS.')
+    }
+
+    // Verifica se todos os IDs solicitados foram deletados
+    if (deletedData.length < ids.length) {
+      const deletedIds = deletedData.map(r => r.id)
+      const notDeletedIds = ids.filter(id => !deletedIds.includes(id))
+      console.warn(`Alguns registros não foram deletados: ${notDeletedIds.join(', ')}`)
     }
   }
 
@@ -281,13 +316,35 @@ export class PortfolioPerformanceService {
    * Deleta um registro detalhado
    */
   static async deleteDetailedRecord(id: string): Promise<void> {
-    const { error } = await supabase
+    // Primeiro verifica se o registro existe
+    const { data: existingRecord, error: checkError } = await supabase
+      .from('performance_data')
+      .select('id')
+      .eq('id', id)
+      .single()
+
+    if (checkError && checkError.code !== 'PGRST116') {
+      throw new Error(`Erro ao verificar registro detalhado: ${checkError.message}`)
+    }
+
+    if (!existingRecord) {
+      throw new Error('Registro detalhado não encontrado')
+    }
+
+    // Deleta o registro e verifica se foi deletado
+    const { data: deletedData, error } = await supabase
       .from('performance_data')
       .delete()
       .eq('id', id)
+      .select()
 
     if (error) {
       throw new Error(`Erro ao deletar registro detalhado: ${error.message}`)
+    }
+
+    // Verifica se realmente deletou algo
+    if (!deletedData || deletedData.length === 0) {
+      throw new Error('Nenhum registro foi deletado. Verifique as permissões ou políticas RLS.')
     }
   }
 
@@ -297,13 +354,26 @@ export class PortfolioPerformanceService {
   static async deleteMultipleDetailedRecords(ids: string[]): Promise<void> {
     if (ids.length === 0) return
 
-    const { error } = await supabase
+    const { data: deletedData, error } = await supabase
       .from('performance_data')
       .delete()
       .in('id', ids)
+      .select()
 
     if (error) {
       throw new Error(`Erro ao deletar registros detalhados: ${error.message}`)
+    }
+
+    // Verifica se realmente deletou algo
+    if (!deletedData || deletedData.length === 0) {
+      throw new Error('Nenhum registro foi deletado. Verifique as permissões ou políticas RLS.')
+    }
+
+    // Verifica se todos os IDs solicitados foram deletados
+    if (deletedData.length < ids.length) {
+      const deletedIds = deletedData.map(r => r.id)
+      const notDeletedIds = ids.filter(id => !deletedIds.includes(id))
+      console.warn(`Alguns registros não foram deletados: ${notDeletedIds.join(', ')}`)
     }
   }
 
