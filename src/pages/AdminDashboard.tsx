@@ -4,7 +4,7 @@ import { supabase } from '@/lib/supabase';
 import { useToast } from '@/components/ui/use-toast';
 import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui/button';
-import { LogOut, Search, Plus, UserX, UserCheck, Users, Wallet, Target, Activity, Eye, EyeOff, Key, TrendingUp, AlertTriangle, Clock, PieChart as PieChartIcon, LineChart as LineChartIcon, Zap, ArrowUpRight, ArrowDownRight, Percent, Shield, Upload } from 'lucide-react';
+import { LogOut, Search, Plus, UserX, UserCheck, Users, Wallet, Target, Activity, Eye, EyeOff, Key, TrendingUp, AlertTriangle, Clock, PieChart as PieChartIcon, LineChart as LineChartIcon, Zap, ArrowUpRight, ArrowDownRight, Percent, Shield, Upload, BarChart as BarChartIcon } from 'lucide-react';
 import { Logo } from '@/components/ui/logo';
 import { Avatar } from '@/components/ui/avatar-initial';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -34,6 +34,7 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { InvestmentPolicyInsights } from '@/components/admin/InvestmentPolicyInsights';
 import { BrokerAccessAnalysis } from '@/components/admin/BrokerAccessAnalysis';
 import { tabTriggerActiveBlue } from '@/lib/gradient-classes';
+import { StatementImportsList } from '@/components/shared/StatementImportsList';
 
 interface BrokerMetrics {
   id: string;
@@ -237,6 +238,10 @@ export const AdminDashboard = () => {
     error: statementImportsError,
     refetch: refetchStatementImports
   } = useAdminStatementImports(30);
+
+  // Map clients and brokers for imports
+  const [clientsMap, setClientsMap] = useState<Record<string, { name: string; email: string; broker_id: string | null }>>({});
+  const [brokersMap, setBrokersMap] = useState<Record<string, { name: string; email: string }>>({});
   
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -255,6 +260,57 @@ export const AdminDashboard = () => {
     window.addEventListener('themechange', updateTheme)
     return () => window.removeEventListener('themechange', updateTheme)
   }, [])
+
+  // Fetch clients and brokers data for imports
+  useEffect(() => {
+    const fetchImportsData = async () => {
+      if (statementImports.length === 0) return;
+
+      const profileIds = [...new Set(statementImports.map(imp => imp.profile_id))];
+      
+      // Fetch clients
+      const { data: clientsData } = await supabase
+        .from('user_profiles_investment')
+        .select('id, profile_name, email, broker_id')
+        .in('id', profileIds);
+
+      const clientsMapData: Record<string, { name: string; email: string; broker_id: string | null }> = {};
+      clientsData?.forEach(client => {
+        clientsMapData[client.id] = {
+          name: client.profile_name || client.email || client.id.slice(0, 8),
+          email: client.email || '',
+          broker_id: client.broker_id
+        };
+      });
+      setClientsMap(clientsMapData);
+
+      // Fetch brokers
+      const brokerIds = [...new Set(clientsData?.map(c => c.broker_id).filter(Boolean) || [])];
+      if (brokerIds.length > 0) {
+        const { data: brokersData } = await supabase
+          .from('profiles')
+          .select('id, name')
+          .in('id', brokerIds);
+
+        const { data: usersData } = await supabase
+          .from('users')
+          .select('id, email')
+          .in('id', brokerIds);
+
+        const brokersMapData: Record<string, { name: string; email: string }> = {};
+        brokersData?.forEach(broker => {
+          const userEmail = usersData?.find(u => u.id === broker.id)?.email || '';
+          brokersMapData[broker.id] = {
+            name: broker.name || userEmail || broker.id.slice(0, 8),
+            email: userEmail
+          };
+        });
+        setBrokersMap(brokersMapData);
+      }
+    };
+
+    fetchImportsData();
+  }, [statementImports]);
 
   // Generate growth trend data for the last 12 months - OPTIMIZED: Single query instead of 36
   const generateGrowthTrendData = useCallback(async (brokers: BrokerMetrics[]) => {
@@ -1320,6 +1376,25 @@ export const AdminDashboard = () => {
                   </DialogFooter>
                 </DialogContent>
               </Dialog>
+
+              {/* Market Data Audit */}
+              {adminProfile?.id && (
+                <div 
+                  className="group flex items-center rounded-full bg-transparent hover:bg-green-50/50 dark:hover:bg-green-900/30 px-2 py-1 transition-all duration-300 ease-out cursor-pointer"
+                  onClick={() => navigate('/market-data-audit')}
+                >
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-10 w-10 rounded-full hover:bg-transparent text-green-600 dark:text-green-400 transition-all duration-200 pointer-events-none"
+                  >
+                    <BarChartIcon className="h-5 w-5" />
+                  </Button>
+                  <span className="ml-2 whitespace-nowrap text-sm text-slate-700 dark:text-slate-300 font-medium opacity-0 group-hover:opacity-100 w-0 group-hover:w-auto overflow-hidden transition-all duration-300 ease-out transform translate-x-[-10px] group-hover:translate-x-0">
+                    {t('adminDashboard.marketDataAudit')}
+                  </span>
+                </div>
+              )}
 
               {/* Sair */}
               <div 
@@ -2877,6 +2952,17 @@ export const AdminDashboard = () => {
             </CardContent>
           </Card>
         </div>
+
+        {/* Last 10 Imports List */}
+        <StatementImportsList
+          imports={statementImports}
+          loading={statementImportsLoading}
+          error={statementImportsError}
+          type="admin"
+          clientsMap={clientsMap}
+          brokersMap={brokersMap}
+          t={t}
+        />
 
           </TabsContent>
 

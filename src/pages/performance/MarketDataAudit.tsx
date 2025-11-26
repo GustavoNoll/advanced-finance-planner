@@ -1,5 +1,5 @@
 import { useMemo, useState, useEffect, useCallback } from "react"
-import { useParams, useNavigate } from "react-router-dom"
+import { useNavigate } from "react-router-dom"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
@@ -74,7 +74,6 @@ function formatCompetence(date: Date): string {
 }
 
 export default function MarketDataAudit() {
-  const { id: profileId } = useParams<{ id: string }>()
   const navigate = useNavigate()
   const { t } = useTranslation()
   const { currency: displayCurrency, convertValue, adjustReturnWithFX, formatCurrency: formatCurrencyContext } = useCurrency()
@@ -854,7 +853,7 @@ export default function MarketDataAudit() {
     <div className="max-w-[1800px] mx-auto px-4 sm:px-6 lg:px-8 py-8">
       <div className="flex justify-between items-center mb-6">
         <div className="flex items-center gap-3">
-          <Button variant="outline" onClick={() => navigate(`/portfolio-data-management/${profileId}`)}>
+          <Button variant="outline" onClick={() => navigate(-1)}>
             <ArrowLeft className="mr-2 h-4 w-4" /> {t('portfolioPerformance.marketDataAudit.back')}
           </Button>
           <div>
