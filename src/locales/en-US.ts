@@ -1446,6 +1446,11 @@ export const enUS = {
     confirmPasswordPlaceholder: 'Enter your new password again',
     passwordChanged: 'Password changed successfully',
     marketDataAudit: 'Market Data Audit',
+    filteringByBroker: 'Filtering by selected broker',
+    brokersSelected: 'brokers selected',
+    selectAll: 'Select all',
+    select: 'Select',
+    deselect: 'Deselect',
     clientAccessAnalysis: {
       title: 'Client Access Analysis',
       activityStatus: {

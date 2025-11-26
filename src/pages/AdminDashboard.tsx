@@ -4,7 +4,7 @@ import { supabase } from '@/lib/supabase';
 import { useToast } from '@/components/ui/use-toast';
 import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui/button';
-import { LogOut, Search, Plus, UserX, UserCheck, Users, Wallet, Target, Activity, Eye, EyeOff, Key, TrendingUp, AlertTriangle, Clock, PieChart as PieChartIcon, LineChart as LineChartIcon, Zap, ArrowUpRight, ArrowDownRight, Percent, Shield, Upload, BarChart as BarChartIcon, Building2 } from 'lucide-react';
+import { LogOut, Search, Plus, UserX, UserCheck, Users, Wallet, Target, Activity, Eye, EyeOff, Key, TrendingUp, AlertTriangle, Clock, PieChart as PieChartIcon, LineChart as LineChartIcon, Zap, ArrowUpRight, ArrowDownRight, Percent, Shield, Upload, BarChart as BarChartIcon, Building2, CheckSquare } from 'lucide-react';
 import { Logo } from '@/components/ui/logo';
 import { Avatar } from '@/components/ui/avatar-initial';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -112,6 +112,7 @@ export const AdminDashboard = () => {
   const [activeBrokerIds, setActiveBrokerIds] = useState<string[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'inactive'>('active');
+  const [selectedBrokerEmail, setSelectedBrokerEmail] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [isDark, setIsDark] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
@@ -747,6 +748,69 @@ export const AdminDashboard = () => {
     
     setFilteredBrokers(filtered);
   }, [searchQuery, statusFilter, brokers]);
+
+  // Clear selectedBrokerEmail if searchQuery doesn't match any broker email
+  useEffect(() => {
+    if (selectedBrokerEmail && searchQuery !== selectedBrokerEmail) {
+      const brokerExists = brokers.some(broker => broker.email === searchQuery);
+      if (!brokerExists) {
+        setSelectedBrokerEmail(null);
+      }
+    }
+  }, [searchQuery, selectedBrokerEmail, brokers]);
+
+  // Calculate filtered brokers for metrics - when a broker email is selected, use only that one
+  const brokersForMetrics = useMemo(() => {
+    const activeBrokers = brokers.filter(broker => broker.active);
+    
+    // If a specific broker email is selected, use only that broker
+    if (selectedBrokerEmail) {
+      const selectedBroker = activeBrokers.find(broker => broker.email === selectedBrokerEmail);
+      if (selectedBroker) {
+        return [selectedBroker];
+      }
+    }
+    
+    // If none selected, use all active brokers
+    return activeBrokers;
+  }, [brokers, selectedBrokerEmail]);
+
+  // Create a stable key for brokersForMetrics to use as dependency
+  const brokersForMetricsKey = useMemo(() => {
+    return brokersForMetrics.map(b => b.id).sort().join(',');
+  }, [brokersForMetrics]);
+
+  // Recalculate metrics when brokersForMetrics changes
+  useEffect(() => {
+    if (brokersForMetrics.length === 0 || brokers.length === 0) return;
+
+    const brokerIdsList = brokersForMetrics.map(broker => broker.id);
+    
+    const updateMetrics = async () => {
+      setActiveBrokerIds(brokerIdsList);
+      const allClients = brokersForMetrics.flatMap(broker => broker.clients);
+      
+      // Recalculate metrics
+      const [overallMetrics, trendData] = await Promise.all([
+        calculateEnhancedMetrics(allClients),
+        generateGrowthTrendData(brokersForMetrics)
+      ]);
+      
+      setOverallMetrics(overallMetrics);
+      setGrowthTrendData(trendData);
+
+      // Generate broker performance data
+      const performanceData = generateBrokerPerformanceData(brokersForMetrics);
+      setBrokerPerformanceData(performanceData);
+
+      // Generate age distribution data
+      const ageData = generateAgeDistributionData(brokersForMetrics);
+      setAgeDistributionData(ageData);
+    };
+
+    updateMetrics();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [brokersForMetricsKey]);
 
   const fetchBrokerMetrics = async () => {
     try {
@@ -1475,7 +1539,17 @@ export const AdminDashboard = () => {
         {/* Brokers List */}
         <div className="bg-card rounded-xl shadow-sm border border-border overflow-hidden mb-8">
           <div className="p-6">
-            <h2 className="text-lg font-semibold text-foreground mb-4">{t('adminDashboard.brokersList')}</h2>
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-lg font-semibold text-foreground">{t('adminDashboard.brokersList')}</h2>
+              {selectedBrokerEmail && (
+                <div className="flex items-center gap-2 px-3 py-1.5 bg-blue-50 dark:bg-blue-900/30 rounded-lg border border-blue-200 dark:border-blue-800">
+                  <CheckSquare className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+                  <span className="text-sm font-medium text-blue-700 dark:text-blue-300">
+                    {t('adminDashboard.filteringByBroker') || 'Filtrando por corretor selecionado'}
+                  </span>
+                </div>
+              )}
+            </div>
             <div className="overflow-x-auto">
               <table className="min-w-full divide-y divide-border">
                 <thead className="bg-muted">
@@ -1515,8 +1589,10 @@ export const AdminDashboard = () => {
                           onClick={() => {
                             if (searchQuery === broker.email) {
                               setSearchQuery('');
+                              setSelectedBrokerEmail(null);
                             } else {
                               setSearchQuery(broker.email);
+                              setSelectedBrokerEmail(broker.email);
                             }
                           }}
                         >

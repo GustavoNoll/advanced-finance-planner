@@ -1446,6 +1446,11 @@ export const ptBR = {
     confirmPasswordPlaceholder: 'Digite novamente sua nova senha',
     passwordChanged: 'Senha alterada com sucesso',
     marketDataAudit: 'Auditoria de Dados de Mercado',
+    filteringByBroker: 'Filtrando por corretor selecionado',
+    brokersSelected: 'corretores selecionados',
+    selectAll: 'Selecionar todos',
+    select: 'Selecionar',
+    deselect: 'Desselecionar',
     clientAccessAnalysis: {
       title: 'Análise de Acessos dos Clientes',
       activityStatus: {
