@@ -11,18 +11,6 @@ CREATE TABLE public.asset_allocations (
   CONSTRAINT asset_allocations_pkey PRIMARY KEY (id),
   CONSTRAINT asset_allocations_policy_id_fkey FOREIGN KEY (policy_id) REFERENCES public.investment_policies(id)
 );
-CREATE TABLE public.broker_themes (
-  broker_id uuid NOT NULL,
-  primary_color character varying,
-  secondary_color character varying,
-  accent_color character varying,
-  logo_url text,
-  brand_name character varying,
-  created_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP,
-  updated_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP,
-  CONSTRAINT broker_themes_pkey PRIMARY KEY (broker_id),
-  CONSTRAINT broker_themes_broker_id_fkey FOREIGN KEY (broker_id) REFERENCES public.profiles(id)
-);
 CREATE TABLE public.budgets (
   id uuid NOT NULL DEFAULT uuid_generate_v4(),
   policy_id uuid UNIQUE,
@@ -45,6 +33,25 @@ CREATE TABLE public.children (
   updated_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP,
   CONSTRAINT children_pkey PRIMARY KEY (id),
   CONSTRAINT children_family_structure_id_fkey FOREIGN KEY (family_structure_id) REFERENCES public.family_structures(id)
+);
+CREATE TABLE public.consolidated_performance (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  profile_id uuid NOT NULL,
+  created_at timestamp with time zone NOT NULL DEFAULT now(),
+  updated_at timestamp with time zone NOT NULL DEFAULT now(),
+  institution text,
+  report_date text,
+  period text,
+  initial_assets numeric,
+  movement numeric,
+  taxes numeric,
+  final_assets numeric,
+  financial_gain numeric,
+  yield numeric,
+  currency character varying DEFAULT 'BRL'::character varying CHECK (currency::text = ANY (ARRAY['BRL'::character varying, 'USD'::character varying, 'EUR'::character varying]::text[])),
+  account_name text,
+  CONSTRAINT consolidated_performance_pkey PRIMARY KEY (id),
+  CONSTRAINT consolidated_performance_profile_id_fkey FOREIGN KEY (profile_id) REFERENCES public.profiles(id)
 );
 CREATE TABLE public.events (
   id uuid NOT NULL DEFAULT uuid_generate_v4(),
@@ -90,8 +97,8 @@ CREATE TABLE public.financial_goals (
   installment_interval integer DEFAULT 1 CHECK (installment_interval IS NULL OR installment_interval >= 1),
   payment_mode text NOT NULL DEFAULT 'none'::text CHECK (payment_mode = ANY (ARRAY['none'::text, 'installment'::text, 'repeat'::text])),
   CONSTRAINT financial_goals_pkey PRIMARY KEY (id),
-  CONSTRAINT goals_profile_id_fkey FOREIGN KEY (profile_id) REFERENCES public.profiles(id),
-  CONSTRAINT financial_goals_profile_id_fkey FOREIGN KEY (profile_id) REFERENCES public.profiles(id)
+  CONSTRAINT financial_goals_profile_id_fkey FOREIGN KEY (profile_id) REFERENCES public.profiles(id),
+  CONSTRAINT goals_profile_id_fkey FOREIGN KEY (profile_id) REFERENCES public.profiles(id)
 );
 CREATE TABLE public.financial_record_links (
   id uuid NOT NULL DEFAULT gen_random_uuid(),
@@ -104,36 +111,6 @@ CREATE TABLE public.financial_record_links (
   CONSTRAINT financial_record_links_pkey PRIMARY KEY (id),
   CONSTRAINT financial_record_links_financial_record_id_fkey FOREIGN KEY (financial_record_id) REFERENCES public.user_financial_records(id)
 );
-
--- Funções para delete em cascata
-CREATE OR REPLACE FUNCTION delete_financial_goal_links()
-RETURNS TRIGGER AS $$
-BEGIN
-    DELETE FROM public.financial_record_links 
-    WHERE item_id = OLD.id AND item_type = 'goal';
-    RETURN OLD;
-END;
-$$ LANGUAGE plpgsql;
-
-CREATE OR REPLACE FUNCTION delete_financial_event_links()
-RETURNS TRIGGER AS $$
-BEGIN
-    DELETE FROM public.financial_record_links 
-    WHERE item_id = OLD.id AND item_type = 'event';
-    RETURN OLD;
-END;
-$$ LANGUAGE plpgsql;
-
--- Triggers para delete em cascata
-CREATE TRIGGER trigger_delete_financial_goal_links
-    BEFORE DELETE ON public.financial_goals
-    FOR EACH ROW
-    EXECUTE FUNCTION delete_financial_goal_links();
-
-CREATE TRIGGER trigger_delete_financial_event_links
-    BEFORE DELETE ON public.events
-    FOR EACH ROW
-    EXECUTE FUNCTION delete_financial_event_links();
 CREATE TABLE public.investment_plans (
   id uuid NOT NULL DEFAULT gen_random_uuid(),
   created_at timestamp with time zone DEFAULT now(),
@@ -142,24 +119,16 @@ CREATE TABLE public.investment_plans (
   final_age integer NOT NULL,
   plan_type character varying NOT NULL CHECK (plan_type::text = ANY (ARRAY['1'::character varying, '2'::character varying, '3'::character varying]::text[])),
   status character varying DEFAULT 'active'::character varying CHECK (status::text = ANY (ARRAY['active'::character varying, 'inactive'::character varying, 'deleted'::character varying]::text[])),
+  adjust_contribution_for_inflation boolean NOT NULL DEFAULT false,
   limit_age integer,
   legacy_amount numeric,
   plan_initial_date date,
+  adjust_income_for_inflation boolean DEFAULT false,
   currency character varying NOT NULL DEFAULT 'BRL'::character varying CHECK (currency::text = ANY (ARRAY['BRL'::character varying::text, 'USD'::character varying::text, 'EUR'::character varying::text])),
+  plan_end_accumulation_date date,
+  old_portfolio_profitability integer,
   CONSTRAINT investment_plans_pkey PRIMARY KEY (id),
   CONSTRAINT investment_plans_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.profiles(id)
-);
-CREATE TABLE public.micro_investment_plans (
-  id uuid NOT NULL DEFAULT gen_random_uuid(),
-  created_at timestamp with time zone NOT NULL DEFAULT timezone('utc'::text, now()),
-  life_investment_plan_id uuid NOT NULL,
-  effective_date date NOT NULL,
-  monthly_deposit numeric NOT NULL,
-  desired_income numeric NOT NULL,
-  expected_return numeric NOT NULL,
-  inflation numeric NOT NULL,
-  CONSTRAINT micro_investment_plans_pkey PRIMARY KEY (id),
-  CONSTRAINT micro_investment_plans_life_investment_plan_id_fkey FOREIGN KEY (life_investment_plan_id) REFERENCES public.investment_plans(id) ON DELETE CASCADE
 );
 CREATE TABLE public.investment_policies (
   id uuid NOT NULL DEFAULT uuid_generate_v4(),
@@ -200,6 +169,20 @@ CREATE TABLE public.life_information (
   CONSTRAINT life_information_pkey PRIMARY KEY (id),
   CONSTRAINT life_information_policy_id_fkey FOREIGN KEY (policy_id) REFERENCES public.investment_policies(id)
 );
+CREATE TABLE public.micro_investment_plans (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  created_at timestamp with time zone NOT NULL DEFAULT timezone('utc'::text, now()),
+  life_investment_plan_id uuid NOT NULL,
+  effective_date date NOT NULL,
+  monthly_deposit numeric NOT NULL,
+  desired_income numeric NOT NULL,
+  expected_return numeric NOT NULL,
+  inflation numeric NOT NULL,
+  adjust_contribution_for_accumulated_inflation boolean DEFAULT false,
+  adjust_income_for_accumulated_inflation boolean DEFAULT false,
+  CONSTRAINT micro_investment_plans_pkey PRIMARY KEY (id),
+  CONSTRAINT micro_investment_plans_life_investment_plan_id_fkey FOREIGN KEY (life_investment_plan_id) REFERENCES public.investment_plans(id)
+);
 CREATE TABLE public.patrimonial_situations (
   id uuid NOT NULL DEFAULT uuid_generate_v4(),
   policy_id uuid UNIQUE,
@@ -210,6 +193,36 @@ CREATE TABLE public.patrimonial_situations (
   updated_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP,
   CONSTRAINT patrimonial_situations_pkey PRIMARY KEY (id),
   CONSTRAINT patrimonial_situations_policy_id_fkey FOREIGN KEY (policy_id) REFERENCES public.investment_policies(id)
+);
+CREATE TABLE public.performance_data (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  profile_id uuid NOT NULL,
+  created_at timestamp with time zone NOT NULL DEFAULT now(),
+  updated_at timestamp with time zone NOT NULL DEFAULT now(),
+  institution text,
+  report_date text,
+  asset text,
+  position numeric,
+  asset_class text,
+  rate text,
+  maturity_date date,
+  issuer text,
+  period text,
+  yield numeric,
+  currency character varying DEFAULT 'BRL'::character varying CHECK (currency::text = ANY (ARRAY['BRL'::character varying, 'USD'::character varying, 'EUR'::character varying]::text[])),
+  account_name text,
+  CONSTRAINT performance_data_pkey PRIMARY KEY (id),
+  CONSTRAINT performance_data_profile_id_fkey FOREIGN KEY (profile_id) REFERENCES public.profiles(id)
+);
+CREATE TABLE public.portfolio_verification_settings (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  profile_id uuid NOT NULL UNIQUE,
+  correct_threshold numeric NOT NULL DEFAULT 0.01,
+  tolerance_value numeric NOT NULL DEFAULT 2500.00,
+  created_at timestamp with time zone DEFAULT now(),
+  updated_at timestamp with time zone DEFAULT now(),
+  CONSTRAINT portfolio_verification_settings_pkey PRIMARY KEY (id),
+  CONSTRAINT portfolio_verification_settings_profile_id_fkey FOREIGN KEY (profile_id) REFERENCES public.profiles(id)
 );
 CREATE TABLE public.professional_information (
   id uuid NOT NULL DEFAULT uuid_generate_v4(),
@@ -233,9 +246,26 @@ CREATE TABLE public.profiles (
   broker_id uuid,
   is_admin boolean NOT NULL DEFAULT false,
   active boolean NOT NULL DEFAULT true,
+  last_active_at timestamp with time zone,
+  language_preference text DEFAULT 'en-US'::text CHECK (language_preference = ANY (ARRAY['pt-BR'::text, 'en-US'::text])),
   CONSTRAINT profiles_pkey PRIMARY KEY (id),
-  CONSTRAINT profiles_broker_id_fkey FOREIGN KEY (broker_id) REFERENCES auth.users(id),
-  CONSTRAINT profiles_id_fkey FOREIGN KEY (id) REFERENCES auth.users(id)
+  CONSTRAINT profiles_id_fkey FOREIGN KEY (id) REFERENCES auth.users(id),
+  CONSTRAINT profiles_broker_id_fkey FOREIGN KEY (broker_id) REFERENCES auth.users(id)
+);
+CREATE TABLE public.statement_imports (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  n8n_execution_id text NOT NULL UNIQUE,
+  profile_id uuid NOT NULL,
+  import_type text CHECK (import_type IS NULL OR (import_type = ANY (ARRAY['consolidated'::text, 'assets'::text]))),
+  status text NOT NULL DEFAULT 'created'::text CHECK (status = ANY (ARRAY['created'::text, 'running'::text, 'success'::text, 'failed'::text])),
+  metadata jsonb DEFAULT '{}'::jsonb,
+  error_message text,
+  created_at timestamp with time zone NOT NULL DEFAULT now(),
+  updated_at timestamp with time zone NOT NULL DEFAULT now(),
+  started_at timestamp with time zone,
+  completed_at timestamp with time zone,
+  CONSTRAINT statement_imports_pkey PRIMARY KEY (id),
+  CONSTRAINT statement_imports_profile_id_fkey FOREIGN KEY (profile_id) REFERENCES public.profiles(id)
 );
 CREATE TABLE public.user_financial_records (
   id integer NOT NULL DEFAULT nextval('user_financial_records_id_seq'::regclass),
