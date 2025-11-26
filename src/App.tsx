@@ -16,6 +16,7 @@ import { Simulation } from "./pages/Simulation";
 import PortfolioDataManagement from "@/pages/performance/PortfolioDataManagement";
 import StatementImportsHistory from "@/pages/performance/StatementImportsHistory";
 import MarketDataAudit from "@/pages/performance/MarketDataAudit";
+import { ManagePdfImportInstitutions } from "@/pages/ManagePdfImportInstitutions";
 import FinancialRecords from "@/pages/planning/FinancialRecords";
 import ClientProfile from "@/pages/ClientProfile";
 import FinancialGoals from "@/pages/planning/FinancialGoals";
@@ -189,6 +190,16 @@ function AppRoutes() {
             <ProtectedRoute>
               <PageTransition>
                 <MarketDataAudit />
+              </PageTransition>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/manage-pdf-institutions"
+          element={
+            <ProtectedRoute>
+              <PageTransition>
+                <ManagePdfImportInstitutions />
               </PageTransition>
             </ProtectedRoute>
           }

@@ -1566,6 +1566,25 @@ export const ptBR = {
         createdClients: 'Criadas'
       }
     },
+    pdfInstitutions: {
+      title: 'Gerenciar Instituições de Importação PDF',
+      description: 'Gerencie as instituições aceitas para importação de PDFs',
+      manage: 'Gerenciar Instituições PDF',
+      create: 'Criar Instituição',
+      edit: 'Editar Instituição',
+      name: 'Nome',
+      namePlaceholder: 'Ex: XP Investimentos',
+      defaultCurrency: 'Moeda Padrão',
+      requiresAdditionalFile: 'Requer Arquivo Adicional',
+      created: 'Instituição criada com sucesso',
+      updated: 'Instituição atualizada com sucesso',
+      deleted: 'Instituição removida com sucesso',
+      createDescription: 'Adicione uma nova instituição para importação de PDFs',
+      editDescription: 'Atualize as informações da instituição',
+      confirmDelete: 'Confirmar Exclusão',
+      confirmDeleteDescription: 'Tem certeza que deseja excluir esta instituição? Esta ação não pode ser desfeita.',
+      noInstitutions: 'Nenhuma instituição cadastrada'
+    },
     tabs: {
       planning: 'Informações de Planejamento',
       imports: 'Importações',
@@ -2446,15 +2465,19 @@ export const ptBR = {
           institution: "Instituição",
           currency: "Moeda",
           period: "Período (MM/YYYY)",
-          accountName: "Nome da Conta"
+          accountName: "Nome da Conta",
+          additionalFile: "Arquivo Adicional"
         },
         formPlaceholders: {
           client: "Selecione o cliente",
           institution: "Selecione a instituição",
           accountName: "Ex: Conta 12345"
         },
+        selectAdditionalFile: "Selecionar arquivo adicional",
+        additionalFileDescription: "Esta instituição requer um arquivo adicional para processamento.",
         formErrors: {
           filesRequired: "Este campo é obrigatório",
+          additionalFileRequired: "Arquivo adicional é obrigatório para esta instituição",
           clientRequired: "Este campo é obrigatório",
           institutionRequired: "Este campo é obrigatório",
           currencyRequired: "Este campo é obrigatório",

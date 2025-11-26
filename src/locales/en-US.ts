@@ -1566,6 +1566,25 @@ export const enUS = {
         createdClients: 'Created'
       }
     },
+    pdfInstitutions: {
+      title: 'Manage PDF Import Institutions',
+      description: 'Manage institutions accepted for PDF imports',
+      manage: 'Manage PDF Institutions',
+      create: 'Create Institution',
+      edit: 'Edit Institution',
+      name: 'Name',
+      namePlaceholder: 'Ex: XP Investimentos',
+      defaultCurrency: 'Default Currency',
+      requiresAdditionalFile: 'Requires Additional File',
+      created: 'Institution created successfully',
+      updated: 'Institution updated successfully',
+      deleted: 'Institution deleted successfully',
+      createDescription: 'Add a new institution for PDF imports',
+      editDescription: 'Update institution information',
+      confirmDelete: 'Confirm Deletion',
+      confirmDeleteDescription: 'Are you sure you want to delete this institution? This action cannot be undone.',
+      noInstitutions: 'No institutions registered'
+    },
     tabs: {
       planning: 'Planning Information',
       imports: 'Imports',
@@ -2446,15 +2465,19 @@ export const enUS = {
           institution: "Institution",
           currency: "Currency",
           period: "Period (MM/YYYY)",
-          accountName: "Account Name"
+          accountName: "Account Name",
+          additionalFile: "Additional File"
         },
         formPlaceholders: {
           client: "Select client",
           institution: "Select institution",
           accountName: "Ex: Account 12345"
         },
+        selectAdditionalFile: "Select additional file",
+        additionalFileDescription: "This institution requires an additional file for processing.",
         formErrors: {
           filesRequired: "This field is required",
+          additionalFileRequired: "Additional file is required for this institution",
           clientRequired: "This field is required",
           institutionRequired: "This field is required",
           currencyRequired: "This field is required",

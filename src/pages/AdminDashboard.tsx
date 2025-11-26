@@ -4,7 +4,7 @@ import { supabase } from '@/lib/supabase';
 import { useToast } from '@/components/ui/use-toast';
 import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui/button';
-import { LogOut, Search, Plus, UserX, UserCheck, Users, Wallet, Target, Activity, Eye, EyeOff, Key, TrendingUp, AlertTriangle, Clock, PieChart as PieChartIcon, LineChart as LineChartIcon, Zap, ArrowUpRight, ArrowDownRight, Percent, Shield, Upload, BarChart as BarChartIcon } from 'lucide-react';
+import { LogOut, Search, Plus, UserX, UserCheck, Users, Wallet, Target, Activity, Eye, EyeOff, Key, TrendingUp, AlertTriangle, Clock, PieChart as PieChartIcon, LineChart as LineChartIcon, Zap, ArrowUpRight, ArrowDownRight, Percent, Shield, Upload, BarChart as BarChartIcon, Building2 } from 'lucide-react';
 import { Logo } from '@/components/ui/logo';
 import { Avatar } from '@/components/ui/avatar-initial';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -1392,6 +1392,25 @@ export const AdminDashboard = () => {
                   </Button>
                   <span className="ml-2 whitespace-nowrap text-sm text-slate-700 dark:text-slate-300 font-medium opacity-0 group-hover:opacity-100 w-0 group-hover:w-auto overflow-hidden transition-all duration-300 ease-out transform translate-x-[-10px] group-hover:translate-x-0">
                     {t('adminDashboard.marketDataAudit')}
+                  </span>
+                </div>
+              )}
+
+              {/* PDF Import Institutions */}
+              {adminProfile?.id && (
+                <div 
+                  className="group flex items-center rounded-full bg-transparent hover:bg-purple-50/50 dark:hover:bg-purple-900/30 px-2 py-1 transition-all duration-300 ease-out cursor-pointer"
+                  onClick={() => navigate('/manage-pdf-institutions')}
+                >
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-10 w-10 rounded-full hover:bg-transparent text-purple-600 dark:text-purple-400 transition-all duration-200 pointer-events-none"
+                  >
+                    <Building2 className="h-5 w-5" />
+                  </Button>
+                  <span className="ml-2 whitespace-nowrap text-sm text-slate-700 dark:text-slate-300 font-medium opacity-0 group-hover:opacity-100 w-0 group-hover:w-auto overflow-hidden transition-all duration-300 ease-out transform translate-x-[-10px] group-hover:translate-x-0">
+                    {t('adminDashboard.pdfInstitutions.manage') || 'Gerenciar Instituições PDF'}
                   </span>
                 </div>
               )}

@@ -7,7 +7,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { FileText } from "lucide-react"
 import { useTranslation } from "react-i18next"
 import { useToast } from "@/hooks/use-toast"
-import { handlePDFImport, ACCEPTED_INSTITUTIONS, type PDFImportParams } from "../utils/import-export"
+import { handlePDFImport, type PDFImportParams } from "../utils/import-export"
+import { usePdfImportInstitutions } from "@/hooks/usePdfImportInstitutions"
 import type { UserProfileInvestment } from "@/types/broker-dashboard"
 import { ClientSelect } from "./ClientSelect"
 
@@ -19,6 +20,7 @@ interface BrokerPDFImportDialogProps {
 
 interface FormErrors {
   files?: string
+  additionalFile?: string
   cliente?: string
   institution?: string
   currency?: string
@@ -37,8 +39,10 @@ function formatPeriodInput(value: string) {
 export function BrokerPDFImportDialog({ open, onOpenChange, clients }: BrokerPDFImportDialogProps) {
   const { t } = useTranslation()
   const { toast } = useToast()
+  const { data: institutions = [], isLoading: isLoadingInstitutions } = usePdfImportInstitutions()
   const [isImporting, setIsImporting] = useState(false)
   const [pdfFile, setPdfFile] = useState<File | null>(null)
+  const [additionalFile, setAdditionalFile] = useState<File | null>(null)
   const [formData, setFormData] = useState<PDFImportParams & { cliente: string }>({
     cliente: '',
     client_id: '',
@@ -50,6 +54,11 @@ export function BrokerPDFImportDialog({ open, onOpenChange, clients }: BrokerPDF
   })
   const [errors, setErrors] = useState<FormErrors>({})
   const pdfFileInputRef = useRef<HTMLInputElement>(null)
+  const additionalFileInputRef = useRef<HTMLInputElement>(null)
+  
+  // Check if selected institution requires additional file
+  const selectedInstitution = institutions.find(inst => inst.name === formData.institution)
+  const requiresAdditionalFile = selectedInstitution?.requires_additional_file || false
   
   // Auto-disable when there's only one client
   const isClientLocked = clients?.length === 1
@@ -67,6 +76,7 @@ export function BrokerPDFImportDialog({ open, onOpenChange, clients }: BrokerPDF
         account_name: ''
       })
       setPdfFile(null)
+      setAdditionalFile(null)
       setErrors({})
     }
   }, [open])
@@ -128,11 +138,29 @@ export function BrokerPDFImportDialog({ open, onOpenChange, clients }: BrokerPDF
     }
   }
 
+  const handleAdditionalFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0]
+    if (!file) return
+
+    setAdditionalFile(file)
+    if (errors.additionalFile) {
+      setErrors(prev => ({ ...prev, additionalFile: undefined }))
+    }
+    if (event.target) {
+      event.target.value = ''
+    }
+  }
+
   const validateForm = (): boolean => {
     const newErrors: FormErrors = {}
 
     if (!pdfFile) {
       newErrors.files = t('portfolioPerformance.dataManagement.importPDF.formErrors.filesRequired') || 'Este campo é obrigatório'
+    }
+
+    // Validate additional file if required
+    if (requiresAdditionalFile && !additionalFile) {
+      newErrors.additionalFile = t('portfolioPerformance.dataManagement.importPDF.formErrors.additionalFileRequired') || 'Arquivo adicional é obrigatório para esta instituição'
     }
 
     if (!formData.cliente) {
@@ -162,14 +190,21 @@ export function BrokerPDFImportDialog({ open, onOpenChange, clients }: BrokerPDF
   }
 
   const handleInstitutionChange = (institution: string) => {
-    const selectedInstitution = ACCEPTED_INSTITUTIONS.find(inst => inst.name === institution)
+    const selectedInstitution = institutions.find(inst => inst.name === institution)
     setFormData(prev => ({
       ...prev,
       institution,
-      currency: selectedInstitution?.defaultCurrency || 'BRL'
+      currency: selectedInstitution?.default_currency || 'BRL'
     }))
+    // Clear additional file when institution changes if it no longer requires it
+    if (!selectedInstitution?.requires_additional_file) {
+      setAdditionalFile(null)
+    }
     if (errors.institution) {
       setErrors(prev => ({ ...prev, institution: undefined }))
+    }
+    if (errors.additionalFile) {
+      setErrors(prev => ({ ...prev, additionalFile: undefined }))
     }
   }
 
@@ -196,7 +231,8 @@ export function BrokerPDFImportDialog({ open, onOpenChange, clients }: BrokerPDF
         institution: formData.institution,
         currency: formData.currency,
         period: formData.period,
-        account_name: formData.account_name
+        account_name: formData.account_name,
+        additional_file: additionalFile || undefined
       })
       toast({
         title: t('portfolioPerformance.dataManagement.import.pdfSuccess') || 'PDF enviado com sucesso',
@@ -224,6 +260,13 @@ export function BrokerPDFImportDialog({ open, onOpenChange, clients }: BrokerPDF
         type="file"
         accept=".pdf"
         onChange={handlePDFFileSelect}
+        className="hidden"
+      />
+      <input
+        ref={additionalFileInputRef}
+        type="file"
+        accept=".pdf,.xlsx,.xls,.csv"
+        onChange={handleAdditionalFileSelect}
         className="hidden"
       />
       <Dialog open={open} onOpenChange={onOpenChange}>
@@ -281,16 +324,19 @@ export function BrokerPDFImportDialog({ open, onOpenChange, clients }: BrokerPDF
                 {t('portfolioPerformance.dataManagement.importPDF.formLabels.institution') || 'Instituição'}
               </Label>
               <ClientSelect
-                options={ACCEPTED_INSTITUTIONS.map(inst => ({
+                options={institutions.map(inst => ({
                   id: inst.name,
                   label: inst.name
                 }))}
                 value={formData.institution}
                 onValueChange={handleInstitutionChange}
-                placeholder={t('portfolioPerformance.dataManagement.importPDF.formPlaceholders.institution') || 'Selecione a instituição'}
+                placeholder={isLoadingInstitutions 
+                  ? (t('common.loading') || 'Carregando...')
+                  : (t('portfolioPerformance.dataManagement.importPDF.formPlaceholders.institution') || 'Selecione a instituição')}
                 searchPlaceholder={t('portfolioPerformance.dataManagement.importPDF.searchInstitution') || 'Buscar instituição...'}
                 emptyMessage={t('portfolioPerformance.dataManagement.importPDF.noInstitutionFound') || 'Nenhuma instituição encontrada.'}
                 error={!!errors.institution}
+                disabled={isLoadingInstitutions}
               />
               {errors.institution && (
                 <p className="text-xs text-red-500">{errors.institution}</p>
@@ -369,6 +415,35 @@ export function BrokerPDFImportDialog({ open, onOpenChange, clients }: BrokerPDF
                 <p className="text-xs text-red-500">{errors.account_name}</p>
               )}
             </div>
+
+            {/* Additional File - Only shown when institution requires it */}
+            {requiresAdditionalFile && (
+              <div className="space-y-2">
+                <Label>
+                  {t('portfolioPerformance.dataManagement.importPDF.formLabels.additionalFile') || 'Arquivo Adicional'}
+                  <span className="text-red-500 ml-1">*</span>
+                </Label>
+                <div className="flex gap-2">
+                  <Button
+                    variant="outline"
+                    className="flex-1"
+                    onClick={() => additionalFileInputRef.current?.click()}
+                    disabled={isImporting}
+                  >
+                    <FileText className="mr-2 h-4 w-4" />
+                    {additionalFile 
+                      ? additionalFile.name 
+                      : (t('portfolioPerformance.dataManagement.importPDF.selectAdditionalFile') || 'Selecionar arquivo adicional')}
+                  </Button>
+                </div>
+                {errors.additionalFile && (
+                  <p className="text-xs text-red-500">{errors.additionalFile}</p>
+                )}
+                <p className="text-xs text-muted-foreground">
+                  {t('portfolioPerformance.dataManagement.importPDF.additionalFileDescription') || 'Esta instituição requer um arquivo adicional para processamento.'}
+                </p>
+              </div>
+            )}
 
             {/* Actions */}
             <div className="flex gap-2 pt-2">
