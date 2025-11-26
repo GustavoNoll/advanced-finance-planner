@@ -706,6 +706,7 @@ export const enUS = {
         enUS: "English (United States)"
       }
     },
+    noData: "No data available",
     actions: "Actions",
     confirmDeleteTitle: "Confirm deletion",
     confirmDeleteMessage: "Are you sure you want to delete this item? This action cannot be undone.",

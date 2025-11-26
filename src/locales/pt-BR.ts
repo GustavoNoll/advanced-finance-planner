@@ -706,6 +706,7 @@ export const ptBR = {
         enUS: "Inglês (Estados Unidos)"
       }
     },
+    noData: "Nenhum dado disponível",
     actions: "Ações",
     confirmDeleteTitle: "Confirmar exclusão",
     confirmDeleteMessage: "Tem certeza que deseja excluir este item? Esta ação não pode ser desfeita.",
