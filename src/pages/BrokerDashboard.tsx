@@ -3,7 +3,7 @@ import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/lib/supabase';
 import { useToast } from '@/components/ui/use-toast';
-import { Plus, LogOut, Share2, Trash2, Calculator, FileText, Users, Target, Shield, Eye } from 'lucide-react';
+import { Plus, LogOut, Share2, Trash2, Calculator, FileText, Users, Target, Shield, Eye, BarChart as BarChartIcon, Upload, LineChart as LineChartIcon, PieChart as PieChartIcon, Clock, AlertTriangle, TrendingUp } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { createDateWithoutTimezone } from '@/utils/dateUtils';
 
@@ -24,6 +24,29 @@ import { BrokerPDFImportDialog } from '@/pages/performance/components/BrokerPDFI
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { InvestmentPolicyInsights } from '@/components/admin/InvestmentPolicyInsights';
 import { tabTriggerActiveBlue } from '@/lib/gradient-classes';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { useBrokerStatementImports } from '@/hooks/useStatementImports';
+import { 
+  AreaChart, Area, PieChart, Pie, Cell, Legend, ResponsiveContainer, 
+  XAxis, YAxis, CartesianGrid, Tooltip
+} from 'recharts';
+import { StatementImportsList } from '@/components/shared/StatementImportsList';
+
+// Modern color palette
+const MODERN_COLORS = {
+  primary: '#6366f1', // Indigo
+  secondary: '#8b5cf6', // Violet
+  success: '#10b981', // Emerald
+  warning: '#f59e0b', // Amber
+  danger: '#ef4444', // Red
+  info: '#06b6d4', // Cyan
+  purple: '#a855f7', // Purple
+  pink: '#ec4899', // Pink
+  blue: '#3b82f6', // Blue
+  green: '#22c55e', // Green
+  orange: '#f97316', // Orange
+  teal: '#14b8a6', // Teal
+};
 
 /**
  * Main broker dashboard component that displays client metrics and management tools
@@ -146,6 +169,16 @@ export const BrokerDashboard = () => {
     type: 'client',
     brokerId: currentBroker || undefined
   });
+
+  // Statement imports data using hook
+  const {
+    statementImports,
+    statementImportsByDay,
+    statementImportsStats,
+    loading: statementImportsLoading,
+    error: statementImportsError,
+    refetch: refetchStatementImports
+  } = useBrokerStatementImports(currentBroker, 30);
 
   // Scroll to client list
   const scrollToClientList = useCallback(() => {
@@ -817,6 +850,25 @@ export const BrokerDashboard = () => {
                 </span>
               </div>
 
+              {/* Market Data Audit */}
+              {brokerProfile?.id && (
+                <div 
+                  className="group flex items-center rounded-full bg-transparent hover:bg-green-50/50 dark:hover:bg-green-900/30 px-2 py-1 transition-all duration-300 ease-out cursor-pointer"
+                  onClick={() => navigate('/market-data-audit')}
+                >
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-10 w-10 rounded-full hover:bg-transparent text-green-600 dark:text-green-400 transition-all duration-200 pointer-events-none"
+                  >
+                    <BarChartIcon className="h-5 w-5" />
+                  </Button>
+                  <span className="ml-2 whitespace-nowrap text-sm text-slate-700 dark:text-slate-300 font-medium opacity-0 group-hover:opacity-100 w-0 group-hover:w-auto overflow-hidden transition-all duration-300 ease-out transform translate-x-[-10px] group-hover:translate-x-0">
+                    {t('brokerDashboard.buttons.marketDataAudit')}
+                  </span>
+                </div>
+              )}
+
               {/* Sair */}
               <div 
                 className="group flex items-center rounded-full bg-transparent hover:bg-red-50/50 dark:hover:bg-red-900/30 px-2 py-1 transition-all duration-300 ease-out cursor-pointer"
@@ -854,7 +906,7 @@ export const BrokerDashboard = () => {
         {/* Tabs for different sections */}
         <Tabs defaultValue="planning" className="mb-8">
           <div className="bg-white/95 dark:bg-slate-900/95 backdrop-blur-md border border-slate-200 dark:border-slate-700 rounded-xl shadow-sm p-1">
-            <TabsList className="grid w-full grid-cols-3 bg-transparent gap-1 h-auto">
+            <TabsList className="grid w-full grid-cols-4 bg-transparent gap-1 h-auto">
               <TabsTrigger 
                 value="planning"
                 className={`rounded-lg ${tabTriggerActiveBlue} text-slate-600 dark:text-slate-400 data-[state=active]:text-white dark:data-[state=active]:text-white hover:text-slate-900 dark:hover:text-slate-100 transition-all duration-200 py-2.5 flex items-center justify-center gap-2`}
@@ -868,6 +920,13 @@ export const BrokerDashboard = () => {
               >
                 <Shield className="h-4 w-4" />
                 {t('brokerDashboard.tabs.policy')}
+              </TabsTrigger>
+              <TabsTrigger 
+                value="imports"
+                className={`rounded-lg ${tabTriggerActiveBlue} text-slate-600 dark:text-slate-400 data-[state=active]:text-white dark:data-[state=active]:text-white hover:text-slate-900 dark:hover:text-slate-100 transition-all duration-200 py-2.5 flex items-center justify-center gap-2`}
+              >
+                <Upload className="h-4 w-4" />
+                {t('brokerDashboard.tabs.imports') || t('adminDashboard.tabs.imports')}
               </TabsTrigger>
               <TabsTrigger 
                 value="access"
@@ -904,6 +963,359 @@ export const BrokerDashboard = () => {
 
           <TabsContent value="policy" className="mt-6">
             <InvestmentPolicyInsights activeBrokerIds={currentBroker ? [currentBroker] : undefined} />
+          </TabsContent>
+
+          <TabsContent value="imports" className="mt-6">
+            {/* Statement Imports Analysis */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+              {/* Statement Imports Overview */}
+              <Card className="hover:shadow-lg transition-all duration-300 border-0 bg-gradient-to-br from-white to-slate-50 dark:from-slate-900 dark:to-slate-800 shadow-xl">
+                <CardHeader className="pb-4">
+                  <CardTitle className="flex items-center gap-3 text-xl">
+                    <div className="p-2 rounded-lg bg-gradient-to-r from-blue-500 to-cyan-500">
+                      <LineChartIcon className="h-6 w-6 text-white" />
+                    </div>
+                    <div>
+                      <span className="text-slate-900 dark:text-slate-100">{t('adminDashboard.statementImports.title')}</span>
+                      <p className="text-sm font-normal text-slate-600 dark:text-slate-400 mt-1">
+                        {t('adminDashboard.statementImports.last14Days')}
+                      </p>
+                    </div>
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="h-[320px]">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <AreaChart data={statementImportsByDay}>
+                        <defs>
+                          <linearGradient id="brokerImportsTotalGradient" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="5%" stopColor={MODERN_COLORS.primary} stopOpacity={0.3}/>
+                            <stop offset="95%" stopColor={MODERN_COLORS.primary} stopOpacity={0.05}/>
+                          </linearGradient>
+                          <linearGradient id="brokerImportsSuccessGradient" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="5%" stopColor={MODERN_COLORS.success} stopOpacity={0.3}/>
+                            <stop offset="95%" stopColor={MODERN_COLORS.success} stopOpacity={0.05}/>
+                          </linearGradient>
+                          <linearGradient id="brokerImportsFailedGradient" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="5%" stopColor={MODERN_COLORS.danger} stopOpacity={0.3}/>
+                            <stop offset="95%" stopColor={MODERN_COLORS.danger} stopOpacity={0.05}/>
+                          </linearGradient>
+                        </defs>
+                        <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" opacity={0.3} />
+                        <XAxis 
+                          dataKey="date" 
+                          tick={{ fontSize: 12, fill: '#64748b' }}
+                          axisLine={false}
+                          tickLine={false}
+                        />
+                        <YAxis 
+                          tick={{ fontSize: 12, fill: '#64748b' }}
+                          axisLine={false}
+                          tickLine={false}
+                        />
+                        <Tooltip 
+                          content={({ active, payload, label }) => {
+                            if (!active || !payload || !payload.length) return null;
+                            const data = statementImportsByDay.find(d => d.date === label);
+                            return (
+                              <div className="bg-white dark:bg-slate-800 p-4 rounded-xl shadow-xl border border-slate-200 dark:border-slate-700">
+                                <p className="text-sm font-semibold text-slate-900 dark:text-slate-100 mb-3">{label}</p>
+                                <div className="space-y-2">
+                                  <div className="flex items-center gap-3">
+                                    <div className="w-3 h-3 rounded-full bg-gradient-to-r from-indigo-500 to-purple-500" />
+                                    <div>
+                                      <p className="text-sm text-slate-600 dark:text-slate-400">{t('adminDashboard.statementImports.total')}</p>
+                                      <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">
+                                        {data?.total || 0}
+                                      </p>
+                                    </div>
+                                  </div>
+                                  <div className="flex items-center gap-3">
+                                    <div className="w-3 h-3 rounded-full bg-gradient-to-r from-emerald-500 to-teal-500" />
+                                    <div>
+                                      <p className="text-sm text-slate-600 dark:text-slate-400">{t('adminDashboard.statementImports.success')}</p>
+                                      <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">
+                                        {data?.success || 0}
+                                      </p>
+                                    </div>
+                                  </div>
+                                  <div className="flex items-center gap-3">
+                                    <div className="w-3 h-3 rounded-full bg-gradient-to-r from-red-500 to-pink-500" />
+                                    <div>
+                                      <p className="text-sm text-slate-600 dark:text-slate-400">{t('adminDashboard.statementImports.failures')}</p>
+                                      <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">
+                                        {data?.failed || 0}
+                                      </p>
+                                    </div>
+                                  </div>
+                                  {data && (data.running > 0 || data.created > 0) && (
+                                    <>
+                                      {data.running > 0 && (
+                                        <div className="flex items-center gap-3">
+                                          <div className="w-3 h-3 rounded-full bg-gradient-to-r from-amber-500 to-orange-500" />
+                                          <div>
+                                            <p className="text-sm text-slate-600 dark:text-slate-400">{t('adminDashboard.statementImports.running')}</p>
+                                            <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">
+                                              {data.running}
+                                            </p>
+                                          </div>
+                                        </div>
+                                      )}
+                                      {data.created > 0 && (
+                                        <div className="flex items-center gap-3">
+                                          <div className="w-3 h-3 rounded-full bg-gradient-to-r from-blue-500 to-cyan-500" />
+                                          <div>
+                                            <p className="text-sm text-slate-600 dark:text-slate-400">{t('adminDashboard.statementImports.created')}</p>
+                                            <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">
+                                              {data.created}
+                                            </p>
+                                          </div>
+                                        </div>
+                                      )}
+                                    </>
+                                  )}
+                                </div>
+                              </div>
+                            );
+                          }}
+                        />
+                        <Area 
+                          type="monotone" 
+                          dataKey="total" 
+                          stroke={MODERN_COLORS.primary}
+                          strokeWidth={3}
+                          fill="url(#brokerImportsTotalGradient)"
+                          name={t('adminDashboard.statementImports.chartLabels.total')}
+                        />
+                        <Area 
+                          type="monotone" 
+                          dataKey="success" 
+                          stroke={MODERN_COLORS.success}
+                          strokeWidth={2}
+                          fill="url(#brokerImportsSuccessGradient)"
+                          name={t('adminDashboard.statementImports.chartLabels.success')}
+                        />
+                        <Area 
+                          type="monotone" 
+                          dataKey="failed" 
+                          stroke={MODERN_COLORS.danger}
+                          strokeWidth={2}
+                          fill="url(#brokerImportsFailedGradient)"
+                          name={t('adminDashboard.statementImports.chartLabels.failures')}
+                        />
+                      </AreaChart>
+                    </ResponsiveContainer>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Statement Imports Status Distribution */}
+              <Card className="hover:shadow-lg transition-all duration-300 border-0 bg-gradient-to-br from-white to-slate-50 dark:from-slate-900 dark:to-slate-800 shadow-xl">
+                <CardHeader className="pb-4">
+                  <CardTitle className="flex items-center gap-3 text-xl">
+                    <div className="p-2 rounded-lg bg-gradient-to-r from-violet-500 to-purple-500">
+                      <PieChartIcon className="h-6 w-6 text-white" />
+                    </div>
+                    <div>
+                      <span className="text-slate-900 dark:text-slate-100">{t('adminDashboard.statementImports.statusDistribution')}</span>
+                      <p className="text-sm font-normal text-slate-600 dark:text-slate-400 mt-1">
+                        {t('adminDashboard.statementImports.last30Days')}
+                      </p>
+                    </div>
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="h-[320px]">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <PieChart>
+                        <Pie
+                          data={[
+                            { name: t('adminDashboard.statementImports.chartLabels.success'), value: statementImportsStats.success, color: MODERN_COLORS.success },
+                            { name: t('adminDashboard.statementImports.chartLabels.failures'), value: statementImportsStats.failed, color: MODERN_COLORS.danger },
+                            { name: t('adminDashboard.statementImports.chartLabels.running'), value: statementImportsStats.running, color: MODERN_COLORS.warning },
+                            { name: t('adminDashboard.statementImports.chartLabels.created'), value: statementImportsStats.created, color: MODERN_COLORS.info }
+                          ].filter(item => item.value > 0)}
+                          cx="50%"
+                          cy="50%"
+                          innerRadius={60}
+                          outerRadius={120}
+                          paddingAngle={5}
+                          dataKey="value"
+                          nameKey="name"
+                        >
+                          {[
+                            { name: t('adminDashboard.statementImports.chartLabels.success'), value: statementImportsStats.success, color: MODERN_COLORS.success },
+                            { name: t('adminDashboard.statementImports.chartLabels.failures'), value: statementImportsStats.failed, color: MODERN_COLORS.danger },
+                            { name: t('adminDashboard.statementImports.chartLabels.running'), value: statementImportsStats.running, color: MODERN_COLORS.warning },
+                            { name: t('adminDashboard.statementImports.chartLabels.created'), value: statementImportsStats.created, color: MODERN_COLORS.info }
+                          ].filter(item => item.value > 0).map((entry, index) => (
+                            <Cell 
+                              key={`cell-${index}`} 
+                              fill={entry.color} 
+                            />
+                          ))}
+                        </Pie>
+                        <Tooltip 
+                          content={({ active, payload }) => {
+                            if (!active || !payload || !payload.length) return null;
+                            const data = payload[0]?.payload;
+                            const total = statementImportsStats.total;
+                            const percentage = total > 0 ? ((data?.value || 0) / total * 100).toFixed(1) : '0.0';
+                            return (
+                              <div className="bg-white dark:bg-slate-800 p-4 rounded-xl shadow-xl border border-slate-200 dark:border-slate-700">
+                                <p className="text-sm font-semibold text-slate-900 dark:text-slate-100 mb-2">{data?.name}</p>
+                                <div className="space-y-1">
+                                  <div className="flex justify-between items-center">
+                                    <span className="text-sm text-slate-600 dark:text-slate-400">{t('adminDashboard.statementImports.quantity')}:</span>
+                                    <span className="text-sm font-semibold text-slate-900 dark:text-slate-100">
+                                      {data?.value || 0}
+                                    </span>
+                                  </div>
+                                  <div className="flex justify-between items-center">
+                                    <span className="text-sm text-slate-600 dark:text-slate-400">{t('adminDashboard.statementImports.percentage')}:</span>
+                                    <span className="text-sm font-semibold text-slate-900 dark:text-slate-100">
+                                      {percentage}%
+                                    </span>
+                                  </div>
+                                </div>
+                              </div>
+                            );
+                          }}
+                        />
+                        <Legend 
+                          verticalAlign="bottom" 
+                          height={60}
+                          formatter={(value) => (
+                            <span className="text-sm text-slate-600 dark:text-slate-400">{value}</span>
+                          )}
+                        />
+                      </PieChart>
+                    </ResponsiveContainer>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Statement Imports Summary Cards */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+              <Card className="hover:shadow-lg transition-all duration-200 border-border">
+                <CardHeader className="pb-2">
+                  <div className="flex items-center justify-between">
+                    <CardTitle className="text-sm font-medium text-muted-foreground">
+                      {t('adminDashboard.statementImports.totalImports')}
+                    </CardTitle>
+                    <Avatar 
+                      icon={LineChartIcon} 
+                      size="md" 
+                      variant="square"
+                      iconClassName="h-5 w-5"
+                      color="blue"
+                    />
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  <div className="flex items-baseline gap-2">
+                    <p className="text-3xl font-bold text-foreground">
+                      {statementImportsStats.total}
+                    </p>
+                    <p className="text-sm text-muted-foreground">{t('adminDashboard.statementImports.last30Days')}</p>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card className="hover:shadow-lg transition-all duration-200 border-border">
+                <CardHeader className="pb-2">
+                  <div className="flex items-center justify-between">
+                    <CardTitle className="text-sm font-medium text-muted-foreground">
+                      {t('adminDashboard.statementImports.success')}
+                    </CardTitle>
+                    <Avatar 
+                      icon={TrendingUp} 
+                      size="md" 
+                      variant="square"
+                      iconClassName="h-5 w-5"
+                      color="green"
+                    />
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  <div className="flex items-baseline gap-2">
+                    <p className="text-3xl font-bold text-foreground">
+                      {statementImportsStats.success}
+                    </p>
+                    <p className="text-sm text-muted-foreground">
+                      {statementImportsStats.total > 0 
+                        ? `${((statementImportsStats.success / statementImportsStats.total) * 100).toFixed(1)}%`
+                        : '0%'}
+                    </p>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card className="hover:shadow-lg transition-all duration-200 border-border">
+                <CardHeader className="pb-2">
+                  <div className="flex items-center justify-between">
+                    <CardTitle className="text-sm font-medium text-muted-foreground">
+                      {t('adminDashboard.statementImports.failures')}
+                    </CardTitle>
+                    <Avatar 
+                      icon={AlertTriangle} 
+                      size="md" 
+                      variant="square"
+                      iconClassName="h-5 w-5"
+                      color="red"
+                    />
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  <div className="flex items-baseline gap-2">
+                    <p className="text-3xl font-bold text-foreground">
+                      {statementImportsStats.failed}
+                    </p>
+                    <p className="text-sm text-muted-foreground">
+                      {statementImportsStats.total > 0 
+                        ? `${((statementImportsStats.failed / statementImportsStats.total) * 100).toFixed(1)}%`
+                        : '0%'}
+                    </p>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card className="hover:shadow-lg transition-all duration-200 border-border">
+                <CardHeader className="pb-2">
+                  <div className="flex items-center justify-between">
+                    <CardTitle className="text-sm font-medium text-muted-foreground">
+                      {t('adminDashboard.statementImports.running')}
+                    </CardTitle>
+                    <Avatar 
+                      icon={Clock} 
+                      size="md" 
+                      variant="square"
+                      iconClassName="h-5 w-5"
+                      color="yellow"
+                    />
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  <div className="flex items-baseline gap-2">
+                    <p className="text-3xl font-bold text-foreground">
+                      {statementImportsStats.running + statementImportsStats.created}
+                    </p>
+                    <p className="text-sm text-muted-foreground">{t('adminDashboard.statementImports.pending')}</p>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Last 10 Imports List */}
+            <StatementImportsList
+              imports={statementImports}
+              loading={statementImportsLoading}
+              error={statementImportsError}
+              type="broker"
+              clients={searchResults}
+              t={t}
+            />
           </TabsContent>
 
           <TabsContent value="access" className="mt-6">

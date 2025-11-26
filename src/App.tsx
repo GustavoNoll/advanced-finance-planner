@@ -184,7 +184,7 @@ function AppRoutes() {
           }
         />
         <Route
-          path="/market-data-audit/:id"
+          path="/market-data-audit"
           element={
             <ProtectedRoute>
               <PageTransition>

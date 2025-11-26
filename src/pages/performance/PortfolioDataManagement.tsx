@@ -49,7 +49,7 @@ export default function PortfolioDataManagement() {
   const currency = (plan?.currency || 'BRL') as CurrencyCode
 
   const [tab, setTab] = useState<'consolidated' | 'detailed'>('consolidated')
-  const [isLoading, setIsLoading] = useState(false)
+  const [isLoading, setIsLoading] = useState(true)
   const [consolidated, setConsolidated] = useState<ConsolidatedRow[]>([])
   const [detailed, setDetailed] = useState<PerformanceRow[]>([])
 
@@ -88,7 +88,10 @@ export default function PortfolioDataManagement() {
   ]))
 
   const fetchData = useCallback(async () => {
-    if (!profileId) return
+    if (!profileId) {
+      setIsLoading(false)
+      return
+    }
     setIsLoading(true)
     try {
       const { consolidated, detailed } = await PortfolioPerformanceService.fetchAllData(
@@ -110,7 +113,13 @@ export default function PortfolioDataManagement() {
     }
   }, [profileId, toast, t])
 
-  useEffect(() => { fetchData() }, [fetchData])
+  useEffect(() => {
+    if (profileId) {
+      fetchData()
+    } else {
+      setIsLoading(false)
+    }
+  }, [profileId, fetchData])
 
   useEffect(() => {
     if (!profileId) return
@@ -836,7 +845,7 @@ export default function PortfolioDataManagement() {
           
           <Button 
             variant="outline" 
-            onClick={() => navigate(`/market-data-audit/${profileId}`)}
+            onClick={() => navigate('/market-data-audit')}
           >
             {t('portfolioPerformance.dataManagement.marketDataAudit')}
           </Button>
