@@ -4,7 +4,7 @@ import type { PerformanceData } from "@/types/financial"
 import { formatMaturityDate } from "@/utils/dateUtils"
 import { useCurrency } from "@/contexts/CurrencyContext"
 import { useTranslation } from "react-i18next"
-
+import { useMemo } from "react"
 interface IssuerExposureProps {
   performanceData: PerformanceData[]
 }
@@ -19,11 +19,33 @@ interface IssuerChartItem {
 const LIMIT = 250000
 const TRANSLATION_BASE = 'portfolioPerformance.issuerExposure'
 
+/**
+ * Converte uma competência no formato "MM/YYYY" para Date
+ */
+function competenciaToDate(competencia?: string | null): Date {
+  if (!competencia) return new Date(0)
+  const [month, year] = competencia.split('/').map(Number)
+  return new Date(year, month - 1)
+}
+
 export function IssuerExposure({ performanceData }: IssuerExposureProps) {
   const { t } = useTranslation()
   const { formatCurrency, getCurrencySymbol } = useCurrency()
 
-  const issuerMap = performanceData
+  // Descobre a última competência disponível nos dados
+  const mostRecentPeriod = useMemo(() => {
+    const uniquePeriods = [...new Set(performanceData.map(item => item.period).filter(Boolean) as string[])]
+    if (uniquePeriods.length === 0) return undefined
+    return uniquePeriods.sort((a, b) => competenciaToDate(b).getTime() - competenciaToDate(a).getTime())[0]
+  }, [performanceData])
+
+  // Usa apenas os registros da última competência
+  const latestPeriodData = useMemo(() => {
+    if (!mostRecentPeriod) return [] as PerformanceData[]
+    return performanceData.filter(item => item.period === mostRecentPeriod)
+  }, [performanceData, mostRecentPeriod])
+
+  const issuerMap = latestPeriodData
     .filter(item => (item.issuer || '').trim().length > 0)
     .reduce((acc, item) => {
       const issuer = item.issuer as string
