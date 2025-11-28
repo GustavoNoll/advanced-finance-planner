@@ -34,6 +34,18 @@ import { fetchIPCARates, fetchUSCPIRates, fetchEuroCPIRates } from "@/lib/bcb-ap
 import { calculateCompoundedRates, yearlyReturnRateToMonthlyReturnRate } from "@/lib/financial-math";
 import { InvestmentPlan, MicroInvestmentPlan } from "@/types/financial/investment-plans";
 
+function competenciaToDate(competencia: string): Date {
+  const [month, year] = competencia.split('/').map(Number)
+  return new Date(year, month - 1)
+}
+
+function isPeriodInRange(period: string, start: string, end: string): boolean {
+  const periodDate = competenciaToDate(period)
+  const startDate = competenciaToDate(start)
+  const endDate = competenciaToDate(end)
+  return periodDate.getTime() >= startDate.getTime() && periodDate.getTime() <= endDate.getTime()
+}
+
 interface PortfolioPerformanceProps {
   clientId: string;
   profile: Profile | null;
@@ -64,13 +76,42 @@ function PortfolioPerformance({
   const [diversificationDialogOpen, setDiversificationDialogOpen] = useState(false)
   const navigate = useNavigate()
 
+  // Dados filtrados pela competência selecionada
+  const filteredConsolidatedData = useMemo(() => {
+    if (!filteredPeriodRange.start || !filteredPeriodRange.end) return consolidatedData
+    return consolidatedData.filter(entry => entry.period && isPeriodInRange(entry.period, filteredPeriodRange.start, filteredPeriodRange.end))
+  }, [consolidatedData, filteredPeriodRange])
+
+  const filteredPerformanceData = useMemo(() => {
+    if (!filteredPeriodRange.start || !filteredPeriodRange.end) return performanceData
+    return performanceData.filter(entry => entry.period && isPeriodInRange(entry.period, filteredPeriodRange.start, filteredPeriodRange.end))
+  }, [performanceData, filteredPeriodRange])
+
+  // Período de referência para KPIs (última competência dentro do filtro, caindo para mostRecentPeriod se necessário)
+  const kpiReferencePeriod = useMemo(() => {
+    if (filteredConsolidatedData.length === 0 && filteredPerformanceData.length === 0) return mostRecentPeriod
+    
+    const periods = [
+      ...new Set([
+        ...filteredConsolidatedData.map(d => d.period).filter(Boolean) as string[],
+        ...filteredPerformanceData.map(d => d.period).filter(Boolean) as string[]
+      ])
+    ].sort((a, b) => {
+      const dateA = competenciaToDate(a)
+      const dateB = competenciaToDate(b)
+      return dateB.getTime() - dateA.getTime()
+    })
+
+    return periods[0] || mostRecentPeriod
+  }, [filteredConsolidatedData, filteredPerformanceData, mostRecentPeriod])
+
   // Get current month inflation rate based on investment plan currency
-  // Uses the most recent period from performance data to get inflation for that specific month
+  // Uses the KPI reference period (respecting selected competence range)
   const currentMonthInflation = useMemo(() => {
-    if (!investmentPlan || !mostRecentPeriod) return null
+    if (!investmentPlan || !kpiReferencePeriod) return null
     
     // Parse the period (MM/YYYY format) to get month and year
-    const [monthStr, yearStr] = mostRecentPeriod.split('/')
+    const [monthStr, yearStr] = kpiReferencePeriod.split('/')
     const month = parseInt(monthStr, 10)
     const year = parseInt(yearStr, 10)
     
@@ -107,7 +148,7 @@ function PortfolioPerformance({
     
     // If exact match not found, use the most recent rate in the range
     return rateForPeriod ? rateForPeriod.monthlyRate : (rates[rates.length - 1]?.monthlyRate ?? null)
-  }, [investmentPlan, mostRecentPeriod])
+  }, [investmentPlan, kpiReferencePeriod])
 
   // Calculate target return: Expected Return - Current Month Inflation
   const targetReturn = useMemo(() => {
@@ -152,12 +193,12 @@ function PortfolioPerformance({
     setFilteredPeriodRange({ start: startPeriod, end: endPeriod })
   }, [])
 
-  // Calculate converted total assets considering currency conversion
+  // Calculate converted total assets considering currency conversion (respecting competence filter)
   const convertedTotalAssets = useMemo(() => {
-    if (!hasData || consolidatedData.length === 0) return totalAssets || 0
+    if (!hasData || filteredConsolidatedData.length === 0) return totalAssets || 0
     
     // Get most recent period
-    const periods = [...new Set(consolidatedData.map(d => d.period).filter(Boolean) as string[])]
+    const periods = [...new Set(filteredConsolidatedData.map(d => d.period).filter(Boolean) as string[])]
       .sort((a, b) => {
         const [mA, yA] = a.split('/').map(Number)
         const [mB, yB] = b.split('/').map(Number)
@@ -167,22 +208,22 @@ function PortfolioPerformance({
     
     if (periods.length === 0) return totalAssets || 0
     
-    const mostRecentPeriod = periods[0]
-    const recentData = consolidatedData.filter(d => d.period === mostRecentPeriod)
+    const latestPeriodInFilter = periods[0]
+    const recentData = filteredConsolidatedData.filter(d => d.period === latestPeriodInFilter)
     
     return recentData.reduce((sum, entry) => {
       const originalCurrency = (entry.currency === 'USD' || entry.currency === 'Dolar') ? 'USD' : 'BRL'
       const value = entry.final_assets || 0
-      return sum + convertValue(value, entry.period || mostRecentPeriod, originalCurrency)
+      return sum + convertValue(value, entry.period || latestPeriodInFilter, originalCurrency)
     }, 0)
-  }, [consolidatedData, hasData, totalAssets, convertValue])
+  }, [filteredConsolidatedData, hasData, totalAssets, convertValue])
 
-  // Calculate converted total yield considering FX adjustment
+  // Calculate converted total yield considering FX adjustment (respecting competence filter)
   const convertedTotalYield = useMemo(() => {
-    if (!hasData || consolidatedData.length === 0) return totalYield || 0
+    if (!hasData || filteredConsolidatedData.length === 0) return totalYield || 0
     
     // Get most recent period
-    const periods = [...new Set(consolidatedData.map(d => d.period).filter(Boolean) as string[])]
+    const periods = [...new Set(filteredConsolidatedData.map(d => d.period).filter(Boolean) as string[])]
       .sort((a, b) => {
         const [mA, yA] = a.split('/').map(Number)
         const [mB, yB] = b.split('/').map(Number)
@@ -192,14 +233,14 @@ function PortfolioPerformance({
     
     if (periods.length === 0) return totalYield || 0
     
-    const mostRecentPeriod = periods[0]
-    const recentData = consolidatedData.filter(d => d.period === mostRecentPeriod)
+    const latestPeriodInFilter = periods[0]
+    const recentData = filteredConsolidatedData.filter(d => d.period === latestPeriodInFilter)
     
     // Calculate weighted average yield with FX adjustment
     const totalWeight = recentData.reduce((sum, entry) => {
       const originalCurrency = (entry.currency === 'USD' || entry.currency === 'Dolar') ? 'USD' : 'BRL'
       const value = entry.final_assets || 0
-      return sum + convertValue(value, entry.period || mostRecentPeriod, originalCurrency)
+      return sum + convertValue(value, entry.period || latestPeriodInFilter, originalCurrency)
     }, 0)
     
     if (totalWeight === 0) return totalYield || 0
@@ -207,52 +248,53 @@ function PortfolioPerformance({
     const weightedYield = recentData.reduce((sum, entry) => {
       const originalCurrency = (entry.currency === 'USD' || entry.currency === 'Dolar') ? 'USD' : 'BRL'
       const patrimonio = entry.final_assets || 0
-      const patrimonioConvertido = convertValue(patrimonio, entry.period || mostRecentPeriod, originalCurrency)
-      const rendimentoAjustado = adjustReturnWithFX(entry.yield || 0, entry.period || mostRecentPeriod, originalCurrency)
+      const patrimonioConvertido = convertValue(patrimonio, entry.period || latestPeriodInFilter, originalCurrency)
+      const rendimentoAjustado = adjustReturnWithFX(entry.yield || 0, entry.period || latestPeriodInFilter, originalCurrency)
       return sum + (rendimentoAjustado * patrimonioConvertido)
     }, 0)
     
     return weightedYield / totalWeight
-  }, [consolidatedData, hasData, totalYield, convertValue, adjustReturnWithFX])
+  }, [filteredConsolidatedData, hasData, totalYield, convertValue, adjustReturnWithFX])
 
-  // Institution allocation data for latest period
+  // Institution allocation data for latest period (respecting competence filter)
   const institutionCardData = useMemo(() => {
     return calculateInstitutionCardData(
-      consolidatedData, 
+      filteredConsolidatedData, 
       t('portfolioPerformance.kpi.noInstitution'),
       convertValue,
       adjustReturnWithFX
     )
-  }, [consolidatedData, t, convertValue, adjustReturnWithFX])
+  }, [filteredConsolidatedData, t, convertValue, adjustReturnWithFX])
 
-  // Diversification count (assets in portfolio)
+  // Diversification count (assets in portfolio) within selected competence range
   const diversificationCount = useMemo(() => {
-    return calculateDiversificationCount(performanceData)
-  }, [performanceData])
+    return calculateDiversificationCount(filteredPerformanceData)
+  }, [filteredPerformanceData])
 
-  // Next maturity date
+  // Next maturity date within selected competence range
   const nextMaturity = useMemo(() => {
-    return getNextMaturityDate(performanceData)
-  }, [performanceData])
+    return getNextMaturityDate(filteredPerformanceData)
+  }, [filteredPerformanceData])
 
-  // Calculate total value that will mature on next maturity date
+  // Calculate total value that will mature on next maturity date within selected competence range
   const nextMaturityValue = useMemo(() => {
-    if (!nextMaturity || !performanceData.length) return null
+    if (!nextMaturity || !filteredPerformanceData.length) return null
 
-    // Get most recent period
-    const mostRecentPeriod = [...new Set(performanceData.map(d => d.period).filter(Boolean) as string[])]
+    const periods = [...new Set(filteredPerformanceData.map(d => d.period).filter(Boolean) as string[])]
       .sort((a, b) => {
         const [mA, yA] = a.split('/').map(Number)
         const [mB, yB] = b.split('/').map(Number)
         if (yA !== yB) return yB - yA
         return mB - mA
-      })[0]
+      })
 
-    if (!mostRecentPeriod) return null
+    const latestPeriodInFilter = periods[0]
+
+    if (!latestPeriodInFilter) return null
 
     // Filter assets that mature on the next maturity date
-    const assetsMaturing = performanceData.filter(item => {
-      if (item.period !== mostRecentPeriod || !item.maturity_date) return false
+    const assetsMaturing = filteredPerformanceData.filter(item => {
+      if (item.period !== latestPeriodInFilter || !item.maturity_date) return false
       const maturityDate = new Date(item.maturity_date)
       return maturityDate.getTime() === nextMaturity.getTime()
     })
@@ -263,12 +305,12 @@ function PortfolioPerformance({
     const totalValue = assetsMaturing.reduce((sum, item) => {
       const originalCurrency = (item.currency === 'USD' || item.currency === 'Dolar') ? 'USD' : 'BRL'
       const position = Number(item.position || 0)
-      const positionConverted = convertValue(position, item.period || mostRecentPeriod, originalCurrency)
+      const positionConverted = convertValue(position, item.period || latestPeriodInFilter, originalCurrency)
       return sum + positionConverted
     }, 0)
 
     return totalValue
-  }, [nextMaturity, performanceData, convertValue])
+  }, [nextMaturity, filteredPerformanceData, convertValue])
 
   const [selectedInstitution, setSelectedInstitution] = useState<string | null>(null)
 
@@ -421,7 +463,7 @@ function PortfolioPerformance({
         {/* Performance Chart - Above Consolidated Performance */}
         {hasData && (
           <PerformanceChart 
-            consolidatedData={consolidatedData}
+            consolidatedData={filteredConsolidatedData}
             targetReturnIpcaPlus={targetReturn !== null ? targetReturn.toString() : undefined}
             targetReturnIpcaPlusText={(() => {
               if (!investmentPlan || !activeMicroPlan) return undefined
@@ -445,8 +487,8 @@ function PortfolioPerformance({
         ) : hasData ? (
           <>
             <ClientDataDisplay 
-              consolidatedData={consolidatedData}
-              performanceData={performanceData}
+              consolidatedData={filteredConsolidatedData}
+              performanceData={filteredPerformanceData}
               loading={loading}
               clientName={profile?.name || ''}
               portfolioTableComponent={
@@ -466,16 +508,16 @@ function PortfolioPerformance({
         )}
 
         {/* Dialogs */}
-        <MaturityDialog open={maturityDialogOpen} onOpenChange={setMaturityDialogOpen} performanceData={performanceData} />
-        <DiversificationDialog open={diversificationDialogOpen} onOpenChange={setDiversificationDialogOpen} performanceData={performanceData} />
+        <MaturityDialog open={maturityDialogOpen} onOpenChange={setMaturityDialogOpen} performanceData={filteredPerformanceData} />
+        <DiversificationDialog open={diversificationDialogOpen} onOpenChange={setDiversificationDialogOpen} performanceData={filteredPerformanceData} />
 
         {/* Charts/Breakdowns similar to InvestmentDashboard */}
         <div className="space-y-6">
-          <StrategyBreakdown performanceData={performanceData} />
-          <InvestmentDetailsTable performanceData={performanceData} />
-          <MaturityTimeline performanceData={performanceData} />
-          <IssuerExposure performanceData={performanceData} />
-          <AssetReturnsTable performanceData={performanceData} />
+          <StrategyBreakdown performanceData={filteredPerformanceData} />
+          <InvestmentDetailsTable performanceData={filteredPerformanceData} />
+          <MaturityTimeline performanceData={filteredPerformanceData} />
+          <IssuerExposure performanceData={filteredPerformanceData} />
+          <AssetReturnsTable performanceData={filteredPerformanceData} />
         </div>
       </div>
     </div>
