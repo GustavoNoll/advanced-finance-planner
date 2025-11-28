@@ -26,9 +26,25 @@ interface GroupedStrategyOption {
   label: string
 }
 
+/**
+ * Converte uma competência no formato "MM/YYYY" para Date
+ */
+function competenciaToDate(competencia?: string | null): Date {
+  if (!competencia) return new Date(0)
+  const [month, year] = competencia.split('/').map(Number)
+  return new Date(year, month - 1)
+}
+
 export function MaturityTimeline({ performanceData }: MaturityTimelineProps) {
   const { t } = useTranslation()
   const { currency, convertValue, formatCurrency, getCurrencySymbol } = useCurrency()
+
+  // Descobre a última competência disponível nos dados
+  const mostRecentPeriod = useMemo(() => {
+    const uniquePeriods = [...new Set(performanceData.map(item => item.period).filter(Boolean) as string[])]
+    if (uniquePeriods.length === 0) return undefined
+    return uniquePeriods.sort((a, b) => competenciaToDate(b).getTime() - competenciaToDate(a).getTime())[0]
+  }, [performanceData])
   
   /**
    * Traduz uma chave de estratégia agrupada usando i18n
@@ -45,6 +61,7 @@ export function MaturityTimeline({ performanceData }: MaturityTimelineProps) {
     // Get all unique grouped strategies that have maturity dates in the future
     const uniqueGroupedKeys = Array.from(new Set(
       performanceData
+        .filter(item => item.period === mostRecentPeriod)
         .filter(item => item.maturity_date)
         .filter(item => new Date(item.maturity_date as string) >= now)
         .map(item => groupStrategyName(item.asset_class))
@@ -63,7 +80,7 @@ export function MaturityTimeline({ performanceData }: MaturityTimelineProps) {
         if (orderA !== orderB) return orderA - orderB
         return a.label.localeCompare(b.label)
       })
-  }, [performanceData, translateGroupedStrategyMemo])
+  }, [performanceData, mostRecentPeriod, translateGroupedStrategyMemo])
 
   const [selectedGroupedStrategy, setSelectedGroupedStrategy] = useState<GroupedStrategyKey | ''>(() => {
     // Initialize with first option key, or empty string if no options
@@ -84,10 +101,11 @@ export function MaturityTimeline({ performanceData }: MaturityTimelineProps) {
     
     // Filter by grouped strategy key
     return performanceData
+      .filter(item => item.period === mostRecentPeriod)
       .filter(item => item.maturity_date)
       .filter(item => new Date(item.maturity_date as string) >= now)
       .filter(item => groupStrategyName(item.asset_class) === selectedGroupedStrategy)
-  }, [performanceData, selectedGroupedStrategy, groupedStrategyOptions])
+  }, [performanceData, selectedGroupedStrategy, groupedStrategyOptions, mostRecentPeriod])
 
   const maturityData = useMemo(() => {
     const grouped = filteredData
