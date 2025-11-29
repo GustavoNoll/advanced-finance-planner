@@ -24,6 +24,8 @@ import ptaxData from '../../data/ptax-historical.json'
 import ihfaData from '../../data/ihfa-historical.json'
 import irfmData from '../../data/irfm-historical.json'
 import imabData from '../../data/imab-historical.json'
+import agggData from '../../data/aggg-historical.json'
+import msciAcwiData from '../../data/msci-acwi-historical.json'
 
 interface BCBResponse {
   data: string
@@ -57,10 +59,14 @@ interface ConsolidatedData {
   irfmRaw: number | null
   imabMonthly: number | null
   imabRaw: number | null
+  agggMonthly: number | null
+  agggRaw: number | null
+  msciAcwiMonthly: number | null
+  msciAcwiRaw: number | null
 }
 
 type ColumnKey = 'competence' | 'ptax' | 'cdiMonthly' | 'cdiAccumulated' | 'ipcaMonthly' | 'ipcaAccumulated' | 
-  'ibovMonthly' | 'sp500Monthly' | 'tBondMonthly' | 'goldMonthly' | 'btcMonthly' | 'usCpiMonthly' | 'euroCpiMonthly' | 'ihfaMonthly' | 'irfmMonthly' | 'imabMonthly'
+  'ibovMonthly' | 'sp500Monthly' | 'tBondMonthly' | 'goldMonthly' | 'btcMonthly' | 'usCpiMonthly' | 'euroCpiMonthly' | 'ihfaMonthly' | 'irfmMonthly' | 'imabMonthly' | 'agggMonthly' | 'msciAcwiMonthly'
 
 function parseBrazilianDate(dateStr: string): Date {
   const [day, month, year] = dateStr.split('/').map(Number)
@@ -93,6 +99,8 @@ export default function MarketDataAudit() {
     ihfa: BCBResponse[]
     irfm: BCBResponse[]
     imab: BCBResponse[]
+    aggg: BCBResponse[]
+    msciAcwi: BCBResponse[]
   }>({
     ptax: [],
     ibov: [],
@@ -103,7 +111,9 @@ export default function MarketDataAudit() {
     euroCpi: [],
     ihfa: [],
     irfm: [],
-    imab: []
+    imab: [],
+    aggg: [],
+    msciAcwi: []
   })
   
   // Paginação
@@ -131,7 +141,9 @@ export default function MarketDataAudit() {
     euroCpiMonthly: false,
     ihfaMonthly: false,
     irfmMonthly: false,
-    imabMonthly: false
+    imabMonthly: false,
+    agggMonthly: false,
+    msciAcwiMonthly: false
   })
   const [showColumnSelector, setShowColumnSelector] = useState(false)
 
@@ -148,7 +160,9 @@ export default function MarketDataAudit() {
         euroCpi: [],
         ihfa: [],
         irfm: [],
-        imab: []
+        imab: [],
+        aggg: [],
+        msciAcwi: []
       }
 
       try {
@@ -221,6 +235,20 @@ export default function MarketDataAudit() {
         // Arquivo não existe ainda
       }
 
+      try {
+        const agggRaw = await import('../../data/aggg-raw-historical.json')
+        raw.aggg = (agggRaw.default || agggRaw) as BCBResponse[]
+      } catch {
+        // Arquivo não existe ainda
+      }
+
+      try {
+        const msciAcwiRaw = await import('../../data/msci-acwi-raw-historical.json')
+        raw.msciAcwi = (msciAcwiRaw.default || msciAcwiRaw) as BCBResponse[]
+      } catch {
+        // Arquivo não existe ainda
+      }
+
       setRawData(raw)
     }
 
@@ -254,6 +282,10 @@ export default function MarketDataAudit() {
       irfmRaw?: number
       imabMonthly?: number
       imabRaw?: number
+      agggMonthly?: number
+      agggRaw?: number
+      msciAcwiMonthly?: number
+      msciAcwiRaw?: number
     }>()
     
     // Processar CDI
@@ -388,6 +420,28 @@ export default function MarketDataAudit() {
       dataMap.get(competence)!.imabMonthly = value
     })
 
+    // Processar AGGG
+    agggData.forEach(item => {
+      const date = parseBrazilianDate(item.data)
+      const competence = formatCompetence(date)
+      const value = parseFloat(item.valor)
+      if (!dataMap.has(competence)) {
+        dataMap.set(competence, { competence })
+      }
+      dataMap.get(competence)!.agggMonthly = value
+    })
+
+    // Processar MSCI ACWI
+    msciAcwiData.forEach(item => {
+      const date = parseBrazilianDate(item.data)
+      const competence = formatCompetence(date)
+      const value = parseFloat(item.valor)
+      if (!dataMap.has(competence)) {
+        dataMap.set(competence, { competence })
+      }
+      dataMap.get(competence)!.msciAcwiMonthly = value
+    })
+
     // Processar PTAX
     ptaxData.forEach(item => {
       const date = parseBrazilianDate(item.data)
@@ -510,6 +564,28 @@ export default function MarketDataAudit() {
       dataMap.get(competence)!.imabRaw = value
     })
 
+    // AGGG Raw
+    rawData.aggg.forEach(item => {
+      const date = parseBrazilianDate(item.data)
+      const competence = formatCompetence(date)
+      const value = parseFloat(item.valor)
+      if (!dataMap.has(competence)) {
+        dataMap.set(competence, { competence })
+      }
+      dataMap.get(competence)!.agggRaw = value
+    })
+
+    // MSCI ACWI Raw
+    rawData.msciAcwi.forEach(item => {
+      const date = parseBrazilianDate(item.data)
+      const competence = formatCompetence(date)
+      const value = parseFloat(item.valor)
+      if (!dataMap.has(competence)) {
+        dataMap.set(competence, { competence })
+      }
+      dataMap.get(competence)!.msciAcwiRaw = value
+    })
+
     // Ordenar competências
     const sortedCompetences = Array.from(dataMap.keys()).sort((a, b) => {
       const [monthA, yearA] = a.split('/').map(Number)
@@ -585,7 +661,11 @@ export default function MarketDataAudit() {
         irfmMonthly: entry.irfmMonthly as number | null ?? null,
         irfmRaw: entry.irfmRaw as number | null ?? null,
         imabMonthly: entry.imabMonthly as number | null ?? null,
-        imabRaw: entry.imabRaw as number | null ?? null
+        imabRaw: entry.imabRaw as number | null ?? null,
+        agggMonthly: entry.agggMonthly as number | null ?? null,
+        agggRaw: entry.agggRaw as number | null ?? null,
+        msciAcwiMonthly: entry.msciAcwiMonthly as number | null ?? null,
+        msciAcwiRaw: entry.msciAcwiRaw as number | null ?? null
       }
     })
   }, [rawData])
@@ -636,6 +716,7 @@ export default function MarketDataAudit() {
     // Se não precisa ajuste FX, retorna como está
     if (!config.needsFXAdjustment) return value
     
+    
     // Se a moeda da variação é igual à moeda de exibição, não ajusta
     if (config.variationCurrency === displayCurrency) return value
     
@@ -661,6 +742,8 @@ export default function MarketDataAudit() {
       converted.imabRaw = convertRawValue(converted.imabRaw, 'imab', competence)
       converted.usCpiRaw = convertRawValue(converted.usCpiRaw, 'usCpi', competence)
       converted.euroCpiRaw = convertRawValue(converted.euroCpiRaw, 'euroCpi', competence)
+      converted.agggRaw = convertRawValue(converted.agggRaw, 'aggg', competence)
+      converted.msciAcwiRaw = convertRawValue(converted.msciAcwiRaw, 'msciAcwi', competence)
 
       // Ajustar porcentagens usando configuração centralizada
       converted.sp500Monthly = adjustVariation(converted.sp500Monthly, 'sp500', competence)
@@ -674,6 +757,8 @@ export default function MarketDataAudit() {
       converted.usCpiMonthly = adjustVariation(converted.usCpiMonthly, 'usCpi', competence)
       converted.euroCpiMonthly = adjustVariation(converted.euroCpiMonthly, 'euroCpi', competence)
       converted.tBondMonthly = adjustVariation(converted.tBondMonthly, 'tBond', competence)
+      converted.agggMonthly = adjustVariation(converted.agggMonthly, 'aggg', competence)
+      converted.msciAcwiMonthly = adjustVariation(converted.msciAcwiMonthly, 'msciAcwi', competence)
 
       return converted
     })
@@ -726,7 +811,9 @@ export default function MarketDataAudit() {
       euroCpi: convertedData.filter(d => d.euroCpiMonthly !== null).length,
       ihfa: convertedData.filter(d => d.ihfaMonthly !== null).length,
       irfm: convertedData.filter(d => d.irfmMonthly !== null).length,
-      imab: convertedData.filter(d => d.imabMonthly !== null).length
+      imab: convertedData.filter(d => d.imabMonthly !== null).length,
+      aggg: convertedData.filter(d => d.agggMonthly !== null).length,
+      msciAcwi: convertedData.filter(d => d.msciAcwiMonthly !== null).length
     }
   }, [convertedData])
 
@@ -846,7 +933,9 @@ export default function MarketDataAudit() {
     euroCpiMonthly: t('portfolioPerformance.marketDataAudit.euroCpiMonthly'),
     ihfaMonthly: t('portfolioPerformance.marketDataAudit.ihfaMonthly'),
     irfmMonthly: t('portfolioPerformance.marketDataAudit.irfmMonthly'),
-    imabMonthly: t('portfolioPerformance.marketDataAudit.imabMonthly')
+    imabMonthly: t('portfolioPerformance.marketDataAudit.imabMonthly'),
+    agggMonthly: t('portfolioPerformance.marketDataAudit.agggMonthly'),
+    msciAcwiMonthly: t('portfolioPerformance.marketDataAudit.msciAcwiMonthly')
   }
 
   return (
@@ -921,7 +1010,7 @@ export default function MarketDataAudit() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              {stats.sp500 + stats.tBond + stats.gold + stats.btc + stats.usCpi + stats.euroCpi + stats.ihfa + stats.irfm + stats.imab}
+              {stats.sp500 + stats.tBond + stats.gold + stats.btc + stats.usCpi + stats.euroCpi + stats.ihfa + stats.irfm + stats.imab + stats.aggg + stats.msciAcwi}
             </div>
             <p className="text-xs text-muted-foreground">{t('portfolioPerformance.marketDataAudit.competencesLoaded')}</p>
           </CardContent>
@@ -1098,6 +1187,12 @@ export default function MarketDataAudit() {
                   {visibleColumns.imabMonthly && (
                     <TableHead>{t('portfolioPerformance.marketDataAudit.imabMonthly')}</TableHead>
                   )}
+                  {visibleColumns.agggMonthly && (
+                    <TableHead>{t('portfolioPerformance.marketDataAudit.agggMonthly')}</TableHead>
+                  )}
+                  {visibleColumns.msciAcwiMonthly && (
+                    <TableHead>{t('portfolioPerformance.marketDataAudit.msciAcwiMonthly')}</TableHead>
+                  )}
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -1192,6 +1287,16 @@ export default function MarketDataAudit() {
                       {visibleColumns.imabMonthly && (
                         <TableCell className={row.imabMonthly !== null && row.imabMonthly >= 0 ? 'text-green-600' : row.imabMonthly !== null ? 'text-red-600' : ''}>
                           {formatWithVariation(row.imabRaw, row.imabMonthly)}
+                        </TableCell>
+                      )}
+                      {visibleColumns.agggMonthly && (
+                        <TableCell className={row.agggMonthly !== null && row.agggMonthly >= 0 ? 'text-green-600' : row.agggMonthly !== null ? 'text-red-600' : ''}>
+                          {formatCurrencyUSDWithVariation(row.agggRaw, row.agggMonthly)}
+                        </TableCell>
+                      )}
+                      {visibleColumns.msciAcwiMonthly && (
+                        <TableCell className={row.msciAcwiMonthly !== null && row.msciAcwiMonthly >= 0 ? 'text-green-600' : row.msciAcwiMonthly !== null ? 'text-red-600' : ''}>
+                          {formatCurrencyUSDWithVariation(row.msciAcwiRaw, row.msciAcwiMonthly)}
                         </TableCell>
                       )}
                     </TableRow>

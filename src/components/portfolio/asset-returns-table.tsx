@@ -358,6 +358,7 @@ export function AssetReturnsTable({ performanceData }: AssetReturnsTableProps) {
     const lastMonthAssets = allStrategyData.filter(item => item.period === mostRecentCompetencia)
     
       // Calculate weighted return with FX adjustments
+      // Include all assets, even those with zero position (like "Caixa" and "Proventos")
       const lastMonthWeightedReturn = lastMonthAssets.reduce((sum, asset) => {
         const moedaOriginal = normalizeCurrency(asset.currency)
         const posicaoConvertida = ensureValidNumber(convertValue(asset.position || 0, mostRecentCompetencia, moedaOriginal))
@@ -370,6 +371,7 @@ export function AssetReturnsTable({ performanceData }: AssetReturnsTableProps) {
           const rateValue = safeParseFloat(asset.rate) / 100
           rendimentoAjustado = ensureValidNumber(adjustReturnWithFX(rateValue, mostRecentCompetencia, moedaOriginal))
         }
+        // Include assets even with zero position - they contribute with 0% return
         return sum + (rendimentoAjustado * posicaoConvertida)
       }, 0)
       
@@ -378,6 +380,8 @@ export function AssetReturnsTable({ performanceData }: AssetReturnsTableProps) {
         return sum + ensureValidNumber(convertValue(asset.position || 0, mostRecentCompetencia, moedaOriginal))
       }, 0)
       
+      // Calculate return: if total position is zero, return 0 (all assets have zero position)
+      // Otherwise, calculate weighted average including all assets
       const monthReturn = lastMonthTotalPosition > 0 
         ? ensureValidNumber(lastMonthWeightedReturn / lastMonthTotalPosition) 
         : 0
@@ -403,6 +407,7 @@ export function AssetReturnsTable({ performanceData }: AssetReturnsTableProps) {
       const yearReturns = yearCompetenciasInFilter.map(competencia => {
         const competenciaAssets = competenciaGroups[competencia]
         
+        // Include all assets, even those with zero position (like "Caixa" and "Proventos")
         const weightedReturn = competenciaAssets.reduce((sum, asset) => {
           const moedaOriginal = normalizeCurrency(asset.currency)
           const posicaoConvertida = ensureValidNumber(convertValue(asset.position || 0, competencia, moedaOriginal))
@@ -415,6 +420,7 @@ export function AssetReturnsTable({ performanceData }: AssetReturnsTableProps) {
             const rateValue = safeParseFloat(asset.rate) / 100
             rendimentoAjustado = ensureValidNumber(adjustReturnWithFX(rateValue, competencia, moedaOriginal))
           }
+          // Include assets even with zero position - they contribute with 0% return
           return sum + (rendimentoAjustado * posicaoConvertida)
         }, 0)
         
@@ -423,6 +429,8 @@ export function AssetReturnsTable({ performanceData }: AssetReturnsTableProps) {
           return sum + ensureValidNumber(convertValue(asset.position || 0, competencia, moedaOriginal))
         }, 0)
         
+        // Calculate return: if total position is zero, return 0 (all assets have zero position)
+        // Otherwise, calculate weighted average including all assets
         return totalPosition > 0 
           ? ensureValidNumber(weightedReturn / totalPosition) 
           : 0
@@ -433,6 +441,7 @@ export function AssetReturnsTable({ performanceData }: AssetReturnsTableProps) {
       const monthlyReturns = sortedCompetencias.map(competencia => {
         const competenciaAssets = competenciaGroups[competencia]
         
+        // Include all assets, even those with zero position (like "Caixa" and "Proventos")
         const weightedReturn = competenciaAssets.reduce((sum, asset) => {
           const moedaOriginal = normalizeCurrency(asset.currency)
           const posicaoConvertida = ensureValidNumber(convertValue(asset.position || 0, competencia, moedaOriginal))
@@ -445,6 +454,7 @@ export function AssetReturnsTable({ performanceData }: AssetReturnsTableProps) {
             const rateValue = safeParseFloat(asset.rate) / 100
             rendimentoAjustado = ensureValidNumber(adjustReturnWithFX(rateValue, competencia, moedaOriginal))
           }
+          // Include assets even with zero position - they contribute with 0% return
           return sum + (rendimentoAjustado * posicaoConvertida)
         }, 0)
         
@@ -453,6 +463,8 @@ export function AssetReturnsTable({ performanceData }: AssetReturnsTableProps) {
           return sum + ensureValidNumber(convertValue(asset.position || 0, competencia, moedaOriginal))
         }, 0)
         
+        // Calculate return: if total position is zero, return 0 (all assets have zero position)
+        // Otherwise, calculate weighted average including all assets
         return totalPosition > 0 
           ? ensureValidNumber(weightedReturn / totalPosition) 
           : 0

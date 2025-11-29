@@ -13,6 +13,8 @@ import {
   fetchIFIXRates,
   fetchIMABRates,
   fetchIHFARates,
+  fetchAGGGPrices,
+  fetchMSCIPrices,
   getIndicatorCurrencyConfig,
   getPTAXByCompetencia,
 } from '@/lib/bcb-api'
@@ -501,11 +503,10 @@ function fetchBenchmarkData(
       rawData = fetchIHFARates(startDate, endDate)
       break
     case 'AGGG':
-      // AGGG não tem dados ainda, usar T-Bond como fallback temporário
-      rawData = fetchTBondPrices(startDate, endDate)
+      rawData = fetchAGGGPrices(startDate, endDate)
       break
     case 'MSCI_ACWI':
-      // MSCI ACWI não tem dados ainda
+      rawData = fetchMSCIPrices(startDate, endDate)
       break
     default:
       return []

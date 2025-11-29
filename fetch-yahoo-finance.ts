@@ -387,6 +387,12 @@ async function main() {
   // IBOV: ^BVSP (Ibovespa)
   await saveYahooFinanceIndicator('^BVSP', 'IBOVESPA', 'ibov', 1968)
   
+  // AGGG: AGGG.L (iShares Global Aggregate Bond ETF)
+  await saveYahooFinanceIndicator('AGGG.L', 'AGGG (Global Aggregate Bonds)', 'aggg', 2000)
+  
+  // MSCI ACWI: VT (Vanguard Total World Stock ETF)
+  await saveYahooFinanceIndicator('VT', 'MSCI ACWI (Vanguard Total World)', 'msci-acwi', 2008)
+  
   console.log('✅ Todos os indicadores foram salvos com sucesso!')
 }
 
