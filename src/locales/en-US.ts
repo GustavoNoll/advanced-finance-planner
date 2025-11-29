@@ -2582,6 +2582,8 @@ export const enUS = {
       ihfaMonthly: "Monthly IHFA",
       irfmMonthly: "Monthly IRFM",
       imabMonthly: "Monthly IMAB",
+      agggMonthly: "Monthly AGGG",
+      msciAcwiMonthly: "Monthly MSCI ACWI",
       loading: "Loading...",
       noData: "No data available",
       loadPtax: "Load PTAX",

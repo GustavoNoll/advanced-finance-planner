@@ -11,6 +11,8 @@ import irfmRawData from '../data/irfm-raw-historical.json';
 import ptaxRawData from '../data/ptax-raw-historical.json';
 import ihfaRawData from '../data/ihfa-raw-historical.json';
 import imabRawData from '../data/imab-raw-historical.json';
+import agggData from '../data/aggg-historical.json';
+import msciAcwiData from '../data/msci-acwi-historical.json';
 
 interface RateData {
   data: string;
@@ -111,7 +113,7 @@ export const INDICATOR_CURRENCY_CONFIG: Record<string, IndicatorConfig> = {
     variationCurrency: 'USD',
     needsFXAdjustment: true
   },
-  msciAcwi: {
+  msciacwi: {
     rawCurrency: 'USD',
     variationCurrency: 'USD',
     needsFXAdjustment: true
@@ -359,6 +361,40 @@ export const fetchIFIXRates = (startDate: string, endDate: string) => {
     return [];
   } catch (error) {
     console.error('Error fetching IFIX rates:', error);
+    return [];
+  }
+};
+
+/**
+ * Fetches AGGG (iShares Global Aggregate Bond ETF) price data within a date range
+ * Uses AGGG.L symbol from Yahoo Finance
+ */
+export const fetchAGGGPrices = (startDate: string, endDate: string) => {
+  try {
+    if (!agggData || (Array.isArray(agggData) && agggData.length === 0)) {
+      console.warn('AGGG data not available yet. Run fetch-yahoo-finance.ts to generate the data file.');
+      return [];
+    }
+    return filterDataByDateRange(agggData as RateData[], startDate, endDate);
+  } catch (error) {
+    console.error('Error fetching AGGG prices:', error);
+    return [];
+  }
+};
+
+/**
+ * Fetches MSCI ACWI (Vanguard Total World Stock ETF) price data within a date range
+ * Uses VT symbol from Yahoo Finance, but represents MSCI ACWI index
+ */
+export const fetchMSCIPrices = (startDate: string, endDate: string) => {
+  try {
+    if (!msciAcwiData || (Array.isArray(msciAcwiData) && msciAcwiData.length === 0)) {
+      console.warn('MSCI ACWI data not available yet. Run fetch-yahoo-finance.ts to generate the data file.');
+      return [];
+    }
+    return filterDataByDateRange(msciAcwiData as RateData[], startDate, endDate);
+  } catch (error) {
+    console.error('Error fetching MSCI ACWI prices:', error);
     return [];
   }
 };
