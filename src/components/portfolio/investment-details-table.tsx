@@ -9,7 +9,8 @@ import {
   getStrategyColor,
   getStrategyOrder,
   STRATEGY_ORDER,
-  type GroupedStrategyKey 
+  type GroupedStrategyKey,
+  type BenchmarkType
 } from "@/utils/benchmark-calculator"
 import { translateGroupedStrategy } from "@/utils/i18n-helpers"
 import { isValidAssetClass, type ValidAssetClass } from "@/pages/performance/utils/valid-asset-classes"
@@ -264,6 +265,62 @@ export function InvestmentDetailsTable({ performanceData }: InvestmentDetailsTab
   // Benchmark color is always neutral (foreground)
   const benchmarkColor = 'text-foreground'
 
+  /**
+   * Calcula o valor do benchmark a ser exibido
+   * Para CDI: retorna o percentual do CDI (retorno estratégia / retorno CDI * 100)
+   * Para outros benchmarks: retorna a diferença (retorno estratégia - retorno benchmark)
+   */
+  function calculateBenchmarkDisplayValue(
+    strategyReturn: number,
+    benchmarkReturn: number | null,
+    benchmarkType: BenchmarkType
+  ): number | null {
+    if (benchmarkReturn === null) return null
+    
+    if (benchmarkType === 'CDI') {
+      // Para CDI, calcula o percentual: estratégia / CDI * 100
+      if (benchmarkReturn === 0) return null
+      return (strategyReturn / benchmarkReturn) * 100
+    } else {
+      // Para outros benchmarks, calcula a diferença: estratégia - benchmark
+      return strategyReturn - benchmarkReturn
+    }
+  }
+
+  /**
+   * Formata o valor do benchmark para exibição
+   */
+  function formatBenchmarkValue(value: number | null, benchmarkType: BenchmarkType): string {
+    if (value === null) return '-'
+    
+    if (benchmarkType === 'CDI') {
+      // Para CDI, mostra como percentual sem sinal de +/-
+      return `${value.toFixed(2)}%`
+    } else {
+      // Para outros benchmarks, mostra a diferença com sinal
+      return `${value >= 0 ? '+' : ''}${value.toFixed(2)}%`
+    }
+  }
+
+  /**
+   * Obtém a cor baseada no valor calculado do benchmark
+   * Para CDI: verde se >= 100%, vermelho se < 100%
+   * Para outros: verde se >= 0, vermelho se < 0
+   */
+  function getBenchmarkDisplayColor(value: number | null, benchmarkType: BenchmarkType): string {
+    if (value === null) return benchmarkColor
+    
+    if (benchmarkType === 'CDI') {
+      return value >= 100 
+        ? 'text-green-600 dark:text-green-500'
+        : 'text-red-600 dark:text-red-500'
+    } else {
+      return value >= 0
+        ? 'text-green-600 dark:text-green-500'
+        : 'text-red-600 dark:text-red-500'
+    }
+  }
+
   return (
     <Card className="bg-gradient-to-br from-white/95 via-slate-50/90 to-blue-50/80 dark:from-gray-900/90 dark:via-gray-900/80 dark:to-slate-800/70 backdrop-blur-sm rounded-xl shadow-lg border border-gray-100/50 dark:border-gray-800 hover:border-blue-100/50 dark:hover:border-gray-700">
       <CardHeader>
@@ -329,39 +386,74 @@ export function InvestmentDetailsTable({ performanceData }: InvestmentDetailsTab
                         }
                       </TableCell>
                       <TableCell className="text-center text-muted-foreground py-1">
-                        {item.benchmark && item.benchmark.monthReturn !== null ? (
-                          <span className={benchmarkColor}>
-                            {item.benchmark.monthReturn >= 0 ? '+' : ''}{item.benchmark.monthReturn.toFixed(2)}%
-                          </span>
-                        ) : '-'}
+                        {item.benchmark ? (() => {
+                          const displayValue = calculateBenchmarkDisplayValue(
+                            item.monthReturn,
+                            item.benchmark.monthReturn,
+                            item.benchmark.benchmarkType
+                          )
+                          return (
+                            <span className={getBenchmarkDisplayColor(displayValue, item.benchmark.benchmarkType)}>
+                              {formatBenchmarkValue(displayValue, item.benchmark.benchmarkType)}
+                            </span>
+                          )
+                        })() : '-'}
                       </TableCell>
                       <TableCell className="text-center text-muted-foreground py-1">
-                        {item.benchmark && item.benchmark.yearReturn !== null ? (
-                          <span className={benchmarkColor}>
-                            {item.benchmark.yearReturn >= 0 ? '+' : ''}{item.benchmark.yearReturn.toFixed(2)}%
-                          </span>
-                        ) : '-'}
+                        {item.benchmark ? (() => {
+                          const displayValue = calculateBenchmarkDisplayValue(
+                            item.yearReturn,
+                            item.benchmark.yearReturn,
+                            item.benchmark.benchmarkType
+                          )
+                          return (
+                            <span className={getBenchmarkDisplayColor(displayValue, item.benchmark.benchmarkType)}>
+                              {formatBenchmarkValue(displayValue, item.benchmark.benchmarkType)}
+                            </span>
+                          )
+                        })() : '-'}
                       </TableCell>
                       <TableCell className="text-center text-muted-foreground py-1">
-                        {item.benchmark && item.benchmark.sixMonthsReturn !== null ? (
-                          <span className={benchmarkColor}>
-                            {item.benchmark.sixMonthsReturn >= 0 ? '+' : ''}{item.benchmark.sixMonthsReturn.toFixed(2)}%
-                          </span>
-                        ) : '-'}
+                        {item.benchmark ? (() => {
+                          const displayValue = calculateBenchmarkDisplayValue(
+                            item.sixMonthsReturn,
+                            item.benchmark.sixMonthsReturn,
+                            item.benchmark.benchmarkType
+                          )
+                          return (
+                            <span className={getBenchmarkDisplayColor(displayValue, item.benchmark.benchmarkType)}>
+                              {formatBenchmarkValue(displayValue, item.benchmark.benchmarkType)}
+                            </span>
+                          )
+                        })() : '-'}
                       </TableCell>
                       <TableCell className="text-center text-muted-foreground py-1">
-                        {item.benchmark && item.benchmark.twelveMonthsReturn !== null ? (
-                          <span className={benchmarkColor}>
-                            {item.benchmark.twelveMonthsReturn >= 0 ? '+' : ''}{item.benchmark.twelveMonthsReturn.toFixed(2)}%
-                          </span>
-                        ) : '-'}
+                        {item.benchmark ? (() => {
+                          const displayValue = calculateBenchmarkDisplayValue(
+                            item.twelveMonthsReturn,
+                            item.benchmark.twelveMonthsReturn,
+                            item.benchmark.benchmarkType
+                          )
+                          return (
+                            <span className={getBenchmarkDisplayColor(displayValue, item.benchmark.benchmarkType)}>
+                              {formatBenchmarkValue(displayValue, item.benchmark.benchmarkType)}
+                            </span>
+                          )
+                        })() : '-'}
                       </TableCell>
                       <TableCell className="text-center text-muted-foreground py-1">
-                        {item.benchmark && item.benchmark.inceptionReturn !== null ? (
-                          <span className={benchmarkColor}>
-                            {item.benchmark.inceptionReturn >= 0 ? '+' : ''}{item.benchmark.inceptionReturn.toFixed(2)}%
-                          </span>
-                        ) : '-'}
+                        {item.benchmark ? (() => {
+                          const displayValue = calculateBenchmarkDisplayValue(
+                            item.inceptionReturn,
+                            item.benchmark.inceptionReturn,
+                            item.benchmark.benchmarkType
+                          )
+                          return (
+                            <span className={getBenchmarkDisplayColor(displayValue, item.benchmark.benchmarkType)}>
+                              {formatBenchmarkValue(displayValue, item.benchmark.benchmarkType)}
+                            </span>
+                          )
+                        })() : '-'}
                       </TableCell>
                     </TableRow>
                   </Fragment>
