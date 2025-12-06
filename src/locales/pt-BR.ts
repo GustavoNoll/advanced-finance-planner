@@ -2129,6 +2129,7 @@ export const ptBR = {
       irfm: "IRF-M",
       ifix: "IFIX",
       ibov: "IBOVESPA",
+      gold: "Ouro",
       sp500: "S&P 500",
       tBond: "T-Bond 10Y",
       btc: "Bitcoin",

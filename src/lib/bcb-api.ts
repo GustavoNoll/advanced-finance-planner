@@ -11,8 +11,8 @@ import irfmRawData from '../data/irfm-raw-historical.json';
 import ptaxRawData from '../data/ptax-raw-historical.json';
 import ihfaRawData from '../data/ihfa-raw-historical.json';
 import imabRawData from '../data/imab-raw-historical.json';
-import agggData from '../data/aggg-historical.json';
-import msciAcwiData from '../data/msci-acwi-historical.json';
+import agggRawData from '../data/aggg-raw-historical.json';
+import msciAcwiRawData from '../data/msci-acwi-raw-historical.json';
 
 interface RateData {
   data: string;
@@ -176,19 +176,21 @@ function filterDataByDateRangeWithVariation(
     }))
     .sort((a, b) => a.date.getTime() - b.date.getTime());
 
-  // Encontrar o índice do primeiro mês que precisamos (mês anterior ao início)
+  // Encontrar o índice do primeiro item >= previousMonth (mês anterior ao início)
+  // Isso garante que incluímos apenas o mês anterior necessário, não meses mais antigos
   let startIndex = 0
   for (let i = 0; i < allData.length; i++) {
     if (allData[i].date >= previousMonth) {
-      startIndex = Math.max(0, i - 1) // Incluir o mês anterior se existir
+      startIndex = i
       break
     }
   }
 
   // Filtrar dados do mês anterior até o fim do intervalo
+  // Garantir que não incluímos meses anteriores ao previousMonth
   const filteredData = allData
     .slice(startIndex)
-    .filter(item => item.date <= end);
+    .filter(item => item.date <= end && item.date >= previousMonth);
 
   if (filteredData.length < 2) {
     return [];
@@ -210,7 +212,6 @@ function filterDataByDateRangeWithVariation(
       });
     }
   }
-
   return variations;
 }
 
@@ -343,7 +344,7 @@ export const fetchIMABRates = (startDate: string, endDate: string) => {
  */
 export const fetchIHFARates = (startDate: string, endDate: string) => {
   try {
-    return filterDataByDateRange(ihfaRawData as RateData[], startDate, endDate);
+    return filterDataByDateRangeWithVariation(ihfaRawData as RateData[], startDate, endDate);
   } catch (error) {
     console.error('Error fetching IHFA rates:', error);
     return [];
@@ -371,11 +372,7 @@ export const fetchIFIXRates = (startDate: string, endDate: string) => {
  */
 export const fetchAGGGPrices = (startDate: string, endDate: string) => {
   try {
-    if (!agggData || (Array.isArray(agggData) && agggData.length === 0)) {
-      console.warn('AGGG data not available yet. Run fetch-yahoo-finance.ts to generate the data file.');
-      return [];
-    }
-    return filterDataByDateRange(agggData as RateData[], startDate, endDate);
+    return filterDataByDateRangeWithVariation(agggRawData as RateData[], startDate, endDate);
   } catch (error) {
     console.error('Error fetching AGGG prices:', error);
     return [];
@@ -388,11 +385,7 @@ export const fetchAGGGPrices = (startDate: string, endDate: string) => {
  */
 export const fetchMSCIPrices = (startDate: string, endDate: string) => {
   try {
-    if (!msciAcwiData || (Array.isArray(msciAcwiData) && msciAcwiData.length === 0)) {
-      console.warn('MSCI ACWI data not available yet. Run fetch-yahoo-finance.ts to generate the data file.');
-      return [];
-    }
-    return filterDataByDateRange(msciAcwiData as RateData[], startDate, endDate);
+    return filterDataByDateRangeWithVariation(msciAcwiRawData as RateData[], startDate, endDate);
   } catch (error) {
     console.error('Error fetching MSCI ACWI prices:', error);
     return [];

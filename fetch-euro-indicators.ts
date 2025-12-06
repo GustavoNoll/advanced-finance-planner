@@ -89,7 +89,7 @@ async function fetchEcbRawData(indicator: EuroIndicator): Promise<BCBResponse[]>
       const [year, month] = date.split('-');
       return {
         data: `01/${month}/${year}`,
-        valor: parseFloat(String(valor)).toFixed(2),
+        valor: parseFloat(String(valor)).toFixed(4),
       };
     });
   } catch (error) {
@@ -120,7 +120,7 @@ async function fetchEcbData(indicator: EuroIndicator): Promise<BCBResponse[]> {
       const change = ((currentVal / previousVal) - 1) * 100;
       return {
         data: current.data,
-        valor: change.toFixed(2),
+        valor: change.toFixed(4),
       };
     });
   }

@@ -111,7 +111,7 @@ function calculateMonthlyVariation(monthlyData: BCBResponse[]): BCBResponse[] {
       const variation = ((current - previous) / previous) * 100;
       variations.push({
         data: monthlyData[i].data,
-        valor: variation.toFixed(2)
+        valor: variation.toFixed(4)
       });
     }
   }
@@ -206,7 +206,9 @@ async function saveDailyIndicator(indicator: 'irfm', baseUrl: string): Promise<v
 async function main() {
   // IPCA e CDI já vêm como taxas percentuais mensais
   await saveIndicator('ipca', 'https://api.bcb.gov.br/dados/serie/bcdata.sgs.433/dados?formato=json');
+  await new Promise(resolve => setTimeout(resolve, 1000));
   await saveIndicator('cdi', 'https://api.bcb.gov.br/dados/serie/bcdata.sgs.4391/dados?formato=json');
+  await new Promise(resolve => setTimeout(resolve, 1000));
   // IBOV precisa calcular variação e salvar raw
   await saveIndicator('ibov', 'https://api.bcb.gov.br/dados/serie/bcdata.sgs.7832/dados?formato=json', { calculateVariation: true });
 }

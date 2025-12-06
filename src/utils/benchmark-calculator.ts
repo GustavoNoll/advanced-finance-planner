@@ -308,6 +308,7 @@ function formatDateForBCB(date: Date): string {
  * Mapeia BenchmarkType para o nome do indicador usado na configuração
  */
 function benchmarkTypeToIndicatorName(benchmarkType: BenchmarkType): string {
+  console.log('benchmarkType', benchmarkType)
   const mapping: Record<BenchmarkType, string> = {
     'CDI': 'cdi',
     'IPCA': 'ipca',
@@ -396,31 +397,6 @@ function adjustReturnWithFX(
   return returnPercent
 }
 
-/**
- * Calcula retornos mensais a partir de preços
- */
-function calculateReturnsFromPrices(
-  prices: Array<{ date: Date; monthlyRate: number }>
-): Array<{ date: Date; return: number }> {
-  if (prices.length === 0) return []
-  
-  const returns: Array<{ date: Date; return: number }> = []
-  
-  for (let i = 1; i < prices.length; i++) {
-    const currentPrice = prices[i].monthlyRate
-    const previousPrice = prices[i - 1].monthlyRate
-    
-    if (previousPrice > 0) {
-      const returnRate = (currentPrice - previousPrice) / previousPrice
-      returns.push({
-        date: prices[i].date,
-        return: returnRate,
-      })
-    }
-  }
-  
-  return returns
-}
 
 /**
  * Processa dados de benchmark convertendo para formato padronizado
@@ -454,7 +430,7 @@ function processBenchmarkData(
  * @param endDate - Data final (DD/MM/YYYY)
  * @param displayCurrency - Moeda de exibição (opcional, para ajuste FX)
  */
-function fetchBenchmarkData(
+export function fetchBenchmarkData(
   benchmarkType: BenchmarkType,
   startDate: string,
   endDate: string,
@@ -587,6 +563,11 @@ export function calculateBenchmarkReturns(
   displayCurrency?: CurrencyCode
 ): BenchmarkData | null {
   // Se é uma chave padronizada, usa o caminho direto (mais eficiente)
+  console.log('strategyName', strategyName)
+  console.log('currency', currency)
+  console.log('periods', periods)
+  console.log('locale', locale)
+  console.log('displayCurrency', displayCurrency)
   if (strategyName in ASSET_CLASS_TO_GROUPED_KEY) {
     return calculateBenchmarkReturnsByAssetClass(
       strategyName as ValidAssetClass,
@@ -734,8 +715,12 @@ export function calculateBenchmarkReturnsByGroupedKey(
   const finalDisplayCurrency = displayCurrency || currency
   
   // Busca os dados históricos do benchmark com ajuste FX se necessário
+  console.log('benchmarkType', benchmarkType)
+  console.log('startDate', startDate)
+  console.log('endDate', endDate)
+  console.log('finalDisplayCurrency', finalDisplayCurrency)
   const benchmarkData = fetchBenchmarkData(benchmarkType, startDate, endDate, finalDisplayCurrency)
-  
+  console.log('benchmarkData', benchmarkData)
   // Se não houver dados, retorna o nome do benchmark com retornos null
   if (benchmarkData.length === 0) {
     return {
@@ -815,4 +800,36 @@ export function calculateBenchmarkReturnsByGroupedKey(
     twelveMonthsReturn: twelveMonthsReturn * 100,
     inceptionReturn: inceptionReturn * 100,
   }
+}
+
+/**
+ * Busca o retorno mensal de um benchmark específico para um período
+ * Usa diretamente o BenchmarkType ao invés de estratégias agrupadas
+ * 
+ * @param benchmarkType - Tipo do benchmark (ex: 'CDI', 'IBOV', 'SP500')
+ * @param period - Período no formato "MM/YYYY" (ex: "10/2024")
+ * @param currency - Moeda para ajuste FX se necessário
+ * @returns Retorno mensal em decimal (ex: 0.015 para 1.5%) ou null se não encontrado
+ */
+export function getBenchmarkMonthlyReturn(
+  benchmarkType: BenchmarkType,
+  period: string,
+  currency: CurrencyCode = 'BRL'
+): number | null {
+  if (!period) return null
+  
+  const periodDate = periodToDate(period)
+  const startDate = formatDateForBCB(periodDate)
+  const endDate = formatDateForBCB(periodDate)
+  
+  const benchmarkData = fetchBenchmarkData(benchmarkType, startDate, endDate, currency)
+  
+  if (benchmarkData.length === 0) return null
+  
+  // Buscar o retorno para o período específico
+  const periodData = benchmarkData.find(item => item.competence === period)
+  
+  if (!periodData) return null
+  
+  return periodData.return // Já está em decimal (ex: 0.015 para 1.5%)
 }

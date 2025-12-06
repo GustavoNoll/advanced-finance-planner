@@ -112,7 +112,12 @@ function calculateMonthlyVariation(
   sortedData.forEach(item => {
     const date = new Date(item.timestamp)
     const monthKey = `${date.getUTCFullYear()}-${String(date.getUTCMonth() + 1).padStart(2, '0')}`
-    monthlyPrices.set(monthKey, item)
+    
+    // Manter apenas o último dia do mês (maior timestamp)
+    const existing = monthlyPrices.get(monthKey)
+    if (!existing || item.timestamp > existing.timestamp) {
+      monthlyPrices.set(monthKey, item)
+    }
   })
 
   // Converte para array ordenado cronologicamente
@@ -140,7 +145,7 @@ function calculateMonthlyVariation(
       
       variations.push({
         data: formattedDate,
-        valor: variation.toFixed(2)
+        valor: variation.toFixed(4)
       })
     }
   }
@@ -239,7 +244,12 @@ function getMonthlyRawValues(
   sortedData.forEach(item => {
     const date = new Date(item.timestamp)
     const monthKey = `${date.getUTCFullYear()}-${String(date.getUTCMonth() + 1).padStart(2, '0')}`
-    monthlyPrices.set(monthKey, item)
+    
+    // Manter apenas o último dia do mês (maior timestamp)
+    const existing = monthlyPrices.get(monthKey)
+    if (!existing || item.timestamp > existing.timestamp) {
+      monthlyPrices.set(monthKey, item)
+    }
   })
 
   // Converte para array ordenado cronologicamente
@@ -259,7 +269,7 @@ function getMonthlyRawValues(
     
     return {
       data: formattedDate,
-      valor: item.close.toFixed(2)
+      valor: item.close.toFixed(4)
     }
   })
 }
@@ -334,7 +344,7 @@ function calculatePTAXMonthlyVariation(ptaxData: BCBResponse[]): BCBResponse[] {
       const variation = ((current - previous) / previous) * 100
       variations.push({
         data: ptaxData[i].data,
-        valor: variation.toFixed(2)
+        valor: variation.toFixed(4)
       })
     }
   }

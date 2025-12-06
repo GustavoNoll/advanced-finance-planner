@@ -2123,6 +2123,7 @@ export const enUS = {
     },
     benchmarks: {
       cdi: "CDI",
+      gold: "Gold",
       ipca: "IPCA",
       usCpi: "US CPI",
       euroCpi: "Euro CPI",

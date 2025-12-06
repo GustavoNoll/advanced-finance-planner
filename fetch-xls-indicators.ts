@@ -254,7 +254,7 @@ export async function fetchByDownload(
         const variation = ((current - previous) / previous) * 100
         variations.push({
           data: result[i].data,
-          valor: variation.toFixed(2)
+          valor: variation.toFixed(4)
         })
       }
     }
