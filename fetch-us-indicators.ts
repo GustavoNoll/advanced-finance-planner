@@ -106,7 +106,7 @@ async function fetchFredRawData(indicator: USIndicator): Promise<BCBResponse[]> 
       const [year, month, day] = entry.date.split('-');
       return {
         data: `${day}/${month}/${year}`,
-        valor: parseFloat(entry.value).toFixed(2),
+        valor: parseFloat(entry.value).toFixed(4),
       };
     });
 }
@@ -133,7 +133,7 @@ async function fetchFredData(indicator: USIndicator): Promise<BCBResponse[]> {
       const change = ((currentVal / previousVal) - 1) * 100;
       return {
         data: current.data,
-        valor: change.toFixed(2),
+        valor: change.toFixed(4),
       };
     });
   }
@@ -155,7 +155,7 @@ async function fetchFredData(indicator: USIndicator): Promise<BCBResponse[]> {
       const change = ((currentVal / previousVal) - 1) * 100;
       return {
         data: current.data,
-        valor: change.toFixed(2),
+        valor: change.toFixed(4),
       };
     });
   }

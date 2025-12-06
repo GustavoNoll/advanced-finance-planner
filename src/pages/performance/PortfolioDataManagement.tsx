@@ -11,7 +11,7 @@ import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { AssetClassSelect } from "./components/AssetClassSelect"
 import { Checkbox } from "@/components/ui/checkbox"
-import { ArrowLeft, Plus, Edit, Trash2, Save, X, CheckSquare, BarChart3, Info, CheckCircle2, AlertCircle, XCircle, Tag, DollarSign, Copy, ArrowUp, ArrowDown, ChevronDown, Settings2, ArrowRight, Settings, FileText } from "lucide-react"
+import { ArrowLeft, Plus, Edit, Trash2, Save, X, CheckSquare, BarChart3, Info, CheckCircle2, AlertCircle, XCircle, Tag, DollarSign, Copy, ArrowUp, ArrowDown, ChevronDown, Settings2, ArrowRight, Settings, FileText, Calculator as CalculatorIcon } from "lucide-react"
 import { useTranslation } from "react-i18next"
 import { PortfolioPerformanceService } from "@/services/portfolio-performance.service"
 import { useToast } from "@/hooks/use-toast"
@@ -35,6 +35,7 @@ import { operatorsByFieldType } from "./utils/filters"
 import { isValidAssetClass, translateAssetClassForDisplay } from "./utils/valid-asset-classes"
 import { supabase } from "@/lib/supabase"
 import type { UserProfileInvestment } from "@/types/broker-dashboard"
+import { YieldCalculator, type YieldCalculationResult } from "@/components/performance/YieldCalculator"
 
 type ConsolidatedRow = ConsolidatedPerformance
 type PerformanceRow = PerformanceData
@@ -70,6 +71,9 @@ export default function PortfolioDataManagement() {
   
   // Export dialog
   const [isExportDialogOpen, setIsExportDialogOpen] = useState(false)
+  
+  // Calculator dialog
+  const [isCalculatorOpen, setIsCalculatorOpen] = useState(false)
   
   // Verification settings
   const [isSettingsOpen, setIsSettingsOpen] = useState(false)
@@ -1885,7 +1889,24 @@ export default function PortfolioDataManagement() {
                 </div>
                 <div>
                   <Label>{t('portfolioPerformance.dataManagement.editDialog.yieldLabel')}</Label>
-                  <Input type="number" step="0.0001" value={(((editItem.yield as number) || 0) * 100).toFixed(4)} onChange={(e) => setEditItem(p => ({ ...p, yield: (parseFloat(e.target.value) || 0) / 100 }))} className="h-12" />
+                  <div className="flex gap-2">
+                    <Input 
+                      type="number" 
+                      step="0.0001" 
+                      value={(((editItem.yield as number) || 0) * 100).toFixed(4)} 
+                      onChange={(e) => setEditItem(p => ({ ...p, yield: (parseFloat(e.target.value) || 0) / 100 }))} 
+                      className="h-12 flex-1" 
+                    />
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => setIsCalculatorOpen(true)}
+                      className="h-12 px-3"
+                      title="Abrir calculadora de rentabilidade"
+                    >
+                      <CalculatorIcon className="h-4 w-4" />
+                    </Button>
+                  </div>
                 </div>
               </div>
             ) : (
@@ -1931,7 +1952,24 @@ export default function PortfolioDataManagement() {
                 </div>
                 <div>
                   <Label>{t('portfolioPerformance.dataManagement.editDialog.yieldLabel')}</Label>
-                  <Input type="number" step="0.0001" value={(((editItem.yield as number) || 0) * 100).toFixed(4)} onChange={(e) => setEditItem(p => ({ ...p, yield: (parseFloat(e.target.value) || 0) / 100 }))} className="h-12" />
+                  <div className="flex gap-2">
+                    <Input 
+                      type="number" 
+                      step="0.0001" 
+                      value={(((editItem.yield as number) || 0) * 100).toFixed(4)} 
+                      onChange={(e) => setEditItem(p => ({ ...p, yield: (parseFloat(e.target.value) || 0) / 100 }))} 
+                      className="h-12 flex-1" 
+                    />
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => setIsCalculatorOpen(true)}
+                      className="h-12 px-3"
+                      title="Abrir calculadora de rentabilidade"
+                    >
+                      <CalculatorIcon className="h-4 w-4" />
+                    </Button>
+                  </div>
                 </div>
               </div>
             )}
@@ -1943,6 +1981,47 @@ export default function PortfolioDataManagement() {
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Yield Calculator Dialog */}
+      <YieldCalculator
+        open={isCalculatorOpen}
+        onOpenChange={setIsCalculatorOpen}
+        initialValue={
+          editingType === 'consolidated' 
+            ? (editItem.initial_assets as number) || 0
+            : (editItem.position as number) || 0
+        }
+        period={editItem.period || ''}
+        institution={editItem.institution || ''}
+        accountName={editItem.account_name || ''}
+        currency={currency}
+        detailedData={detailed}
+        editingType={editingType}
+        onConfirm={(result: YieldCalculationResult) => {
+          // Atualizar o campo yield com o resultado
+          setEditItem(prev => ({
+            ...prev,
+            yield: result.monthlyYield
+          }))
+          
+          // Se for consolidado e tiver valor final calculado, atualizar também
+          if (editingType === 'consolidated' && result.finalValue !== undefined) {
+            setEditItem(prev => ({
+              ...prev,
+              final_assets: result.finalValue,
+              financial_gain: result.financialGain || 0
+            }))
+          }
+          
+          // Se for detalhado e tiver valor final calculado, atualizar posição
+          if (editingType === 'detailed' && result.finalValue !== undefined) {
+            setEditItem(prev => ({
+              ...prev,
+              position: result.finalValue
+            }))
+          }
+        }}
+      />
 
       {/* Import Dialog */}
       <ImportDialog
