@@ -2744,6 +2744,118 @@ export const enUS = {
         noFutureMaturities: "No future maturities found",
         upcomingMaturities: "Upcoming Maturities"
       }
+    },
+    yieldCalculator: {
+      title: "Yield Calculator",
+      modes: {
+        auto: "Automatic",
+        manual: "Manual",
+        custom: "Custom",
+        market: "Market"
+      },
+      auto: {
+        description: "Calculates the weighted yield of detailed assets linked to the consolidated record.",
+        criteria: "Criteria: Same Period, Institution and Account Name.",
+        searchCriteria: "Search criteria:",
+        competence: "Period:",
+        institution: "Institution:",
+        account: "Account:",
+        totalAssetsAvailable: "Total assets available: {{count}}",
+        warning: "⚠️ <strong>Warning:</strong> Fill in the period and institution in the form to use automatic mode.",
+        info: "ℹ️ Automatic mode is only available for consolidated records."
+      },
+      manual: {
+        period: "Period",
+        indexer: "Indexer",
+        selectIndexer: "Select indexer",
+        searchIndexer: "Search indexer...",
+        cdiPercentage: "CDI Percentage (%)",
+        cdiExample: "Ex: 80 for 80% of CDI",
+        spreadExample: "Ex: 2 for CDI + 2% p.a.",
+        ipcaSpread: "Spread per year (%)",
+        ipcaExample: "Ex: 5 for IPCA + 5% p.a.",
+        annualRate: "Annual Rate (%)",
+        annualRateExample: "Ex: 12 for 12% per year"
+      },
+      custom: {
+        initialValue: "Initial Value (R$)",
+        initialValueExample: "Ex: 10000.00",
+        initialValueDescription: "Enter the initial investment value",
+        period: "Period",
+        periodExample: "Ex: 10/2024 for October 2024",
+        indexer: "Indexer",
+        selectIndexer: "Select indexer",
+        searchIndexer: "Search indexer...",
+        cdiPercentage: "CDI Percentage (%)",
+        cdiExample: "Ex: 80 for 80% of CDI",
+        spreadExample: "Ex: 2 for CDI + 2% p.a.",
+        monthlyYield: "Monthly Yield (%)",
+        monthlyYieldExample: "Ex: 1.5 for 1.5% monthly yield",
+        annualRate: "Annual Rate (%)",
+        annualRateExample: "Ex: 12 for 12% per year",
+        ipcaSpread: "Spread per year (%)",
+        ipcaExample: "Ex: 5 for IPCA + 5% p.a."
+      },
+      market: {
+        description: "Automatically searches for the real yield of an index in a specific month using market data.",
+        period: "Period",
+        periodExample: "Ex: 10/2024 for October 2024",
+        benchmark: "Index/Benchmark",
+        selectBenchmark: "Select index/benchmark",
+        searchBenchmark: "Search index...",
+        currency: "Currency",
+        selectCurrency: "Select currency",
+        searchCurrency: "Search currency...",
+        currencyDescription: "Select the currency to search for yield (adjusts exchange rate when necessary)",
+        searchButton: "Search Yield",
+        searching: "Searching...",
+        resultTitle: "Query Result:",
+        index: "Index:",
+        currencyLabel: "Currency:",
+        yield: "Yield:",
+        confirmNote: "ℹ️ When confirming, this value will be used as Yield",
+        errorTitle: "Yield not found",
+        errorMessage: "No yield data found for:\n\n• Index: {{benchmark}}\n• Period: {{period}}\n• Currency: {{currency}}\n\nPlease verify:\n- The period is correct (format MM/YYYY)\n- Historical data is available for this period\n- The selected index has data for this currency"
+      },
+      indexers: {
+        cdi: "CDI",
+        ipca: "IPCA",
+        preFixed: "Pre-fixed",
+        manual: "Manual"
+      },
+      currencies: {
+        brl: "Real (BRL)",
+        usd: "Dollar (USD)"
+      },
+      buttons: {
+        cancel: "Cancel",
+        confirm: "Confirm"
+      },
+      errors: {
+        error: "Error",
+        informPeriod: "Enter the period",
+        informValidInitialValue: "Enter a valid initial value",
+        incompleteData: "Incomplete data",
+        incompleteDataDescription: "To calculate automatically, it is necessary to enter the period and institution",
+        modeNotAvailable: "Mode not available",
+        modeNotAvailableDescription: "Automatic mode is only available for consolidated records",
+        noAssetsFound: "No assets found",
+        noAssetsFoundDescription: "No detailed assets linked were found for:\n• Period: {{period}}\n• Institution: {{institution}}{{account}}\n\nPlease verify if there are assets registered with this information or use another calculation mode.",
+        zeroPosition: "Total position zero",
+        zeroPositionDescription: "{{count}} linked asset(s) were found, but the sum of positions is zero.\n\nPlease verify if the assets have position values filled in.",
+        calculationError: "Error calculating yield",
+        marketDataError: "Error fetching market data",
+        searchFirst: "Warning",
+        searchFirstDescription: "Search market data first"
+      },
+      success: {
+        calculationDone: "Calculation completed",
+        calculationDescription: "Yield: {{yield}}%",
+        autoCalculationDone: "Automatic calculation completed",
+        autoCalculationDescription: "Found {{count}} asset(s). Weighted yield: {{yield}}%",
+        dataObtained: "Data obtained",
+        dataObtainedDescription: "Yield of {{benchmark}} in {{currency}}: {{yield}}%"
+      }
     }
   },
   investmentPreferences: {
