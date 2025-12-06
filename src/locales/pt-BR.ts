@@ -2744,6 +2744,118 @@ export const ptBR = {
         noFutureMaturities: "Nenhum vencimento futuro encontrado",
         upcomingMaturities: "Próximos Vencimentos"
       }
+    },
+    yieldCalculator: {
+      title: "Calculadora de Rentabilidade",
+      modes: {
+        auto: "Automático",
+        manual: "Manual",
+        custom: "Personalizado",
+        market: "Mercado"
+      },
+      auto: {
+        description: "Calcula a rentabilidade ponderada dos ativos detalhados vinculados ao registro consolidado.",
+        criteria: "Critério: Mesma Competência, Instituição e Nome da Conta.",
+        searchCriteria: "Critérios de busca:",
+        competence: "Competência:",
+        institution: "Instituição:",
+        account: "Conta:",
+        totalAssetsAvailable: "Total de ativos disponíveis: {{count}}",
+        warning: "⚠️ <strong>Atenção:</strong> Preencha a competência e a instituição no formulário para usar o modo automático.",
+        info: "ℹ️ O modo automático está disponível apenas para registros consolidados."
+      },
+      manual: {
+        period: "Competência",
+        indexer: "Indexador",
+        selectIndexer: "Selecione o indexador",
+        searchIndexer: "Buscar indexador...",
+        cdiPercentage: "Percentual do CDI (%)",
+        cdiExample: "Ex: 80 para 80% do CDI",
+        spreadExample: "Ex: 2 para CDI + 2% a.a.",
+        ipcaSpread: "Spread ao ano (%)",
+        ipcaExample: "Ex: 5 para IPCA + 5% a.a.",
+        annualRate: "Taxa Anual (%)",
+        annualRateExample: "Ex: 12 para 12% ao ano"
+      },
+      custom: {
+        initialValue: "Valor Inicial (R$)",
+        initialValueExample: "Ex: 10000.00",
+        initialValueDescription: "Informe o valor do investimento inicial",
+        period: "Competência",
+        periodExample: "Ex: 10/2024 para outubro de 2024",
+        indexer: "Indexador",
+        selectIndexer: "Selecione o indexador",
+        searchIndexer: "Buscar indexador...",
+        cdiPercentage: "Percentual do CDI (%)",
+        cdiExample: "Ex: 80 para 80% do CDI",
+        spreadExample: "Ex: 2 para CDI + 2% a.a.",
+        monthlyYield: "Rentabilidade Mensal (%)",
+        monthlyYieldExample: "Ex: 1.5 para 1,5% de rentabilidade no mês",
+        annualRate: "Taxa Anual (%)",
+        annualRateExample: "Ex: 12 para 12% ao ano",
+        ipcaSpread: "Spread ao ano (%)",
+        ipcaExample: "Ex: 5 para IPCA + 5% a.a."
+      },
+      market: {
+        description: "Busca automaticamente a rentabilidade real de um índice em um mês específico usando dados de mercado.",
+        period: "Competência",
+        periodExample: "Ex: 10/2024 para outubro de 2024",
+        benchmark: "Índice/Benchmark",
+        selectBenchmark: "Selecione o índice/benchmark",
+        searchBenchmark: "Buscar índice...",
+        currency: "Moeda",
+        selectCurrency: "Selecione a moeda",
+        searchCurrency: "Buscar moeda...",
+        currencyDescription: "Selecione a moeda para buscar a rentabilidade (ajusta câmbio quando necessário)",
+        searchButton: "Buscar Rentabilidade",
+        searching: "Buscando...",
+        resultTitle: "Resultado da Consulta:",
+        index: "Índice:",
+        currencyLabel: "Moeda:",
+        yield: "Rentabilidade:",
+        confirmNote: "ℹ️ Ao confirmar, este valor será usado como Rendimento",
+        errorTitle: "Rentabilidade não encontrada",
+        errorMessage: "Não foram encontrados dados de rentabilidade para:\n\n• Índice: {{benchmark}}\n• Competência: {{period}}\n• Moeda: {{currency}}\n\nVerifique se:\n- A competência está correta (formato MM/YYYY)\n- Existem dados históricos disponíveis para este período\n- O índice selecionado possui dados para esta moeda"
+      },
+      indexers: {
+        cdi: "CDI",
+        ipca: "IPCA",
+        preFixed: "Pré-fixado",
+        manual: "Manual"
+      },
+      currencies: {
+        brl: "Real (BRL)",
+        usd: "Dólar (USD)"
+      },
+      buttons: {
+        cancel: "Cancelar",
+        confirm: "Confirmar"
+      },
+      errors: {
+        error: "Erro",
+        informPeriod: "Informe a competência",
+        informValidInitialValue: "Informe um valor inicial válido",
+        incompleteData: "Dados incompletos",
+        incompleteDataDescription: "Para calcular automaticamente, é necessário informar a competência e a instituição",
+        modeNotAvailable: "Modo não disponível",
+        modeNotAvailableDescription: "O modo automático está disponível apenas para registros consolidados",
+        noAssetsFound: "Nenhum ativo encontrado",
+        noAssetsFoundDescription: "Não foram encontrados ativos detalhados vinculados para:\n• Competência: {{period}}\n• Instituição: {{institution}}{{account}}\n\nVerifique se existem ativos cadastrados com essas informações ou use outro modo de cálculo.",
+        zeroPosition: "Posição total zero",
+        zeroPositionDescription: "Foram encontrados {{count}} ativo(s) vinculado(s), mas a soma das posições é zero.\n\nVerifique se os ativos têm valores de posição preenchidos.",
+        calculationError: "Erro ao calcular rentabilidade",
+        marketDataError: "Erro ao buscar dados do mercado",
+        searchFirst: "Aviso",
+        searchFirstDescription: "Busque os dados do mercado primeiro"
+      },
+      success: {
+        calculationDone: "Cálculo realizado",
+        calculationDescription: "Rentabilidade: {{yield}}%",
+        autoCalculationDone: "Cálculo automático realizado",
+        autoCalculationDescription: "Encontrados {{count}} ativo(s). Rentabilidade ponderada: {{yield}}%",
+        dataObtained: "Dados obtidos",
+        dataObtainedDescription: "Rentabilidade de {{benchmark}} em {{currency}}: {{yield}}%"
+      }
     }
   },
   investmentPreferences: {

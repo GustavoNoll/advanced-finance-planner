@@ -87,16 +87,16 @@ export function YieldCalculator({
   
   // Opções para selects
   const manualIndexerOptions: SelectOption[] = [
-    { id: 'CDI', label: 'CDI' },
-    { id: 'IPCA', label: 'IPCA' },
-    { id: 'PRE', label: 'Pré-fixado' }
+    { id: 'CDI', label: i18n.t('portfolioPerformance.yieldCalculator.indexers.cdi') },
+    { id: 'IPCA', label: i18n.t('portfolioPerformance.yieldCalculator.indexers.ipca') },
+    { id: 'PRE', label: i18n.t('portfolioPerformance.yieldCalculator.indexers.preFixed') }
   ]
   
   const customIndexerOptions: SelectOption[] = [
-    { id: 'CDI', label: 'CDI' },
-    { id: 'IPCA', label: 'IPCA' },
-    { id: 'PRE', label: 'Pré-fixado' },
-    { id: 'MANUAL', label: 'Manual' }
+    { id: 'CDI', label: i18n.t('portfolioPerformance.yieldCalculator.indexers.cdi') },
+    { id: 'IPCA', label: i18n.t('portfolioPerformance.yieldCalculator.indexers.ipca') },
+    { id: 'PRE', label: i18n.t('portfolioPerformance.yieldCalculator.indexers.preFixed') },
+    { id: 'MANUAL', label: i18n.t('portfolioPerformance.yieldCalculator.indexers.manual') }
   ]
   
   const marketBenchmarkOptions: SelectOption[] = [
@@ -116,16 +116,16 @@ export function YieldCalculator({
   ]
   
   const currencyOptions: SelectOption[] = [
-    { id: 'BRL', label: 'Real (BRL)' },
-    { id: 'USD', label: 'Dólar (USD)' }
+    { id: 'BRL', label: i18n.t('portfolioPerformance.yieldCalculator.currencies.brl') },
+    { id: 'USD', label: i18n.t('portfolioPerformance.yieldCalculator.currencies.usd') }
   ]
   
   // Função para buscar dados do mercado usando benchmark-calculator
   const handleFetchMarketData = async () => {
     if (!marketPeriod) {
       toast({
-        title: "Erro",
-        description: "Informe a competência",
+        title: i18n.t('portfolioPerformance.yieldCalculator.errors.error'),
+        description: i18n.t('portfolioPerformance.yieldCalculator.errors.informPeriod'),
         variant: "destructive"
       })
       return
@@ -141,12 +141,18 @@ export function YieldCalculator({
       if (monthlyReturn === null) {
         const benchmarkName = getBenchmarkNameKey(marketBenchmark)
         const benchmarkDisplayName = i18n.t(benchmarkName)
-        const currencyLabel = marketCurrency === 'BRL' ? 'Real (BRL)' : 'Dólar (USD)'
-        const errorMessage = `Não foram encontrados dados de rentabilidade para:\n\n• Índice: ${benchmarkDisplayName}\n• Competência: ${marketPeriod}\n• Moeda: ${currencyLabel}\n\nVerifique se:\n- A competência está correta (formato MM/YYYY)\n- Existem dados históricos disponíveis para este período\n- O índice selecionado possui dados para esta moeda`
+        const currencyLabel = marketCurrency === 'BRL' 
+          ? i18n.t('portfolioPerformance.yieldCalculator.currencies.brl') 
+          : i18n.t('portfolioPerformance.yieldCalculator.currencies.usd')
+        const errorMessage = i18n.t('portfolioPerformance.yieldCalculator.market.errorMessage', {
+          benchmark: benchmarkDisplayName,
+          period: marketPeriod,
+          currency: currencyLabel
+        })
         
         setMarketError(errorMessage)
         toast({
-          title: "Rentabilidade não encontrada",
+          title: i18n.t('portfolioPerformance.yieldCalculator.market.errorTitle'),
           description: errorMessage,
           variant: "destructive",
           duration: 8000
@@ -165,15 +171,23 @@ export function YieldCalculator({
         benchmarkName
       })
       
-      const currencyLabel = marketCurrency === 'BRL' ? 'Real (BRL)' : 'Dólar (USD)'
+      const currencyLabel = marketCurrency === 'BRL' 
+        ? i18n.t('portfolioPerformance.yieldCalculator.currencies.brl') 
+        : i18n.t('portfolioPerformance.yieldCalculator.currencies.usd')
       toast({
-        title: "Dados obtidos",
-        description: `Rentabilidade de ${i18n.t(benchmarkName)} em ${currencyLabel}: ${(monthlyReturn * 100).toFixed(4)}%`
+        title: i18n.t('portfolioPerformance.yieldCalculator.success.dataObtained'),
+        description: i18n.t('portfolioPerformance.yieldCalculator.success.dataObtainedDescription', {
+          benchmark: i18n.t(benchmarkName),
+          currency: currencyLabel,
+          yield: (monthlyReturn * 100).toFixed(4)
+        })
       })
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : "Erro ao buscar dados do mercado"
+      const errorMessage = error instanceof Error 
+        ? error.message 
+        : i18n.t('portfolioPerformance.yieldCalculator.errors.marketDataError')
       toast({
-        title: "Erro",
+        title: i18n.t('portfolioPerformance.yieldCalculator.errors.error'),
         description: errorMessage,
         variant: "destructive"
       })
@@ -190,8 +204,8 @@ export function YieldCalculator({
       if (calculationMode === 'market') {
         if (!marketResult) {
           toast({
-            title: "Aviso",
-            description: "Busque os dados do mercado primeiro",
+            title: i18n.t('portfolioPerformance.yieldCalculator.errors.searchFirst'),
+            description: i18n.t('portfolioPerformance.yieldCalculator.errors.searchFirstDescription'),
             variant: "destructive"
           })
           return
@@ -222,8 +236,8 @@ export function YieldCalculator({
         
         if (initial === 0) {
           toast({
-            title: "Erro",
-            description: "Informe um valor inicial válido",
+            title: i18n.t('portfolioPerformance.yieldCalculator.errors.error'),
+            description: i18n.t('portfolioPerformance.yieldCalculator.errors.informValidInitialValue'),
             variant: "destructive"
           })
           return
@@ -251,8 +265,8 @@ export function YieldCalculator({
         // Modo Automático - calcular rentabilidade ponderada dos ativos vinculados
         if (!period || !institution) {
           toast({
-            title: "Dados incompletos",
-            description: "Para calcular automaticamente, é necessário informar a competência e a instituição",
+            title: i18n.t('portfolioPerformance.yieldCalculator.errors.incompleteData'),
+            description: i18n.t('portfolioPerformance.yieldCalculator.errors.incompleteDataDescription'),
             variant: "destructive"
           })
           return
@@ -260,8 +274,8 @@ export function YieldCalculator({
         
         if (editingType === 'detailed') {
           toast({
-            title: "Modo não disponível",
-            description: "O modo automático está disponível apenas para registros consolidados",
+            title: i18n.t('portfolioPerformance.yieldCalculator.errors.modeNotAvailable'),
+            description: i18n.t('portfolioPerformance.yieldCalculator.errors.modeNotAvailableDescription'),
             variant: "destructive"
           })
           return
@@ -275,9 +289,14 @@ export function YieldCalculator({
         )
         
         if (linkedAssets.length === 0) {
+          const accountText = accountName ? `\n• ${i18n.t('portfolioPerformance.yieldCalculator.auto.account')} ${accountName}` : ''
           toast({
-            title: "Nenhum ativo encontrado",
-            description: `Não foram encontrados ativos detalhados vinculados para:\n• Competência: ${period}\n• Instituição: ${institution}${accountName ? `\n• Conta: ${accountName}` : ''}\n\nVerifique se existem ativos cadastrados com essas informações ou use outro modo de cálculo.`,
+            title: i18n.t('portfolioPerformance.yieldCalculator.errors.noAssetsFound'),
+            description: i18n.t('portfolioPerformance.yieldCalculator.errors.noAssetsFoundDescription', {
+              period,
+              institution,
+              account: accountText
+            }),
             variant: "destructive",
             duration: 6000
           })
@@ -298,8 +317,10 @@ export function YieldCalculator({
         
         if (totalPosition === 0) {
           toast({
-            title: "Posição total zero",
-            description: `Foram encontrados ${linkedAssets.length} ativo(s) vinculado(s), mas a soma das posições é zero.\n\nVerifique se os ativos têm valores de posição preenchidos.`,
+            title: i18n.t('portfolioPerformance.yieldCalculator.errors.zeroPosition'),
+            description: i18n.t('portfolioPerformance.yieldCalculator.errors.zeroPositionDescription', {
+              count: linkedAssets.length
+            }),
             variant: "destructive",
             duration: 6000
           })
@@ -321,8 +342,11 @@ export function YieldCalculator({
         }
         
         toast({
-          title: "Cálculo automático realizado",
-          description: `Encontrados ${linkedAssets.length} ativo(s). Rentabilidade ponderada: ${(monthlyYield * 100).toFixed(4)}%`
+          title: i18n.t('portfolioPerformance.yieldCalculator.success.autoCalculationDone'),
+          description: i18n.t('portfolioPerformance.yieldCalculator.success.autoCalculationDescription', {
+            count: linkedAssets.length,
+            yield: (monthlyYield * 100).toFixed(4)
+          })
         })
       }
       
@@ -331,8 +355,10 @@ export function YieldCalculator({
       }
       
       toast({
-        title: "Cálculo realizado",
-        description: `Rentabilidade: ${(result.monthlyYield * 100).toFixed(4)}%`
+        title: i18n.t('portfolioPerformance.yieldCalculator.success.calculationDone'),
+        description: i18n.t('portfolioPerformance.yieldCalculator.success.calculationDescription', {
+          yield: (result.monthlyYield * 100).toFixed(4)
+        })
       })
       
       if (onOpenChange) {
@@ -340,8 +366,8 @@ export function YieldCalculator({
       }
     } catch (error) {
       toast({
-        title: "Erro",
-        description: "Erro ao calcular rentabilidade",
+        title: i18n.t('portfolioPerformance.yieldCalculator.errors.error'),
+        description: i18n.t('portfolioPerformance.yieldCalculator.errors.calculationError'),
         variant: "destructive"
       })
     }
@@ -353,7 +379,7 @@ export function YieldCalculator({
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <CalculatorIcon className="h-5 w-5" />
-            Calculadora de Rentabilidade
+            {i18n.t('portfolioPerformance.yieldCalculator.title')}
           </DialogTitle>
         </DialogHeader>
         
@@ -365,28 +391,28 @@ export function YieldCalculator({
               onClick={() => setCalculationMode('auto')}
               size="sm"
             >
-              Automático
+              {i18n.t('portfolioPerformance.yieldCalculator.modes.auto')}
             </Button>
             <Button
               variant={calculationMode === 'manual' ? 'default' : 'outline'}
               onClick={() => setCalculationMode('manual')}
               size="sm"
             >
-              Manual
+              {i18n.t('portfolioPerformance.yieldCalculator.modes.manual')}
             </Button>
             <Button
               variant={calculationMode === 'custom' ? 'default' : 'outline'}
               onClick={() => setCalculationMode('custom')}
               size="sm"
             >
-              Personalizado
+              {i18n.t('portfolioPerformance.yieldCalculator.modes.custom')}
             </Button>
             <Button
               variant={calculationMode === 'market' ? 'default' : 'outline'}
               onClick={() => setCalculationMode('market')}
               size="sm"
             >
-              Mercado
+              {i18n.t('portfolioPerformance.yieldCalculator.modes.market')}
             </Button>
           </div>
           
@@ -395,26 +421,26 @@ export function YieldCalculator({
             <div className="space-y-3">
               <div className="space-y-2">
                 <p className="text-sm text-muted-foreground">
-                  Calcula a rentabilidade ponderada dos ativos detalhados vinculados ao registro consolidado.
+                  {i18n.t('portfolioPerformance.yieldCalculator.auto.description')}
                 </p>
                 <p className="text-sm text-muted-foreground">
-                  <strong>Critério:</strong> Mesma Competência, Instituição e Nome da Conta.
+                  <strong>{i18n.t('portfolioPerformance.yieldCalculator.auto.criteria')}</strong>
                 </p>
               </div>
               
               {period && institution && (
                 <div className="bg-muted p-3 rounded-md space-y-1">
-                  <p className="text-sm font-medium">Critérios de busca:</p>
+                  <p className="text-sm font-medium">{i18n.t('portfolioPerformance.yieldCalculator.auto.searchCriteria')}</p>
                   <div className="text-xs text-muted-foreground space-y-0.5">
-                    <p>• Competência: <span className="font-medium text-foreground">{period}</span></p>
-                    <p>• Instituição: <span className="font-medium text-foreground">{institution}</span></p>
+                    <p>• {i18n.t('portfolioPerformance.yieldCalculator.auto.competence')} <span className="font-medium text-foreground">{period}</span></p>
+                    <p>• {i18n.t('portfolioPerformance.yieldCalculator.auto.institution')} <span className="font-medium text-foreground">{institution}</span></p>
                     {accountName && (
-                      <p>• Conta: <span className="font-medium text-foreground">{accountName}</span></p>
+                      <p>• {i18n.t('portfolioPerformance.yieldCalculator.auto.account')} <span className="font-medium text-foreground">{accountName}</span></p>
                     )}
                   </div>
                   {detailedData && detailedData.length > 0 && (
                     <p className="text-xs text-muted-foreground mt-2">
-                      Total de ativos disponíveis: {detailedData.length}
+                      {i18n.t('portfolioPerformance.yieldCalculator.auto.totalAssetsAvailable', { count: detailedData.length })}
                     </p>
                   )}
                 </div>
@@ -422,16 +448,14 @@ export function YieldCalculator({
               
               {(!period || !institution) && (
                 <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 p-3 rounded-md">
-                  <p className="text-xs text-yellow-800 dark:text-yellow-200">
-                    ⚠️ <strong>Atenção:</strong> Preencha a competência e a instituição no formulário para usar o modo automático.
-                  </p>
+                  <p className="text-xs text-yellow-800 dark:text-yellow-200" dangerouslySetInnerHTML={{ __html: i18n.t('portfolioPerformance.yieldCalculator.auto.warning') }} />
                 </div>
               )}
               
               {editingType === 'detailed' && (
                 <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 p-3 rounded-md">
                   <p className="text-xs text-blue-800 dark:text-blue-200">
-                    ℹ️ O modo automático está disponível apenas para registros consolidados.
+                    {i18n.t('portfolioPerformance.yieldCalculator.auto.info')}
                   </p>
                 </div>
               )}
@@ -442,7 +466,7 @@ export function YieldCalculator({
           {calculationMode === 'manual' && (
             <div className="space-y-3">
               <div>
-                <Label htmlFor="manual-period">Competência</Label>
+                <Label htmlFor="manual-period">{i18n.t('portfolioPerformance.yieldCalculator.manual.period')}</Label>
                 <Input
                   id="manual-period"
                   value={manualPeriod}
@@ -459,7 +483,7 @@ export function YieldCalculator({
               </div>
               
               <div>
-                <Label htmlFor="manual-indexer">Indexador</Label>
+                <Label htmlFor="manual-indexer">{i18n.t('portfolioPerformance.yieldCalculator.manual.indexer')}</Label>
                 <SelectWithSearch
                   options={manualIndexerOptions}
                   value={manualIndexer}
@@ -471,14 +495,14 @@ export function YieldCalculator({
                       setManualPercentage('100')
                     }
                   }}
-                  placeholder="Selecione o indexador"
-                  searchPlaceholder="Buscar indexador..."
+                  placeholder={i18n.t('portfolioPerformance.yieldCalculator.manual.selectIndexer')}
+                  searchPlaceholder={i18n.t('portfolioPerformance.yieldCalculator.manual.searchIndexer')}
                 />
               </div>
               
               {manualIndexer === 'CDI' && (
                 <div>
-                  <Label>Percentual do CDI (%)</Label>
+                  <Label>{i18n.t('portfolioPerformance.yieldCalculator.custom.cdiPercentage')}</Label>
                   <div className="flex gap-2 mt-1">
                     <div className="flex border rounded-md overflow-hidden">
                       <Button
@@ -510,12 +534,12 @@ export function YieldCalculator({
                       type="text"
                       value={manualPercentage}
                       onChange={(e) => setManualPercentage(e.target.value)}
-                      placeholder={manualOperation === '%' ? 'Ex: 80 para 80% do CDI' : 'Spread a.a.'}
+                      placeholder={manualOperation === '%' ? i18n.t('portfolioPerformance.yieldCalculator.manual.cdiExample') : i18n.t('portfolioPerformance.yieldCalculator.manual.spreadExample')}
                       className="flex-1"
                     />
                   </div>
                   <p className="text-xs text-muted-foreground mt-1">
-                    {manualOperation === '%' ? 'Ex: 80 para 80% do CDI' : 'Ex: 2 para CDI + 2% a.a.'}
+                    {manualOperation === '%' ? i18n.t('portfolioPerformance.yieldCalculator.manual.cdiExample') : i18n.t('portfolioPerformance.yieldCalculator.manual.spreadExample')}
                   </p>
                 </div>
               )}
@@ -523,17 +547,17 @@ export function YieldCalculator({
               {manualIndexer !== 'CDI' && (
                 <div>
                   <Label htmlFor="manual-percentage">
-                    {manualIndexer === 'IPCA' ? 'Spread ao ano (%)' : 'Taxa Anual (%)'}
+                    {manualIndexer === 'IPCA' ? i18n.t('portfolioPerformance.yieldCalculator.manual.ipcaSpread') : i18n.t('portfolioPerformance.yieldCalculator.manual.annualRate')}
                   </Label>
                   <Input
                     id="manual-percentage"
                     type="text"
                     value={manualPercentage}
                     onChange={(e) => setManualPercentage(e.target.value)}
-                    placeholder={manualIndexer === 'IPCA' ? 'Ex: 5 para IPCA + 5% a.a.' : 'Ex: 12 para 12% a.a.'}
+                    placeholder={manualIndexer === 'IPCA' ? i18n.t('portfolioPerformance.yieldCalculator.manual.ipcaExample') : i18n.t('portfolioPerformance.yieldCalculator.manual.annualRateExample')}
                   />
                   <p className="text-xs text-muted-foreground mt-1">
-                    {manualIndexer === 'IPCA' ? 'Ex: 5 para IPCA + 5% a.a.' : 'Ex: 12 para 12% ao ano'}
+                    {manualIndexer === 'IPCA' ? i18n.t('portfolioPerformance.yieldCalculator.manual.ipcaExample') : i18n.t('portfolioPerformance.yieldCalculator.manual.annualRateExample')}
                   </p>
                 </div>
               )}
@@ -544,21 +568,21 @@ export function YieldCalculator({
           {calculationMode === 'custom' && (
             <div className="space-y-3">
               <div>
-                <Label htmlFor="custom-initial">Valor Inicial (R$)</Label>
+                <Label htmlFor="custom-initial">{i18n.t('portfolioPerformance.yieldCalculator.custom.initialValue')}</Label>
                 <Input
                   id="custom-initial"
                   type="text"
                   value={customInitialValue}
                   onChange={(e) => setCustomInitialValue(e.target.value)}
-                  placeholder="Ex: 10000.00"
+                  placeholder={i18n.t('portfolioPerformance.yieldCalculator.custom.initialValueExample')}
                 />
                 <p className="text-xs text-muted-foreground mt-1">
-                  Informe o valor do investimento inicial
+                  {i18n.t('portfolioPerformance.yieldCalculator.custom.initialValueDescription')}
                 </p>
               </div>
               
               <div>
-                <Label htmlFor="custom-period">Competência</Label>
+                <Label htmlFor="custom-period">{i18n.t('portfolioPerformance.yieldCalculator.custom.period')}</Label>
                 <Input
                   id="custom-period"
                   value={customPeriod}
@@ -573,12 +597,12 @@ export function YieldCalculator({
                   maxLength={7}
                 />
                 <p className="text-xs text-muted-foreground mt-1">
-                  Ex: 10/2024 para outubro de 2024
+                  {i18n.t('portfolioPerformance.yieldCalculator.custom.periodExample')}
                 </p>
               </div>
               
               <div>
-                <Label htmlFor="custom-indexer">Indexador</Label>
+                <Label htmlFor="custom-indexer">{i18n.t('portfolioPerformance.yieldCalculator.custom.indexer')}</Label>
                 <SelectWithSearch
                   options={customIndexerOptions}
                   value={customIndexer}
@@ -592,14 +616,14 @@ export function YieldCalculator({
                       setCustomPercentage('1.0')
                     }
                   }}
-                  placeholder="Selecione o indexador"
-                  searchPlaceholder="Buscar indexador..."
+                  placeholder={i18n.t('portfolioPerformance.yieldCalculator.custom.selectIndexer')}
+                  searchPlaceholder={i18n.t('portfolioPerformance.yieldCalculator.custom.searchIndexer')}
                 />
               </div>
               
               {customIndexer === 'CDI' && (
                 <div>
-                  <Label>Percentual do CDI (%)</Label>
+                  <Label>{i18n.t('portfolioPerformance.yieldCalculator.custom.cdiPercentage')}</Label>
                   <div className="flex gap-2 mt-1">
                     <div className="flex border rounded-md overflow-hidden">
                       <Button
@@ -631,32 +655,32 @@ export function YieldCalculator({
                       type="text"
                       value={customPercentage}
                       onChange={(e) => setCustomPercentage(e.target.value)}
-                      placeholder={customOperation === '%' ? '% do CDI' : 'Spread a.a.'}
-                      className="flex-1"
-                    />
-                  </div>
-                  <p className="text-xs text-muted-foreground mt-1">
-                    {customOperation === '%' ? 'Ex: 80 para 80% do CDI' : 'Ex: 2 para CDI + 2% a.a.'}
-                  </p>
+                    placeholder={customOperation === '%' ? i18n.t('portfolioPerformance.yieldCalculator.custom.cdiExample') : i18n.t('portfolioPerformance.yieldCalculator.custom.spreadExample')}
+                    className="flex-1"
+                  />
+                </div>
+                <p className="text-xs text-muted-foreground mt-1">
+                  {customOperation === '%' ? i18n.t('portfolioPerformance.yieldCalculator.custom.cdiExample') : i18n.t('portfolioPerformance.yieldCalculator.custom.spreadExample')}
+                </p>
                 </div>
               )}
               
               {customIndexer !== 'CDI' && (
                 <div>
                   <Label htmlFor="custom-percentage">
-                    {customIndexer === 'MANUAL' ? 'Rentabilidade Mensal (%)' : customIndexer === 'PRE' ? 'Taxa Anual (%)' : 'Spread ao ano (%)'}
+                    {customIndexer === 'MANUAL' ? i18n.t('portfolioPerformance.yieldCalculator.custom.monthlyYield') : customIndexer === 'PRE' ? i18n.t('portfolioPerformance.yieldCalculator.custom.annualRate') : i18n.t('portfolioPerformance.yieldCalculator.custom.ipcaSpread')}
                   </Label>
                   <Input
                     id="custom-percentage"
                     type="text"
                     value={customPercentage}
                     onChange={(e) => setCustomPercentage(e.target.value)}
-                    placeholder={customIndexer === 'MANUAL' ? 'Ex: 1.5' : customIndexer === 'PRE' ? 'Ex: 12' : 'Ex: 5'}
+                    placeholder={customIndexer === 'MANUAL' ? i18n.t('portfolioPerformance.yieldCalculator.custom.monthlyYieldExample') : customIndexer === 'PRE' ? i18n.t('portfolioPerformance.yieldCalculator.custom.annualRateExample') : i18n.t('portfolioPerformance.yieldCalculator.custom.ipcaExample')}
                   />
                   <p className="text-xs text-muted-foreground mt-1">
-                    {customIndexer === 'MANUAL' ? 'Ex: 1.5 para 1,5% de rentabilidade no mês' : 
-                     customIndexer === 'PRE' ? 'Ex: 12 para 12% ao ano' : 
-                     'Ex: 5 para IPCA + 5% a.a.'}
+                    {customIndexer === 'MANUAL' ? i18n.t('portfolioPerformance.yieldCalculator.custom.monthlyYieldExample') : 
+                     customIndexer === 'PRE' ? i18n.t('portfolioPerformance.yieldCalculator.custom.annualRateExample') : 
+                     i18n.t('portfolioPerformance.yieldCalculator.custom.ipcaExample')}
                   </p>
                 </div>
               )}
@@ -667,11 +691,11 @@ export function YieldCalculator({
           {calculationMode === 'market' && (
             <div className="space-y-3">
               <p className="text-sm text-muted-foreground">
-                Busca automaticamente a rentabilidade real de um índice em um mês específico usando dados de mercado.
+                {i18n.t('portfolioPerformance.yieldCalculator.market.description')}
               </p>
               
               <div>
-                <Label htmlFor="market-period">Competência</Label>
+                <Label htmlFor="market-period">{i18n.t('portfolioPerformance.yieldCalculator.market.period')}</Label>
                 <Input
                   id="market-period"
                   value={marketPeriod}
@@ -688,12 +712,12 @@ export function YieldCalculator({
                   maxLength={7}
                 />
                 <p className="text-xs text-muted-foreground mt-1">
-                  Ex: 10/2024 para outubro de 2024
+                  {i18n.t('portfolioPerformance.yieldCalculator.market.periodExample')}
                 </p>
               </div>
               
               <div>
-                <Label htmlFor="market-benchmark">Índice/Benchmark</Label>
+                <Label htmlFor="market-benchmark">{i18n.t('portfolioPerformance.yieldCalculator.market.benchmark')}</Label>
                 <SelectWithSearch
                   options={marketBenchmarkOptions}
                   value={marketBenchmark}
@@ -702,13 +726,13 @@ export function YieldCalculator({
                     setMarketResult(null) // Limpar resultado ao mudar benchmark
                     setMarketError(null) // Limpar erro ao mudar benchmark
                   }}
-                  placeholder="Selecione o índice/benchmark"
-                  searchPlaceholder="Buscar índice..."
+                  placeholder={i18n.t('portfolioPerformance.yieldCalculator.market.selectBenchmark')}
+                  searchPlaceholder={i18n.t('portfolioPerformance.yieldCalculator.market.searchBenchmark')}
                 />
               </div>
               
               <div>
-                <Label htmlFor="market-currency">Moeda</Label>
+                <Label htmlFor="market-currency">{i18n.t('portfolioPerformance.yieldCalculator.market.currency')}</Label>
                 <SelectWithSearch
                   options={currencyOptions}
                   value={marketCurrency}
@@ -717,11 +741,11 @@ export function YieldCalculator({
                     setMarketResult(null) // Limpar resultado ao mudar moeda
                     setMarketError(null) // Limpar erro ao mudar moeda
                   }}
-                  placeholder="Selecione a moeda"
-                  searchPlaceholder="Buscar moeda..."
+                  placeholder={i18n.t('portfolioPerformance.yieldCalculator.market.selectCurrency')}
+                  searchPlaceholder={i18n.t('portfolioPerformance.yieldCalculator.market.searchCurrency')}
                 />
                 <p className="text-xs text-muted-foreground mt-1">
-                  Selecione a moeda para buscar a rentabilidade (ajusta câmbio quando necessário)
+                  {i18n.t('portfolioPerformance.yieldCalculator.market.currencyDescription')}
                 </p>
               </div>
               
@@ -731,7 +755,7 @@ export function YieldCalculator({
                 className="w-full"
                 variant="secondary"
               >
-                {isLoading ? 'Buscando...' : 'Buscar Rentabilidade'}
+                {isLoading ? i18n.t('portfolioPerformance.yieldCalculator.market.searching') : i18n.t('portfolioPerformance.yieldCalculator.market.searchButton')}
               </Button>
               
               {marketError && (
@@ -744,7 +768,7 @@ export function YieldCalculator({
                     </div>
                     <div className="flex-1">
                       <h4 className="font-semibold text-sm text-red-900 dark:text-red-100 mb-2">
-                        Rentabilidade não encontrada
+                        {i18n.t('portfolioPerformance.yieldCalculator.market.errorTitle')}
                       </h4>
                       <div className="text-xs text-red-800 dark:text-red-200 space-y-1 whitespace-pre-line">
                         {marketError.split('\n').map((line, index) => (
@@ -758,27 +782,27 @@ export function YieldCalculator({
               
               {marketResult && (
                 <div className="bg-muted p-4 rounded-md space-y-2 border border-primary/20">
-                  <h4 className="font-semibold text-sm">Resultado da Consulta:</h4>
+                  <h4 className="font-semibold text-sm">{i18n.t('portfolioPerformance.yieldCalculator.market.resultTitle')}</h4>
                   <div className="grid grid-cols-2 gap-2 text-sm">
                     <div>
-                      <p className="text-muted-foreground">Índice:</p>
+                      <p className="text-muted-foreground">{i18n.t('portfolioPerformance.yieldCalculator.market.index')}</p>
                       <p className="font-medium">{i18n.t(`${marketResult.benchmarkName}`)}</p>
                     </div>
                     <div>
-                      <p className="text-muted-foreground">Moeda:</p>
+                      <p className="text-muted-foreground">{i18n.t('portfolioPerformance.yieldCalculator.market.currencyLabel')}</p>
                       <p className="font-medium">
-                        {marketCurrency === 'BRL' ? 'Real (BRL)' : 'Dólar (USD)'}
+                        {marketCurrency === 'BRL' ? i18n.t('portfolioPerformance.yieldCalculator.currencies.brl') : i18n.t('portfolioPerformance.yieldCalculator.currencies.usd')}
                       </p>
                     </div>
                     <div className="col-span-2">
-                      <p className="text-muted-foreground">Rentabilidade:</p>
+                      <p className="text-muted-foreground">{i18n.t('portfolioPerformance.yieldCalculator.market.yield')}</p>
                       <p className={`font-medium text-lg ${marketResult.monthlyReturn > 0 ? 'text-green-600' : 'text-red-600'}`}>
                         {(marketResult.monthlyReturn * 100).toFixed(4)}%
                       </p>
                     </div>
                   </div>
                   <p className="text-xs text-muted-foreground italic mt-2">
-                    ℹ️ Ao confirmar, este valor será usado como Rendimento
+                    {i18n.t('portfolioPerformance.yieldCalculator.market.confirmNote')}
                   </p>
                 </div>
               )}
@@ -795,14 +819,14 @@ export function YieldCalculator({
               }}
               className="flex-1"
             >
-              Cancelar
+              {i18n.t('portfolioPerformance.yieldCalculator.buttons.cancel')}
             </Button>
             <Button
               onClick={handleCalculate}
               className="flex-1"
               disabled={calculationMode === 'market' && !marketResult}
             >
-              Confirmar
+              {i18n.t('portfolioPerformance.yieldCalculator.buttons.confirm')}
             </Button>
           </div>
         </div>
