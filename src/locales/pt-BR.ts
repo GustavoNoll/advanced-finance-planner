@@ -2649,6 +2649,17 @@ export const ptBR = {
         twelveMonths: "12 Meses",
         inception: "Início",
         noData: "Nenhum dado disponível",
+        viewMode: {
+          visual: "Visual",
+          table: "Tabela"
+        },
+        allocation: "Alocação",
+        value: "Valor",
+        benchmark: "Benchmark",
+        yourPortfolio: "Sua Carteira",
+        vs: "vs",
+        comparison: "Comparação",
+        difference: "Diferença",
         performance: {
           excellent: "Excelente",
           good: "Bom",

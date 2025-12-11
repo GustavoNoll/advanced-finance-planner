@@ -2649,6 +2649,17 @@ export const enUS = {
         twelveMonths: "12 Months",
         inception: "Inception",
         noData: "No data available",
+        viewMode: {
+          visual: "Visual",
+          table: "Table"
+        },
+        allocation: "Allocation",
+        value: "Value",
+        benchmark: "Benchmark",
+        yourPortfolio: "Your Portfolio",
+        vs: "vs",
+        comparison: "Comparison",
+        difference: "Difference",
         performance: {
           excellent: "Excellent",
           good: "Good",
