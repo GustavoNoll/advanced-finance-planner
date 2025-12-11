@@ -1,5 +1,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { Badge } from "@/components/ui/badge"
 import type { PerformanceData } from "@/types/financial"
 import { calculateCompoundedRates } from "@/lib/financial-math"
 import { useTranslation } from "react-i18next"
@@ -16,6 +18,7 @@ import { translateGroupedStrategy } from "@/utils/i18n-helpers"
 import { isValidAssetClass, type ValidAssetClass } from "@/pages/performance/utils/valid-asset-classes"
 import { useMemo, useCallback, Fragment } from "react"
 import { useCurrency } from "@/contexts/CurrencyContext"
+import { TrendingUp, TrendingDown, Minus } from "lucide-react"
 
 interface InvestmentDetailsTableProps {
   performanceData: PerformanceData[]
@@ -41,7 +44,7 @@ function calculateCompoundReturn(monthlyReturns: number[]): number {
 
 export function InvestmentDetailsTable({ performanceData }: InvestmentDetailsTableProps) {
   const { t } = useTranslation()
-  const { currency, adjustReturnWithFX, convertValue } = useCurrency()
+  const { currency, adjustReturnWithFX, convertValue, formatCurrency } = useCurrency()
   const currentLocale = currency === 'BRL' ? 'pt-BR' : 'en-US'
   
   /**
@@ -320,151 +323,396 @@ export function InvestmentDetailsTable({ performanceData }: InvestmentDetailsTab
     }
   }
 
+  /**
+   * Renderiza um valor de retorno com ícone e cor apropriados
+   */
+  function renderReturnValue(value: number): React.ReactNode {
+    const isPositive = value > 0
+    const isNegative = value < 0
+    const color = isPositive 
+      ? 'text-green-600 dark:text-green-500' 
+      : isNegative 
+        ? 'text-red-600 dark:text-red-500' 
+        : 'text-foreground'
+    
+    return (
+      <div className={`flex items-center justify-center gap-1 ${color}`}>
+        {isPositive && <TrendingUp className="w-4 h-4" />}
+        {isNegative && <TrendingDown className="w-4 h-4" />}
+        {!isPositive && !isNegative && <Minus className="w-4 h-4" />}
+        <span className="font-semibold">
+          {value >= 0 ? '+' : ''}{value.toFixed(2)}%
+        </span>
+      </div>
+    )
+  }
+
+  /**
+   * Visualização em cards
+   */
+  function renderVisualView() {
+    if (consolidated.length === 0) {
+      return (
+        <div className="text-center text-muted-foreground py-12">
+          {t('portfolioPerformance.kpi.investmentDetails.noData')}
+        </div>
+      )
+    }
+
+    return (
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        {consolidated.map(item => {
+          const strategyColor = getStrategyColorForName(item.name)
+          
+          return (
+            <Card 
+              key={item.name}
+              className="bg-gradient-to-br from-white/95 to-slate-50/90 dark:from-gray-900/90 dark:to-slate-800/70 border border-gray-200/50 dark:border-gray-700 hover:shadow-lg transition-shadow"
+            >
+              <CardHeader className="pb-3">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <div 
+                      className="w-4 h-4 rounded-full flex-shrink-0" 
+                      style={{ backgroundColor: strategyColor }} 
+                    />
+                    <CardTitle className="text-base font-semibold text-foreground">
+                      {item.name}
+                    </CardTitle>
+                  </div>
+                  <Badge variant="outline" className="text-xs">
+                    {item.percentage.toFixed(1)}%
+                  </Badge>
+                </div>
+                <div className="mt-2 text-sm text-muted-foreground">
+                  {formatCurrency(item.value)}
+                </div>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {/* Retornos da Carteira */}
+                <div>
+                  <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-3">
+                    {t('portfolioPerformance.kpi.investmentDetails.yourPortfolio')}
+                  </div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <div className="text-xs text-muted-foreground mb-1">
+                        {t('portfolioPerformance.kpi.investmentDetails.month')}
+                      </div>
+                      {renderReturnValue(item.monthReturn)}
+                    </div>
+                    <div>
+                      <div className="text-xs text-muted-foreground mb-1">
+                        {t('portfolioPerformance.kpi.investmentDetails.year')}
+                      </div>
+                      {renderReturnValue(item.yearReturn)}
+                    </div>
+                    <div>
+                      <div className="text-xs text-muted-foreground mb-1">
+                        {t('portfolioPerformance.kpi.investmentDetails.sixMonths')}
+                      </div>
+                      {renderReturnValue(item.sixMonthsReturn)}
+                    </div>
+                    <div>
+                      <div className="text-xs text-muted-foreground mb-1">
+                        {t('portfolioPerformance.kpi.investmentDetails.twelveMonths')}
+                      </div>
+                      {renderReturnValue(item.twelveMonthsReturn)}
+                    </div>
+                    <div className="col-span-2">
+                      <div className="text-xs text-muted-foreground mb-1">
+                        {t('portfolioPerformance.kpi.investmentDetails.inception')}
+                      </div>
+                      {renderReturnValue(item.inceptionReturn)}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Comparação com Benchmark */}
+                {item.benchmark && (
+                  <div className="pt-4 border-t border-border/50">
+                    <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-3">
+                      {t('portfolioPerformance.kpi.investmentDetails.comparison')} {(() => {
+                        const translatedName = t(item.benchmark.nameKey)
+                        return translatedName
+                      })()}
+                    </div>
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <div className="text-xs text-muted-foreground mb-1">
+                          {t('portfolioPerformance.kpi.investmentDetails.month')}
+                        </div>
+                        <div className="text-sm">
+                          {(() => {
+                            const displayValue = calculateBenchmarkDisplayValue(
+                              item.monthReturn,
+                              item.benchmark.monthReturn,
+                              item.benchmark.benchmarkType
+                            )
+                            return (
+                              <span className={getBenchmarkDisplayColor(displayValue, item.benchmark.benchmarkType)}>
+                                {formatBenchmarkValue(displayValue, item.benchmark.benchmarkType)}
+                              </span>
+                            )
+                          })()}
+                        </div>
+                      </div>
+                      <div>
+                        <div className="text-xs text-muted-foreground mb-1">
+                          {t('portfolioPerformance.kpi.investmentDetails.year')}
+                        </div>
+                        <div className="text-sm">
+                          {(() => {
+                            const displayValue = calculateBenchmarkDisplayValue(
+                              item.yearReturn,
+                              item.benchmark.yearReturn,
+                              item.benchmark.benchmarkType
+                            )
+                            return (
+                              <span className={getBenchmarkDisplayColor(displayValue, item.benchmark.benchmarkType)}>
+                                {formatBenchmarkValue(displayValue, item.benchmark.benchmarkType)}
+                              </span>
+                            )
+                          })()}
+                        </div>
+                      </div>
+                      <div>
+                        <div className="text-xs text-muted-foreground mb-1">
+                          {t('portfolioPerformance.kpi.investmentDetails.sixMonths')}
+                        </div>
+                        <div className="text-sm">
+                          {(() => {
+                            const displayValue = calculateBenchmarkDisplayValue(
+                              item.sixMonthsReturn,
+                              item.benchmark.sixMonthsReturn,
+                              item.benchmark.benchmarkType
+                            )
+                            return (
+                              <span className={getBenchmarkDisplayColor(displayValue, item.benchmark.benchmarkType)}>
+                                {formatBenchmarkValue(displayValue, item.benchmark.benchmarkType)}
+                              </span>
+                            )
+                          })()}
+                        </div>
+                      </div>
+                      <div>
+                        <div className="text-xs text-muted-foreground mb-1">
+                          {t('portfolioPerformance.kpi.investmentDetails.twelveMonths')}
+                        </div>
+                        <div className="text-sm">
+                          {(() => {
+                            const displayValue = calculateBenchmarkDisplayValue(
+                              item.twelveMonthsReturn,
+                              item.benchmark.twelveMonthsReturn,
+                              item.benchmark.benchmarkType
+                            )
+                            return (
+                              <span className={getBenchmarkDisplayColor(displayValue, item.benchmark.benchmarkType)}>
+                                {formatBenchmarkValue(displayValue, item.benchmark.benchmarkType)}
+                              </span>
+                            )
+                          })()}
+                        </div>
+                      </div>
+                      <div className="col-span-2">
+                        <div className="text-xs text-muted-foreground mb-1">
+                          {t('portfolioPerformance.kpi.investmentDetails.inception')}
+                        </div>
+                        <div className="text-sm">
+                          {(() => {
+                            const displayValue = calculateBenchmarkDisplayValue(
+                              item.inceptionReturn,
+                              item.benchmark.inceptionReturn,
+                              item.benchmark.benchmarkType
+                            )
+                            return (
+                              <span className={getBenchmarkDisplayColor(displayValue, item.benchmark.benchmarkType)}>
+                                {formatBenchmarkValue(displayValue, item.benchmark.benchmarkType)}
+                              </span>
+                            )
+                          })()}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          )
+        })}
+      </div>
+    )
+  }
+
+  /**
+   * Visualização em tabela
+   */
+  function renderTableView() {
+    return (
+      <div className="overflow-x-auto">
+        <Table>
+          <TableHeader>
+            <TableRow className="border-border/50">
+              <TableHead className="text-muted-foreground">{t('portfolioPerformance.kpi.investmentDetails.strategy')}</TableHead>
+              <TableHead className="text-muted-foreground text-center">{t('portfolioPerformance.kpi.investmentDetails.month')}</TableHead>
+              <TableHead className="text-muted-foreground text-center">{t('portfolioPerformance.kpi.investmentDetails.year')}</TableHead>
+              <TableHead className="text-muted-foreground text-center">{t('portfolioPerformance.kpi.investmentDetails.sixMonths')}</TableHead>
+              <TableHead className="text-muted-foreground text-center">{t('portfolioPerformance.kpi.investmentDetails.twelveMonths')}</TableHead>
+              <TableHead className="text-muted-foreground text-center">{t('portfolioPerformance.kpi.investmentDetails.inception')}</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {consolidated.length > 0 ? (
+              consolidated.map(item => (
+                <Fragment key={item.name}>
+                  <TableRow className="border-border/50">
+                    <TableCell className="font-medium text-foreground flex items-center gap-2 py-2">
+                      <div className="w-3 h-3 rounded-full" style={{ backgroundColor: getStrategyColorForName(item.name) }} />
+                      {item.name}
+                    </TableCell>
+                    <TableCell className="text-center py-2">
+                      <span className="text-foreground">
+                        {item.monthReturn >= 0 ? '+' : ''}{item.monthReturn.toFixed(2)}%
+                      </span>
+                    </TableCell>
+                    <TableCell className="text-center py-2">
+                      <span className="text-foreground">
+                        {item.yearReturn >= 0 ? '+' : ''}{item.yearReturn.toFixed(2)}%
+                      </span>
+                    </TableCell>
+                    <TableCell className="text-center py-2">
+                      <span className="text-foreground">
+                        {item.sixMonthsReturn >= 0 ? '+' : ''}{item.sixMonthsReturn.toFixed(2)}%
+                      </span>
+                    </TableCell>
+                    <TableCell className="text-center py-2">
+                      <span className="text-foreground">
+                        {item.twelveMonthsReturn >= 0 ? '+' : ''}{item.twelveMonthsReturn.toFixed(2)}%
+                      </span>
+                    </TableCell>
+                    <TableCell className="text-center py-2">
+                      <span className="text-foreground">
+                        {item.inceptionReturn >= 0 ? '+' : ''}{item.inceptionReturn.toFixed(2)}%
+                      </span>
+                    </TableCell>
+                  </TableRow>
+                  <TableRow className="border-border/50 bg-muted/20">
+                    <TableCell className="font-medium text-muted-foreground pl-8 py-1">
+                      {item.benchmark 
+                        ? (() => {
+                            const prefix = item.benchmark.benchmarkType === 'CDI' ? '%' : '±'
+                            const translatedName = t(item.benchmark.nameKey)
+                            return `${prefix} ${translatedName}`
+                          })()
+                        : '-'
+                      }
+                    </TableCell>
+                    <TableCell className="text-center text-muted-foreground py-1">
+                      {item.benchmark ? (() => {
+                        const displayValue = calculateBenchmarkDisplayValue(
+                          item.monthReturn,
+                          item.benchmark.monthReturn,
+                          item.benchmark.benchmarkType
+                        )
+                        return (
+                          <span className={getBenchmarkDisplayColor(displayValue, item.benchmark.benchmarkType)}>
+                            {formatBenchmarkValue(displayValue, item.benchmark.benchmarkType)}
+                          </span>
+                        )
+                      })() : '-'}
+                    </TableCell>
+                    <TableCell className="text-center text-muted-foreground py-1">
+                      {item.benchmark ? (() => {
+                        const displayValue = calculateBenchmarkDisplayValue(
+                          item.yearReturn,
+                          item.benchmark.yearReturn,
+                          item.benchmark.benchmarkType
+                        )
+                        return (
+                          <span className={getBenchmarkDisplayColor(displayValue, item.benchmark.benchmarkType)}>
+                            {formatBenchmarkValue(displayValue, item.benchmark.benchmarkType)}
+                          </span>
+                        )
+                      })() : '-'}
+                    </TableCell>
+                    <TableCell className="text-center text-muted-foreground py-1">
+                      {item.benchmark ? (() => {
+                        const displayValue = calculateBenchmarkDisplayValue(
+                          item.sixMonthsReturn,
+                          item.benchmark.sixMonthsReturn,
+                          item.benchmark.benchmarkType
+                        )
+                        return (
+                          <span className={getBenchmarkDisplayColor(displayValue, item.benchmark.benchmarkType)}>
+                            {formatBenchmarkValue(displayValue, item.benchmark.benchmarkType)}
+                          </span>
+                        )
+                      })() : '-'}
+                    </TableCell>
+                    <TableCell className="text-center text-muted-foreground py-1">
+                      {item.benchmark ? (() => {
+                        const displayValue = calculateBenchmarkDisplayValue(
+                          item.twelveMonthsReturn,
+                          item.benchmark.twelveMonthsReturn,
+                          item.benchmark.benchmarkType
+                        )
+                        return (
+                          <span className={getBenchmarkDisplayColor(displayValue, item.benchmark.benchmarkType)}>
+                            {formatBenchmarkValue(displayValue, item.benchmark.benchmarkType)}
+                          </span>
+                        )
+                      })() : '-'}
+                    </TableCell>
+                    <TableCell className="text-center text-muted-foreground py-1">
+                      {item.benchmark ? (() => {
+                        const displayValue = calculateBenchmarkDisplayValue(
+                          item.inceptionReturn,
+                          item.benchmark.inceptionReturn,
+                          item.benchmark.benchmarkType
+                        )
+                        return (
+                          <span className={getBenchmarkDisplayColor(displayValue, item.benchmark.benchmarkType)}>
+                            {formatBenchmarkValue(displayValue, item.benchmark.benchmarkType)}
+                          </span>
+                        )
+                      })() : '-'}
+                    </TableCell>
+                  </TableRow>
+                </Fragment>
+              ))
+            ) : (
+              <TableRow className="border-border/50">
+                <TableCell colSpan={6} className="text-center text-muted-foreground py-8">{t('portfolioPerformance.kpi.investmentDetails.noData')}</TableCell>
+              </TableRow>
+            )}
+          </TableBody>
+        </Table>
+      </div>
+    )
+  }
+
   return (
     <Card className="bg-gradient-to-br from-white/95 via-slate-50/90 to-blue-50/80 dark:from-gray-900/90 dark:via-gray-900/80 dark:to-slate-800/70 backdrop-blur-sm rounded-xl shadow-lg border border-gray-100/50 dark:border-gray-800 hover:border-blue-100/50 dark:hover:border-gray-700">
       <CardHeader>
         <CardTitle className="text-foreground">{t('portfolioPerformance.kpi.investmentDetails.title')}</CardTitle>
       </CardHeader>
       <CardContent>
-        <div className="overflow-x-auto">
-          <Table>
-            <TableHeader>
-              <TableRow className="border-border/50">
-                <TableHead className="text-muted-foreground">{t('portfolioPerformance.kpi.investmentDetails.strategy')}</TableHead>
-                <TableHead className="text-muted-foreground text-center">{t('portfolioPerformance.kpi.investmentDetails.month')}</TableHead>
-                <TableHead className="text-muted-foreground text-center">{t('portfolioPerformance.kpi.investmentDetails.year')}</TableHead>
-                <TableHead className="text-muted-foreground text-center">{t('portfolioPerformance.kpi.investmentDetails.sixMonths')}</TableHead>
-                <TableHead className="text-muted-foreground text-center">{t('portfolioPerformance.kpi.investmentDetails.twelveMonths')}</TableHead>
-                <TableHead className="text-muted-foreground text-center">{t('portfolioPerformance.kpi.investmentDetails.inception')}</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {consolidated.length > 0 ? (
-                consolidated.map(item => (
-                  <Fragment key={item.name}>
-                    <TableRow className="border-border/50">
-                      <TableCell className="font-medium text-foreground flex items-center gap-2 py-2">
-                        <div className="w-3 h-3 rounded-full" style={{ backgroundColor: getStrategyColorForName(item.name) }} />
-                        {item.name}
-                      </TableCell>
-                      <TableCell className="text-center py-2">
-                        <span className="text-foreground">
-                          {item.monthReturn >= 0 ? '+' : ''}{item.monthReturn.toFixed(2)}%
-                        </span>
-                      </TableCell>
-                      <TableCell className="text-center py-2">
-                        <span className="text-foreground">
-                          {item.yearReturn >= 0 ? '+' : ''}{item.yearReturn.toFixed(2)}%
-                        </span>
-                      </TableCell>
-                      <TableCell className="text-center py-2">
-                        <span className="text-foreground">
-                          {item.sixMonthsReturn >= 0 ? '+' : ''}{item.sixMonthsReturn.toFixed(2)}%
-                        </span>
-                      </TableCell>
-                      <TableCell className="text-center py-2">
-                        <span className="text-foreground">
-                          {item.twelveMonthsReturn >= 0 ? '+' : ''}{item.twelveMonthsReturn.toFixed(2)}%
-                        </span>
-                      </TableCell>
-                      <TableCell className="text-center py-2">
-                        <span className="text-foreground">
-                          {item.inceptionReturn >= 0 ? '+' : ''}{item.inceptionReturn.toFixed(2)}%
-                        </span>
-                      </TableCell>
-                    </TableRow>
-                    <TableRow className="border-border/50 bg-muted/20">
-                      <TableCell className="font-medium text-muted-foreground pl-8 py-1">
-                        {item.benchmark 
-                          ? (() => {
-                              const prefix = item.benchmark.benchmarkType === 'CDI' ? '%' : '±'
-                              const translatedName = t(item.benchmark.nameKey)
-                              return `${prefix} ${translatedName}`
-                            })()
-                          : '-'
-                        }
-                      </TableCell>
-                      <TableCell className="text-center text-muted-foreground py-1">
-                        {item.benchmark ? (() => {
-                          const displayValue = calculateBenchmarkDisplayValue(
-                            item.monthReturn,
-                            item.benchmark.monthReturn,
-                            item.benchmark.benchmarkType
-                          )
-                          return (
-                            <span className={getBenchmarkDisplayColor(displayValue, item.benchmark.benchmarkType)}>
-                              {formatBenchmarkValue(displayValue, item.benchmark.benchmarkType)}
-                            </span>
-                          )
-                        })() : '-'}
-                      </TableCell>
-                      <TableCell className="text-center text-muted-foreground py-1">
-                        {item.benchmark ? (() => {
-                          const displayValue = calculateBenchmarkDisplayValue(
-                            item.yearReturn,
-                            item.benchmark.yearReturn,
-                            item.benchmark.benchmarkType
-                          )
-                          return (
-                            <span className={getBenchmarkDisplayColor(displayValue, item.benchmark.benchmarkType)}>
-                              {formatBenchmarkValue(displayValue, item.benchmark.benchmarkType)}
-                            </span>
-                          )
-                        })() : '-'}
-                      </TableCell>
-                      <TableCell className="text-center text-muted-foreground py-1">
-                        {item.benchmark ? (() => {
-                          const displayValue = calculateBenchmarkDisplayValue(
-                            item.sixMonthsReturn,
-                            item.benchmark.sixMonthsReturn,
-                            item.benchmark.benchmarkType
-                          )
-                          return (
-                            <span className={getBenchmarkDisplayColor(displayValue, item.benchmark.benchmarkType)}>
-                              {formatBenchmarkValue(displayValue, item.benchmark.benchmarkType)}
-                            </span>
-                          )
-                        })() : '-'}
-                      </TableCell>
-                      <TableCell className="text-center text-muted-foreground py-1">
-                        {item.benchmark ? (() => {
-                          const displayValue = calculateBenchmarkDisplayValue(
-                            item.twelveMonthsReturn,
-                            item.benchmark.twelveMonthsReturn,
-                            item.benchmark.benchmarkType
-                          )
-                          return (
-                            <span className={getBenchmarkDisplayColor(displayValue, item.benchmark.benchmarkType)}>
-                              {formatBenchmarkValue(displayValue, item.benchmark.benchmarkType)}
-                            </span>
-                          )
-                        })() : '-'}
-                      </TableCell>
-                      <TableCell className="text-center text-muted-foreground py-1">
-                        {item.benchmark ? (() => {
-                          const displayValue = calculateBenchmarkDisplayValue(
-                            item.inceptionReturn,
-                            item.benchmark.inceptionReturn,
-                            item.benchmark.benchmarkType
-                          )
-                          return (
-                            <span className={getBenchmarkDisplayColor(displayValue, item.benchmark.benchmarkType)}>
-                              {formatBenchmarkValue(displayValue, item.benchmark.benchmarkType)}
-                            </span>
-                          )
-                        })() : '-'}
-                      </TableCell>
-                    </TableRow>
-                  </Fragment>
-                ))
-              ) : (
-                <TableRow className="border-border/50">
-                  <TableCell colSpan={6} className="text-center text-muted-foreground py-8">{t('portfolioPerformance.kpi.investmentDetails.noData')}</TableCell>
-                </TableRow>
-              )}
-            </TableBody>
-          </Table>
-        </div>
+        <Tabs defaultValue="visual" className="w-full">
+          <TabsList className="grid w-full max-w-md grid-cols-2 mb-4">
+            <TabsTrigger value="visual">
+              {t('portfolioPerformance.kpi.investmentDetails.viewMode.visual')}
+            </TabsTrigger>
+            <TabsTrigger value="table">
+              {t('portfolioPerformance.kpi.investmentDetails.viewMode.table')}
+            </TabsTrigger>
+          </TabsList>
+          <TabsContent value="visual" className="mt-0">
+            {renderVisualView()}
+          </TabsContent>
+          <TabsContent value="table" className="mt-0">
+            {renderTableView()}
+          </TabsContent>
+        </Tabs>
       </CardContent>
     </Card>
   )
