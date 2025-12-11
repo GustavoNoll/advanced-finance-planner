@@ -304,16 +304,15 @@ export function InvestmentDetailsTable({ performanceData }: InvestmentDetailsTab
 
   /**
    * Obtém a cor baseada no valor calculado do benchmark
-   * Para CDI: verde se >= 100%, vermelho se < 100%
+   * Para CDI: sempre cor neutra (sem cor)
    * Para outros: verde se >= 0, vermelho se < 0
    */
   function getBenchmarkDisplayColor(value: number | null, benchmarkType: BenchmarkType): string {
     if (value === null) return benchmarkColor
     
     if (benchmarkType === 'CDI') {
-      return value >= 100 
-        ? 'text-green-600 dark:text-green-500'
-        : 'text-red-600 dark:text-red-500'
+      // CDI sempre sem cor
+      return benchmarkColor
     } else {
       return value >= 0
         ? 'text-green-600 dark:text-green-500'
@@ -349,27 +348,27 @@ export function InvestmentDetailsTable({ performanceData }: InvestmentDetailsTab
                         {item.name}
                       </TableCell>
                       <TableCell className="text-center py-2">
-                        <span className={getStrategyColorComparedToBenchmark(item.monthReturn, item.benchmark?.monthReturn ?? null)}>
+                        <span className="text-foreground">
                           {item.monthReturn >= 0 ? '+' : ''}{item.monthReturn.toFixed(2)}%
                         </span>
                       </TableCell>
                       <TableCell className="text-center py-2">
-                        <span className={getStrategyColorComparedToBenchmark(item.yearReturn, item.benchmark?.yearReturn ?? null)}>
+                        <span className="text-foreground">
                           {item.yearReturn >= 0 ? '+' : ''}{item.yearReturn.toFixed(2)}%
                         </span>
                       </TableCell>
                       <TableCell className="text-center py-2">
-                        <span className={getStrategyColorComparedToBenchmark(item.sixMonthsReturn, item.benchmark?.sixMonthsReturn ?? null)}>
+                        <span className="text-foreground">
                           {item.sixMonthsReturn >= 0 ? '+' : ''}{item.sixMonthsReturn.toFixed(2)}%
                         </span>
                       </TableCell>
                       <TableCell className="text-center py-2">
-                        <span className={getStrategyColorComparedToBenchmark(item.twelveMonthsReturn, item.benchmark?.twelveMonthsReturn ?? null)}>
+                        <span className="text-foreground">
                           {item.twelveMonthsReturn >= 0 ? '+' : ''}{item.twelveMonthsReturn.toFixed(2)}%
                         </span>
                       </TableCell>
                       <TableCell className="text-center py-2">
-                        <span className={getStrategyColorComparedToBenchmark(item.inceptionReturn, item.benchmark?.inceptionReturn ?? null)}>
+                        <span className="text-foreground">
                           {item.inceptionReturn >= 0 ? '+' : ''}{item.inceptionReturn.toFixed(2)}%
                         </span>
                       </TableCell>

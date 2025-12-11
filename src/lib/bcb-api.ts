@@ -13,6 +13,7 @@ import ihfaRawData from '../data/ihfa-raw-historical.json';
 import imabRawData from '../data/imab-raw-historical.json';
 import agggRawData from '../data/aggg-raw-historical.json';
 import msciAcwiRawData from '../data/msci-acwi-raw-historical.json';
+import ifixRawData from '../data/ifix-raw-historical.json';
 
 interface RateData {
   data: string;
@@ -72,6 +73,11 @@ export const INDICATOR_CURRENCY_CONFIG: Record<string, IndicatorConfig> = {
     rawCurrency: 'INDEX',
     variationCurrency: 'INDEX',
     needsFXAdjustment: false
+  },
+  ifix: {
+    rawCurrency: 'BRL',
+    variationCurrency: 'BRL',
+    needsFXAdjustment: true
   },
   
   // Indicadores em USD
@@ -357,9 +363,7 @@ export const fetchIHFARates = (startDate: string, endDate: string) => {
  */
 export const fetchIFIXRates = (startDate: string, endDate: string) => {
   try {
-    // IFIX data file doesn't exist yet, return empty array
-    // This can be implemented when IFIX data becomes available
-    return [];
+    return filterDataByDateRangeWithVariation(ifixRawData as RateData[], startDate, endDate);
   } catch (error) {
     console.error('Error fetching IFIX rates:', error);
     return [];

@@ -308,7 +308,6 @@ function formatDateForBCB(date: Date): string {
  * Mapeia BenchmarkType para o nome do indicador usado na configuração
  */
 function benchmarkTypeToIndicatorName(benchmarkType: BenchmarkType): string {
-  console.log('benchmarkType', benchmarkType)
   const mapping: Record<BenchmarkType, string> = {
     'CDI': 'cdi',
     'IPCA': 'ipca',
@@ -563,11 +562,6 @@ export function calculateBenchmarkReturns(
   displayCurrency?: CurrencyCode
 ): BenchmarkData | null {
   // Se é uma chave padronizada, usa o caminho direto (mais eficiente)
-  console.log('strategyName', strategyName)
-  console.log('currency', currency)
-  console.log('periods', periods)
-  console.log('locale', locale)
-  console.log('displayCurrency', displayCurrency)
   if (strategyName in ASSET_CLASS_TO_GROUPED_KEY) {
     return calculateBenchmarkReturnsByAssetClass(
       strategyName as ValidAssetClass,
@@ -715,12 +709,7 @@ export function calculateBenchmarkReturnsByGroupedKey(
   const finalDisplayCurrency = displayCurrency || currency
   
   // Busca os dados históricos do benchmark com ajuste FX se necessário
-  console.log('benchmarkType', benchmarkType)
-  console.log('startDate', startDate)
-  console.log('endDate', endDate)
-  console.log('finalDisplayCurrency', finalDisplayCurrency)
   const benchmarkData = fetchBenchmarkData(benchmarkType, startDate, endDate, finalDisplayCurrency)
-  console.log('benchmarkData', benchmarkData)
   // Se não houver dados, retorna o nome do benchmark com retornos null
   if (benchmarkData.length === 0) {
     return {
