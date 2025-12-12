@@ -108,6 +108,12 @@ const Index = () => {
 
   useEffect(() => {
     if (!isInvestmentPlanLoading && !isProfilesLoading) { 
+      // If user is a broker accessing their own dashboard (clientId === user.id), redirect to broker dashboard
+      if (brokerProfile && clientId === user?.id) {
+        navigate('/broker-dashboard');
+        return;
+      }
+      
       // If user is a broker but not viewing a client, redirect to broker dashboard
       if (brokerProfile && !params.id) {
         navigate('/broker-dashboard');
@@ -129,12 +135,19 @@ const Index = () => {
       
       if (!investmentPlan) {
         if (brokerProfile) {
-          toast({
-            title: t('dashboard.messages.noPlan.title'),
-            description: t('dashboard.messages.noPlan.description'),
-          });
-          navigate(`/create-plan${params.id ? `?client_id=${params.id}` : ''}`);
-          return;
+          // Only redirect to simulation if viewing a client, not if accessing own dashboard
+          if (clientId !== user?.id) {
+            toast({
+              title: t('dashboard.messages.noPlan.title'),
+              description: t('dashboard.messages.noPlan.description'),
+            });
+            navigate(`/simulation${params.id ? `?client_id=${params.id}` : ''}`);
+            return;
+          } else {
+            // Broker accessing own dashboard without plan, go to broker dashboard
+            navigate('/broker-dashboard');
+            return;
+          }
         }
         
         toast({
