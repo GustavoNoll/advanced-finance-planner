@@ -3345,4 +3345,42 @@ export const ptBR = {
       error: 'Erro'
     }
   },
+  bulkPDFImport: {
+    title: 'Gestão de Dados dos Clientes',
+    description: 'Acompanhe o status de atualização dos dados e gerencie as competências de cada cliente',
+    expectedPeriod: 'Competência Esperada',
+    metrics: {
+      totalClients: 'Total de Clientes',
+      updated: 'Atualizados',
+      outdated: 'Desatualizados'
+    },
+    filters: {
+      all: 'Todos',
+      updated: 'Atualizados',
+      outdated: 'Desatualizados'
+    },
+    searchPlaceholder: 'Buscar cliente na lista...',
+    table: {
+      title: 'Lista de Clientes',
+      description: 'Gerencie os extratos PDF de cada cliente',
+      client: 'Cliente',
+      lastPeriod: 'Última Competência',
+      expected: 'Esperada',
+      total: 'Total',
+      actions: 'Ações'
+    },
+    status: {
+      updated: 'Atualizado'
+    },
+    monthsDelayed: {
+      singular: '{{count}} mês atrasado',
+      plural: '{{count}} meses atrasados'
+    },
+    manage: 'Gerenciar',
+    hideForm: 'Ocultar',
+    uploadForClient: 'Adicionar extrato para {{name}}',
+    noPeriod: 'Sem dados',
+    neverUpdated: 'Nunca Atualizado',
+    noClients: 'Nenhum cliente encontrado'
+  },
 };

@@ -16,6 +16,7 @@ import { Simulation } from "./pages/Simulation";
 import PortfolioDataManagement from "@/pages/performance/PortfolioDataManagement";
 import StatementImportsHistory from "@/pages/performance/StatementImportsHistory";
 import MarketDataAudit from "@/pages/performance/MarketDataAudit";
+import BulkPDFImport from "@/pages/performance/BulkPDFImport";
 import { ManagePdfImportInstitutions } from "@/pages/ManagePdfImportInstitutions";
 import FinancialRecords from "@/pages/planning/FinancialRecords";
 import ClientProfile from "@/pages/ClientProfile";
@@ -210,6 +211,16 @@ function AppRoutes() {
             <ProtectedRoute>
               <PageTransition>
                 <StatementImportsHistory />
+              </PageTransition>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/bulk-pdf-import"
+          element={
+            <ProtectedRoute>
+              <PageTransition>
+                <BulkPDFImport />
               </PageTransition>
             </ProtectedRoute>
           }
