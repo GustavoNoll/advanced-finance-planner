@@ -7,9 +7,10 @@ interface BrokerPDFImportDialogProps {
   open: boolean
   onOpenChange: (open: boolean) => void
   clients: UserProfileInvestment[]
+  selectedClientId?: string
 }
 
-export function BrokerPDFImportDialog({ open, onOpenChange, clients }: BrokerPDFImportDialogProps) {
+export function BrokerPDFImportDialog({ open, onOpenChange, clients, selectedClientId }: BrokerPDFImportDialogProps) {
   const { t } = useTranslation()
   
   const handleSuccess = () => {
@@ -33,6 +34,7 @@ export function BrokerPDFImportDialog({ open, onOpenChange, clients }: BrokerPDF
         <div className="py-4">
           <PDFImportForm
             clients={clients}
+            selectedClientId={selectedClientId}
             onSuccess={handleSuccess}
             onCancel={handleCancel}
             showCancelButton={true}

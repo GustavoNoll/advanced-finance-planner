@@ -2037,6 +2037,7 @@ export default function PortfolioDataManagement() {
         open={isPdfDialogOpen}
         onOpenChange={setIsPdfDialogOpen}
         clients={pdfClients}
+        selectedClientId={profileId}
       />
 
       {/* Export Dialog */}
