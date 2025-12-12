@@ -66,7 +66,7 @@ function PortfolioPerformance({
   onShareClient
 }: PortfolioPerformanceProps) {
   const { t } = useTranslation();
-  const { isBroker } = useAuth();
+  const { isBroker, loading: authLoading } = useAuth();
   const { currency: displayCurrency, convertValue, adjustReturnWithFX, formatCurrency: formatCurrencyContext } = useCurrency();
   const { consolidatedData, performanceData, loading, error, totalAssets, totalYield, previousAssets, assetsChangePercent, hasData, refetch, mostRecentPeriod } = usePerformanceData(profile?.id || null)
   const { latestImport } = useStatementImports(profile?.id || null)
@@ -321,7 +321,7 @@ function PortfolioPerformance({
         <div className="flex justify-end items-center mb-6">
           <div className="flex items-center gap-2">
             <CurrencyToggle />
-            {isBroker && (
+            {!authLoading && isBroker && (
               <>
                 <Button 
                   variant="outline" 

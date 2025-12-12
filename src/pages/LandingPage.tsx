@@ -93,7 +93,7 @@ export default function LandingPage() {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const { toast } = useToast()
   const navigate = useNavigate()
-  const { user, isBroker, isAdmin } = useAuth()
+  const { user, isBroker, isAdmin, loading: authLoading } = useAuth()
   
   // Detecta a moeda automaticamente baseada no locale do navegador
   const currency = useMemo(() => detectCurrency(), [])
@@ -502,7 +502,9 @@ export default function LandingPage() {
               <Logo variant="full" className="h-6 sm:h-7" />
             </div>
             <div className="flex items-center gap-2 sm:gap-3">
-              {user ? (
+              {authLoading ? (
+                <div className="h-9 w-32 bg-gray-200 dark:bg-gray-700 animate-pulse rounded-md" />
+              ) : user ? (
                 <Button 
                   onClick={() => {
                     if (isBroker) {
