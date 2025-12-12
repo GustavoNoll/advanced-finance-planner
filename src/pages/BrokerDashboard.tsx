@@ -20,7 +20,6 @@ import { useAuth } from '@/components/auth/AuthProvider';
 import { Spinner } from '@/components/ui/spinner';
 import { ClientAccessAnalysis } from '@/components/shared/ClientAccessAnalysis';
 import { useAccessData } from '@/hooks/useAccessData';
-import { BrokerPDFImportDialog } from '@/pages/performance/components/BrokerPDFImportDialog';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { InvestmentPolicyInsights } from '@/components/admin/InvestmentPolicyInsights';
 import { tabTriggerActiveBlue } from '@/lib/gradient-classes';
@@ -159,7 +158,6 @@ export const BrokerDashboard = () => {
     percentage: number;
   }>>([]);
 
-  const [isPDFImportDialogOpen, setIsPDFImportDialogOpen] = useState(false);
 
   // Ref for client list section
   const clientListRef = useRef<HTMLDivElement>(null);
@@ -816,10 +814,10 @@ export const BrokerDashboard = () => {
                 </span>
               </div>
 
-              {/* Importar PDF */}
+              {/* Importar PDF em Massa */}
               <div 
                 className="group flex items-center rounded-full bg-transparent hover:bg-purple-50/50 dark:hover:bg-purple-900/30 px-2 py-1 transition-all duration-300 ease-out cursor-pointer"
-                onClick={() => setIsPDFImportDialogOpen(true)}
+                onClick={() => navigate('/bulk-pdf-import')}
               >
                 <Button
                   variant="ghost"
@@ -1345,12 +1343,6 @@ export const BrokerDashboard = () => {
       </div>
 
 
-      {/* PDF Import Dialog */}
-      <BrokerPDFImportDialog
-        open={isPDFImportDialogOpen}
-        onOpenChange={setIsPDFImportDialogOpen}
-        clients={searchResults}
-      />
     </div>
   );
 };

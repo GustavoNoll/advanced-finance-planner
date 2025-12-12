@@ -3345,4 +3345,42 @@ export const enUS = {
       error: 'Error'
     }
   },
+  bulkPDFImport: {
+    title: 'Client Data Management',
+    description: 'Track data update status and manage each client\'s competencies',
+    expectedPeriod: 'Expected Competency',
+    metrics: {
+      totalClients: 'Total Clients',
+      updated: 'Updated',
+      outdated: 'Outdated'
+    },
+    filters: {
+      all: 'All',
+      updated: 'Updated',
+      outdated: 'Outdated'
+    },
+    searchPlaceholder: 'Search client in list...',
+    table: {
+      title: 'Client List',
+      description: 'Manage PDF statements for each client',
+      client: 'Client',
+      lastPeriod: 'Last Competency',
+      expected: 'Expected',
+      total: 'Total',
+      actions: 'Actions'
+    },
+    status: {
+      updated: 'Updated'
+    },
+    monthsDelayed: {
+      singular: '{{count}} month delayed',
+      plural: '{{count}} months delayed'
+    },
+    manage: 'Manage',
+    hideForm: 'Hide',
+    uploadForClient: 'Add statement for {{name}}',
+    noPeriod: 'No data',
+    neverUpdated: 'Never Updated',
+    noClients: 'No clients found'
+  },
 };
