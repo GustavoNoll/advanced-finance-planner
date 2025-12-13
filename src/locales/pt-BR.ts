@@ -2585,6 +2585,7 @@ export const ptBR = {
       imabMonthly: "IMAB Mensal",
       agggMonthly: "AGGG Mensal",
       msciAcwiMonthly: "MSCI ACWI Mensal",
+      ifixMonthly: "IFIX Mensal",
       loading: "Carregando...",
       noData: "Nenhum dado disponível",
       loadPtax: "Carregar PTAX",

@@ -26,6 +26,7 @@ import irfmData from '../../data/irfm-historical.json'
 import imabData from '../../data/imab-historical.json'
 import agggData from '../../data/aggg-historical.json'
 import msciAcwiData from '../../data/msci-acwi-historical.json'
+import ifixData from '../../data/ifix-historical.json'
 
 interface BCBResponse {
   data: string
@@ -63,10 +64,12 @@ interface ConsolidatedData {
   agggRaw: number | null
   msciAcwiMonthly: number | null
   msciAcwiRaw: number | null
+  ifixMonthly: number | null
+  ifixRaw: number | null
 }
 
 type ColumnKey = 'competence' | 'ptax' | 'cdiMonthly' | 'cdiAccumulated' | 'ipcaMonthly' | 'ipcaAccumulated' | 
-  'ibovMonthly' | 'sp500Monthly' | 'tBondMonthly' | 'goldMonthly' | 'btcMonthly' | 'usCpiMonthly' | 'euroCpiMonthly' | 'ihfaMonthly' | 'irfmMonthly' | 'imabMonthly' | 'agggMonthly' | 'msciAcwiMonthly'
+  'ibovMonthly' | 'sp500Monthly' | 'tBondMonthly' | 'goldMonthly' | 'btcMonthly' | 'usCpiMonthly' | 'euroCpiMonthly' | 'ihfaMonthly' | 'irfmMonthly' | 'imabMonthly' | 'agggMonthly' | 'msciAcwiMonthly' | 'ifixMonthly'
 
 function parseBrazilianDate(dateStr: string): Date {
   const [day, month, year] = dateStr.split('/').map(Number)
@@ -101,6 +104,7 @@ export default function MarketDataAudit() {
     imab: BCBResponse[]
     aggg: BCBResponse[]
     msciAcwi: BCBResponse[]
+    ifix: BCBResponse[]
   }>({
     ptax: [],
     ibov: [],
@@ -113,7 +117,8 @@ export default function MarketDataAudit() {
     irfm: [],
     imab: [],
     aggg: [],
-    msciAcwi: []
+    msciAcwi: [],
+    ifix: []
   })
   
   // Paginação
@@ -143,7 +148,8 @@ export default function MarketDataAudit() {
     irfmMonthly: false,
     imabMonthly: false,
     agggMonthly: false,
-    msciAcwiMonthly: false
+    msciAcwiMonthly: false,
+    ifixMonthly: false
   })
   const [showColumnSelector, setShowColumnSelector] = useState(false)
 
@@ -162,7 +168,8 @@ export default function MarketDataAudit() {
         irfm: [],
         imab: [],
         aggg: [],
-        msciAcwi: []
+        msciAcwi: [],
+        ifix: []
       }
 
       try {
@@ -249,6 +256,13 @@ export default function MarketDataAudit() {
         // Arquivo não existe ainda
       }
 
+      try {
+        const ifixRaw = await import('../../data/ifix-raw-historical.json')
+        raw.ifix = (ifixRaw.default || ifixRaw) as BCBResponse[]
+      } catch {
+        // Arquivo não existe ainda
+      }
+
       setRawData(raw)
     }
 
@@ -286,6 +300,8 @@ export default function MarketDataAudit() {
       agggRaw?: number
       msciAcwiMonthly?: number
       msciAcwiRaw?: number
+      ifixMonthly?: number
+      ifixRaw?: number
     }>()
     
     // Processar CDI
@@ -442,6 +458,17 @@ export default function MarketDataAudit() {
       dataMap.get(competence)!.msciAcwiMonthly = value
     })
 
+    // Processar IFIX
+    ifixData.forEach(item => {
+      const date = parseBrazilianDate(item.data)
+      const competence = formatCompetence(date)
+      const value = parseFloat(item.valor)
+      if (!dataMap.has(competence)) {
+        dataMap.set(competence, { competence })
+      }
+      dataMap.get(competence)!.ifixMonthly = value
+    })
+
     // Processar PTAX
     ptaxData.forEach(item => {
       const date = parseBrazilianDate(item.data)
@@ -586,6 +613,17 @@ export default function MarketDataAudit() {
       dataMap.get(competence)!.msciAcwiRaw = value
     })
 
+    // IFIX Raw
+    rawData.ifix.forEach(item => {
+      const date = parseBrazilianDate(item.data)
+      const competence = formatCompetence(date)
+      const value = parseFloat(item.valor)
+      if (!dataMap.has(competence)) {
+        dataMap.set(competence, { competence })
+      }
+      dataMap.get(competence)!.ifixRaw = value
+    })
+
     // Ordenar competências
     const sortedCompetences = Array.from(dataMap.keys()).sort((a, b) => {
       const [monthA, yearA] = a.split('/').map(Number)
@@ -665,7 +703,9 @@ export default function MarketDataAudit() {
         agggMonthly: entry.agggMonthly as number | null ?? null,
         agggRaw: entry.agggRaw as number | null ?? null,
         msciAcwiMonthly: entry.msciAcwiMonthly as number | null ?? null,
-        msciAcwiRaw: entry.msciAcwiRaw as number | null ?? null
+        msciAcwiRaw: entry.msciAcwiRaw as number | null ?? null,
+        ifixMonthly: entry.ifixMonthly as number | null ?? null,
+        ifixRaw: entry.ifixRaw as number | null ?? null
       }
     })
   }, [rawData])
@@ -744,6 +784,7 @@ export default function MarketDataAudit() {
       converted.euroCpiRaw = convertRawValue(converted.euroCpiRaw, 'euroCpi', competence)
       converted.agggRaw = convertRawValue(converted.agggRaw, 'aggg', competence)
       converted.msciAcwiRaw = convertRawValue(converted.msciAcwiRaw, 'msciAcwi', competence)
+      converted.ifixRaw = convertRawValue(converted.ifixRaw, 'ifix', competence)
 
       // Ajustar porcentagens usando configuração centralizada
       converted.sp500Monthly = adjustVariation(converted.sp500Monthly, 'sp500', competence)
@@ -759,6 +800,7 @@ export default function MarketDataAudit() {
       converted.tBondMonthly = adjustVariation(converted.tBondMonthly, 'tBond', competence)
       converted.agggMonthly = adjustVariation(converted.agggMonthly, 'aggg', competence)
       converted.msciAcwiMonthly = adjustVariation(converted.msciAcwiMonthly, 'msciAcwi', competence)
+      converted.ifixMonthly = adjustVariation(converted.ifixMonthly, 'ifix', competence)
 
       return converted
     })
@@ -813,7 +855,8 @@ export default function MarketDataAudit() {
       irfm: convertedData.filter(d => d.irfmMonthly !== null).length,
       imab: convertedData.filter(d => d.imabMonthly !== null).length,
       aggg: convertedData.filter(d => d.agggMonthly !== null).length,
-      msciAcwi: convertedData.filter(d => d.msciAcwiMonthly !== null).length
+      msciAcwi: convertedData.filter(d => d.msciAcwiMonthly !== null).length,
+      ifix: convertedData.filter(d => d.ifixMonthly !== null).length
     }
   }, [convertedData])
 
@@ -935,7 +978,8 @@ export default function MarketDataAudit() {
     irfmMonthly: t('portfolioPerformance.marketDataAudit.irfmMonthly'),
     imabMonthly: t('portfolioPerformance.marketDataAudit.imabMonthly'),
     agggMonthly: t('portfolioPerformance.marketDataAudit.agggMonthly'),
-    msciAcwiMonthly: t('portfolioPerformance.marketDataAudit.msciAcwiMonthly')
+    msciAcwiMonthly: t('portfolioPerformance.marketDataAudit.msciAcwiMonthly'),
+    ifixMonthly: t('portfolioPerformance.marketDataAudit.ifixMonthly')
   }
 
   return (
@@ -1010,7 +1054,7 @@ export default function MarketDataAudit() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              {stats.sp500 + stats.tBond + stats.gold + stats.btc + stats.usCpi + stats.euroCpi + stats.ihfa + stats.irfm + stats.imab + stats.aggg + stats.msciAcwi}
+              {stats.sp500 + stats.tBond + stats.gold + stats.btc + stats.usCpi + stats.euroCpi + stats.ihfa + stats.irfm + stats.imab + stats.aggg + stats.msciAcwi + stats.ifix}
             </div>
             <p className="text-xs text-muted-foreground">{t('portfolioPerformance.marketDataAudit.competencesLoaded')}</p>
           </CardContent>
@@ -1193,6 +1237,9 @@ export default function MarketDataAudit() {
                   {visibleColumns.msciAcwiMonthly && (
                     <TableHead>{t('portfolioPerformance.marketDataAudit.msciAcwiMonthly')}</TableHead>
                   )}
+                  {visibleColumns.ifixMonthly && (
+                    <TableHead>{t('portfolioPerformance.marketDataAudit.ifixMonthly')}</TableHead>
+                  )}
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -1297,6 +1344,11 @@ export default function MarketDataAudit() {
                       {visibleColumns.msciAcwiMonthly && (
                         <TableCell className={row.msciAcwiMonthly !== null && row.msciAcwiMonthly >= 0 ? 'text-green-600' : row.msciAcwiMonthly !== null ? 'text-red-600' : ''}>
                           {formatCurrencyUSDWithVariation(row.msciAcwiRaw, row.msciAcwiMonthly)}
+                        </TableCell>
+                      )}
+                      {visibleColumns.ifixMonthly && (
+                        <TableCell className={row.ifixMonthly !== null && row.ifixMonthly >= 0 ? 'text-green-600' : row.ifixMonthly !== null ? 'text-red-600' : ''}>
+                          {formatWithVariation(row.ifixRaw, row.ifixMonthly)}
                         </TableCell>
                       )}
                     </TableRow>
