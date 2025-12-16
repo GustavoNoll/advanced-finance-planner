@@ -2806,7 +2806,18 @@ export const ptBR = {
         annualRate: "Taxa Anual (%)",
         annualRateExample: "Ex: 12 para 12% ao ano",
         ipcaSpread: "Spread ao ano (%)",
-        ipcaExample: "Ex: 5 para IPCA + 5% a.a."
+        ipcaExample: "Ex: 5 para IPCA + 5% a.a.",
+        resultTitle: "Resultado do Cálculo:",
+        percentageValue: "Valor Percentual:",
+        financialGain: "Ganho Financeiro:",
+        finalValue: "Valor Final:",
+        toast: {
+          period: "Competência",
+          calculation: "Cálculo",
+          initialValue: "Valor Inicial",
+          financialGain: "Ganho Financeiro",
+          finalValue: "Valor Final"
+        }
       },
       market: {
         description: "Busca automaticamente a rentabilidade real de um índice em um mês específico usando dados de mercado.",
@@ -2847,6 +2858,8 @@ export const ptBR = {
         error: "Erro",
         informPeriod: "Informe a competência",
         informValidInitialValue: "Informe um valor inicial válido",
+        informValidPercentage: "Informe um percentual válido",
+        indexerDataNotFound: "Não foram encontrados dados para o indexador {{indexer}} no período {{period}}",
         incompleteData: "Dados incompletos",
         incompleteDataDescription: "Para calcular automaticamente, é necessário informar a competência e a instituição",
         modeNotAvailable: "Modo não disponível",
