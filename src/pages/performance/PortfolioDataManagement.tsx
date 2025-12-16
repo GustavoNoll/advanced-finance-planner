@@ -58,6 +58,8 @@ export default function PortfolioDataManagement() {
   const [editOpen, setEditOpen] = useState(false)
   const [editingType, setEditingType] = useState<'consolidated' | 'detailed'>('consolidated')
   const [editItem, setEditItem] = useState<Partial<ConsolidatedRow & PerformanceRow>>({})
+  const [inputUpdateKey, setInputUpdateKey] = useState(0)
+  const [preserveFiltersOnTabChange, setPreserveFiltersOnTabChange] = useState(false)
   const [periodError, setPeriodError] = useState<string>('')
 
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
@@ -865,8 +867,16 @@ export default function PortfolioDataManagement() {
       />
 
       <Tabs value={tab} onValueChange={(v: string) => {
-        setTab(v as 'consolidated' | 'detailed')
-        // Resetar filtros ao trocar de aba
+        const newTab = v as 'consolidated' | 'detailed'
+        
+        // Se os filtros devem ser preservados (definidos pelo botão), não resetar
+        if (preserveFiltersOnTabChange && newTab === 'detailed') {
+          setPreserveFiltersOnTabChange(false) // Resetar flag após usar
+          setTab(newTab)
+          return
+        }
+        
+        // Resetar filtros ao trocar de aba manualmente
         setSelectedPeriods([])
         setSelectedInstitutions([])
         setSelectedClasses([])
@@ -874,6 +884,7 @@ export default function PortfolioDataManagement() {
         setActiveFilters([])
         setVerifFilter('all')
         setSearchText('')
+        setTab(newTab)
       }}>
         <TabsList className="grid w-full grid-cols-2">
           <TabsTrigger value="consolidated">{t('portfolioPerformance.dataManagement.tabs.consolidated')}</TabsTrigger>
@@ -1296,18 +1307,53 @@ export default function PortfolioDataManagement() {
                                   size="sm"
                                   className="h-8 px-2 hover:bg-primary/10 text-primary"
                                   onClick={() => {
-                                    setTab('detailed')
-                                    setSelectedPeriods([r.period])
-                                    setSelectedInstitutions([r.institution])
+                                    // Definir flag para preservar filtros ao mudar de aba
+                                    setPreserveFiltersOnTabChange(true)
+                                    
+                                    // Simular adição de filtros através do sistema padrão (FilterBuilder)
+                                    const filters: FilterType[] = []
+                                    
+                                    // Adicionar filtro de competência
+                                    if (r.period) {
+                                      filters.push({
+                                        id: crypto.randomUUID(),
+                                        field: 'period',
+                                        operator: 'equals',
+                                        value: r.period
+                                      })
+                                    }
+                                    
+                                    // Adicionar filtro de instituição
+                                    if (r.institution) {
+                                      filters.push({
+                                        id: crypto.randomUUID(),
+                                        field: 'institution',
+                                        operator: 'equals',
+                                        value: r.institution
+                                      })
+                                    }
+                                    
+                                    // Adicionar filtro de account_name se disponível
                                     if (r.account_name) {
-                                      // Aplicar filtro de account_name se disponível
-                                      setActiveFilters([{
+                                      filters.push({
                                         id: crypto.randomUUID(),
                                         field: 'account_name',
                                         operator: 'equals',
                                         value: r.account_name
-                                      }])
+                                      })
                                     }
+                                    
+                                    // Aplicar todos os filtros de uma vez
+                                    setActiveFilters(filters)
+                                    
+                                    // Limpar filtros de seleção rápida que não são usados pelo FilterBuilder
+                                    setSelectedPeriods([])
+                                    setSelectedInstitutions([])
+                                    setSelectedClasses([])
+                                    setSelectedIssuers([])
+                                    
+                                    // Mudar para aba de detalhados
+                                    setTab('detailed')
                                     setTimeout(() => {
                                       document.querySelector('[value="detailed"]')?.scrollIntoView({ 
                                         behavior: 'smooth' 
@@ -1861,7 +1907,7 @@ export default function PortfolioDataManagement() {
                   <Label>{t('portfolioPerformance.dataManagement.editDialog.financialGainLabel')}</Label>
                   <CurrencyInput
                     id="financial_gain"
-                    keyPrefix={editItem.id ? `financial_gain_${editItem.id}` : undefined}
+                    keyPrefix={editItem.id ? `financial_gain_${editItem.id}_${inputUpdateKey}` : undefined}
                     className="flex h-12 w-full rounded-lg border border-input bg-background text-foreground px-4 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 transition-colors dark:[color-scheme:dark]"
                     currency={currency}
                     allowNegativeValue={true}
@@ -1876,7 +1922,7 @@ export default function PortfolioDataManagement() {
                   <Label>{t('portfolioPerformance.dataManagement.editDialog.finalAssetsLabel')}</Label>
                   <CurrencyInput
                     id="final_assets"
-                    keyPrefix={editItem.id ? `final_assets_${editItem.id}` : undefined}
+                    keyPrefix={editItem.id ? `final_assets_${editItem.id}_${inputUpdateKey}` : undefined}
                     className="flex h-12 w-full rounded-lg border border-input bg-background text-foreground px-4 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 transition-colors dark:[color-scheme:dark]"
                     currency={currency}
                     allowNegativeValue={false}
@@ -1998,28 +2044,40 @@ export default function PortfolioDataManagement() {
         detailedData={detailed}
         editingType={editingType}
         onConfirm={(result: YieldCalculationResult) => {
-          // Atualizar o campo yield com o resultado
-          setEditItem(prev => ({
-            ...prev,
-            yield: result.monthlyYield
-          }))
-          
-          // Se for consolidado e tiver valor final calculado, atualizar também
-          if (editingType === 'consolidated' && result.finalValue !== undefined) {
-            setEditItem(prev => ({
+          // Atualizar campos baseado no resultado
+          setEditItem(prev => {
+            const updated = {
               ...prev,
-              final_assets: result.finalValue,
-              financial_gain: result.financialGain || 0
-            }))
-          }
-          
-          // Se for detalhado e tiver valor final calculado, atualizar posição
-          if (editingType === 'detailed' && result.finalValue !== undefined) {
-            setEditItem(prev => ({
-              ...prev,
-              position: result.finalValue
-            }))
-          }
+              yield: result.monthlyYield
+            }
+            
+            // Se for consolidado, atualizar ganho financeiro e patrimônio final
+            if (editingType === 'consolidated') {
+              // Se tiver valores calculados (modo Personalizado ou Automático), usar eles
+              if (result.finalValue !== undefined && result.financialGain !== undefined) {
+                updated.final_assets = Math.round(result.finalValue * 100) / 100
+                updated.financial_gain = Math.round(result.financialGain * 100) / 100
+                // Forçar atualização dos inputs
+                setInputUpdateKey(prev => prev + 1)
+              } else {
+                // Para outros modos (Manual, Mercado), calcular baseado no initial_assets atual
+                const currentInitial = (prev.initial_assets as number) || 0
+                if (currentInitial > 0) {
+                  updated.final_assets = Math.round((currentInitial * (1 + result.monthlyYield)) * 100) / 100
+                  updated.financial_gain = Math.round((currentInitial * result.monthlyYield) * 100) / 100
+                  // Forçar atualização dos inputs
+                  setInputUpdateKey(prev => prev + 1)
+                }
+              }
+            }
+            
+            // Se for detalhado e tiver valor final calculado, atualizar posição
+            if (editingType === 'detailed' && result.finalValue !== undefined) {
+              updated.position = result.finalValue
+            }
+            
+            return updated
+          })
         }}
       />
 

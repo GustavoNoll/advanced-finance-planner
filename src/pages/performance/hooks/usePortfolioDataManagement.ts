@@ -4,6 +4,7 @@ import type { SortConfig, Filter, VerificationResult } from '../types/portfolio-
 import { applyFiltersGeneric } from '../utils/filters'
 import { applySortingGeneric } from '../utils/sorters'
 import { createVerificationCache } from '../utils/verification'
+import { isValidAssetClass } from '../utils/valid-asset-classes'
 
 interface UsePortfolioDataManagementProps {
   consolidated: ConsolidatedPerformance[]
@@ -100,6 +101,14 @@ export function usePortfolioDataManagement({
     return data
   }, [consolidated, selectedPeriods, selectedInstitutions, activeFilters, verifFilter, sortConfig, getVerification])
 
+  // Função auxiliar para verificar se um registro detalhado tem problemas
+  const hasDetailedIssues = useCallback((item: PerformanceData): boolean => {
+    const hasInvalidClass = !isValidAssetClass(item.asset_class)
+    // Verificar se yield é null, undefined ou NaN
+    const hasMissingYield = item.yield == null || (typeof item.yield === 'number' && (isNaN(item.yield) || !isFinite(item.yield)))
+    return hasInvalidClass || hasMissingYield
+  }, [])
+
   const filteredDetailed = useMemo(() => {
     let data = detailed
 
@@ -126,10 +135,27 @@ export function usePortfolioDataManagement({
     }
 
     data = applyFiltersGeneric(data, activeFilters)
+
+    // Aplicar filtro de verificação para detalhados
+    if (verifFilter !== 'all') {
+      if (verifFilter === 'mismatch') {
+        // Para detalhados, "mismatch" (Divergência) significa registros com problemas
+        // (classe inválida OU rentabilidade faltando)
+        data = data.filter(item => hasDetailedIssues(item))
+      } else if (verifFilter === 'match') {
+        // Para detalhados, "match" significa registros sem problemas
+        // (classe válida E rentabilidade preenchida)
+        data = data.filter(item => !hasDetailedIssues(item))
+      }
+      // Para outros filtros (tolerance, no-data), não aplicamos aos detalhados
+      // pois eles não têm verificação de integridade como os consolidados
+      // Nesses casos, não filtra (mostra todos)
+    }
+
     data = applySortingGeneric(data, sortConfig)
 
     return data
-  }, [detailed, selectedPeriods, selectedInstitutions, selectedClasses, selectedIssuers, searchText, activeFilters, sortConfig])
+  }, [detailed, selectedPeriods, selectedInstitutions, selectedClasses, selectedIssuers, searchText, activeFilters, verifFilter, sortConfig, hasDetailedIssues])
 
   const handleSort = useCallback((field: string) => {
     if (!sortConfig || sortConfig.field !== field) {

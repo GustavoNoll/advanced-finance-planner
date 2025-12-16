@@ -15,15 +15,18 @@ export function applyFiltersGeneric<T extends Record<string, unknown>>(
           return fieldValue !== filter.value
         case 'contains':
           if (Array.isArray(filter.value)) {
+            // Para arrays, verificar se o valor do campo está no array (igualdade)
+            // Isso é útil para campos como período, instituição, etc.
             return filter.value.some(val => 
-              String(fieldValue).toLowerCase().includes(String(val).toLowerCase())
+              String(fieldValue) === String(val)
             )
           }
           return String(fieldValue).toLowerCase().includes(String(filter.value).toLowerCase())
         case 'notContains':
           if (Array.isArray(filter.value)) {
+            // Para arrays, verificar se o valor do campo NÃO está no array (igualdade)
             return !filter.value.some(val => 
-              String(fieldValue).toLowerCase().includes(String(val).toLowerCase())
+              String(fieldValue) === String(val)
             )
           }
           return !String(fieldValue).toLowerCase().includes(String(filter.value).toLowerCase())

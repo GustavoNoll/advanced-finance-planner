@@ -1,4 +1,4 @@
-import { useState } from "react"
+import { useState, useMemo, useCallback } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -120,6 +120,112 @@ export function YieldCalculator({
     { id: 'USD', label: i18n.t('portfolioPerformance.yieldCalculator.currencies.usd') }
   ]
   
+  // Função auxiliar para calcular rentabilidade mensal baseada em indexador
+  const calculateMonthlyYieldFromIndexer = useCallback((
+    indexer: 'CDI' | 'IPCA' | 'PRE' | 'MANUAL',
+    period: string,
+    percentage: number,
+    operation: '%' | '+'
+  ): number | null => {
+    if (indexer === 'MANUAL') {
+      // Rentabilidade manual já está em % ao mês, converter para decimal
+      // Ex: se usuário digita 1.0, significa 1% ao mês = 0.01
+      if (percentage === 0) {
+        return null
+      }
+      return percentage / 100
+    }
+    
+    if (!period) {
+      return null
+    }
+    
+    if (indexer === 'CDI') {
+      const cdiMonthlyReturn = getBenchmarkMonthlyReturn('CDI', period, 'BRL')
+      if (cdiMonthlyReturn === null) {
+        return null
+      }
+      
+      if (operation === '%') {
+        // Porcentagem do CDI (ex: 80% do CDI)
+        return cdiMonthlyReturn * (percentage / 100)
+      } else {
+        // Spread sobre CDI (ex: CDI + 2% a.a.)
+        // Converter spread anual para mensal: (1 + spread_anual)^(1/12) - 1
+        const annualSpread = percentage / 100
+        const monthlySpread = Math.pow(1 + annualSpread, 1/12) - 1
+        return cdiMonthlyReturn + monthlySpread
+      }
+    }
+    
+    if (indexer === 'IPCA') {
+      const ipcaMonthlyReturn = getBenchmarkMonthlyReturn('IPCA', period, 'BRL')
+      if (ipcaMonthlyReturn === null) {
+        return null
+      }
+      
+      // IPCA + spread anual (ex: IPCA + 5% a.a.)
+      // Converter spread anual para mensal: (1 + spread_anual)^(1/12) - 1
+      const annualSpread = percentage / 100
+      const monthlySpread = Math.pow(1 + annualSpread, 1/12) - 1
+      return ipcaMonthlyReturn + monthlySpread
+    }
+    
+    if (indexer === 'PRE') {
+      // Taxa pré-fixada anual (ex: 12% a.a.)
+      // Converter taxa anual para mensal: (1 + taxa_anual)^(1/12) - 1
+      const annualRate = percentage / 100
+      return Math.pow(1 + annualRate, 1/12) - 1
+    }
+    
+    return null
+  }, [])
+  
+  // Cálculo em tempo real para modo Personalizado
+  const customCalculationResult = useMemo(() => {
+    if (calculationMode !== 'custom') {
+      return null
+    }
+    
+    const initial = parseFloat(customInitialValue.replace(',', '.')) || 0
+    const percentage = parseFloat(customPercentage.replace(',', '.')) || 0
+    
+    if (initial === 0) {
+      return null
+    }
+    
+    // Validar período se não for MANUAL
+    if (customIndexer !== 'MANUAL' && !customPeriod) {
+      return null
+    }
+    
+    if (percentage === 0 && customIndexer !== 'MANUAL') {
+      return null
+    }
+    
+    // Calcular rentabilidade mensal baseada no indexador
+    const monthlyYield = calculateMonthlyYieldFromIndexer(
+      customIndexer,
+      customPeriod,
+      percentage,
+      customOperation
+    )
+    
+    if (monthlyYield === null) {
+      return null
+    }
+    
+    const finalValue = Math.round((initial * (1 + monthlyYield)) * 100) / 100
+    const financialGain = Math.round((initial * monthlyYield) * 100) / 100
+    
+    return {
+      monthlyYield,
+      finalValue,
+      financialGain,
+      percentageValue: monthlyYield * 100
+    }
+  }, [calculationMode, customInitialValue, customPercentage, customPeriod, customIndexer, customOperation, calculateMonthlyYieldFromIndexer])
+  
   // Função para buscar dados do mercado usando benchmark-calculator
   const handleFetchMarketData = async () => {
     if (!marketPeriod) {
@@ -220,14 +326,60 @@ export function YieldCalculator({
           }
         }
       } else if (calculationMode === 'manual') {
-        // Implementar lógica manual baseada em indexadores
-        // Por enquanto, placeholder
+        // Validar período
+        if (!manualPeriod) {
+          toast({
+            title: i18n.t('portfolioPerformance.yieldCalculator.errors.error'),
+            description: i18n.t('portfolioPerformance.yieldCalculator.errors.informPeriod'),
+            variant: "destructive"
+          })
+          return
+        }
+        
+        const percentage = parseFloat(manualPercentage.replace(',', '.')) || 0
+        
+        if (percentage === 0) {
+          toast({
+            title: i18n.t('portfolioPerformance.yieldCalculator.errors.error'),
+            description: i18n.t('portfolioPerformance.yieldCalculator.errors.informValidPercentage'),
+            variant: "destructive"
+          })
+          return
+        }
+        
+        // Calcular rentabilidade mensal baseada no indexador
+        const monthlyYield = calculateMonthlyYieldFromIndexer(
+          manualIndexer as 'CDI' | 'IPCA' | 'PRE',
+          manualPeriod,
+          percentage,
+          manualOperation
+        )
+        
+        if (monthlyYield === null) {
+          const indexerName = manualIndexer === 'CDI' 
+            ? i18n.t('portfolioPerformance.yieldCalculator.indexers.cdi')
+            : manualIndexer === 'IPCA'
+            ? i18n.t('portfolioPerformance.yieldCalculator.indexers.ipca')
+            : i18n.t('portfolioPerformance.yieldCalculator.indexers.preFixed')
+          
+          toast({
+            title: i18n.t('portfolioPerformance.yieldCalculator.errors.error'),
+            description: i18n.t('portfolioPerformance.yieldCalculator.errors.indexerDataNotFound', {
+              indexer: indexerName,
+              period: manualPeriod
+            }),
+            variant: "destructive"
+          })
+          return
+        }
+        
         result = {
-          monthlyYield: 0.01, // Placeholder
+          monthlyYield,
           metadata: {
             indexer: manualIndexer,
-            percentage: parseFloat(manualPercentage),
-            operation: manualOperation
+            percentage,
+            operation: manualOperation,
+            period: manualPeriod
           }
         }
       } else if (calculationMode === 'custom') {
@@ -243,22 +395,62 @@ export function YieldCalculator({
           return
         }
         
-        let monthlyYield = 0
-        if (customIndexer === 'MANUAL') {
-          monthlyYield = percentage / 100
-        } else {
-          // Placeholder - implementar lógica real
-          monthlyYield = percentage / 100
+        // Validar período se não for MANUAL
+        if (customIndexer !== 'MANUAL' && !customPeriod) {
+          toast({
+            title: i18n.t('portfolioPerformance.yieldCalculator.errors.error'),
+            description: i18n.t('portfolioPerformance.yieldCalculator.errors.informPeriod'),
+            variant: "destructive"
+          })
+          return
+        }
+        
+        if (percentage === 0 && customIndexer !== 'MANUAL') {
+          toast({
+            title: i18n.t('portfolioPerformance.yieldCalculator.errors.error'),
+            description: i18n.t('portfolioPerformance.yieldCalculator.errors.informValidPercentage'),
+            variant: "destructive"
+          })
+          return
+        }
+        
+        // Calcular rentabilidade mensal baseada no indexador
+        const monthlyYield = calculateMonthlyYieldFromIndexer(
+          customIndexer,
+          customPeriod,
+          percentage,
+          customOperation
+        )
+        
+        if (monthlyYield === null) {
+          const indexerName = customIndexer === 'CDI' 
+            ? i18n.t('portfolioPerformance.yieldCalculator.indexers.cdi')
+            : customIndexer === 'IPCA'
+            ? i18n.t('portfolioPerformance.yieldCalculator.indexers.ipca')
+            : customIndexer === 'PRE'
+            ? i18n.t('portfolioPerformance.yieldCalculator.indexers.preFixed')
+            : i18n.t('portfolioPerformance.yieldCalculator.indexers.manual')
+          
+          toast({
+            title: i18n.t('portfolioPerformance.yieldCalculator.errors.error'),
+            description: i18n.t('portfolioPerformance.yieldCalculator.errors.indexerDataNotFound', {
+              indexer: indexerName,
+              period: customPeriod || '-'
+            }),
+            variant: "destructive"
+          })
+          return
         }
         
         result = {
           monthlyYield,
-          finalValue: initial * (1 + monthlyYield),
-          financialGain: initial * monthlyYield,
+          finalValue: Math.round((initial * (1 + monthlyYield)) * 100) / 100,
+          financialGain: Math.round((initial * monthlyYield) * 100) / 100,
           metadata: {
             indexer: customIndexer,
             percentage,
-            operation: customOperation
+            operation: customOperation,
+            period: customPeriod
           }
         }
       } else if (calculationMode === 'auto') {
@@ -329,8 +521,26 @@ export function YieldCalculator({
         
         const monthlyYield = weightedYield / totalPosition
         
+        // O totalPosition já é a soma das posições finais dos ativos detalhados
+        // Usar diretamente como patrimônio final para garantir que bata com a verificação de integridade
+        const finalValue = Math.round(totalPosition * 100) / 100
+        
+        // Calcular ganho financeiro baseado no initial_assets do consolidado (se disponível)
+        // ou estimar baseado na rentabilidade
+        let financialGain = 0
+        if (initialValue > 0) {
+          // Se temos o valor inicial do consolidado, calcular o ganho baseado nele
+          financialGain = Math.round((finalValue - initialValue) * 100) / 100
+        } else if (monthlyYield !== 0 && !isNaN(monthlyYield) && isFinite(monthlyYield)) {
+          // Caso contrário, estimar baseado na rentabilidade
+          const estimatedInitialPosition = totalPosition / (1 + monthlyYield)
+          financialGain = Math.round((totalPosition - estimatedInitialPosition) * 100) / 100
+        }
+        
         result = {
           monthlyYield,
+          finalValue,
+          financialGain,
           metadata: {
             mode: 'auto',
             linkedAssetsCount: linkedAssets.length,
@@ -354,12 +564,118 @@ export function YieldCalculator({
         onConfirm(result)
       }
       
-      toast({
-        title: i18n.t('portfolioPerformance.yieldCalculator.success.calculationDone'),
-        description: i18n.t('portfolioPerformance.yieldCalculator.success.calculationDescription', {
-          yield: (result.monthlyYield * 100).toFixed(4)
+      // Toast detalhado para modo Personalizado
+      if (calculationMode === 'custom' && result.metadata) {
+        const metadata = result.metadata as {
+          indexer: 'CDI' | 'IPCA' | 'PRE' | 'MANUAL'
+          percentage: number
+          operation: '%' | '+'
+          period?: string
+        }
+        
+        const initial = parseFloat(customInitialValue.replace(',', '.')) || 0
+        const finalValue = result.finalValue || initial * (1 + result.monthlyYield)
+        const financialGain = result.financialGain || initial * result.monthlyYield
+        
+        // Formatar detalhes do cálculo
+        let calculationDetails = ''
+        const indexerName = metadata.indexer === 'CDI' 
+          ? i18n.t('portfolioPerformance.yieldCalculator.indexers.cdi')
+          : metadata.indexer === 'IPCA'
+          ? i18n.t('portfolioPerformance.yieldCalculator.indexers.ipca')
+          : metadata.indexer === 'PRE'
+          ? i18n.t('portfolioPerformance.yieldCalculator.indexers.preFixed')
+          : i18n.t('portfolioPerformance.yieldCalculator.indexers.manual')
+        
+        if (metadata.indexer === 'MANUAL') {
+          calculationDetails = `${indexerName} (${metadata.percentage.toFixed(2)}% a.m.) = ${(result.monthlyYield * 100).toFixed(2)}%`
+        } else if (metadata.indexer === 'CDI') {
+          const cdiMonthlyReturn = metadata.period ? getBenchmarkMonthlyReturn('CDI', metadata.period, 'BRL') : null
+          const cdiPercent = cdiMonthlyReturn ? (cdiMonthlyReturn * 100).toFixed(2) : 'N/A'
+          
+          if (metadata.operation === '%') {
+            // Para CDI com %, mostrar: CDI (X%) × Y% = Z%
+            calculationDetails = `${indexerName} (${cdiPercent}%) × ${metadata.percentage}% = ${(result.monthlyYield * 100).toFixed(2)}%`
+          } else {
+            // Para CDI com +, mostrar: CDI (X%) + Y% a.a. (Z% a.m.) = W%
+            const annualSpread = metadata.percentage
+            const monthlySpread = Math.pow(1 + annualSpread / 100, 1/12) - 1
+            calculationDetails = `${indexerName} (${cdiPercent}%) + ${annualSpread}% a.a. (${(monthlySpread * 100).toFixed(2)}% a.m.) = ${(result.monthlyYield * 100).toFixed(2)}%`
+          }
+        } else if (metadata.indexer === 'IPCA') {
+          const ipcaMonthlyReturn = metadata.period ? getBenchmarkMonthlyReturn('IPCA', metadata.period, 'BRL') : null
+          const ipcaPercent = ipcaMonthlyReturn ? (ipcaMonthlyReturn * 100).toFixed(2) : 'N/A'
+          const annualSpread = metadata.percentage
+          const monthlySpread = Math.pow(1 + annualSpread / 100, 1/12) - 1
+          calculationDetails = `${indexerName} (${ipcaPercent}%) + ${annualSpread}% a.a. (${(monthlySpread * 100).toFixed(2)}% a.m.) = ${(result.monthlyYield * 100).toFixed(2)}%`
+        } else if (metadata.indexer === 'PRE') {
+          const annualRate = metadata.percentage
+          const monthlyRate = Math.pow(1 + annualRate / 100, 1/12) - 1
+          calculationDetails = `${indexerName} ${annualRate}% a.a. (${(monthlyRate * 100).toFixed(2)}% a.m.) = ${(result.monthlyYield * 100).toFixed(2)}%`
+        }
+        
+        const formattedInitial = new Intl.NumberFormat('pt-BR', {
+          style: 'currency',
+          currency: 'BRL',
+          minimumFractionDigits: 2,
+          maximumFractionDigits: 2
+        }).format(initial)
+        
+        const formattedFinancialGain = new Intl.NumberFormat('pt-BR', {
+          style: 'currency',
+          currency: 'BRL',
+          minimumFractionDigits: 2,
+          maximumFractionDigits: 2
+        }).format(financialGain)
+        
+        const formattedFinalValue = new Intl.NumberFormat('pt-BR', {
+          style: 'currency',
+          currency: 'BRL',
+          minimumFractionDigits: 2,
+          maximumFractionDigits: 2
+        }).format(finalValue)
+        
+        const periodText = metadata.period || '-'
+        
+        toast({
+          title: i18n.t('portfolioPerformance.yieldCalculator.success.calculationDone'),
+          description: (
+            <div className="space-y-2 text-sm">
+              {metadata.period && (
+                <div className="flex items-start gap-2">
+                  <strong className="min-w-[80px]">{i18n.t('portfolioPerformance.yieldCalculator.custom.toast.period')}:</strong>
+                  <span>{periodText}</span>
+                </div>
+              )}
+              <div className="flex items-start gap-2">
+                <strong className="min-w-[80px]">{i18n.t('portfolioPerformance.yieldCalculator.custom.toast.calculation')}:</strong>
+                <span className="break-words">{calculationDetails}</span>
+              </div>
+              <div className="flex items-start gap-2">
+                <strong className="min-w-[80px]">{i18n.t('portfolioPerformance.yieldCalculator.custom.toast.initialValue')}:</strong>
+                <span>{formattedInitial}</span>
+              </div>
+              <div className="flex items-start gap-2">
+                <strong className="min-w-[80px]">{i18n.t('portfolioPerformance.yieldCalculator.custom.toast.financialGain')}:</strong>
+                <span className="text-green-600 dark:text-green-400 font-medium">{formattedFinancialGain}</span>
+              </div>
+              <div className="flex items-start gap-2">
+                <strong className="min-w-[80px]">{i18n.t('portfolioPerformance.yieldCalculator.custom.toast.finalValue')}:</strong>
+                <span className="font-medium">{formattedFinalValue}</span>
+              </div>
+            </div>
+          ),
+          duration: 10000
         })
-      })
+      } else {
+        // Toast simples para outros modos
+        toast({
+          title: i18n.t('portfolioPerformance.yieldCalculator.success.calculationDone'),
+          description: i18n.t('portfolioPerformance.yieldCalculator.success.calculationDescription', {
+            yield: (result.monthlyYield * 100).toFixed(4)
+          })
+        })
+      }
       
       if (onOpenChange) {
         onOpenChange(false)
@@ -503,7 +819,7 @@ export function YieldCalculator({
               {manualIndexer === 'CDI' && (
                 <div>
                   <Label>{i18n.t('portfolioPerformance.yieldCalculator.custom.cdiPercentage')}</Label>
-                  <div className="flex gap-2 mt-1">
+                  <div className="flex gap-3 mt-1">
                     <div className="flex border rounded-md overflow-hidden">
                       <Button
                         type="button"
@@ -512,7 +828,7 @@ export function YieldCalculator({
                           setManualOperation('%')
                           setManualPercentage('100')
                         }}
-                        className="rounded-none px-4"
+                        className="rounded-none px-5 min-w-[50px]"
                         size="sm"
                       >
                         %
@@ -524,7 +840,7 @@ export function YieldCalculator({
                           setManualOperation('+')
                           setManualPercentage('0')
                         }}
-                        className="rounded-none px-4"
+                        className="rounded-none px-5 min-w-[50px]"
                         size="sm"
                       >
                         +
@@ -624,7 +940,7 @@ export function YieldCalculator({
               {customIndexer === 'CDI' && (
                 <div>
                   <Label>{i18n.t('portfolioPerformance.yieldCalculator.custom.cdiPercentage')}</Label>
-                  <div className="flex gap-2 mt-1">
+                  <div className="flex gap-3 mt-1">
                     <div className="flex border rounded-md overflow-hidden">
                       <Button
                         type="button"
@@ -633,7 +949,7 @@ export function YieldCalculator({
                           setCustomOperation('%')
                           setCustomPercentage('100')
                         }}
-                        className="rounded-none px-4"
+                        className="rounded-none px-5 min-w-[50px]"
                         size="sm"
                       >
                         %
@@ -645,7 +961,7 @@ export function YieldCalculator({
                           setCustomOperation('+')
                           setCustomPercentage('0')
                         }}
-                        className="rounded-none px-4"
+                        className="rounded-none px-5 min-w-[50px]"
                         size="sm"
                       >
                         +
@@ -655,13 +971,13 @@ export function YieldCalculator({
                       type="text"
                       value={customPercentage}
                       onChange={(e) => setCustomPercentage(e.target.value)}
-                    placeholder={customOperation === '%' ? i18n.t('portfolioPerformance.yieldCalculator.custom.cdiExample') : i18n.t('portfolioPerformance.yieldCalculator.custom.spreadExample')}
-                    className="flex-1"
-                  />
-                </div>
-                <p className="text-xs text-muted-foreground mt-1">
-                  {customOperation === '%' ? i18n.t('portfolioPerformance.yieldCalculator.custom.cdiExample') : i18n.t('portfolioPerformance.yieldCalculator.custom.spreadExample')}
-                </p>
+                      placeholder={customOperation === '%' ? i18n.t('portfolioPerformance.yieldCalculator.custom.cdiExample') : i18n.t('portfolioPerformance.yieldCalculator.custom.spreadExample')}
+                      className="flex-1"
+                    />
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    {customOperation === '%' ? i18n.t('portfolioPerformance.yieldCalculator.custom.cdiExample') : i18n.t('portfolioPerformance.yieldCalculator.custom.spreadExample')}
+                  </p>
                 </div>
               )}
               
@@ -682,6 +998,51 @@ export function YieldCalculator({
                      customIndexer === 'PRE' ? i18n.t('portfolioPerformance.yieldCalculator.custom.annualRateExample') : 
                      i18n.t('portfolioPerformance.yieldCalculator.custom.ipcaExample')}
                   </p>
+                </div>
+              )}
+              
+              {/* Resultado do Cálculo em Tempo Real */}
+              {customCalculationResult && (
+                <div className="bg-muted p-4 rounded-md border border-primary/20 space-y-3">
+                  <h4 className="font-semibold text-sm text-foreground">
+                    {i18n.t('portfolioPerformance.yieldCalculator.custom.resultTitle')}
+                  </h4>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-1">
+                      <p className="text-xs text-muted-foreground">
+                        {i18n.t('portfolioPerformance.yieldCalculator.custom.percentageValue')}
+                      </p>
+                      <p className="text-sm font-medium text-foreground">
+                        {customCalculationResult.percentageValue.toFixed(4)}%
+                      </p>
+                    </div>
+                    <div className="space-y-1">
+                      <p className="text-xs text-muted-foreground">
+                        {i18n.t('portfolioPerformance.yieldCalculator.custom.financialGain')}
+                      </p>
+                      <p className="text-sm font-medium text-green-600 dark:text-green-400">
+                        {new Intl.NumberFormat('pt-BR', {
+                          style: 'currency',
+                          currency: 'BRL',
+                          minimumFractionDigits: 2,
+                          maximumFractionDigits: 2
+                        }).format(customCalculationResult.financialGain)}
+                      </p>
+                    </div>
+                    <div className="col-span-2 space-y-1">
+                      <p className="text-xs text-muted-foreground">
+                        {i18n.t('portfolioPerformance.yieldCalculator.custom.finalValue')}
+                      </p>
+                      <p className="text-sm font-medium text-foreground">
+                        {new Intl.NumberFormat('pt-BR', {
+                          style: 'currency',
+                          currency: 'BRL',
+                          minimumFractionDigits: 2,
+                          maximumFractionDigits: 2
+                        }).format(customCalculationResult.finalValue)}
+                      </p>
+                    </div>
+                  </div>
                 </div>
               )}
             </div>

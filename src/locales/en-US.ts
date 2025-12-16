@@ -2806,7 +2806,18 @@ export const enUS = {
         annualRate: "Annual Rate (%)",
         annualRateExample: "Ex: 12 for 12% per year",
         ipcaSpread: "Spread per year (%)",
-        ipcaExample: "Ex: 5 for IPCA + 5% p.a."
+        ipcaExample: "Ex: 5 for IPCA + 5% p.a.",
+        resultTitle: "Calculation Result:",
+        percentageValue: "Percentage Value:",
+        financialGain: "Financial Gain:",
+        finalValue: "Final Value:",
+        toast: {
+          period: "Period",
+          calculation: "Calculation",
+          initialValue: "Initial Value",
+          financialGain: "Financial Gain",
+          finalValue: "Final Value"
+        }
       },
       market: {
         description: "Automatically searches for the real yield of an index in a specific month using market data.",
@@ -2847,6 +2858,8 @@ export const enUS = {
         error: "Error",
         informPeriod: "Enter the period",
         informValidInitialValue: "Enter a valid initial value",
+        informValidPercentage: "Enter a valid percentage",
+        indexerDataNotFound: "No data found for indexer {{indexer}} in period {{period}}",
         incompleteData: "Incomplete data",
         incompleteDataDescription: "To calculate automatically, it is necessary to enter the period and institution",
         modeNotAvailable: "Mode not available",
