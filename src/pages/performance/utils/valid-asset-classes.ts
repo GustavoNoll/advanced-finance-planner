@@ -1,26 +1,27 @@
 // Chaves padronizadas para classes de ativo (salvas no banco)
+// Ordem definida conforme especificação do usuário
 export const VALID_ASSET_CLASSES = [
-  'cdi_liquidity',
-  'cdi_bonds',
-  'cdi_funds',
-  'inflation_bonds',
-  'inflation_funds',
-  'pre_fixed_bonds',
-  'pre_fixed_funds',
-  'multimarket',
-  'real_estate_assets',
-  'real_estate_funds',
-  'stocks_assets',
-  'stocks_etfs',
-  'stocks_funds',
-  'stocks_long_biased',
-  'private_equity',
-  'foreign_fixed_income',
-  'foreign_stocks',
-  'coe',
-  'crypto',
-  'gold',
-  'others'
+  'cdi_liquidity',           // CDI - Liquidez
+  'cdi_bonds',               // CDI - Titulos
+  'cdi_funds',               // CDI - Fundos
+  'inflation_bonds',         // Inflação - Titulos
+  'inflation_funds',         // Inflação - Fundos
+  'pre_fixed_bonds',         // Pré Fixado - Titulos
+  'pre_fixed_funds',         // Pré Fixado - Fundos
+  'multimarket',             // Multimercado
+  'real_estate_assets',      // Imobiliário - Ativos
+  'real_estate_funds',       // Imobiliário - Fundos
+  'stocks_assets',           // Ações - Ativos
+  'stocks_etfs',             // Ações - ETFs
+  'stocks_funds',            // Ações - Fundos
+  'stocks_long_biased',     // Ações - Long Biased
+  'private_equity',          // Private Equity/Venture Capital/ Special Sits
+  'foreign_fixed_income',    // Exterior - Renda Fixa
+  'foreign_stocks',          // Exterior - Ações
+  'coe',                     // COE
+  'crypto',                  // Criptoativos
+  'gold',                    // Ouro
+  'others'                  // Outros
 ] as const
 
 export type ValidAssetClass = typeof VALID_ASSET_CLASSES[number]
