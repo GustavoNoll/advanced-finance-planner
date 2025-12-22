@@ -3,7 +3,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Badge } from "@/components/ui/badge"
 import type { PerformanceData } from "@/types/financial"
-import { calculateCompoundedRates } from "@/lib/financial-math"
+import { calculateCompoundReturn, shouldExcludeFromReturnCalculation, calculateWeightedReturnForPeriod } from "@/utils/portfolio-returns"
 import { useTranslation } from "react-i18next"
 import { 
   calculateBenchmarkReturnsByAssetClass,
@@ -34,13 +34,6 @@ function periodToTimestamp(period?: string | null): number {
 }
 
 
-/**
- * Calculates compound return from an array of monthly returns
- */
-function calculateCompoundReturn(monthlyReturns: number[]): number {
-  if (monthlyReturns.length === 0) return 0
-  return calculateCompoundedRates(monthlyReturns)
-}
 
 export function InvestmentDetailsTable({ performanceData }: InvestmentDetailsTableProps) {
   const { t } = useTranslation()
@@ -142,23 +135,12 @@ export function InvestmentDetailsTable({ performanceData }: InvestmentDetailsTab
     if (periodList.length === 0) return { month: 0, year: 0, sixMonths: 0, twelveMonths: 0, inception: 0 }
 
     // Calculate weighted returns for each period with FX adjustment
+    // Exclude Caixa, Proventos, and Cash from return calculations
     const weightedReturns = periodList.map(period => {
       const items = byPeriod[period]
-      // Convert positions and adjust returns with FX
-      const totalPos = items.reduce((s, x) => {
-        const originalCurrency = (x.currency === 'USD' || x.currency === 'Dolar') ? 'USD' : 'BRL'
-        const position = Number(x.position || 0)
-        return s + convertValue(position, period, originalCurrency)
-      }, 0)
-      const totalRet = items.reduce((s, x) => {
-        const originalCurrency = (x.currency === 'USD' || x.currency === 'Dolar') ? 'USD' : 'BRL'
-        const position = Number(x.position || 0)
-        const positionConverted = convertValue(position, period, originalCurrency)
-        const yieldValue = Number(x.yield || 0)
-        const yieldAdjusted = adjustReturnWithFX(yieldValue, period, originalCurrency)
-        return s + (yieldAdjusted * positionConverted)
-      }, 0)
-      const r = totalPos > 0 ? totalRet / totalPos : 0
+      const { weightedReturn, totalPosition } = 
+        calculateWeightedReturnForPeriod(items, period, convertValue, adjustReturnWithFX)
+      const r = totalPosition > 0 ? weightedReturn / totalPosition : 0
       return { period, r }
     })
 

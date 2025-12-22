@@ -18,7 +18,17 @@ import { translateGroupedStrategy } from "@/utils/i18n-helpers"
 import { isValidAssetClass, type ValidAssetClass } from "@/pages/performance/utils/valid-asset-classes"
 import type { PerformanceData } from "@/types/financial"
 import { useCurrency } from "@/contexts/CurrencyContext"
-import { calculateCompoundedRates } from "@/lib/financial-math"
+import { 
+  competenciaToDate,
+  safeParseFloat,
+  ensureValidNumber,
+  normalizeCurrency,
+  shouldExcludeFromReturnCalculation,
+  calculateCompoundReturn,
+  getMostRecentData,
+  calculateAdjustedReturn,
+  calculateWeightedReturnForPeriod
+} from "@/utils/portfolio-returns"
 
 interface AssetReturnsTableProps {
   performanceData: PerformanceData[]
@@ -98,38 +108,6 @@ export function AssetReturnsTable({ performanceData }: AssetReturnsTableProps) {
     return columns.join(' ')
   }
 
-  // Helper function to convert competencia to Date
-  const competenciaToDate = (competencia: string): Date => {
-    const [month, year] = competencia.split('/').map(Number)
-    return new Date(year, month - 1)
-  }
-
-  // Helper function to safely parse a number
-  const safeParseFloat = (value: string | null | undefined): number => {
-    if (!value) return 0
-    const parsed = parseFloat(value)
-    return isNaN(parsed) ? 0 : parsed
-  }
-
-  // Helper function to ensure a number is valid (not NaN or Infinity)
-  const ensureValidNumber = (value: number): number => {
-    if (isNaN(value) || !isFinite(value)) return 0
-    return value
-  }
-
-  // Helper function to normalize currency to 'BRL' | 'USD'
-  const normalizeCurrency = (currency: string | null | undefined): 'BRL' | 'USD' => {
-    if (currency === 'USD' || currency === 'Dolar') return 'USD'
-    return 'BRL'
-  }
-
-  // Helper function to calculate compound return
-  // Uses the financial-math function which correctly compounds rates starting from 1
-  const calculateCompoundReturn = useCallback((returns: number[]): number => {
-    if (returns.length === 0) return 0
-    const validReturns = returns.map(r => ensureValidNumber(r))
-    return ensureValidNumber(calculateCompoundedRates(validReturns))
-  }, [])
 
   // Pre-compute asset returns for all assets
   const precomputedAssetReturns = useMemo(() => {
@@ -161,20 +139,10 @@ export function AssetReturnsTable({ performanceData }: AssetReturnsTableProps) {
       }
       
       // Month return: return from most recent competencia
-      // Use yield if available (already adjusted), otherwise use rate
       const lastMonthData = allAssetData.find(item => item.period === mostRecentCompetencia)
-      const originalCurrency = normalizeCurrency(lastMonthData?.currency)
-      let monthReturn = 0
-      if (lastMonthData) {
-        // Prefer yield over rate as yield is already calculated and may be more accurate
-        if (lastMonthData.yield !== null && lastMonthData.yield !== undefined) {
-          const yieldValue = safeParseFloat(String(lastMonthData.yield))
-          monthReturn = ensureValidNumber(adjustReturnWithFX(yieldValue, mostRecentCompetencia, originalCurrency))
-        } else if (lastMonthData.rate) {
-          const rateValue = safeParseFloat(lastMonthData.rate) / 100
-          monthReturn = ensureValidNumber(adjustReturnWithFX(rateValue, mostRecentCompetencia, originalCurrency))
-        }
-      }
+      const monthReturn = lastMonthData 
+        ? calculateAdjustedReturn(lastMonthData, mostRecentCompetencia, adjustReturnWithFX)
+        : 0
       
       // Year return: compound return for the year of most recent competencia
       const lastYear = mostRecentCompetencia.split('/')[1]
@@ -185,16 +153,7 @@ export function AssetReturnsTable({ performanceData }: AssetReturnsTableProps) {
       })
       
       const yearMonthlyReturns = sortedYearData.map(item => {
-        const moeda = normalizeCurrency(item.currency)
-        // Prefer yield over rate as yield is already calculated and may be more accurate
-        if (item.yield !== null && item.yield !== undefined) {
-          const yieldValue = safeParseFloat(String(item.yield))
-          return ensureValidNumber(adjustReturnWithFX(yieldValue, item.period || '', moeda))
-        } else if (item.rate) {
-          const rateValue = safeParseFloat(item.rate) / 100
-          return ensureValidNumber(adjustReturnWithFX(rateValue, item.period || '', moeda))
-        }
-        return 0
+        return calculateAdjustedReturn(item, item.period || '', adjustReturnWithFX)
       })
       const yearReturn = calculateCompoundReturn(yearMonthlyReturns)
       
@@ -207,16 +166,7 @@ export function AssetReturnsTable({ performanceData }: AssetReturnsTableProps) {
         })
       
       const inceptionMonthlyReturns = sortedAllData.map(item => {
-        const moeda = normalizeCurrency(item.currency)
-        // Prefer yield over rate as yield is already calculated and may be more accurate
-        if (item.yield !== null && item.yield !== undefined) {
-          const yieldValue = safeParseFloat(String(item.yield))
-          return ensureValidNumber(adjustReturnWithFX(yieldValue, item.period || '', moeda))
-        } else if (item.rate) {
-          const rateValue = safeParseFloat(item.rate) / 100
-          return ensureValidNumber(adjustReturnWithFX(rateValue, item.period || '', moeda))
-        }
-        return 0
+        return calculateAdjustedReturn(item, item.period || '', adjustReturnWithFX)
       })
       const inceptionReturn = calculateCompoundReturn(inceptionMonthlyReturns)
       
@@ -224,25 +174,7 @@ export function AssetReturnsTable({ performanceData }: AssetReturnsTableProps) {
     })
     
     return returns
-  }, [performanceData, adjustReturnWithFX, calculateCompoundReturn])
-
-  // Get most recent data
-  const getMostRecentData = (data: PerformanceData[]) => {
-    if (data.length === 0) return []
-    
-    const mostRecentPeriod = data
-      .filter(item => item.period)
-      .reduce((latest, current) => {
-        if (!latest.period || !current.period) return latest
-        const latestDate = competenciaToDate(latest.period)
-        const currentDate = competenciaToDate(current.period)
-        return currentDate > latestDate ? current : latest
-      }).period
-    
-    if (!mostRecentPeriod) return []
-    
-    return data.filter(item => item.period === mostRecentPeriod)
-  }
+  }, [performanceData, adjustReturnWithFX])
 
   const finalPeriodData = getMostRecentData(performanceData)
 
@@ -357,34 +289,15 @@ export function AssetReturnsTable({ performanceData }: AssetReturnsTableProps) {
     // Get only assets from the most recent competencia for monthly return calculation
     const lastMonthAssets = allStrategyData.filter(item => item.period === mostRecentCompetencia)
     
-      // Calculate weighted return with FX adjustments
-      // Include all assets, even those with zero position (like "Caixa" and "Proventos")
-      const lastMonthWeightedReturn = lastMonthAssets.reduce((sum, asset) => {
-        const moedaOriginal = normalizeCurrency(asset.currency)
-        const posicaoConvertida = ensureValidNumber(convertValue(asset.position || 0, mostRecentCompetencia, moedaOriginal))
-        let rendimentoAjustado = 0
-        // Prefer yield over rate as yield is already calculated and may be more accurate
-        if (asset.yield !== null && asset.yield !== undefined) {
-          const yieldValue = safeParseFloat(String(asset.yield))
-          rendimentoAjustado = ensureValidNumber(adjustReturnWithFX(yieldValue, mostRecentCompetencia, moedaOriginal))
-        } else if (asset.rate) {
-          const rateValue = safeParseFloat(asset.rate) / 100
-          rendimentoAjustado = ensureValidNumber(adjustReturnWithFX(rateValue, mostRecentCompetencia, moedaOriginal))
-        }
-        // Include assets even with zero position - they contribute with 0% return
-        return sum + (rendimentoAjustado * posicaoConvertida)
-      }, 0)
-      
-      const lastMonthTotalPosition = lastMonthAssets.reduce((sum, asset) => {
-        const moedaOriginal = normalizeCurrency(asset.currency)
-        return sum + ensureValidNumber(convertValue(asset.position || 0, mostRecentCompetencia, moedaOriginal))
-      }, 0)
-      
-      // Calculate return: if total position is zero, return 0 (all assets have zero position)
-      // Otherwise, calculate weighted average including all assets
-      const monthReturn = lastMonthTotalPosition > 0 
-        ? ensureValidNumber(lastMonthWeightedReturn / lastMonthTotalPosition) 
-        : 0
+    // Calculate weighted return with FX adjustments
+    const { weightedReturn: lastMonthWeightedReturn, totalPosition: lastMonthTotalPosition } = 
+      calculateWeightedReturnForPeriod(lastMonthAssets, mostRecentCompetencia, convertValue, adjustReturnWithFX)
+    
+    // Calculate return: if total position is zero, return 0 (all assets have zero position)
+    // Otherwise, calculate weighted average excluding Caixa, Proventos, and Cash
+    const monthReturn = lastMonthTotalPosition > 0 
+      ? ensureValidNumber(lastMonthWeightedReturn / lastMonthTotalPosition) 
+      : 0
     
     // Group by competencia for year and inception calculations
     const competenciaGroups = allStrategyData.reduce((acc, item) => {
@@ -406,31 +319,11 @@ export function AssetReturnsTable({ performanceData }: AssetReturnsTableProps) {
     
       const yearReturns = yearCompetenciasInFilter.map(competencia => {
         const competenciaAssets = competenciaGroups[competencia]
-        
-        // Include all assets, even those with zero position (like "Caixa" and "Proventos")
-        const weightedReturn = competenciaAssets.reduce((sum, asset) => {
-          const moedaOriginal = normalizeCurrency(asset.currency)
-          const posicaoConvertida = ensureValidNumber(convertValue(asset.position || 0, competencia, moedaOriginal))
-          let rendimentoAjustado = 0
-          // Prefer yield over rate as yield is already calculated and may be more accurate
-          if (asset.yield !== null && asset.yield !== undefined) {
-            const yieldValue = safeParseFloat(String(asset.yield))
-            rendimentoAjustado = ensureValidNumber(adjustReturnWithFX(yieldValue, competencia, moedaOriginal))
-          } else if (asset.rate) {
-            const rateValue = safeParseFloat(asset.rate) / 100
-            rendimentoAjustado = ensureValidNumber(adjustReturnWithFX(rateValue, competencia, moedaOriginal))
-          }
-          // Include assets even with zero position - they contribute with 0% return
-          return sum + (rendimentoAjustado * posicaoConvertida)
-        }, 0)
-        
-        const totalPosition = competenciaAssets.reduce((sum, asset) => {
-          const moedaOriginal = normalizeCurrency(asset.currency)
-          return sum + ensureValidNumber(convertValue(asset.position || 0, competencia, moedaOriginal))
-        }, 0)
+        const { weightedReturn, totalPosition } = 
+          calculateWeightedReturnForPeriod(competenciaAssets, competencia, convertValue, adjustReturnWithFX)
         
         // Calculate return: if total position is zero, return 0 (all assets have zero position)
-        // Otherwise, calculate weighted average including all assets
+        // Otherwise, calculate weighted average excluding Caixa, Proventos, and Cash
         return totalPosition > 0 
           ? ensureValidNumber(weightedReturn / totalPosition) 
           : 0
@@ -440,31 +333,11 @@ export function AssetReturnsTable({ performanceData }: AssetReturnsTableProps) {
     // Inception return: compound return for all competencias
       const monthlyReturns = sortedCompetencias.map(competencia => {
         const competenciaAssets = competenciaGroups[competencia]
-        
-        // Include all assets, even those with zero position (like "Caixa" and "Proventos")
-        const weightedReturn = competenciaAssets.reduce((sum, asset) => {
-          const moedaOriginal = normalizeCurrency(asset.currency)
-          const posicaoConvertida = ensureValidNumber(convertValue(asset.position || 0, competencia, moedaOriginal))
-          let rendimentoAjustado = 0
-          // Prefer yield over rate as yield is already calculated and may be more accurate
-          if (asset.yield !== null && asset.yield !== undefined) {
-            const yieldValue = safeParseFloat(String(asset.yield))
-            rendimentoAjustado = ensureValidNumber(adjustReturnWithFX(yieldValue, competencia, moedaOriginal))
-          } else if (asset.rate) {
-            const rateValue = safeParseFloat(asset.rate) / 100
-            rendimentoAjustado = ensureValidNumber(adjustReturnWithFX(rateValue, competencia, moedaOriginal))
-          }
-          // Include assets even with zero position - they contribute with 0% return
-          return sum + (rendimentoAjustado * posicaoConvertida)
-        }, 0)
-        
-        const totalPosition = competenciaAssets.reduce((sum, asset) => {
-          const moedaOriginal = normalizeCurrency(asset.currency)
-          return sum + ensureValidNumber(convertValue(asset.position || 0, competencia, moedaOriginal))
-        }, 0)
+        const { weightedReturn, totalPosition } = 
+          calculateWeightedReturnForPeriod(competenciaAssets, competencia, convertValue, adjustReturnWithFX)
         
         // Calculate return: if total position is zero, return 0 (all assets have zero position)
-        // Otherwise, calculate weighted average including all assets
+        // Otherwise, calculate weighted average excluding Caixa, Proventos, and Cash
         return totalPosition > 0 
           ? ensureValidNumber(weightedReturn / totalPosition) 
           : 0
@@ -472,7 +345,7 @@ export function AssetReturnsTable({ performanceData }: AssetReturnsTableProps) {
     const inceptionReturn = calculateCompoundReturn(monthlyReturns)
     
     return { monthReturn, yearReturn, inceptionReturn }
-  }, [performanceData, convertValue, adjustReturnWithFX, calculateCompoundReturn, groupStrategy])
+  }, [performanceData, convertValue, adjustReturnWithFX, groupStrategy])
 
 
   const toggleStrategy = (strategy: string) => {
