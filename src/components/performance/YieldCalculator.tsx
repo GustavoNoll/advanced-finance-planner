@@ -10,6 +10,7 @@ import type { CurrencyCode } from "@/utils/currency"
 import type { ConsolidatedPerformance, PerformanceData } from "@/types/financial"
 import i18n from "@/lib/i18n"
 import { SelectWithSearch, type SelectOption } from "@/components/ui/select-with-search"
+import { shouldExcludeFromReturnCalculation } from "@/utils/portfolio-returns"
 
 interface YieldCalculatorProps {
   /** Valor inicial para cálculo */
@@ -474,10 +475,12 @@ export function YieldCalculator({
         }
         
         // Buscar ativos detalhados vinculados (mesma competência, instituição e nome da conta)
+        // Exclude Caixa, Proventos, and Cash from return calculations
         const linkedAssets = detailedData.filter(asset => 
           asset.period === period &&
           asset.institution === institution &&
-          (accountName ? asset.account_name === accountName : true)
+          (accountName ? asset.account_name === accountName : true) &&
+          !shouldExcludeFromReturnCalculation(asset.asset)
         )
         
         if (linkedAssets.length === 0) {
@@ -496,6 +499,7 @@ export function YieldCalculator({
         }
         
         // Calcular rentabilidade ponderada
+        // Exclude Caixa, Proventos, and Cash assets as they don't contribute to portfolio returns
         let totalPosition = 0
         let weightedYield = 0
         

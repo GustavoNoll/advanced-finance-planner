@@ -67,6 +67,7 @@ export function AssetClassSelect({
       disabled={disabled}
       className={className}
       triggerClassName="h-12"
+      sortOptions={false}
     />
   )
 }
