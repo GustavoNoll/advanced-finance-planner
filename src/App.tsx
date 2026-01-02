@@ -42,14 +42,18 @@ const queryClient = new QueryClient();
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   const { user, loading } = useAuth();
 
-  if (loading) {
+  // Only show loading screen on initial load, not during navigation
+  // This prevents flickering when navigating after login
+  if (loading && !user) {
     return <LoadingScreen />;
   }
 
-  if (!user) {
-    return <Navigate to="/login" />;
+  if (!user && !loading) {
+    return <Navigate to="/login" replace />;
   }
 
+  // If we have a user but still loading (e.g., fetching profile), show children with minimal loading
+  // This allows smooth transition from login
   return <>{children}</>;
 };
 

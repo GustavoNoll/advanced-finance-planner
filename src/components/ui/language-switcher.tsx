@@ -1,5 +1,5 @@
 import { useState } from "react"
-import { useLanguagePreference } from "@/contexts/LanguageContext"
+import { useLanguagePreference } from "@/hooks/useLanguagePreference"
 import { useTranslation } from "react-i18next"
 import { useToast } from "@/components/ui/use-toast"
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
