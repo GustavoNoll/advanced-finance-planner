@@ -53,6 +53,24 @@ export const PersonalInformationForm = ({
     defaultValues: currentData,
   });
 
+  // ESC key handler to cancel editing
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape' && isEditMode) {
+        form.reset(currentData);
+        setIsEditMode(false);
+      }
+    };
+
+    if (isEditMode) {
+      window.addEventListener('keydown', handleKeyDown);
+    }
+
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [isEditMode, currentData, form]);
+
   const handleSubmit = async (data: PersonalInformationFormValues) => {
     if (!clientId) return;
 

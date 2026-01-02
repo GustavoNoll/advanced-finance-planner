@@ -11,7 +11,7 @@ import { useToast } from '@/components/ui/use-toast';
 import { Plus, Trash2, Pencil, Info } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
 import { useTranslation } from 'react-i18next';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { capitalizeFirstLetter } from '@/utils/string';
 
@@ -73,6 +73,25 @@ export const BudgetForm = ({
   });
 
   const queryClient = useQueryClient();
+  const initialFormValues = useRef<BudgetFormValues | null>(null);
+
+  // ESC key handler to cancel editing
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape' && isEditMode && initialFormValues.current) {
+        form.reset(initialFormValues.current);
+        setIsEditMode(false);
+      }
+    };
+
+    if (isEditMode) {
+      window.addEventListener('keydown', handleKeyDown);
+    }
+
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [isEditMode, form]);
 
   useEffect(() => {
     const loadBudget = async () => {
@@ -88,7 +107,7 @@ export const BudgetForm = ({
         if (error) throw error;
 
         if (data) {
-          form.reset({
+          const formData = {
             ...data,
             incomes: (data.incomes || [{ description: '', amount: 0 }]).map(income => ({
               description: income.description || '',
@@ -101,16 +120,20 @@ export const BudgetForm = ({
             bonus: data.bonus != null ? Number(data.bonus) : 0,
             dividends: data.dividends != null ? Number(data.dividends) : 0,
             savings: data.savings != null ? Number(data.savings) : 0,
-          });
+          };
+          initialFormValues.current = formData;
+          form.reset(formData);
         } else {
           // Se não houver dados, inicializa com valores padrão
-          form.reset({
+          const defaultData = {
             incomes: [{ description: '', amount: 0 }],
             expenses: [{ description: '', amount: 0 }],
             bonus: 0,
             dividends: 0,
             savings: 0,
-          });
+          };
+          initialFormValues.current = defaultData;
+          form.reset(defaultData);
         }
       } catch (error) {
         console.error('Error loading budget:', error);
