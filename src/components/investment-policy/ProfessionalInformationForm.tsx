@@ -68,6 +68,30 @@ export const ProfessionalInformationForm = ({
     },
   });
 
+  // ESC key handler to cancel editing
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape' && isEditMode) {
+        form.reset({
+          occupation: initialData?.occupation || '',
+          work_description: initialData?.work_description || '',
+          work_location: initialData?.work_location || '',
+          work_regime: initialData?.work_regime,
+          tax_declaration_method: initialData?.tax_declaration_method
+        });
+        setIsEditMode(false);
+      }
+    };
+
+    if (isEditMode) {
+      window.addEventListener('keydown', handleKeyDown);
+    }
+
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [isEditMode, initialData, form]);
+
   const handleSubmit = async (data: ProfessionalInformationFormValues) => {
     if (!policyId) return;
 

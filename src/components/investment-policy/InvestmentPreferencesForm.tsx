@@ -184,6 +184,24 @@ export const InvestmentPreferencesForm = ({
     setIsEditMode(false);
   };
 
+  // ESC key handler to cancel editing
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape' && isEditMode) {
+        form.reset(initialFormValues.current);
+        setIsEditMode(false);
+      }
+    };
+
+    if (isEditMode) {
+      window.addEventListener('keydown', handleKeyDown);
+    }
+
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [isEditMode, form]);
+
   const acceptableLoss = [
     { value: '0', label: t('investmentPreferences.options.acceptableLoss.no_loss') },
     { value: '5', label: t('investmentPreferences.options.acceptableLoss.five_percent') },

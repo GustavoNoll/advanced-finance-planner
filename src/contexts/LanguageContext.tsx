@@ -1,19 +1,11 @@
-import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react"
+import { useCallback, useEffect, useMemo, useState } from "react"
 import { supabase } from "@/lib/supabase"
 import { detectLanguage, SupportedLocale } from "@/lib/locale-detection"
 import i18n from "@/lib/i18n"
 import { useAuth } from "@/components/auth/AuthProvider"
+import { LanguageContext } from "./LanguageContext.types"
 
-interface LanguageContextValue {
-  language: SupportedLocale
-  isLoading: boolean
-  isUpdating: boolean
-  setLanguagePreference: (locale: SupportedLocale) => Promise<void>
-}
-
-const LanguageContext = createContext<LanguageContextValue | undefined>(undefined)
-
-export function LanguageProvider({ children }: { children: React.ReactNode }) {
+function LanguageProvider({ children }: { children: React.ReactNode }) {
   const { user } = useAuth()
   const [language, setLanguage] = useState<SupportedLocale>(() => detectLanguage())
   const [isLoading, setIsLoading] = useState(true)
@@ -117,10 +109,6 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
   return <LanguageContext.Provider value={value}>{children}</LanguageContext.Provider>
 }
 
-export function useLanguagePreference() {
-  const context = useContext(LanguageContext)
-  if (!context) throw new Error("useLanguagePreference must be used within a LanguageProvider")
-  return context
-}
+export { LanguageProvider }
 
 

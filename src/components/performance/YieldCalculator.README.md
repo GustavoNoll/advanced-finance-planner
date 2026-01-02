@@ -136,3 +136,4 @@ Você pode personalizar a calculadora adicionando:
 Basta modificar o componente `YieldCalculator.tsx` conforme necessário.
 
 
+

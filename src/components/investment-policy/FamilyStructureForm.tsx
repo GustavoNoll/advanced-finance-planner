@@ -173,6 +173,37 @@ export const FamilyStructureForm = ({
     },
   });
 
+  // ESC key handler to cancel editing
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape' && isEditMode) {
+        form.reset({
+          marital_status: initialData?.marital_status || '',
+          spouse_name: initialData?.spouse_name || '',
+          spouse_birth_date: parseDate(initialData?.spouse_birth_date),
+          has_children: initialData?.has_children || false,
+          children: initialData?.children?.map(child => ({
+            ...child,
+            birth_date: parseDate(child.birth_date)
+          })) || [],
+        });
+        setChildren(initialData?.children?.map(child => ({
+          ...child,
+          birth_date: parseDate(child.birth_date)
+        })) || []);
+        setIsEditMode(false);
+      }
+    };
+
+    if (isEditMode) {
+      window.addEventListener('keydown', handleKeyDown);
+    }
+
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [isEditMode, initialData, form]);
+
   const handleSubmit = async (data: FamilyStructureFormValues) => {
     if (!policyId) return;
 

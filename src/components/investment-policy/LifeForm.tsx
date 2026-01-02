@@ -12,7 +12,7 @@ import { Plus, Trash2, Pencil, Info } from 'lucide-react';
 import { useQueryClient } from '@tanstack/react-query';
 import { capitalizeFirstLetter } from '@/utils/string';
 import { useTranslation } from 'react-i18next';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { LifeInformation } from '@/services/investment-policy.service';
 
 const hobbySchema = z.object({
@@ -92,6 +92,29 @@ export const LifeForm = ({
     control: form.control,
     name: 'insurances',
   });
+
+  // ESC key handler to cancel editing
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape' && isEditMode) {
+        form.reset({
+          life_stage: initialData?.life_stage,
+          hobbies: initialData?.hobbies || [defaultEmptyHobby],
+          objectives: initialData?.objectives || [defaultEmptyObjective],
+          insurances: initialData?.insurances || [],
+        });
+        setIsEditMode(false);
+      }
+    };
+
+    if (isEditMode) {
+      window.addEventListener('keydown', handleKeyDown);
+    }
+
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [isEditMode, initialData, form]);
 
   const handleSubmit = async (data: LifeFormValues) => {
     if (!policyId) return;
