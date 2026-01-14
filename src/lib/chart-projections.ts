@@ -721,29 +721,6 @@ export function generateProjectionData(
       monthlyReturnRate = monthlyExpectedReturnRateForDate;
       monthlyOldPortfolioReturnRate = context.monthlyOldPortfolioExpectedReturnRate;
     }
-    
-    // Handle goals and events for planned balance (use all goals/events)
-    plannedBalance = handleMonthlyGoalsAndEvents(
-      plannedBalance,
-      year,
-      month,
-      accumulatedInflation,
-      allGoalsForChart,
-      allEventsForChart,
-      chartOptions?.showRealValues || false
-    );
-
-    if (context.oldPortfolioProfitability) {
-      oldPortfolioBalance = handleMonthlyGoalsAndEvents(
-        oldPortfolioBalance!,
-        year,
-        month,
-        accumulatedInflation,
-        allGoalsForChart,
-        allEventsForChart,
-        chartOptions?.showRealValues || false
-      );
-    }
 
     // Check for historical record
     const historicalKey = `${year}-${month}`;
@@ -759,6 +736,25 @@ export function generateProjectionData(
       if (context.oldPortfolioProfitability) {
         oldPortfolioBalance = oldPortfolioBalance! * (1 + monthlyOldPortfolioReturnRate) + contribution;
       }
+      
+      // Handle goals and events for planned balance AFTER returns and contribution (use all goals/events)
+      const { plannedBalance: updatedPlannedBalance, oldPortfolioBalance: updatedOldPortfolioBalance } = 
+        handleBalancesGoalsAndEvents(
+          plannedBalance,
+          oldPortfolioBalance,
+          null, // No projectedBalance for historical records
+          year,
+          month,
+          accumulatedInflation,
+          allGoalsForChart,
+          allEventsForChart,
+          undefined, // No separate projected goals/events
+          undefined,
+          chartOptions?.showRealValues || false,
+          !!context.oldPortfolioProfitability
+        );
+      plannedBalance = updatedPlannedBalance;
+      oldPortfolioBalance = updatedOldPortfolioBalance;
 
       monthlyData = createHistoricalMonthData(
         historicalRecord,
@@ -784,6 +780,25 @@ export function generateProjectionData(
       if (context.oldPortfolioProfitability) {
         oldPortfolioBalance = oldPortfolioBalance! * (1 + monthlyOldPortfolioReturnRate) + contribution;
       }
+      
+      // Handle goals and events for planned balance AFTER returns and contribution (use all goals/events)
+      const { plannedBalance: updatedPlannedBalance, oldPortfolioBalance: updatedOldPortfolioBalance } = 
+        handleBalancesGoalsAndEvents(
+          plannedBalance,
+          oldPortfolioBalance,
+          null, // No projectedBalance for past months
+          year,
+          month,
+          accumulatedInflation,
+          allGoalsForChart,
+          allEventsForChart,
+          undefined, // No separate projected goals/events
+          undefined,
+          chartOptions?.showRealValues || false,
+          !!context.oldPortfolioProfitability
+        );
+      plannedBalance = updatedPlannedBalance;
+      oldPortfolioBalance = updatedOldPortfolioBalance;
       monthlyData = createPastMonthData(
         month,
         year,
@@ -796,85 +811,112 @@ export function generateProjectionData(
         activeMicroPlanForRates?.expected_return || 8, // Default 8% se não houver micro plano
         contribution,
       );
-    } else {
-      // Future month
-      if (isRetirementAge) {
-        const withdrawal = chartOptions?.showRealValues ? currentRealMonthlyWithdrawal : currentNominalMonthlyWithdrawal;
-        
-        projectedBalance = (projectedBalance * (1 + monthlyReturnRate)) - withdrawal;
-        plannedBalance = (plannedBalance * (1 + monthlyReturnRate)) - withdrawal;
-        if (context.oldPortfolioProfitability) {
-          oldPortfolioBalance = (oldPortfolioBalance! * (1 + monthlyOldPortfolioReturnRate)) - withdrawal;
-        }
-        
-        // Apply goals/events after returns and withdrawals
-        const balanceBeforeGoalsEvents = projectedBalance;
-        projectedBalance = handleMonthlyGoalsAndEvents(
-          projectedBalance,
-          year,
-          month,
-          accumulatedInflation,
-          pendingGoalsForChart,
-          pendingEventsForChart,
-          chartOptions?.showRealValues || false
-        );
-        
-        const goalsEventsImpact = projectedBalance - balanceBeforeGoalsEvents;
-        
-        monthlyData = createRetirementMonthData(
-          month,
-          year,
-          projectedBalance,
-          plannedBalance,
-          oldPortfolioBalance,
-          monthlyReturnRate,
-          monthlyOldPortfolioReturnRate,
-          monthlyInflationRate,
-          accumulatedInflation,
-          withdrawal,
-          goalsEventsImpact,
-          activeMicroPlanForRates?.expected_return || 8, // Default 8% se não houver micro plano
-          context.birthYear
-        );
-      } else {
-        // Regular future month
-        const contribution = chartOptions?.showRealValues ? currentRealMonthlyDeposit : currentNominalMonthlyDeposit;
-        
-        projectedBalance = projectedBalance * (1 + monthlyReturnRate) + contribution;
-        plannedBalance = plannedBalance * (1 + monthlyReturnRate) + contribution;
-        if (context.oldPortfolioProfitability) {
-          oldPortfolioBalance = oldPortfolioBalance! * (1 + monthlyOldPortfolioReturnRate) + contribution;
-        }
-        
-        // Apply goals/events after returns and contributions
-        const balanceBeforeGoalsEvents = projectedBalance;
-        const projectedBalanceAfterGoalsEvents = handleMonthlyGoalsAndEvents(
-          projectedBalance,
-          year,
-          month,
-          accumulatedInflation,
-          pendingGoalsForChart,
-          pendingEventsForChart,
-          chartOptions?.showRealValues || false
-        );
-        
-        const goalsEventsImpact = projectedBalanceAfterGoalsEvents - balanceBeforeGoalsEvents;
-        projectedBalance = projectedBalanceAfterGoalsEvents;
-        monthlyData = createFutureMonthData(
-          month,
-          year,
-          projectedBalanceAfterGoalsEvents,
-          plannedBalance,
-          oldPortfolioBalance,
-          monthlyReturnRate,
-          monthlyInflationRate,
-          accumulatedInflation,
-          goalsEventsImpact,
-          contribution,
-          activeMicroPlanForRates?.expected_return || 8, // Default 8% se não houver micro plano
-          context.birthYear
-        );
+    } else if (isRetirementAge) {
+      const withdrawal = chartOptions?.showRealValues ? currentRealMonthlyWithdrawal : currentNominalMonthlyWithdrawal;
+      
+      projectedBalance = (projectedBalance * (1 + monthlyReturnRate)) - withdrawal;
+      plannedBalance = (plannedBalance * (1 + monthlyReturnRate)) - withdrawal;
+      if (context.oldPortfolioProfitability) {
+        oldPortfolioBalance = (oldPortfolioBalance! * (1 + monthlyOldPortfolioReturnRate)) - withdrawal;
       }
+      
+      // Apply goals/events after returns and withdrawals
+      const balanceBeforeGoalsEvents = projectedBalance;
+      
+      // Handle goals and events for all balances AFTER returns and withdrawals
+      const { 
+        plannedBalance: updatedPlannedBalance, 
+        oldPortfolioBalance: updatedOldPortfolioBalance,
+        projectedBalance: updatedProjectedBalance
+      } = handleBalancesGoalsAndEvents(
+        plannedBalance,
+        oldPortfolioBalance,
+        projectedBalance,
+        year,
+        month,
+        accumulatedInflation,
+        allGoalsForChart,
+        allEventsForChart,
+        pendingGoalsForChart, // Different goals/events for projected
+        pendingEventsForChart,
+        chartOptions?.showRealValues || false,
+        !!context.oldPortfolioProfitability
+      );
+      plannedBalance = updatedPlannedBalance;
+      oldPortfolioBalance = updatedOldPortfolioBalance;
+      projectedBalance = updatedProjectedBalance!;
+      
+      const goalsEventsImpact = projectedBalance - balanceBeforeGoalsEvents;
+      
+      monthlyData = createRetirementMonthData(
+        month,
+        year,
+        projectedBalance,
+        plannedBalance,
+        oldPortfolioBalance,
+        monthlyReturnRate,
+        monthlyOldPortfolioReturnRate,
+        monthlyInflationRate,
+        accumulatedInflation,
+        withdrawal,
+        goalsEventsImpact,
+        activeMicroPlanForRates?.expected_return || 8, // Default 8% se não houver micro plano
+        context.birthYear
+      );
+    } else {
+      // Regular future month
+      const contribution = chartOptions?.showRealValues ? currentRealMonthlyDeposit : currentNominalMonthlyDeposit;
+      
+      // Apply returns and contributions first
+      projectedBalance = projectedBalance * (1 + monthlyReturnRate) + contribution;
+      const balanceAfterReturnsAndContribution = projectedBalance;
+      
+      plannedBalance = plannedBalance * (1 + monthlyReturnRate) + contribution;
+      if (context.oldPortfolioProfitability) {
+        oldPortfolioBalance = oldPortfolioBalance! * (1 + monthlyOldPortfolioReturnRate) + contribution;
+      }
+      
+      // Apply goals/events AFTER returns and contributions
+      const balanceBeforeGoalsEvents = projectedBalance;
+      
+      // Handle goals and events for all balances AFTER returns and contributions
+      const { 
+        plannedBalance: updatedPlannedBalance, 
+        oldPortfolioBalance: updatedOldPortfolioBalance,
+        projectedBalance: updatedProjectedBalance
+      } = handleBalancesGoalsAndEvents(
+        plannedBalance,
+        oldPortfolioBalance,
+        projectedBalance,
+        year,
+        month,
+        accumulatedInflation,
+        allGoalsForChart,
+        allEventsForChart,
+        pendingGoalsForChart, // Different goals/events for projected
+        pendingEventsForChart,
+        chartOptions?.showRealValues || false,
+        !!context.oldPortfolioProfitability
+      );
+      plannedBalance = updatedPlannedBalance;
+      oldPortfolioBalance = updatedOldPortfolioBalance;
+      projectedBalance = updatedProjectedBalance!;
+      
+      const goalsEventsImpact = projectedBalance - balanceBeforeGoalsEvents;
+      monthlyData = createFutureMonthData(
+        month,
+        year,
+        projectedBalance,
+        plannedBalance,
+        oldPortfolioBalance,
+        monthlyReturnRate,
+        monthlyInflationRate,
+        accumulatedInflation,
+        goalsEventsImpact,
+        contribution,
+        activeMicroPlanForRates?.expected_return || 6, // Default 6% se não houver micro plano
+        context.birthYear
+      );
     }
 
     // Adicionar dados mensais ao mapa do ano
@@ -1096,4 +1138,77 @@ export function handleMonthlyGoalsAndEvents(
   }
 
   return updatedBalance;
+}
+
+/**
+ * Handles monthly goals and events for balances (planned, old portfolio, and optionally projected)
+ * @param plannedBalance Current planned balance
+ * @param oldPortfolioBalance Current old portfolio balance (can be null)
+ * @param projectedBalance Optional projected balance to process
+ * @param year Current year
+ * @param month Current month
+ * @param accumulatedInflation Accumulated inflation factor
+ * @param goals Processed goals for planned/old portfolio
+ * @param events Processed events for planned/old portfolio
+ * @param projectedGoals Optional processed goals for projected balance (if different)
+ * @param projectedEvents Optional processed events for projected balance (if different)
+ * @param showRealValues Whether to show real values (no inflation adjustment)
+ * @param hasOldPortfolio Whether old portfolio profitability is enabled
+ * @returns Object with updated balances
+ */
+function handleBalancesGoalsAndEvents(
+  plannedBalance: number,
+  oldPortfolioBalance: number | null,
+  projectedBalance: number | null,
+  year: number,
+  month: number,
+  accumulatedInflation: number,
+  goals: ProcessedGoalEvent[],
+  events: ProcessedGoalEvent[],
+  projectedGoals: ProcessedGoalEvent[] | undefined,
+  projectedEvents: ProcessedGoalEvent[] | undefined,
+  showRealValues: boolean,
+  hasOldPortfolio: boolean
+): { 
+  plannedBalance: number; 
+  oldPortfolioBalance: number | null;
+  projectedBalance: number | null;
+} {
+  plannedBalance = handleMonthlyGoalsAndEvents(
+    plannedBalance,
+    year,
+    month,
+    accumulatedInflation,
+    goals,
+    events,
+    showRealValues
+  );
+
+  if (hasOldPortfolio && oldPortfolioBalance !== null) {
+    oldPortfolioBalance = handleMonthlyGoalsAndEvents(
+      oldPortfolioBalance,
+      year,
+      month,
+      accumulatedInflation,
+      goals,
+      events,
+      showRealValues
+    );
+  }
+
+  if (projectedBalance !== null) {
+    const goalsToUse = projectedGoals ?? goals;
+    const eventsToUse = projectedEvents ?? events;
+    projectedBalance = handleMonthlyGoalsAndEvents(
+      projectedBalance,
+      year,
+      month,
+      accumulatedInflation,
+      goalsToUse,
+      eventsToUse,
+      showRealValues
+    );
+  }
+
+  return { plannedBalance, oldPortfolioBalance, projectedBalance };
 }

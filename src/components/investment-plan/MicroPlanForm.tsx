@@ -42,20 +42,67 @@ export function MicroPlanForm({
 }: MicroPlanFormProps) {
   const { t } = useTranslation()
   const [isSubmitting, setIsSubmitting] = useState(false)
-  const [formData, setFormData] = useState({
-    life_investment_plan_id: planId,
-    effective_date: isFirstMicroPlan ? planInitialDate : '',
-    monthly_deposit: '',
-    desired_income: '',
-    expected_return: '',
-    inflation: '',
-    adjust_contribution_for_accumulated_inflation: true,
-    adjust_income_for_accumulated_inflation: true
-  })
   
-  const [effectiveDateInput, setEffectiveDateInput] = useState('')
-  const [monthInput, setMonthInput] = useState('')
-  const [yearInput, setYearInput] = useState('')
+  // Inicializar formData com valores de initialData se disponível (modo edição)
+  // Ao criar novo, sempre começar com campos zerados
+  const getInitialFormData = () => {
+    if (initialData) {
+      // Modo edição: preencher com dados do micro plano sendo editado
+      const expectedReturnStr = parseFloat(initialData.expected_return.toString()).toFixed(1)
+      return {
+        life_investment_plan_id: planId,
+        effective_date: initialData.effective_date,
+        monthly_deposit: initialData.monthly_deposit.toString(),
+        desired_income: initialData.desired_income.toString(),
+        expected_return: expectedReturnStr,
+        inflation: initialData.inflation.toString(),
+        adjust_contribution_for_accumulated_inflation: initialData.adjust_contribution_for_accumulated_inflation,
+        adjust_income_for_accumulated_inflation: initialData.adjust_income_for_accumulated_inflation
+      }
+    }
+    // Modo criação: sempre começar com campos zerados
+    return {
+      life_investment_plan_id: planId,
+      effective_date: isFirstMicroPlan ? planInitialDate : '',
+      monthly_deposit: '',
+      desired_income: '',
+      expected_return: '',
+      inflation: '',
+      adjust_contribution_for_accumulated_inflation: true,
+      adjust_income_for_accumulated_inflation: true
+    }
+  }
+  
+  const [formData, setFormData] = useState(getInitialFormData)
+  
+  // Inicializar inputs de data
+  const getInitialDateInputs = () => {
+    if (initialData) {
+      const date = createDateWithoutTimezone(initialData.effective_date)
+      return {
+        effectiveDateInput: date.toISOString().split('T')[0],
+        monthInput: (date.getMonth() + 1).toString().padStart(2, '0'),
+        yearInput: date.getFullYear().toString()
+      }
+    } else if (isFirstMicroPlan) {
+      const date = new Date(planInitialDate)
+      return {
+        effectiveDateInput: planInitialDate,
+        monthInput: (date.getMonth() + 1).toString().padStart(2, '0'),
+        yearInput: date.getFullYear().toString()
+      }
+    }
+    return {
+      effectiveDateInput: '',
+      monthInput: '',
+      yearInput: ''
+    }
+  }
+  
+  const initialDateInputs = getInitialDateInputs()
+  const [effectiveDateInput, setEffectiveDateInput] = useState(initialDateInputs.effectiveDateInput)
+  const [monthInput, setMonthInput] = useState(initialDateInputs.monthInput)
+  const [yearInput, setYearInput] = useState(initialDateInputs.yearInput)
   
 
   const currencySymbol = currency === 'BRL' ? 'R$' : currency === 'USD' ? '$' : '€'
@@ -78,11 +125,10 @@ export function MicroPlanForm({
     return result
   }
 
+  // Atualizar formData quando initialData mudar (para casos de edição dinâmica)
   useEffect(() => {
     if (initialData) {
       const date = createDateWithoutTimezone(initialData.effective_date)
-      // Normalizar o expected_return para garantir compatibilidade com os valores dos perfis
-      // Converter para número e depois para string com 1 casa decimal para match com os perfis
       const expectedReturnStr = parseFloat(initialData.expected_return.toString()).toFixed(1)
       
       setFormData({
@@ -96,12 +142,10 @@ export function MicroPlanForm({
         adjust_income_for_accumulated_inflation: initialData.adjust_income_for_accumulated_inflation
       })
       
-      // Definir a data no formato YYYY-MM-DD para o input
       setEffectiveDateInput(date.toISOString().split('T')[0])
-      // Definir mês e ano separadamente
       setMonthInput((date.getMonth() + 1).toString().padStart(2, '0'))
       setYearInput(date.getFullYear().toString())
-    } else if (isFirstMicroPlan) {
+    } else if (isFirstMicroPlan && !initialData) {
       const date = new Date(planInitialDate)
       setFormData(prev => ({
         ...prev,
@@ -110,22 +154,9 @@ export function MicroPlanForm({
       setEffectiveDateInput(planInitialDate)
       setMonthInput((date.getMonth() + 1).toString().padStart(2, '0'))
       setYearInput(date.getFullYear().toString())
-    } else if (lastMicroPlan && !isFirstMicroPlan) {
-      // Preencher com dados do último micro plano quando criando um novo
-      const expectedReturnStr = parseFloat(lastMicroPlan.expected_return.toString()).toFixed(1)
-      
-      setFormData({
-        life_investment_plan_id: planId,
-        effective_date: '',
-        monthly_deposit: lastMicroPlan.monthly_deposit.toString(),
-        desired_income: lastMicroPlan.desired_income.toString(),
-        expected_return: expectedReturnStr,
-        inflation: lastMicroPlan.inflation.toString(),
-        adjust_contribution_for_accumulated_inflation: true, // Manter valor padrão
-        adjust_income_for_accumulated_inflation: true // Manter valor padrão
-      })
     }
-  }, [initialData, isFirstMicroPlan, planId, planInitialDate, lastMicroPlan])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [initialData?.id, isFirstMicroPlan, planId, planInitialDate])
 
   const handleChange = (field: string, value: string | boolean) => {
     setFormData(prev => ({
@@ -331,6 +362,7 @@ export function MicroPlanForm({
           </Label>
           <CurrencyInput
             id="monthly_deposit"
+            keyPrefix={initialData?.id ? `monthly-deposit-${initialData.id}` : `monthly-deposit-new`}
             defaultValue={formData.monthly_deposit}
             onValueChange={(value) => handleChange('monthly_deposit', value || '')}
             placeholder="1000"
@@ -346,6 +378,7 @@ export function MicroPlanForm({
           </Label>
           <CurrencyInput
             id="desired_income"
+            keyPrefix={initialData?.id ? `desired-income-${initialData.id}` : `desired-income-new`}
             defaultValue={formData.desired_income}
             onValueChange={(value) => handleChange('desired_income', value || '')}
             placeholder="5000"

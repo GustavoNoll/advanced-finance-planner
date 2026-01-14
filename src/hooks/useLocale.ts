@@ -1,14 +1,24 @@
 import { useState, useEffect } from 'react';
+import { useLanguagePreference } from './useLanguagePreference';
+import { useTranslation } from 'react-i18next';
 
 /**
  * Hook to manage user's locale settings
  * @returns Object containing locale information and formatting functions
  */
 export function useLocale() {
+  const { language } = useLanguagePreference();
+  const { i18n } = useTranslation();
   const [locale, setLocale] = useState<string>(() => {
-    // Get user's preferred language from browser
-    return navigator.language || 'pt-BR';
+    // Use language from context or i18n, fallback to browser language
+    return language || i18n.language || navigator.language || 'pt-BR';
   });
+
+  // Update locale when language changes
+  useEffect(() => {
+    const currentLocale = language || i18n.language || navigator.language || 'pt-BR';
+    setLocale(currentLocale);
+  }, [language, i18n.language]);
 
   /**
    * Formats a date according to user's locale
