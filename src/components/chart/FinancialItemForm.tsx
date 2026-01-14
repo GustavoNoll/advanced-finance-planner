@@ -106,6 +106,23 @@ export const FinancialItemForm = ({
     });
   }, [type, form]);
 
+  // Reset form when initialValues change (especially month and year)
+  useEffect(() => {
+    if (initialValues?.month || initialValues?.year) {
+      form.reset({
+        name: initialValues?.name || '',
+        icon: initialValues?.icon || 'other',
+        asset_value: initialValues?.asset_value || '',
+        month: initialValues?.month || '',
+        year: initialValues?.year || '',
+        type: initialValues?.type || type,
+        payment_mode: initialValues?.payment_mode || 'none',
+        installment_count: initialValues?.installment_count?.toString() || '',
+        installment_interval: initialValues?.installment_interval?.toString() || '1',
+      });
+    }
+  }, [initialValues?.month, initialValues?.year, form, type]);
+
   // Reset form when type changes
   const handleTypeChange = (newType: 'goal' | 'event') => {
     onTypeChange?.(newType);
@@ -226,7 +243,7 @@ export const FinancialItemForm = ({
                 </FormLabel>
                 <Select 
                   onValueChange={field.onChange} 
-                  defaultValue={field.value}
+                  value={field.value}
                 >
                   <FormControl>
                     <SelectTrigger className={cn(
@@ -262,7 +279,7 @@ export const FinancialItemForm = ({
                 </FormLabel>
                 <Select 
                   onValueChange={field.onChange} 
-                  defaultValue={field.value}
+                  value={field.value}
                 >
                   <FormControl>
                     <SelectTrigger className={cn(
@@ -355,7 +372,7 @@ export const FinancialItemForm = ({
                 <FormControl>
                   <RadioGroup
                     onValueChange={field.onChange}
-                    defaultValue={field.value}
+                    value={field.value}
                     className="flex flex-col space-y-1"
                   >
                     <FormItem className="flex items-center space-x-3 space-y-0">

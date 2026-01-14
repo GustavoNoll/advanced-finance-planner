@@ -89,7 +89,7 @@ export const ChartPointDialog = ({
                 name: '',
                 icon: '',
                 asset_value: '',
-                month: selectedPoint.month.toString().padStart(2, '0'),
+                month: selectedPoint.month.toString(),
                 year: selectedPoint.year.toString(),
                 type: formType,
                 payment_mode: 'none',
