@@ -11,7 +11,7 @@ import { supabase } from '@/lib/supabase';
 import { toast } from '@/components/ui/use-toast';
 import { useTranslation } from 'react-i18next';
 import { useQueryClient } from '@tanstack/react-query';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Pencil, Info } from 'lucide-react';
 import { ProfessionalInformation } from '@/services/investment-policy.service';
 
