@@ -38,8 +38,8 @@ docs/
 3. **Siga o passo a passo** do guia rápido
 
 ### Para Configuração Vercel
-1. **VERCEL_1_PROJETO.md** - Guia para configurar 1 projeto (recomendado)
-2. **VERCEL_2_PROJETOS.md** - Guia para configurar 2 projetos separados
+1. **VERCEL_1_PROJETO.md** - Guia para configurar 1 projeto
+2. **VERCEL_2_PROJETOS_SEPARADOS.md** - Guia para configurar 2 projetos separados (recomendado) ⭐
 3. **CONFIGURACAO_VERCEL.md** - Configuração geral e troubleshooting
 
 ## 🔄 Atualizações
