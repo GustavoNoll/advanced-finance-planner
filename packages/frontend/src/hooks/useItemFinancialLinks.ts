@@ -1,5 +1,8 @@
-import { useState, useEffect } from "react";
-import { supabase } from "@/lib/supabase";
+// 1. Imports externos
+import { useState, useEffect } from 'react'
+
+// 2. Imports internos (shared)
+import { supabase } from '@/lib/supabase'
 
 export interface ItemFinancialLink {
   id: string;
@@ -11,7 +14,7 @@ export interface ItemFinancialLink {
   record_date: string; // Data formatada
 }
 
-export const useItemFinancialLinks = (itemId: string, itemType: 'goal' | 'event') => {
+export function useItemFinancialLinks(itemId: string, itemType: 'goal' | 'event') {
   const [financialLinks, setFinancialLinks] = useState<ItemFinancialLink[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);

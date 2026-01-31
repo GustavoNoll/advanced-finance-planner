@@ -1,8 +1,13 @@
-import { Card, CardContent } from '@/components/ui/card';
-import { Users, Wallet, CheckCircle2, HelpCircle } from 'lucide-react';
-import { useTranslation } from 'react-i18next';
-import { DashboardMetrics } from '@/types/broker-dashboard';
-import { Avatar } from '@/components/ui/avatar-initial';
+// 1. Imports externos
+import { useTranslation } from 'react-i18next'
+import { Users, Wallet, CheckCircle2, HelpCircle } from 'lucide-react'
+
+// 2. Imports internos (shared)
+import { Card, CardContent } from '@/components/ui/card'
+import { Avatar } from '@/components/ui/avatar-initial'
+
+// 3. Imports internos (feature)
+import { DashboardMetrics } from '@/types/broker-dashboard'
 
 interface SummaryMetricsProps {
   metrics: DashboardMetrics;
@@ -12,7 +17,7 @@ interface SummaryMetricsProps {
  * Displays summary metrics cards for the broker dashboard
  * @param metrics - The dashboard metrics data
  */
-export const SummaryMetrics = ({ metrics }: SummaryMetricsProps) => {
+export function SummaryMetrics({ metrics }: SummaryMetricsProps) {
   const { t } = useTranslation();
 
   return (
@@ -121,5 +126,5 @@ export const SummaryMetrics = ({ metrics }: SummaryMetricsProps) => {
         </CardContent>
       </Card>
     </div>
-  );
-}; 
+  )
+} 

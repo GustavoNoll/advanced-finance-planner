@@ -1,4 +1,7 @@
+// 1. Imports externos
 import { useState, useCallback, useEffect } from 'react'
+
+// 2. Imports internos (shared)
 import { supabase } from '@/lib/supabase'
 import { ClientAccessData } from '@/components/shared/ClientAccessAnalysis'
 

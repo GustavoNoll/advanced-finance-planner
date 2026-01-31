@@ -1,15 +1,19 @@
-import React, { useState, useEffect } from 'react';
-import { supabase } from '@/lib/supabase';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { useToast } from '@/components/ui/use-toast';
-import { useNavigate, useParams } from 'react-router-dom';
-import { useTranslation } from 'react-i18next';
-import { Logo } from '@/components/ui/logo';
-import { Lock } from 'lucide-react';
+// 1. Imports externos
+import React, { useState, useEffect } from 'react'
+import { useNavigate, useParams } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
+import { Lock } from 'lucide-react'
 
-export const ClientLoginForm: React.FC = () => {
+// 2. Imports internos (shared)
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { useToast } from '@/components/ui/use-toast'
+import { Logo } from '@/components/ui/logo'
+import { supabase } from '@/lib/supabase'
+
+// 3. Component
+export function ClientLoginForm() {
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
@@ -106,5 +110,5 @@ export const ClientLoginForm: React.FC = () => {
         </Card>
       </div>
     </div>
-  );
-}; 
+  )
+} 

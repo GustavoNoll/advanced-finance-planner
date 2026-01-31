@@ -1,8 +1,12 @@
-import { useCallback } from 'react';
-import { supabase } from '@/lib/supabase';
-import { useAuth } from '@/components/auth/AuthProvider';
+// 1. Imports externos
+import { useCallback } from 'react'
 
-export const useLastActive = () => {
+// 2. Imports internos (shared)
+import { supabase } from '@/lib/supabase'
+import { useAuth } from '@/components/auth/AuthProvider'
+
+// 3. Hook
+export function useLastActive() {
   const { user } = useAuth();
 
   const updateLastActive = useCallback(async () => {
@@ -18,5 +22,5 @@ export const useLastActive = () => {
     }
   }, [user]);
 
-  return { updateLastActive };
-};
+  return { updateLastActive }
+}

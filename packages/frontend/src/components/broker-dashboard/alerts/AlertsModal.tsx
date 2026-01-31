@@ -33,7 +33,7 @@ interface AlertsModalProps {
 /**
  * Modal component to display all alerts in a detailed view
  */
-export const AlertsModal = ({ isOpen, onClose, alerts, onClientSelect }: AlertsModalProps) => {
+export function AlertsModal({ isOpen, onClose, alerts, onClientSelect }: AlertsModalProps) {
   const { t } = useTranslation();
 
   const getAlertIcon = (type: string) => {
@@ -230,5 +230,5 @@ export const AlertsModal = ({ isOpen, onClose, alerts, onClientSelect }: AlertsM
         )}
       </DialogContent>
     </Dialog>
-  );
-};
+  )
+}

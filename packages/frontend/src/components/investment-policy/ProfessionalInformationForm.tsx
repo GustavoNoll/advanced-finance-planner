@@ -1,19 +1,24 @@
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import * as z from 'zod';
-import { Button } from '@/components/ui/button';
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { supabase } from '@/lib/supabase';
-import { toast } from '@/components/ui/use-toast';
-import { useTranslation } from 'react-i18next';
-import { useQueryClient } from '@tanstack/react-query';
-import { useState, useEffect } from 'react';
-import { Pencil, Info } from 'lucide-react';
-import { ProfessionalInformation } from '@/services/investment-policy.service';
+// 1. Imports externos
+import { useState, useEffect } from 'react'
+import { useForm } from 'react-hook-form'
+import { zodResolver } from '@hookform/resolvers/zod'
+import { useTranslation } from 'react-i18next'
+import { useQueryClient } from '@tanstack/react-query'
+import * as z from 'zod'
+import { Pencil, Info } from 'lucide-react'
+
+// 2. Imports internos (shared)
+import { Button } from '@/components/ui/button'
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Input } from '@/components/ui/input'
+import { Textarea } from '@/components/ui/textarea'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { toast } from '@/components/ui/use-toast'
+
+// 3. Imports internos (feature)
+import { supabase } from '@/lib/supabase'
+import { ProfessionalInformation } from '@/services/investment-policy.service'
 
 const professionalInformationSchema = z.object({
   occupation: z.string().min(1, 'Profissão é obrigatória'),
@@ -48,12 +53,12 @@ const taxDeclarationMethods = [
   { value: 'exempt' },
 ];
 
-export const ProfessionalInformationForm = ({
+export function ProfessionalInformationForm({
   initialData,
   isEditing = false,
   policyId,
   clientId,
-}: ProfessionalInformationFormProps) => {
+}: ProfessionalInformationFormProps) {
   const queryClient = useQueryClient();
   const { t } = useTranslation();
   const [isEditMode, setIsEditMode] = useState(false);

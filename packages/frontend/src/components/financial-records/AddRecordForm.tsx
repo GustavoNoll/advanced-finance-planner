@@ -1,27 +1,31 @@
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Form, FormControl, FormField, FormItem, FormLabel } from "@/components/ui/form";
-import { Input } from "@/components/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { toast } from "@/components/ui/use-toast";
-import { supabase } from "@/lib/supabase";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { useForm } from "react-hook-form";
-import { useTranslation } from "react-i18next";
-import { z } from "zod";
-import { useQueryClient } from "@tanstack/react-query";
-import { useEffect, useState } from "react";
-import { CurrencyInput } from "@/components/ui/currency-input";
-import { useProfileData } from "@/hooks/usePlanCreation";
-import { FinancialRecord, MonthNumber } from '@/types/financial';
-import { InvestmentPlan } from '@/types/financial';
-import { CurrencyCode } from "@/utils/currency";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Link, Plus } from "lucide-react";
-import SelectExistingItems from "./SelectExistingItems";
-import SelectedItemCard from "./SelectedItemCard";
-import { FinancialItemForm } from "@/components/chart/FinancialItemForm";
-import { GoalsEventsService } from "@/services/goals-events.service";
+// 1. Imports externos
+import { useEffect, useState } from 'react'
+import { useForm } from 'react-hook-form'
+import { zodResolver } from '@hookform/resolvers/zod'
+import { useTranslation } from 'react-i18next'
+import { useQueryClient } from '@tanstack/react-query'
+import { z } from 'zod'
+import { Link, Plus } from 'lucide-react'
+
+// 2. Imports internos (shared)
+import { Button } from '@/components/ui/button'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Form, FormControl, FormField, FormItem, FormLabel } from '@/components/ui/form'
+import { Input } from '@/components/ui/input'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { CurrencyInput } from '@/components/ui/currency-input'
+import { toast } from '@/components/ui/use-toast'
+import { supabase } from '@/lib/supabase'
+import { CurrencyCode } from '@/utils/currency'
+
+// 3. Imports internos (feature)
+import { FinancialRecord, MonthNumber, InvestmentPlan } from '@/types/financial'
+import { useProfileData } from '@/hooks/usePlanCreation'
+import { FinancialItemForm } from '@/components/chart/FinancialItemForm'
+import { GoalsEventsService } from '@/services/goals-events.service'
+import SelectExistingItems from './SelectExistingItems'
+import SelectedItemCard from './SelectedItemCard'
 
 // Interfaces para os itens selecionados
 interface Goal {
@@ -107,7 +111,7 @@ const sortRecords = (records: FinancialRecord[]) => {
   });
 };
 
-export const AddRecordForm = ({ clientId, onSuccess, editingRecord, investmentPlan, onLinksUpdated }: AddRecordFormProps) => {
+export function AddRecordForm({ clientId, onSuccess, editingRecord, investmentPlan, onLinksUpdated }: AddRecordFormProps) {
   const { t } = useTranslation();
   const queryClient = useQueryClient();
   const [ipcaDate, setIpcaDate] = useState<string>('');

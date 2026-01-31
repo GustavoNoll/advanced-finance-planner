@@ -1,6 +1,5 @@
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
+// 1. Imports externos
+import { useTranslation } from 'react-i18next'
 import { 
   AlertTriangle, 
   TrendingUp, 
@@ -11,9 +10,15 @@ import {
   Lightbulb,
   AlertCircle,
   Activity
-} from 'lucide-react';
-import { useTranslation } from 'react-i18next';
-import { ClientInsight } from '@/types/broker-dashboard';
+} from 'lucide-react'
+
+// 2. Imports internos (shared)
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
+
+// 3. Imports internos (feature)
+import { ClientInsight } from '@/types/broker-dashboard'
 
 interface ClientInsightsProps {
   insights: ClientInsight[];
@@ -23,7 +28,7 @@ interface ClientInsightsProps {
 /**
  * Client insights component with AI-powered recommendations
  */
-export const ClientInsights = ({ insights, onClientSelect }: ClientInsightsProps) => {
+export function ClientInsights({ insights, onClientSelect }: ClientInsightsProps) {
   const { t } = useTranslation();
 
   const getPriorityColor = (priority: string) => {
@@ -219,5 +224,5 @@ export const ClientInsights = ({ insights, onClientSelect }: ClientInsightsProps
         </Card>
       )}
     </div>
-  );
-};
+  )
+}

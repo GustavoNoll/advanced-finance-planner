@@ -20,68 +20,21 @@
 
 ### 1.1 Arquitetura e Infraestrutura
 
-#### 1.1.1 Separação Frontend/Backend
-**Problema Atual:**
-- Backend Express.js está misturado com o frontend (comando `npm run server`)
-- Não há separação clara entre aplicação frontend e API backend
-- Dificulta deploy independente e escalabilidade horizontal
+#### 1.1.1 CI/CD Pipeline - Melhorias Futuras
 
-**Solução Proposta:**
-- Separar backend em repositório/monorepo independente
-- Criar estrutura clara: `packages/frontend` e `packages/backend`
-- Implementar comunicação via API REST bem definida
-- Considerar arquitetura de monorepo com Turborepo ou Nx
+**O que falta:**
+- ⚠️ Implementar testes de integração (estrutura preparada no workflow)
+- ⚠️ Implementar testes E2E com Playwright (estrutura preparada no workflow)
+- ⚠️ Security scanning adicional (Snyk, CodeQL)
 
-**Benefícios:**
-- Deploy independente
-- Escalabilidade horizontal do backend
-- Melhor organização de equipes
-- Facilita implementação de microserviços futuros
+**Próximos Passos:**
+1. Implementar testes de integração (descomentar e configurar job no workflow)
+2. Implementar testes E2E com Playwright (instalar Playwright e descomentar job)
+3. Configurar notificações de falha (Slack, Discord, etc.)
+4. Adicionar CodeQL para análise de segurança de código
+5. Adicionar Snyk para análise de vulnerabilidades em runtime
 
-#### 1.1.2 Configuração de Ambiente
-**Problema Atual:**
-- Variáveis de ambiente não documentadas
-- Falta arquivo `.env.example`
-- Configurações hardcoded em alguns lugares
-
-**Solução Proposta:**
-```bash
-# Criar .env.example
-VITE_SUPABASE_URL=
-VITE_SUPABASE_ANON_KEY=
-VITE_API_URL=
-VITE_ENVIRONMENT=development
-```
-
-- Documentar todas as variáveis necessárias
-- Implementar validação de variáveis de ambiente no startup
-- Usar biblioteca como `zod` para validação de env vars
-
-#### 1.1.3 CI/CD Pipeline
-**Problema Atual:**
-- Falta pipeline de CI/CD completo
-- Apenas testes básicos de i18n
-- Sem validação de tipos, linting automático
-- Sem testes E2E
-
-**Solução Proposta:**
-```yaml
-# .github/workflows/ci.yml
-- Lint (ESLint)
-- Type Check (TypeScript)
-- Unit Tests (Vitest)
-- Integration Tests
-- E2E Tests (Playwright/Cypress)
-- Build Verification
-- Security Scanning
-```
-
-**Benefícios:**
-- Detecção precoce de bugs
-- Qualidade de código garantida
-- Deploy automatizado e confiável
-
-#### 1.1.4 Monitoramento e Observabilidade
+#### 1.1.2 Monitoramento e Observabilidade
 **Problema Atual:**
 - Apenas Vercel Analytics e Speed Insights
 - Sem monitoramento de erros (Sentry, LogRocket)
@@ -94,7 +47,7 @@ VITE_ENVIRONMENT=development
 - Criar dashboard de métricas customizadas
 - Implementar APM (Application Performance Monitoring)
 
-#### 1.1.5 Database e Migrations
+#### 1.1.3 Database e Migrations
 **Problema Atual:**
 - Migrations do Supabase presentes mas sem versionamento claro
 - Falta documentação sobre schema
@@ -188,123 +141,59 @@ VITE_ENVIRONMENT=development
 ### 2.1 Estrutura de Pastas
 
 #### 2.1.1 Organização por Features
-**Problema Atual:**
-- Estrutura mista: alguns por tipo (components, pages), alguns por feature
-- Dificulta encontrar código relacionado
-- Algumas features já usam estrutura feature-based (investment-plans)
+**Status:** ✅ **DOCUMENTADO**
 
-**Solução Proposta:**
-```
-src/
-  features/
-    auth/
-      components/
-      hooks/
-      services/
-      types/
-      index.ts
-    financial-records/
-      components/
-      hooks/
-      services/
-      types/
-      index.ts
-    investment-plans/
-      components/
-      hooks/
-      services/
-      types/
-      index.ts
-    portfolio-performance/
-      components/
-      hooks/
-      services/
-      types/
-      index.ts
-  shared/
-    components/
-    hooks/
-    utils/
-    types/
-  app/
-    routes/
-    providers/
-    layouts/
-```
+**Documentação criada:**
+- `docs/ESTRUTURA_PROJETO.md` - Guia completo de estrutura do projeto
 
-**Benefícios:**
-- Código relacionado agrupado
-- Facilita remoção de features
-- Melhor para equipes grandes
-- Reduz acoplamento
+**Estrutura ideal documentada:**
+- Organização por features com exemplos
+- Guia de migração passo a passo
+- Checklist de organização
+- Benefícios explicados
 
 #### 2.1.2 Separação de Concerns
-**Problema Atual:**
-- Alguns componentes muito grandes (AdminDashboard.tsx com 3000+ linhas)
-- Lógica de negócio misturada com UI
-- Falta separação clara entre presentational e container components
+**Status:** ✅ **EM ANDAMENTO**
 
-**Solução Proposta:**
-- Dividir componentes grandes em menores
+**O que foi feito:**
+- Organização de imports seguindo padrão documentado
+- Padronização de exports (`export const` → `export function`)
+- Estrutura de arquivos organizada (imports, types, component)
+- Arquivos exemplo corrigidos: `activity-tracker.tsx`, `dashboard-card.tsx`, `ProfessionalInformationForm.tsx`, `useAccessData.ts`, `useChartOptions.ts`
+
+**Próximos passos:**
+- Continuar aplicando convenções nos demais arquivos
+- Dividir componentes grandes (AdminDashboard.tsx) em menores
 - Extrair lógica de negócio para hooks/services
-- Usar padrão Container/Presentational
-- Criar componentes de UI reutilizáveis
+- Usar padrão Container/Presentational onde apropriado
 
 ### 2.2 Convenções e Padrões
 
 #### 2.2.1 Nomenclatura
-**Problema Atual:**
-- Inconsistência: alguns arquivos em kebab-case, outros em PascalCase
-- Componentes com nomes diferentes do arquivo
+**Status:** ✅ **DOCUMENTADO**
 
-**Solução Proposta:**
-```
-# Componentes
-components/UserProfile.tsx → export function UserProfile()
-components/user-profile.tsx → export function UserProfile()
+**Documentação criada:**
+- `docs/CONVENCOES_CODIGO.md` - Guia completo de nomenclatura e convenções
 
-# Hooks
-hooks/useUserData.ts → export function useUserData()
-
-# Services
-services/user.service.ts → export class UserService
-
-# Types
-types/user.ts → export interface User
-```
+**Padrões definidos:**
+- Componentes: `kebab-case.tsx` → `PascalCase`
+- Hooks: `use-kebab-case.ts` → `camelCase` com prefixo `use`
+- Services: `kebab-case.service.ts` → `PascalCase`
+- Types: `kebab-case.ts` → `PascalCase`
 
 #### 2.2.2 Estrutura de Arquivos
-**Problema Atual:**
-- Falta padrão consistente de estrutura de arquivos
-- Imports desorganizados
+**Status:** ✅ **DOCUMENTADO**
 
-**Solução Proposta:**
-```typescript
-// 1. Imports externos
-import React from 'react'
-import { useQuery } from '@tanstack/react-query'
+**Documentação criada:**
+- `docs/CONVENCOES_CODIGO.md` - Guia de estrutura de arquivos e organização de imports
 
-// 2. Imports internos (shared)
-import { Button } from '@/components/ui/button'
-
-// 3. Imports internos (feature)
-import { useUserData } from '@/features/auth/hooks/useUserData'
-
-// 4. Types
-interface ComponentProps {
-  // ...
-}
-
-// 5. Component
-export function Component({ ... }: ComponentProps) {
-  // ...
-}
-
-// 6. Helpers (se necessário)
-function helper() {
-  // ...
-}
-```
+**Padrão definido:**
+1. Imports externos
+2. Imports internos (shared)
+3. Imports internos (feature)
+4. Types/Interfaces
+5. Component/Hook/Function
+6. Helpers (se necessário)
 
 ### 2.3 Documentação
 
@@ -321,58 +210,38 @@ function helper() {
 - Documentar decisões arquiteturais (ADRs)
 
 #### 2.3.2 Documentação de API
-**Problema Atual:**
-- Sem documentação de endpoints
-- Falta OpenAPI/Swagger
+**Status:** ✅ **DOCUMENTADO** (Básico)
 
-**Solução Proposta:**
-- Criar documentação OpenAPI
-- Usar Swagger UI
-- Documentar todos os endpoints
-- Incluir exemplos de request/response
+**Documentação criada:**
+- `docs/API_DOCUMENTATION.md` - Documentação básica da API
+
+**O que foi feito:**
+- Documentação dos endpoints existentes (health, test)
+- Formato de requisições e respostas
+- Códigos de status HTTP
+- Tratamento de erros
+- Guia para criar novos endpoints
+
+**O que falta:**
+- ⚠️ Implementar OpenAPI/Swagger (quando houver mais endpoints)
+- ⚠️ Documentar endpoints futuros conforme forem criados
 
 #### 2.3.3 Guias de Contribuição
-**Problema Atual:**
-- Falta CONTRIBUTING.md
-- Sem guia de setup
-- Falta documentação de decisões técnicas
+**Status:** ⚠️ **NÃO NECESSÁRIO**
 
-**Solução Proposta:**
-- Criar CONTRIBUTING.md
-- Documentar processo de desenvolvimento
-- Criar guia de setup detalhado
-- Manter CHANGELOG.md
+**Nota:** Como o projeto é mantido por um único desenvolvedor, documentação de contribuição não é necessária. O README.md principal já contém informações de setup.
 
 ### 2.4 Versionamento e Git
 
 #### 2.4.1 Estratégia de Branches
-**Problema Atual:**
-- Falta documentação de estratégia de branches
-- Sem convenção de commits
+**Status:** ⚠️ **NÃO NECESSÁRIO**
 
-**Solução Proposta:**
-```
-main (produção)
-├── develop (desenvolvimento)
-├── feature/nome-da-feature
-├── bugfix/nome-do-bug
-└── hotfix/nome-do-hotfix
-```
-
-- Usar Conventional Commits
-- Implementar semantic versioning
-- Usar tags para releases
+**Nota:** Estratégia de branches pode ser documentada no README se necessário, mas não é crítica para projeto solo.
 
 #### 2.4.2 Pull Requests
-**Problema Atual:**
-- Falta template de PR
-- Sem checklist de revisão
+**Status:** ⚠️ **NÃO NECESSÁRIO**
 
-**Solução Proposta:**
-- Criar template de PR
-- Definir checklist de revisão
-- Exigir aprovação de pelo menos 1 reviewer
-- Integrar testes no PR
+**Nota:** Template de PR não é necessário para projeto mantido por um único desenvolvedor.
 
 ---
 
@@ -644,12 +513,11 @@ src/
 3. **Implementar Error Handling consistente** - Estabilidade
 4. **Separar AdminDashboard** - Manutenibilidade
 5. **Criar estrutura de testes** - Qualidade e confiança
-6. **Documentar variáveis de ambiente** - Onboarding
 
 ### 🟡 Média Prioridade (Próximos 2-3 meses)
 
 1. **Reorganizar estrutura por features** - Escalabilidade
-2. **Implementar CI/CD completo** - Automação
+2. **Implementar testes de integração** - Qualidade
 3. **Adicionar monitoramento de erros** - Observabilidade
 4. **Otimizar bundle size** - Performance
 5. **Criar documentação de API** - Colaboração
@@ -657,12 +525,11 @@ src/
 
 ### 🟢 Baixa Prioridade (Backlog)
 
-1. **Separar frontend/backend** - Arquitetura
-2. **Implementar service workers** - PWA
-3. **Adicionar 2FA** - Segurança avançada
-4. **Criar testes E2E** - Qualidade end-to-end
-5. **Otimizar imagens** - Performance
-6. **Implementar acessibilidade completa** - Inclusão
+1. **Implementar service workers** - PWA
+2. **Adicionar 2FA** - Segurança avançada
+3. **Criar testes E2E** - Qualidade end-to-end
+4. **Otimizar imagens** - Performance
+5. **Implementar acessibilidade completa** - Inclusão
 
 ---
 
@@ -678,13 +545,10 @@ src/
 ### Organização
 - [ ] Todas as features organizadas por domínio
 - [ ] 100% dos componentes documentados
-- [ ] CI/CD pipeline completo
 - [ ] Documentação de API completa
 
 ### Projeto
 - [ ] Monitoramento de erros implementado
-- [ ] Logging estruturado
-- [ ] Deploy automatizado
 - [ ] Performance monitoring ativo
 
 ---

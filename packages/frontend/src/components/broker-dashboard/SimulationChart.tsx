@@ -1,9 +1,14 @@
-import { useTranslation } from "react-i18next";
-import { ChartDataPoint, FinancialRecord, Goal, InvestmentPlan, Profile, ProjectedEvent } from '@/types/financial';
-import { ChartOptions, generateChartProjections } from '@/lib/chart-projections';
-import { useState, useEffect } from "react";
-import PatrimonialProjectionChart from "@/components/chart/PatrimonialProjectionChart";
-import { createDateWithoutTimezone, createDateFromYearMonth } from '@/utils/dateUtils';
+// 1. Imports externos
+import { useState, useEffect } from 'react'
+import { useTranslation } from 'react-i18next'
+
+// 2. Imports internos (shared)
+import PatrimonialProjectionChart from '@/components/chart/PatrimonialProjectionChart'
+import { ChartOptions, generateChartProjections } from '@/lib/chart-projections'
+import { createDateWithoutTimezone, createDateFromYearMonth } from '@/utils/dateUtils'
+
+// 3. Imports internos (feature)
+import { ChartDataPoint, FinancialRecord, Goal, InvestmentPlan, Profile, ProjectedEvent } from '@/types/financial'
 
 interface SimulationFormData {
   initialAmount: string;
@@ -211,7 +216,7 @@ function getZoomedChartData({
   return reduceDataPoints(filteredData);
 }
 
-export const SimulationChart = ({ 
+export function SimulationChart({ 
   profile, 
   investmentPlan, 
   clientId, 
@@ -222,7 +227,7 @@ export const SimulationChart = ({
   chartOptions: externalChartOptions,
   goals = [],
   events = []
-}: SimulationChartProps) => {
+}: SimulationChartProps) {
   const { t } = useTranslation();
   const [zoomLevel, setZoomLevel] = useState<ZoomLevel>('all');
   const [customRange, setCustomRange] = useState<{ past: number, future: number }>({ past: 1, future: 1 });

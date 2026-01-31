@@ -1,20 +1,25 @@
-import { useState, useEffect } from 'react';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import * as z from 'zod';
-import { Button } from '@/components/ui/button';
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { supabase } from '@/lib/supabase';
-import { toast } from '@/components/ui/use-toast';
-import { Plus, Trash2, Calendar as CalendarIcon, Pencil, Info } from 'lucide-react';
-import { format, parse } from "date-fns";
-import { useTranslation } from 'react-i18next';
-import { useQueryClient } from '@tanstack/react-query';
-import { capitalizeFirstLetter } from '@/utils/string';
-import { FamilyStructure } from '@/services/investment-policy.service';
+// 1. Imports externos
+import { useState, useEffect } from 'react'
+import { useForm } from 'react-hook-form'
+import { zodResolver } from '@hookform/resolvers/zod'
+import { useTranslation } from 'react-i18next'
+import { useQueryClient } from '@tanstack/react-query'
+import { format, parse } from 'date-fns'
+import * as z from 'zod'
+import { Plus, Trash2, Calendar as CalendarIcon, Pencil, Info } from 'lucide-react'
+
+// 2. Imports internos (shared)
+import { Button } from '@/components/ui/button'
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Input } from '@/components/ui/input'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { toast } from '@/components/ui/use-toast'
+import { supabase } from '@/lib/supabase'
+import { capitalizeFirstLetter } from '@/utils/string'
+
+// 3. Imports internos (feature)
+import { FamilyStructure } from '@/services/investment-policy.service'
 
 const familyStructureSchema = z.object({
   marital_status: z.string().optional(),
@@ -128,12 +133,12 @@ function parseDate(value?: string | Date | null): Date | undefined {
   return isNaN(parsed.getTime()) ? undefined : parsed;
 }
 
-export const FamilyStructureForm = ({
+export function FamilyStructureForm({
   initialData,
   isEditing = false,
   policyId,
   clientId,
-}: FamilyStructureFormProps) => {
+}: FamilyStructureFormProps) {
   const { t } = useTranslation();
   const queryClient = useQueryClient();
   const [isEditMode, setIsEditMode] = useState(false);

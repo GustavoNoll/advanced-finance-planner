@@ -1,11 +1,16 @@
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Target } from 'lucide-react';
-import { useTranslation } from 'react-i18next';
-import { DashboardMetrics } from '@/types/broker-dashboard';
-import { DonutChart, Metric, Text, CustomTooltipProps } from '@tremor/react';
-import { AvailableChartColorsKeys } from '@/lib/chartColors';
-import { t } from 'i18next';
-import { Avatar } from '@/components/ui/avatar-initial';
+// 1. Imports externos
+import { useTranslation } from 'react-i18next'
+import { t } from 'i18next'
+import { Target } from 'lucide-react'
+import { DonutChart, Metric, Text, CustomTooltipProps } from '@tremor/react'
+
+// 2. Imports internos (shared)
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Avatar } from '@/components/ui/avatar-initial'
+import { AvailableChartColorsKeys } from '@/lib/chartColors'
+
+// 3. Imports internos (feature)
+import { DashboardMetrics } from '@/types/broker-dashboard'
 interface PlanningMetricsProps {
   metrics: DashboardMetrics;
 }
@@ -45,7 +50,7 @@ const handleNaN = (value: number): number => {
  * Displays planning metrics including average age, retirement age, and plan types using Tremor
  * @param metrics - The dashboard metrics data
  */
-export const PlanningMetrics = ({ metrics }: PlanningMetricsProps) => {
+export function PlanningMetrics({ metrics }: PlanningMetricsProps) {
   const { t } = useTranslation();
 
   const planTypesData = [
@@ -134,5 +139,5 @@ export const PlanningMetrics = ({ metrics }: PlanningMetricsProps) => {
         </div>
       </CardContent>
     </Card>
-  );
-}; 
+  )
+} 

@@ -1,11 +1,16 @@
-import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { supabase } from "@/lib/supabase";
-import { toast } from "@/components/ui/use-toast";
-import { useTranslation } from "react-i18next";
-import { fetchIPCARates, fetchUSCPIRates, fetchEuroCPIRates } from "@/lib/bcb-api";
-import { calculateCompoundedRates, yearlyReturnRateToMonthlyReturnRate } from "@/lib/financial-math";
-import { FinancialRecord, InvestmentPlan, MicroInvestmentPlan } from "@/types/financial";
-import { getActiveMicroPlanForDate } from '@/utils/microPlanUtils';
+// 1. Imports externos
+import { useMutation, useQueryClient } from '@tanstack/react-query'
+import { useTranslation } from 'react-i18next'
+
+// 2. Imports internos (shared)
+import { toast } from '@/components/ui/use-toast'
+import { supabase } from '@/lib/supabase'
+import { fetchIPCARates, fetchUSCPIRates, fetchEuroCPIRates } from '@/lib/bcb-api'
+import { calculateCompoundedRates, yearlyReturnRateToMonthlyReturnRate } from '@/lib/financial-math'
+import { getActiveMicroPlanForDate } from '@/utils/microPlanUtils'
+
+// 3. Imports internos (feature)
+import { FinancialRecord, InvestmentPlan, MicroInvestmentPlan } from '@/types/financial'
 
 interface SyncResult {
   count: number;
@@ -15,7 +20,7 @@ interface SyncResult {
   }>;
 }
 
-export const useIPCASync = (clientId: string | undefined, records: FinancialRecord[] | undefined, investmentPlan: InvestmentPlan | null, microPlans: MicroInvestmentPlan[]) => {
+export function useIPCASync(clientId: string | undefined, records: FinancialRecord[] | undefined, investmentPlan: InvestmentPlan | null, microPlans: MicroInvestmentPlan[]) {
   const { t } = useTranslation();
   const queryClient = useQueryClient();
 

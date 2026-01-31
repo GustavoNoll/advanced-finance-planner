@@ -1,5 +1,8 @@
+// 1. Imports externos
 import { useState, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
+
+// 2. Imports internos (shared)
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -7,9 +10,11 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Checkbox } from '@/components/ui/checkbox'
 import { CurrencyInput } from '@/components/ui/currency-input'
 import { CurrencyCode } from '@/utils/currency'
-import { MicroInvestmentPlan, CreateMicroInvestmentPlan, UpdateMicroInvestmentPlan } from '@/types/financial'
 import { RISK_PROFILES } from '@/constants/riskProfiles'
 import { createDateWithoutTimezone } from '@/utils/dateUtils'
+
+// 3. Imports internos (feature)
+import { MicroInvestmentPlan, CreateMicroInvestmentPlan, UpdateMicroInvestmentPlan } from '@/types/financial'
 
 interface MicroPlanFormProps {
   onSubmit: (data: CreateMicroInvestmentPlan | UpdateMicroInvestmentPlan) => Promise<void>

@@ -18,7 +18,7 @@ interface ActionMetricsProps {
  * Displays action metrics including clients needing plan review, below required contribution, etc.
  * @param metrics - The dashboard metrics data
  */
-export const ActionMetrics = ({ metrics }: ActionMetricsProps) => {
+export function ActionMetrics({ metrics }: ActionMetricsProps) {
   const { t } = useTranslation();
 
   return (
@@ -115,5 +115,5 @@ export const ActionMetrics = ({ metrics }: ActionMetricsProps) => {
         </div>
       </CardContent>
     </Card>
-  );
-}; 
+  )
+} 

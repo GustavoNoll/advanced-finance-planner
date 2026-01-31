@@ -1,8 +1,10 @@
+// 1. Imports externos
+import { createContext, useContext, useEffect, useRef, useState } from 'react'
+import type { User } from '@supabase/supabase-js'
 
-import { createContext, useContext, useEffect, useRef, useState } from 'react';
-import { supabase } from '@/lib/supabase';
-import type { User } from '@supabase/supabase-js';
-import { detectLanguage } from '@/lib/locale-detection';
+// 2. Imports internos (shared)
+import { supabase } from '@/lib/supabase'
+import { detectLanguage } from '@/lib/locale-detection'
 
 type AuthContextType = {
   user: User | null;
@@ -20,7 +22,13 @@ const AuthContext = createContext<AuthContextType>({
   updateLastActive: async () => {},
 });
 
-export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
+// 3. Types
+interface AuthProviderProps {
+  children: React.ReactNode
+}
+
+// 4. Component
+export function AuthProvider({ children }: AuthProviderProps) {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [isBroker, setIsBroker] = useState(false);
@@ -261,10 +269,11 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     <AuthContext.Provider value={{ user, loading, isBroker, isAdmin, updateLastActive }}>
       {children}
     </AuthContext.Provider>
-  );
-};
+  )
+}
 
-export const useAuth = () => {
+// 5. Hook
+export function useAuth() {
   const context = useContext(AuthContext);
   if (!context) {
     throw new Error('useAuth must be used within an AuthProvider');

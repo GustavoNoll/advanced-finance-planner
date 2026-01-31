@@ -1,35 +1,39 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
-import { Button } from '@/components/ui/button';
-import { useNavigate } from 'react-router-dom';
-import { supabase } from '@/lib/supabase';
-import { useToast } from '@/components/ui/use-toast';
-import { Plus, LogOut, Share2, Trash2, Calculator, FileText, Users, Target, Shield, Eye, BarChart as BarChartIcon, Upload, LineChart as LineChartIcon, PieChart as PieChartIcon, Clock, AlertTriangle, TrendingUp } from 'lucide-react';
-import { useTranslation } from 'react-i18next';
-import { createDateWithoutTimezone } from '@/utils/dateUtils';
-
-import { SummaryMetrics } from '@/components/broker-dashboard/metrics/SummaryMetrics';
-import { PerformanceMetrics } from '@/components/broker-dashboard/metrics/PerformanceMetrics';
-import { AdvancedWealthChart } from '@/components/broker-dashboard/charts/AdvancedWealthChart';
-import { ContributionTrendChart } from '@/components/broker-dashboard/charts/ContributionTrendChart';
-import { SmartAlerts } from '@/components/broker-dashboard/alerts/SmartAlerts';
-import { ClientList } from '@/components/broker-dashboard/client-list/ClientList';
-import { UserProfileInvestment, BrokerProfile, EnhancedDashboardMetrics, DashboardMetrics } from '@/types/broker-dashboard';
-import { Logo } from '@/components/ui/logo';
-import { Avatar } from '@/components/ui/avatar-initial';
-import { useAuth } from '@/components/auth/AuthProvider';
-import { Spinner } from '@/components/ui/spinner';
-import { ClientAccessAnalysis } from '@/components/shared/ClientAccessAnalysis';
-import { useAccessData } from '@/hooks/useAccessData';
-import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
-import { InvestmentPolicyInsights } from '@/components/admin/InvestmentPolicyInsights';
-import { tabTriggerActiveBlue } from '@/lib/gradient-classes';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { useBrokerStatementImports } from '@/hooks/useStatementImports';
+// 1. Imports externos
+import { useState, useEffect, useCallback, useRef } from 'react'
+import { useNavigate } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
+import { Plus, LogOut, Share2, Trash2, Calculator, FileText, Users, Target, Shield, Eye, BarChart as BarChartIcon, Upload, LineChart as LineChartIcon, PieChart as PieChartIcon, Clock, AlertTriangle, TrendingUp } from 'lucide-react'
 import { 
   AreaChart, Area, PieChart, Pie, Cell, Legend, ResponsiveContainer, 
   XAxis, YAxis, CartesianGrid, Tooltip
-} from 'recharts';
-import { StatementImportsList } from '@/components/shared/StatementImportsList';
+} from 'recharts'
+
+// 2. Imports internos (shared)
+import { Button } from '@/components/ui/button'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { useToast } from '@/components/ui/use-toast'
+import { Logo } from '@/components/ui/logo'
+import { Avatar } from '@/components/ui/avatar-initial'
+import { Spinner } from '@/components/ui/spinner'
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
+import { useAuth } from '@/components/auth/AuthProvider'
+import { supabase } from '@/lib/supabase'
+import { createDateWithoutTimezone } from '@/utils/dateUtils'
+import { tabTriggerActiveBlue } from '@/lib/gradient-classes'
+import { useAccessData } from '@/hooks/useAccessData'
+import { useBrokerStatementImports } from '@/hooks/useStatementImports'
+
+// 3. Imports internos (feature)
+import { SummaryMetrics } from '@/components/broker-dashboard/metrics/SummaryMetrics'
+import { PerformanceMetrics } from '@/components/broker-dashboard/metrics/PerformanceMetrics'
+import { AdvancedWealthChart } from '@/components/broker-dashboard/charts/AdvancedWealthChart'
+import { ContributionTrendChart } from '@/components/broker-dashboard/charts/ContributionTrendChart'
+import { SmartAlerts } from '@/components/broker-dashboard/alerts/SmartAlerts'
+import { ClientList } from '@/components/broker-dashboard/client-list/ClientList'
+import { ClientAccessAnalysis } from '@/components/shared/ClientAccessAnalysis'
+import { StatementImportsList } from '@/components/shared/StatementImportsList'
+import { InvestmentPolicyInsights } from '@/components/admin/InvestmentPolicyInsights'
+import { UserProfileInvestment, BrokerProfile, EnhancedDashboardMetrics, DashboardMetrics } from '@/types/broker-dashboard'
 
 // Modern color palette
 const MODERN_COLORS = {
@@ -50,7 +54,7 @@ const MODERN_COLORS = {
 /**
  * Main broker dashboard component that displays client metrics and management tools
  */
-export const BrokerDashboard = () => {
+export function BrokerDashboard() {
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState<UserProfileInvestment[]>([]);
   const [isSearching, setIsSearching] = useState(false);
@@ -1344,6 +1348,6 @@ export const BrokerDashboard = () => {
 
 
     </div>
-  );
-};
+  )
+}
 

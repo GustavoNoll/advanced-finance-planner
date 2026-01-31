@@ -1,17 +1,22 @@
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { cn } from "@/lib/utils";
-import { ReactNode } from "react";
-import { LucideIcon } from "lucide-react";
+// 1. Imports externos
+import { ReactNode } from 'react'
+import { LucideIcon } from 'lucide-react'
 
+// 2. Imports internos (shared)
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { cn } from '@/lib/utils'
+
+// 3. Types
 interface DashboardCardProps {
-  title: ReactNode;
-  children: ReactNode;
-  className?: string;
-  icon?: LucideIcon;
-  headerActions?: ReactNode;
+  title: ReactNode
+  children: ReactNode
+  className?: string
+  icon?: LucideIcon
+  headerActions?: ReactNode
 }
 
-export const DashboardCard = ({ title, children, className, icon: Icon, headerActions }: DashboardCardProps) => {
+// 4. Component
+export function DashboardCard({ title, children, className, icon: Icon, headerActions }: DashboardCardProps) {
   return (
     <Card className={cn("investment-card bg-card text-card-foreground border border-border", className)}>
       <CardHeader>
@@ -29,5 +34,5 @@ export const DashboardCard = ({ title, children, className, icon: Icon, headerAc
       </CardHeader>
       <CardContent>{children}</CardContent>
     </Card>
-  );
-};
+  )
+}

@@ -1,21 +1,26 @@
-import { useForm, useFieldArray, FieldPath  } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import * as z from 'zod';
-import { Button } from '@/components/ui/button';
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
-import { CurrencyInput } from '@/components/ui/currency-input';
-import { supabase } from '@/lib/supabase';
-import { toast } from '@/components/ui/use-toast';
-import { Plus, Trash2, Pencil, Info } from 'lucide-react';
-import { Separator } from '@/components/ui/separator';
-import { useQueryClient } from '@tanstack/react-query';
-import { capitalizeFirstLetter } from '@/utils/string';
-import { useTranslation } from 'react-i18next';
-import { useState, useEffect } from 'react';
-import { AddressInput } from '@/components/address/AddressInput';
+// 1. Imports externos
+import { useState, useEffect } from 'react'
+import { useForm, useFieldArray, FieldPath } from 'react-hook-form'
+import { zodResolver } from '@hookform/resolvers/zod'
+import { useTranslation } from 'react-i18next'
+import { useQueryClient } from '@tanstack/react-query'
+import * as z from 'zod'
+import { Plus, Trash2, Pencil, Info } from 'lucide-react'
+
+// 2. Imports internos (shared)
+import { Button } from '@/components/ui/button'
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Input } from '@/components/ui/input'
+import { Textarea } from '@/components/ui/textarea'
+import { CurrencyInput } from '@/components/ui/currency-input'
+import { Separator } from '@/components/ui/separator'
+import { toast } from '@/components/ui/use-toast'
+import { supabase } from '@/lib/supabase'
+import { capitalizeFirstLetter } from '@/utils/string'
+
+// 3. Imports internos (feature)
+import { AddressInput } from '@/components/address/AddressInput'
 
 const assetSchema = z.object({
   name: z.string(),
@@ -88,12 +93,12 @@ const defaultEmptyPropertyAsset: AssetType = {
   country: '',
 };
 
-export const PatrimonialForm = ({
+export function PatrimonialForm({
   initialData,
   isEditing = false,
   policyId,
   clientId,
-}: PatrimonialFormProps) => {
+}: PatrimonialFormProps) {
   const { t } = useTranslation();
   const queryClient = useQueryClient();
   const [investmentsEditMode, setInvestmentsEditMode] = useState(false);

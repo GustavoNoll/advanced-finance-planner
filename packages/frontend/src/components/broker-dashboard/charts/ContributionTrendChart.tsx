@@ -17,7 +17,7 @@ interface ContributionTrendChartProps {
 /**
  * Chart showing contribution adequacy trends over the last 6 months
  */
-export const ContributionTrendChart = ({ data }: ContributionTrendChartProps) => {
+export function ContributionTrendChart({ data }: ContributionTrendChartProps) {
   const { t } = useTranslation();
 
   const formatPercentage = (value: number) => `${value.toFixed(1)}%`;
@@ -252,5 +252,5 @@ export const ContributionTrendChart = ({ data }: ContributionTrendChartProps) =>
         </div>
       </CardContent>
     </Card>
-  );
-};
+  )
+}

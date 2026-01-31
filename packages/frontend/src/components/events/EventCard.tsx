@@ -1,19 +1,26 @@
-import { Card } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Trash2, Pencil, Target, TrendingUp, Calendar, Link as LinkIcon } from "lucide-react";
-import { useTranslation } from "react-i18next";
-import { ProjectedEvent } from "@/types/financial";
-import { formatCurrency, CurrencyCode } from "@/utils/currency";
-import { eventIcons } from "@/constants/events";
-import { useItemFinancialLinks } from "@/hooks/useItemFinancialLinks";
+// 1. Imports externos
+import { useTranslation } from 'react-i18next'
+import { Trash2, Pencil, Target, TrendingUp, Calendar, Link as LinkIcon } from 'lucide-react'
 
-export const EventCard = ({ event, currency, isCompleted, onDelete, onEdit }: { 
-  event: ProjectedEvent; 
-  currency: CurrencyCode;
-  isCompleted: boolean;
-  onDelete: () => void;
-  onEdit: () => void;
-}) => {
+// 2. Imports internos (shared)
+import { Card } from '@/components/ui/card'
+import { Button } from '@/components/ui/button'
+import { formatCurrency, CurrencyCode } from '@/utils/currency'
+import { eventIcons } from '@/constants/events'
+import { useItemFinancialLinks } from '@/hooks/useItemFinancialLinks'
+
+// 3. Imports internos (feature)
+import { ProjectedEvent } from '@/types/financial'
+
+interface EventCardProps { 
+  event: ProjectedEvent
+  currency: CurrencyCode
+  isCompleted: boolean
+  onDelete: () => void
+  onEdit: () => void
+}
+
+export function EventCard({ event, currency, isCompleted, onDelete, onEdit }: EventCardProps) {
   const { t } = useTranslation();
   const { financialLinks, isLoading: linksLoading } = useItemFinancialLinks(event.id, 'event');
   
@@ -146,5 +153,5 @@ export const EventCard = ({ event, currency, isCompleted, onDelete, onEdit }: {
         </div>
       </div>
     </Card>
-  );
-}; 
+  )
+} 

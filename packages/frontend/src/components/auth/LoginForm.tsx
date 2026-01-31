@@ -1,17 +1,21 @@
-import { useState } from 'react';
-import { supabase } from '@/lib/supabase';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { useToast } from '@/components/ui/use-toast';
-import { useNavigate } from 'react-router-dom';
-import { useTranslation } from 'react-i18next';
-import { Logo } from '@/components/ui/logo';
-import { Eye, EyeOff, Mail, Lock } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { Spinner } from '@/components/ui/spinner';
+// 1. Imports externos
+import { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
+import { Eye, EyeOff, Mail, Lock } from 'lucide-react'
+import { motion, AnimatePresence } from 'framer-motion'
 
-export const LoginForm = () => {
+// 2. Imports internos (shared)
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { useToast } from '@/components/ui/use-toast'
+import { Logo } from '@/components/ui/logo'
+import { Spinner } from '@/components/ui/spinner'
+import { supabase } from '@/lib/supabase'
+
+// 3. Component
+export function LoginForm() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -192,5 +196,5 @@ export const LoginForm = () => {
         </Card>
       </motion.div>
     </div>
-  );
-};
+  )
+}

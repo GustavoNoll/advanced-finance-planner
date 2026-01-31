@@ -1,14 +1,18 @@
-import { useTranslation } from "react-i18next";
-import { Switch } from "@/components/ui/switch";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogClose } from "@/components/ui/dialog";
-import { HoverCard, HoverCardContent, HoverCardTrigger } from "@/components/ui/hover-card";
-import { HelpCircle } from "lucide-react";
-import { formatCurrency } from "@/utils/currency";
-import { CurrencyInput } from "@/components/ui/currency-input";
-import { InvestmentPlan, MicroInvestmentPlan } from "@/types/financial";
-import { CurrencyCode } from "@/utils/currency";
+// 1. Imports externos
+import { useTranslation } from 'react-i18next'
+import { HelpCircle } from 'lucide-react'
+
+// 2. Imports internos (shared)
+import { Switch } from '@/components/ui/switch'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogClose } from '@/components/ui/dialog'
+import { HoverCard, HoverCardContent, HoverCardTrigger } from '@/components/ui/hover-card'
+import { CurrencyInput } from '@/components/ui/currency-input'
+import { CurrencyCode, formatCurrency } from '@/utils/currency'
+
+// 3. Imports internos (feature)
+import { InvestmentPlan, MicroInvestmentPlan } from '@/types/financial'
 
 interface ChartAdvancedOptionsModalProps {
   open: boolean;
@@ -54,7 +58,7 @@ interface ChartAdvancedOptionsModalProps {
   }) => void;
 }
 
-export const ChartAdvancedOptionsModal = ({
+export function ChartAdvancedOptionsModal({
   open,
   onOpenChange,
   investmentPlan,
@@ -73,7 +77,7 @@ export const ChartAdvancedOptionsModal = ({
   setChangeMonthlyDeposit,
   changeMonthlyWithdraw,
   setChangeMonthlyWithdraw
-}: ChartAdvancedOptionsModalProps) => {
+}: ChartAdvancedOptionsModalProps) {
   const { t } = useTranslation();
 
   return (

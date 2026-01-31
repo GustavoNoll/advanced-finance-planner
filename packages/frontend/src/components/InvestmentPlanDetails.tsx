@@ -1,15 +1,20 @@
-import { TrendingUp, Building2, Coins, Scale, ChartLine, CalendarDays, UserCog, HeartPulse, WalletCards, Pencil } from "lucide-react";
-import { InvestmentPlan, MicroInvestmentPlan, MicroPlanCalculations, FinancialRecord } from "@/types/financial";
-import { format, isValid } from "date-fns";
-import { ptBR } from "date-fns/locale";
-import { useTranslation } from "react-i18next";
-import { formatCurrency } from '@/utils/currency';
-import { Button } from './ui/button';
-import { createDateWithoutTimezone } from '@/utils/dateUtils';
-import { ChartOptions, YearlyProjectionData } from "@/lib/chart-projections";
-import { ProjectionService } from "@/services/projection.service";
-import { PlanProgressData } from "@/lib/plan-progress-calculator";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from './ui/tooltip';
+// 1. Imports externos
+import { format, isValid } from 'date-fns'
+import { ptBR } from 'date-fns/locale'
+import { useTranslation } from 'react-i18next'
+import { TrendingUp, Building2, Coins, Scale, ChartLine, CalendarDays, UserCog, HeartPulse, WalletCards, Pencil } from 'lucide-react'
+
+// 2. Imports internos (shared)
+import { Button } from './ui/button'
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from './ui/tooltip'
+import { formatCurrency } from '@/utils/currency'
+import { createDateWithoutTimezone } from '@/utils/dateUtils'
+import { ChartOptions, YearlyProjectionData } from '@/lib/chart-projections'
+import { PlanProgressData } from '@/lib/plan-progress-calculator'
+
+// 3. Imports internos (feature)
+import { InvestmentPlan, MicroInvestmentPlan, MicroPlanCalculations, FinancialRecord } from '@/types/financial'
+import { ProjectionService } from '@/services/projection.service'
 
 interface InvestmentPlanDetailsProps {
   investmentPlan: InvestmentPlan | null;

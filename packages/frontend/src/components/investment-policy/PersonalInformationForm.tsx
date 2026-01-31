@@ -1,17 +1,20 @@
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import * as z from 'zod';
-import { Button } from '@/components/ui/button';
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { supabase } from '@/lib/supabase';
-import { toast } from '@/components/ui/use-toast';
-import { useTranslation } from 'react-i18next';
-import { useQueryClient } from '@tanstack/react-query';
-import { useState, useEffect } from 'react';
-import { Pencil, Info } from 'lucide-react';
-import { formatDateByLocale, parseDateByLocale } from '@/utils/dateUtils';
+// 1. Imports externos
+import { useState, useEffect } from 'react'
+import { useForm } from 'react-hook-form'
+import { zodResolver } from '@hookform/resolvers/zod'
+import { useTranslation } from 'react-i18next'
+import { useQueryClient } from '@tanstack/react-query'
+import * as z from 'zod'
+import { Pencil, Info } from 'lucide-react'
+
+// 2. Imports internos (shared)
+import { Button } from '@/components/ui/button'
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Input } from '@/components/ui/input'
+import { toast } from '@/components/ui/use-toast'
+import { supabase } from '@/lib/supabase'
+import { formatDateByLocale, parseDateByLocale } from '@/utils/dateUtils'
 
 const personalInformationSchema = z.object({
   name: z.string().min(1, 'Nome é obrigatório'),
@@ -26,11 +29,11 @@ interface PersonalInformationFormProps {
   clientId?: string;
 }
 
-export const PersonalInformationForm = ({
+export function PersonalInformationForm({
   initialData,
   isEditing = false,
   clientId,
-}: PersonalInformationFormProps) => {
+}: PersonalInformationFormProps) {
   const queryClient = useQueryClient();
   const { t } = useTranslation();
   const [isEditMode, setIsEditMode] = useState(false);

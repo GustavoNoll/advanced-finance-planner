@@ -1,7 +1,10 @@
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
-import { BarChart3, Users } from 'lucide-react';
-import { useTranslation } from 'react-i18next';
+// 1. Imports externos
+import { useTranslation } from 'react-i18next'
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts'
+import { BarChart3, Users } from 'lucide-react'
+
+// 2. Imports internos (shared)
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 
 // Modern color palette
 const MODERN_COLORS = {

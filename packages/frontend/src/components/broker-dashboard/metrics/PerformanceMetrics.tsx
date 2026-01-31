@@ -1,7 +1,12 @@
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { TrendingUp, TrendingDown, Activity, Target, Zap, Shield, HelpCircle } from 'lucide-react';
-import { useTranslation } from 'react-i18next';
-import { EnhancedDashboardMetrics } from '@/types/broker-dashboard';
+// 1. Imports externos
+import { useTranslation } from 'react-i18next'
+import { TrendingUp, TrendingDown, Activity, Target, Zap, Shield, HelpCircle } from 'lucide-react'
+
+// 2. Imports internos (shared)
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+
+// 3. Imports internos (feature)
+import { EnhancedDashboardMetrics } from '@/types/broker-dashboard'
 
 interface PerformanceMetricsProps {
   metrics: EnhancedDashboardMetrics;
@@ -10,7 +15,7 @@ interface PerformanceMetricsProps {
 /**
  * Advanced performance metrics component with futuristic design
  */
-export const PerformanceMetrics = ({ metrics }: PerformanceMetricsProps) => {
+export function PerformanceMetrics({ metrics }: PerformanceMetricsProps) {
   const { t } = useTranslation();
 
   const formatPercentage = (value: number) => 
@@ -243,5 +248,5 @@ export const PerformanceMetrics = ({ metrics }: PerformanceMetricsProps) => {
         </CardContent>
       </Card>
     </div>
-  );
-};
+  )
+}

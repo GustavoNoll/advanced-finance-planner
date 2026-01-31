@@ -1,10 +1,15 @@
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { useTranslation } from "react-i18next";
-import { useState } from "react";
-import { useLocale } from "@/hooks/useLocale";
-import { CurrencyCode } from "@/utils/currency";
-import { FinancialItemForm } from "./FinancialItemForm";
-import { GoalFormValues, EventFormValues, FinancialItemFormValues } from "@/types/financial";
+// 1. Imports externos
+import { useState } from 'react'
+import { useTranslation } from 'react-i18next'
+
+// 2. Imports internos (shared)
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
+import { CurrencyCode } from '@/utils/currency'
+import { useLocale } from '@/hooks/useLocale'
+
+// 3. Imports internos (feature)
+import { FinancialItemForm } from './FinancialItemForm'
+import { GoalFormValues, EventFormValues, FinancialItemFormValues } from '@/types/financial'
 
 interface ChartPoint {
   age: string;
@@ -29,7 +34,7 @@ interface ChartPointDialogProps {
   birthDate?: string;
 }
 
-export const ChartPointDialog = ({
+export function ChartPointDialog({
   open,
   onOpenChange,
   selectedPoint,
@@ -41,7 +46,7 @@ export const ChartPointDialog = ({
   planInitialDate,
   limitAge,
   birthDate
-}: ChartPointDialogProps) => {
+}: ChartPointDialogProps) {
   const { t } = useTranslation();
   const [formType, setFormType] = useState<'goal' | 'event'>(type);
   const { formatDate } = useLocale();

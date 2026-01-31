@@ -1,7 +1,12 @@
-import { Target, Trophy, Calendar, TrendingUp, LineChart, PiggyBank } from 'lucide-react'
-import { useFinancialHighlights } from '@/hooks/useFinancialData'
-import { InvestmentPlan, MicroInvestmentPlan } from '@/types/financial'
+// 1. Imports externos
 import { useTranslation } from 'react-i18next'
+import { Target, Trophy, Calendar, TrendingUp, LineChart, PiggyBank } from 'lucide-react'
+
+// 2. Imports internos (shared)
+import { useFinancialHighlights } from '@/hooks/useFinancialData'
+
+// 3. Imports internos (feature)
+import { InvestmentPlan, MicroInvestmentPlan } from '@/types/financial'
 
 interface DashboardHighlightsProps {
   clientId: string

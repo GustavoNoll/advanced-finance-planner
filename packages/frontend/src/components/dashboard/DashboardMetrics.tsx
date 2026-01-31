@@ -1,11 +1,16 @@
-import { DashboardCard } from "@/components/DashboardCard"
-import { Briefcase, LineChart, PiggyBank, Scale, Info } from "lucide-react"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { HoverCard, HoverCardContent, HoverCardTrigger } from "@/components/ui/hover-card"
-import { formatCurrency, CurrencyCode } from "@/utils/currency"
-import { useFinancialMetrics } from "@/hooks/useFinancialData"
-import { InvestmentPlan, MicroInvestmentPlan } from "@/types/financial"
-import { ProjectionData } from "@/services/projection.service"
+// 1. Imports externos
+import { Briefcase, LineChart, PiggyBank, Scale, Info } from 'lucide-react'
+
+// 2. Imports internos (shared)
+import { DashboardCard } from '@/components/dashboard-card'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { HoverCard, HoverCardContent, HoverCardTrigger } from '@/components/ui/hover-card'
+import { formatCurrency, CurrencyCode } from '@/utils/currency'
+import { useFinancialMetrics } from '@/hooks/useFinancialData'
+
+// 3. Imports internos (feature)
+import { InvestmentPlan, MicroInvestmentPlan } from '@/types/financial'
+import { ProjectionData } from '@/services/projection.service'
 
 type TimePeriod = 'all' | '6m' | '12m' | '24m'
 

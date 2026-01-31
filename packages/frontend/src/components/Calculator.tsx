@@ -1,17 +1,22 @@
-import { useTranslation } from "react-i18next";
-import { Info, Calculator as CalculatorIcon, ArrowRightLeft } from "lucide-react";
-import { PlanProgressData } from "@/lib/plan-progress-calculator";
-import { DashboardCard } from "./DashboardCard";
-import { InvestmentPlan, MicroInvestmentPlan } from "@/types/financial";
-import { formatCurrency, CurrencyCode} from '@/utils/currency';
-import { useInvestmentPlanMutations } from "@/hooks/useInvestmentPlan";
-import { useToast } from "@/components/ui/use-toast";
-import { createDateWithoutTimezone } from "@/utils/dateUtils";
-import { MicroInvestmentPlanService } from "@/services/micro-investment-plan.service";
-import { useState } from "react";
-import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { useQueryClient } from "@tanstack/react-query";
+// 1. Imports externos
+import { useState } from 'react'
+import { useTranslation } from 'react-i18next'
+import { useQueryClient } from '@tanstack/react-query'
+import { Info, Calculator as CalculatorIcon, ArrowRightLeft } from 'lucide-react'
+
+// 2. Imports internos (shared)
+import { Button } from '@/components/ui/button'
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
+import { useToast } from '@/components/ui/use-toast'
+import { DashboardCard } from './dashboard-card'
+import { PlanProgressData } from '@/lib/plan-progress-calculator'
+import { formatCurrency, CurrencyCode } from '@/utils/currency'
+import { createDateWithoutTimezone } from '@/utils/dateUtils'
+
+// 3. Imports internos (feature)
+import { InvestmentPlan, MicroInvestmentPlan } from '@/types/financial'
+import { useInvestmentPlanMutations } from '@/hooks/useInvestmentPlan'
+import { MicroInvestmentPlanService } from '@/services/micro-investment-plan.service'
 
 /**
  * Props for the PlanProgress component
@@ -218,7 +223,7 @@ const ComparisonRow = ({
 /**
  * Component that displays the progress of a financial plan
  */
-export const Calculator = ({ data, investmentPlan, activeMicroPlan, onRefreshMicroPlans, clientProfile, clientId, onPlanUpdated }: PlanProgressProps) => {
+export function Calculator({ data, investmentPlan, activeMicroPlan, onRefreshMicroPlans, clientProfile, clientId, onPlanUpdated }: PlanProgressProps) {
   const { t } = useTranslation();
   const { updatePlan } = useInvestmentPlanMutations();
   const { toast } = useToast();
@@ -513,5 +518,5 @@ export const Calculator = ({ data, investmentPlan, activeMicroPlan, onRefreshMic
         </DialogContent>
       </Dialog>
     </DashboardCard>
-  );
-};
+  )
+}

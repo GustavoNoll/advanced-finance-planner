@@ -1,19 +1,26 @@
-import { Card } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Trash2, Pencil, Link as LinkIcon } from "lucide-react";
-import { useTranslation } from "react-i18next";
-import { goalIcons } from "@/constants/goals";
-import { Goal } from "@/types/financial";
-import { formatCurrency, CurrencyCode, getCurrencySymbol } from "@/utils/currency";
-import { useItemFinancialLinks } from "@/hooks/useItemFinancialLinks";
+// 1. Imports externos
+import { useTranslation } from 'react-i18next'
+import { Trash2, Pencil, Link as LinkIcon } from 'lucide-react'
 
-export const GoalCard = ({ goal, currency, isCompleted, onDelete, onEdit }: { 
-  goal: Goal; 
-  currency: CurrencyCode;
-  isCompleted: boolean;
-  onDelete: () => void;
-  onEdit: () => void;
-}) => {
+// 2. Imports internos (shared)
+import { Card } from '@/components/ui/card'
+import { Button } from '@/components/ui/button'
+import { formatCurrency, CurrencyCode, getCurrencySymbol } from '@/utils/currency'
+import { goalIcons } from '@/constants/goals'
+import { useItemFinancialLinks } from '@/hooks/useItemFinancialLinks'
+
+// 3. Imports internos (feature)
+import { Goal } from '@/types/financial'
+
+interface GoalCardProps { 
+  goal: Goal
+  currency: CurrencyCode
+  isCompleted: boolean
+  onDelete: () => void
+  onEdit: () => void
+}
+
+export function GoalCard({ goal, currency, isCompleted, onDelete, onEdit }: GoalCardProps) {
   const { t } = useTranslation();
   const Icon = goalIcons[goal.icon];
   const { financialLinks, isLoading: linksLoading } = useItemFinancialLinks(goal.id, 'goal');
@@ -139,5 +146,5 @@ export const GoalCard = ({ goal, currency, isCompleted, onDelete, onEdit }: {
         </div>
       </div>
     </Card>
-  );
-}; 
+  )
+} 

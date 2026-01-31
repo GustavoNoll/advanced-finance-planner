@@ -279,7 +279,7 @@ function getZoomedChartData({
   return reduceDataPoints(filteredData);
 }
 
-export const ExpenseChart = ({ 
+export function ExpenseChart({ 
   profile, 
   investmentPlan, 
   activeMicroPlan,
@@ -294,7 +294,7 @@ export const ExpenseChart = ({
   showProjectedLine = true,
   showPlannedLine = true,
   onOpenAdvancedOptions
-}: ExpenseChartProps) => {
+}: ExpenseChartProps) {
   const { t } = useTranslation();
   const queryClient = useQueryClient();
   const [zoomLevel, setZoomLevel] = useState<ZoomLevel>('all');
@@ -815,5 +815,5 @@ export const ExpenseChart = ({
         } : undefined}
       />
     </div>
-  );
-};
+  )
+}

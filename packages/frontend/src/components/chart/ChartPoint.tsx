@@ -1,12 +1,15 @@
-import { eventIcons } from "@/constants/events";
-import { Calendar, Target, Banknote } from "lucide-react";
+// 1. Imports externos
+import { Calendar, Target, Banknote } from 'lucide-react'
+
+// 2. Imports internos (shared)
+import { eventIcons } from '@/constants/events'
 
 interface ChartPointProps {
-  type: keyof typeof eventIcons;
-  value: number;
+  type: keyof typeof eventIcons
+  value: number
 }
 
-export const ChartPoint = ({ type, value }: ChartPointProps) => {
+export function ChartPoint({ type, value }: ChartPointProps) {
   const getIcon = () => {
     switch (type) {
       case 'goal':
@@ -27,5 +30,5 @@ export const ChartPoint = ({ type, value }: ChartPointProps) => {
         {value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
       </span>
     </div>
-  );
-}; 
+  )
+} 

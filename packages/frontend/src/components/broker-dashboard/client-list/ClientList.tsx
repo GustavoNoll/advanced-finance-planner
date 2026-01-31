@@ -1,16 +1,19 @@
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { TrendingUp, User, Calendar, Clock, Search, X, Share2, ChevronRight, Trash2, Calculator } from 'lucide-react';
-import { useTranslation } from 'react-i18next';
+// 1. Imports externos
+import { useState } from 'react'
+import { useTranslation } from 'react-i18next'
+import { TrendingUp, User, Calendar, Clock, Search, X, Share2, ChevronRight, Trash2, Calculator } from 'lucide-react'
+
+// 2. Imports internos (shared)
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Input } from '@/components/ui/input'
+import { Button } from '@/components/ui/button'
+import { useToast } from '@/components/ui/use-toast'
 import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
-} from "@/components/ui/tooltip";
-import { UserProfileInvestment } from '@/types/broker-dashboard';
-import { Input } from '@/components/ui/input';
-import { Button } from '@/components/ui/button';
-import { useToast } from '@/components/ui/use-toast';
+} from '@/components/ui/tooltip'
 import {
   AlertDialog,
   AlertDialogAction,
@@ -20,9 +23,11 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
-import { useState } from 'react';
-import { Avatar } from '@/components/ui/avatar-initial';
+} from '@/components/ui/alert-dialog'
+import { Avatar } from '@/components/ui/avatar-initial'
+
+// 3. Imports internos (feature)
+import { UserProfileInvestment } from '@/types/broker-dashboard'
 
 interface ClientListProps {
   clients: UserProfileInvestment[];
@@ -43,7 +48,7 @@ interface ClientListProps {
  * @param onClearSearch - Callback function to clear search
  * @param isSearching - Whether a search is in progress
  */
-export const ClientList = ({ 
+export function ClientList({ 
   clients, 
   onClientSelect, 
   searchQuery, 
@@ -51,7 +56,7 @@ export const ClientList = ({
   onClearSearch,
   isSearching,
   onDeleteClient
-}: ClientListProps) => {
+}: ClientListProps) {
   const { toast } = useToast();
   const { t } = useTranslation();
   const [clientToDelete, setClientToDelete] = useState<string | null>(null);

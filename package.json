@@ -14,12 +14,16 @@
     "build": "npm run build --workspace=packages/frontend",
     "build:frontend": "npm run build --workspace=packages/frontend",
     "build:backend": "npm run build --workspace=packages/backend",
+    "build:all": "npm run build:backend && npm run build:frontend",
     "lint": "npm run lint --workspace=packages/frontend",
+    "lint:all": "npm run lint --workspace=packages/frontend && npm run lint --workspace=packages/backend",
+    "type-check": "npm run type-check --workspace=packages/frontend && npm run type-check --workspace=packages/backend",
     "test": "npm run test --workspace=packages/frontend",
     "test:watch": "npm run test:watch --workspace=packages/frontend",
     "preview": "npm run preview --workspace=packages/frontend",
     "vercel-build": "npm run sync-api && npm run build --workspace=packages/frontend",
-    "sync-api": "bash scripts/sync-api-functions.sh"
+    "sync-api": "bash scripts/sync-api-functions.sh",
+    "ci": "npm run lint:all && npm run type-check && npm test && npm run build:all"
   },
   "devDependencies": {
     "npm-run-all": "^4.1.5",

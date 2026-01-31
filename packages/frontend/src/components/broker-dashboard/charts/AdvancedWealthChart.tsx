@@ -1,8 +1,13 @@
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from 'recharts';
-import { useTranslation } from 'react-i18next';
-import { WealthDistribution } from '@/types/broker-dashboard';
-import { TrendingUp, Users, DollarSign } from 'lucide-react';
+// 1. Imports externos
+import { useTranslation } from 'react-i18next'
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from 'recharts'
+import { TrendingUp, Users, DollarSign } from 'lucide-react'
+
+// 2. Imports internos (shared)
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+
+// 3. Imports internos (feature)
+import { WealthDistribution } from '@/types/broker-dashboard'
 
 interface AdvancedWealthChartProps {
   data: WealthDistribution[];
@@ -11,7 +16,7 @@ interface AdvancedWealthChartProps {
 /**
  * Advanced wealth distribution chart with futuristic design
  */
-export const AdvancedWealthChart = ({ data }: AdvancedWealthChartProps) => {
+export function AdvancedWealthChart({ data }: AdvancedWealthChartProps) {
   const { t } = useTranslation();
 
   const colors = [
@@ -199,5 +204,5 @@ export const AdvancedWealthChart = ({ data }: AdvancedWealthChartProps) => {
         </div>
       </CardContent>
     </Card>
-  );
-};
+  )
+}

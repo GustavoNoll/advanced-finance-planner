@@ -1,12 +1,17 @@
-import { useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Button } from '@/components/ui/button';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Spinner } from '@/components/ui/spinner';
-import { FileText, CheckCircle2, XCircle, Clock, Info } from 'lucide-react';
-import type { StatementImport } from '@/types/financial/statement-imports';
-import type { UserProfileInvestment } from '@/types/broker-dashboard';
+// 1. Imports externos
+import { useState } from 'react'
+import { FileText, CheckCircle2, XCircle, Clock, Info } from 'lucide-react'
+
+// 2. Imports internos (shared)
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
+import { Button } from '@/components/ui/button'
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
+import { Spinner } from '@/components/ui/spinner'
+
+// 3. Imports internos (feature)
+import type { StatementImport } from '@/types/financial/statement-imports'
+import type { UserProfileInvestment } from '@/types/broker-dashboard'
 
 interface StatementImportsListProps {
   imports: StatementImport[];

@@ -1,9 +1,12 @@
-import { useForm } from "react-hook-form";
-import { useEffect } from "react";
-import { zodResolver } from "@hookform/resolvers/zod";
-import * as z from "zod";
-import { useTranslation } from "react-i18next";
-import { Button } from "@/components/ui/button";
+// 1. Imports externos
+import { useEffect } from 'react'
+import { useForm } from 'react-hook-form'
+import { zodResolver } from '@hookform/resolvers/zod'
+import { useTranslation } from 'react-i18next'
+import * as z from 'zod'
+
+// 2. Imports internos (shared)
+import { Button } from '@/components/ui/button'
 import {
   Form,
   FormControl,
@@ -11,17 +14,19 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from "@/components/ui/form";
-import { CurrencyInput } from "@/components/ui/currency-input";
-import { goalIcons } from "@/constants/goals";
-import { eventIcons } from "@/constants/events";
-import { CurrencyCode, formatCurrency } from "@/utils/currency";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { cn } from "@/lib/utils";
-import { Input } from "@/components/ui/input";
-import { Alert, AlertDescription } from "@/components/ui/alert";
-import { FinancialItemFormValues } from "@/types/financial";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+} from '@/components/ui/form'
+import { CurrencyInput } from '@/components/ui/currency-input'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { Input } from '@/components/ui/input'
+import { Alert, AlertDescription } from '@/components/ui/alert'
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
+import { CurrencyCode, formatCurrency } from '@/utils/currency'
+import { cn } from '@/lib/utils'
+import { goalIcons } from '@/constants/goals'
+import { eventIcons } from '@/constants/events'
+
+// 3. Imports internos (feature)
+import { FinancialItemFormValues } from '@/types/financial'
 
 const createSchema = (type: 'goal' | 'event') => {
   const baseFields = {
@@ -66,7 +71,7 @@ interface FinancialItemFormProps {
   leftActions?: React.ReactNode;
 }
 
-export const FinancialItemForm = ({
+export function FinancialItemForm({
   type,
   onSubmit,
   onCancel,
@@ -78,8 +83,8 @@ export const FinancialItemForm = ({
   birthDate,
   onTypeChange,
   showTypeSelector = true,
-  leftActions,
-}: FinancialItemFormProps) => {
+  leftActions
+}: FinancialItemFormProps) {
   const { t } = useTranslation();
   const form = useForm<FinancialItemFormValues>({
     resolver: zodResolver(createSchema(type)),

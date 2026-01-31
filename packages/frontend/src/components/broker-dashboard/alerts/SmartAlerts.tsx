@@ -1,6 +1,6 @@
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
+// 1. Imports externos
+import { useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { 
   AlertTriangle, 
   TrendingDown, 
@@ -13,11 +13,16 @@ import {
   XCircle,
   Info,
   Eye
-} from 'lucide-react';
-import { useTranslation } from 'react-i18next';
-import { UserProfileInvestment } from '@/types/broker-dashboard';
-import { AlertsModal } from './AlertsModal';
-import { useState } from 'react';
+} from 'lucide-react'
+
+// 2. Imports internos (shared)
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
+
+// 3. Imports internos (feature)
+import { UserProfileInvestment } from '@/types/broker-dashboard'
+import { AlertsModal } from './AlertsModal'
 
 interface SmartAlertsProps {
   clients: UserProfileInvestment[];
@@ -38,7 +43,7 @@ interface Alert {
 /**
  * Smart alerts component with AI-powered client monitoring
  */
-export const SmartAlerts = ({ clients, onClientSelect }: SmartAlertsProps) => {
+export function SmartAlerts({ clients, onClientSelect }: SmartAlertsProps) {
   const { t } = useTranslation();
   const [isModalOpen, setIsModalOpen] = useState(false);
 

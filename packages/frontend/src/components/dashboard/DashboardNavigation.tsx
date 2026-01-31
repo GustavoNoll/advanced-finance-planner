@@ -1,8 +1,12 @@
-import { Button } from "@/components/ui/button"
-import { Link } from "react-router-dom"
-import { History, TrendingUp, Target, Calendar } from "lucide-react"
-import { Goal } from "@/types/financial"
-import { ProjectedEvent } from "@/types/financial"
+// 1. Imports externos
+import { Link } from 'react-router-dom'
+import { History, TrendingUp, Target, Calendar } from 'lucide-react'
+
+// 2. Imports internos (shared)
+import { Button } from '@/components/ui/button'
+
+// 3. Imports internos (feature)
+import { Goal, ProjectedEvent } from '@/types/financial'
 
 interface DashboardNavigationProps {
   clientId: string

@@ -1,6 +1,9 @@
-import { useState, useMemo } from 'react';
-import { generateProjectionData, ChartOptions } from '@/lib/chart-projections';
-import { InvestmentPlan, MicroInvestmentPlan, Profile, FinancialRecord, Goal, ProjectedEvent } from '@/types/financial';
+// 1. Imports externos
+import { useState, useMemo } from 'react'
+
+// 2. Imports internos (shared)
+import { generateProjectionData, ChartOptions } from '@/lib/chart-projections'
+import { InvestmentPlan, MicroInvestmentPlan, Profile, FinancialRecord, Goal, ProjectedEvent } from '@/types/financial'
 
 interface UseChartOptionsProps {
   investmentPlan: InvestmentPlan;
@@ -12,7 +15,7 @@ interface UseChartOptionsProps {
   events?: ProjectedEvent[];
 }
 
-export const useChartOptions = ({
+export function useChartOptions({
   investmentPlan,
   activeMicroPlan,
   microPlans,
@@ -20,7 +23,7 @@ export const useChartOptions = ({
   allFinancialRecords,
   goals,
   events
-}: UseChartOptionsProps) => {
+}: UseChartOptionsProps) {
   // Chart options states
   const [changeMonthlyDeposit, setChangeMonthlyDeposit] = useState({
     enabled: false,

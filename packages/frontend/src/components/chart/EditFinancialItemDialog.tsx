@@ -1,12 +1,16 @@
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { FinancialItemForm } from "./FinancialItemForm";
-import { FinancialItemFormValues } from "@/types/financial";
-import { CurrencyCode } from "@/utils/currency";
-import { Goal, ProjectedEvent } from "@/types/financial";
-import { useTranslation } from "react-i18next";
-import { Button } from "@/components/ui/button";
-import { useState } from "react";
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
+// 1. Imports externos
+import { useState } from 'react'
+import { useTranslation } from 'react-i18next'
+
+// 2. Imports internos (shared)
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
+import { Button } from '@/components/ui/button'
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog'
+import { CurrencyCode } from '@/utils/currency'
+
+// 3. Imports internos (feature)
+import { FinancialItemForm } from './FinancialItemForm'
+import { FinancialItemFormValues, Goal, ProjectedEvent } from '@/types/financial'
 
 interface EditFinancialItemDialogProps {
   open: boolean;
@@ -20,7 +24,7 @@ interface EditFinancialItemDialogProps {
   birthDate?: string;
 }
 
-export const EditFinancialItemDialog = ({
+export function EditFinancialItemDialog({
   open,
   onOpenChange,
   item,
@@ -30,7 +34,7 @@ export const EditFinancialItemDialog = ({
   planInitialDate,
   limitAge,
   birthDate,
-}: EditFinancialItemDialogProps) => {
+}: EditFinancialItemDialogProps) {
   const { t } = useTranslation();
   const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
   if (!item) return null;
@@ -104,5 +108,5 @@ export const EditFinancialItemDialog = ({
         )}
       </DialogContent>
     </Dialog>
-  );
-}; 
+  )
+} 

@@ -1,10 +1,15 @@
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { LineChart, TrendingUp, Users, AlertCircle } from 'lucide-react';
-import { useTranslation } from 'react-i18next';
-import { DashboardMetrics } from '@/types/broker-dashboard';
-import { Metric, Text } from '@tremor/react';
-import { AvailableChartColorsKeys, getColorClassName } from '@/lib/chartColors';
-import { Avatar } from '@/components/ui/avatar-initial';
+// 1. Imports externos
+import { useTranslation } from 'react-i18next'
+import { LineChart, TrendingUp, Users, AlertCircle } from 'lucide-react'
+import { Metric, Text } from '@tremor/react'
+
+// 2. Imports internos (shared)
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Avatar } from '@/components/ui/avatar-initial'
+import { AvailableChartColorsKeys, getColorClassName } from '@/lib/chartColors'
+
+// 3. Imports internos (feature)
+import { DashboardMetrics } from '@/types/broker-dashboard'
 interface TrendMetricsProps {
   metrics: DashboardMetrics;
 }
@@ -13,7 +18,7 @@ interface TrendMetricsProps {
  * Displays trend metrics including new clients, growth, and inactive clients using Tremor
  * @param metrics - The dashboard metrics data
  */
-export const TrendMetrics = ({ metrics }: TrendMetricsProps) => {
+export function TrendMetrics({ metrics }: TrendMetricsProps) {
   const { t } = useTranslation();
 
   // Mock data for the area chart - in a real app, this would come from your API
@@ -102,5 +107,5 @@ export const TrendMetrics = ({ metrics }: TrendMetricsProps) => {
         </div>
       </CardContent>
     </Card>
-  );
-}; 
+  )
+} 

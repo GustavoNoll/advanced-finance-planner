@@ -1,19 +1,22 @@
-import { useForm, useFieldArray } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import * as z from 'zod';
-import { Button } from '@/components/ui/button';
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { CurrencyInput } from '@/components/ui/currency-input';
-import { supabase } from '@/lib/supabase';
-import { useToast } from '@/components/ui/use-toast';
-import { Plus, Trash2, Pencil, Info } from 'lucide-react';
-import { Separator } from '@/components/ui/separator';
-import { useTranslation } from 'react-i18next';
-import { useEffect, useState, useRef } from 'react';
-import { useQueryClient } from '@tanstack/react-query';
-import { capitalizeFirstLetter } from '@/utils/string';
+// 1. Imports externos
+import { useEffect, useState, useRef } from 'react'
+import { useForm, useFieldArray } from 'react-hook-form'
+import { zodResolver } from '@hookform/resolvers/zod'
+import { useTranslation } from 'react-i18next'
+import { useQueryClient } from '@tanstack/react-query'
+import * as z from 'zod'
+import { Plus, Trash2, Pencil, Info } from 'lucide-react'
+
+// 2. Imports internos (shared)
+import { Button } from '@/components/ui/button'
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Input } from '@/components/ui/input'
+import { CurrencyInput } from '@/components/ui/currency-input'
+import { Separator } from '@/components/ui/separator'
+import { useToast } from '@/components/ui/use-toast'
+import { supabase } from '@/lib/supabase'
+import { capitalizeFirstLetter } from '@/utils/string'
 
 const incomeSchema = z.object({
   description: z.string().min(1, 'Descrição é obrigatória').trim(),
@@ -42,12 +45,12 @@ interface BudgetFormProps {
   clientId?: string;
 }
 
-export const BudgetForm = ({
+export function BudgetForm({
   initialData,
   isEditing = false,
   policyId,
   clientId,
-}: BudgetFormProps) => {
+}: BudgetFormProps) {
   const { t } = useTranslation();
   const { toast } = useToast();
   const [isEditMode, setIsEditMode] = useState(false);

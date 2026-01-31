@@ -1,23 +1,22 @@
-import { useState, useEffect, useCallback, useMemo } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { supabase } from '@/lib/supabase';
-import { useToast } from '@/components/ui/use-toast';
-import { useTranslation } from 'react-i18next';
-import { Button } from '@/components/ui/button';
-import { LogOut, Search, Plus, UserX, UserCheck, Users, Wallet, Target, Activity, Eye, EyeOff, Key, TrendingUp, AlertTriangle, Clock, PieChart as PieChartIcon, LineChart as LineChartIcon, Zap, ArrowUpRight, ArrowDownRight, Percent, Shield, Upload, BarChart as BarChartIcon, Building2, CheckSquare } from 'lucide-react';
-import { Logo } from '@/components/ui/logo';
-import { Avatar } from '@/components/ui/avatar-initial';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
+// 1. Imports externos
+import { useState, useEffect, useCallback, useMemo } from 'react'
+import { useNavigate } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
+import { LogOut, Search, Plus, UserX, UserCheck, Users, Wallet, Target, Activity, Eye, EyeOff, Key, TrendingUp, AlertTriangle, Clock, PieChart as PieChartIcon, LineChart as LineChartIcon, Zap, ArrowUpRight, ArrowDownRight, Percent, Shield, Upload, BarChart as BarChartIcon, Building2, CheckSquare } from 'lucide-react'
 import { 
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, 
   PieChart, Pie, Cell, Legend, LineChart, Line, AreaChart, Area, 
   ComposedChart, ScatterChart, Scatter, RadialBarChart, RadialBar,
   Treemap, ReferenceLine, LabelList
-} from 'recharts';
-import { useAuth } from '@/components/auth/AuthProvider';
-import { UserProfileInvestment, EnhancedDashboardMetrics, WealthDistribution, TrendMetrics, ActionMetrics } from '@/types/broker-dashboard';
-import { createDateWithoutTimezone } from '@/utils/dateUtils';
+} from 'recharts'
+
+// 2. Imports internos (shared)
+import { Button } from '@/components/ui/button'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Input } from '@/components/ui/input'
+import { useToast } from '@/components/ui/use-toast'
+import { Logo } from '@/components/ui/logo'
+import { Avatar } from '@/components/ui/avatar-initial'
 import {
   Dialog,
   DialogContent,
@@ -26,15 +25,21 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from "@/components/ui/dialog";
-import { ClientAccessAnalysis } from '@/components/shared/ClientAccessAnalysis';
-import { useAccessData } from '@/hooks/useAccessData';
-import { useAdminStatementImports } from '@/hooks/useStatementImports';
-import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
-import { InvestmentPolicyInsights } from '@/components/admin/InvestmentPolicyInsights';
-import { BrokerAccessAnalysis } from '@/components/admin/BrokerAccessAnalysis';
-import { tabTriggerActiveBlue } from '@/lib/gradient-classes';
-import { StatementImportsList } from '@/components/shared/StatementImportsList';
+} from '@/components/ui/dialog'
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
+import { useAuth } from '@/components/auth/AuthProvider'
+import { supabase } from '@/lib/supabase'
+import { createDateWithoutTimezone } from '@/utils/dateUtils'
+import { tabTriggerActiveBlue } from '@/lib/gradient-classes'
+import { useAccessData } from '@/hooks/useAccessData'
+import { useAdminStatementImports } from '@/hooks/useStatementImports'
+
+// 3. Imports internos (feature)
+import { ClientAccessAnalysis } from '@/components/shared/ClientAccessAnalysis'
+import { StatementImportsList } from '@/components/shared/StatementImportsList'
+import { InvestmentPolicyInsights } from '@/components/admin/InvestmentPolicyInsights'
+import { BrokerAccessAnalysis } from '@/components/admin/BrokerAccessAnalysis'
+import { UserProfileInvestment, EnhancedDashboardMetrics, WealthDistribution, TrendMetrics, ActionMetrics } from '@/types/broker-dashboard'
 
 interface BrokerMetrics {
   id: string;
@@ -106,7 +111,7 @@ const CHART_COLORS = [
   MODERN_COLORS.orange,
 ];
 
-export const AdminDashboard = () => {
+export function AdminDashboard() {
   const [brokers, setBrokers] = useState<BrokerMetrics[]>([]);
   const [filteredBrokers, setFilteredBrokers] = useState<BrokerMetrics[]>([]);
   const [activeBrokerIds, setActiveBrokerIds] = useState<string[]>([]);
@@ -3074,5 +3079,5 @@ export const AdminDashboard = () => {
         </Tabs>
       </div>
     </div>
-  );
-}; 
+  )
+} 

@@ -1,33 +1,42 @@
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { DashboardCard } from "./DashboardCard";
-import { useTranslation } from "react-i18next";
-import { BarChart } from "lucide-react";
-import { YearlyProjectionData } from '@/lib/chart-projections';
-import { FinancialRecord, InvestmentPlan, MicroInvestmentPlan, Goal, ProjectedEvent, Profile } from '@/types/financial';
-import { ReturnChartTab, TableTab, FutureProjectionTab } from "./monthly-view";
-import { tabTriggerActiveGreen } from "@/lib/gradient-classes";
+// 1. Imports externos
+import { useTranslation } from 'react-i18next'
+import { BarChart } from 'lucide-react'
 
-export const MonthlyView = ({ 
-  userId, 
+// 2. Imports internos (shared)
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { DashboardCard } from './dashboard-card'
+import { YearlyProjectionData } from '@/lib/chart-projections'
+import { tabTriggerActiveGreen } from '@/lib/gradient-classes'
+
+// 3. Imports internos (feature)
+import { FinancialRecord, InvestmentPlan, MicroInvestmentPlan, Goal, ProjectedEvent, Profile } from '@/types/financial'
+import { ReturnChartTab, TableTab, FutureProjectionTab } from './monthly-view'
+
+// 4. Types
+interface MonthlyViewProps {
+  userId: string
+  allFinancialRecords: FinancialRecord[]
+  investmentPlan: InvestmentPlan
+  activeMicroPlan: MicroInvestmentPlan | null
+  profile: Profile
+  projectionData?: YearlyProjectionData[]
+  goals?: Goal[]
+  events?: ProjectedEvent[]
+  microPlans?: MicroInvestmentPlan[]
+}
+
+// 5. Component
+export function MonthlyView({ 
+  userId,
   allFinancialRecords,
-  investmentPlan, 
+  investmentPlan,
   activeMicroPlan,
   profile,
   projectionData,
   goals,
   events,
   microPlans
-}: {
-  userId: string;
-  allFinancialRecords: FinancialRecord[];
-  investmentPlan: InvestmentPlan;
-  activeMicroPlan: MicroInvestmentPlan | null;
-  profile: Profile;
-  projectionData?: YearlyProjectionData[];
-  goals?: Goal[];
-  events?: ProjectedEvent[];
-  microPlans?: MicroInvestmentPlan[];
-}) => {
+}: MonthlyViewProps) {
   const { t } = useTranslation();
   return (
     <DashboardCard 
@@ -94,5 +103,5 @@ export const MonthlyView = ({
         </TabsContent>
       </Tabs>
     </DashboardCard>
-  );
-};
+  )
+}

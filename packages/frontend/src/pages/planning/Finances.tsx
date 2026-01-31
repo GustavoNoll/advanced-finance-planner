@@ -14,7 +14,7 @@ import { useIPCASync } from "@/hooks/useIPCASync"
 import { useChartOptions } from "@/hooks/useChartOptions"
 import { Profile } from "@/types/financial"
 import { InvestmentPlan, MicroInvestmentPlan } from "@/types/financial/investment-plans"
-import { DashboardCard } from "@/components/DashboardCard"
+import { DashboardCard } from '@/components/dashboard-card'
 import { DashboardNavigation } from "@/components/dashboard/DashboardNavigation"
 import { DashboardHighlights } from "@/components/dashboard/DashboardHighlights"
 import { DashboardMetrics } from "@/components/dashboard/DashboardMetrics";

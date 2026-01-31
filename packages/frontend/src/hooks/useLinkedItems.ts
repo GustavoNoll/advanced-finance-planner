@@ -1,5 +1,8 @@
-import { useState, useEffect } from "react";
-import { supabase } from "@/lib/supabase";
+// 1. Imports externos
+import { useState, useEffect } from 'react'
+
+// 2. Imports internos (shared)
+import { supabase } from '@/lib/supabase'
 
 export interface LinkedItem {
   id: string;
@@ -13,7 +16,7 @@ export interface LinkedItem {
   item_id: string; // ID do objetivo/evento para poder atualizar o status
 }
 
-export const useLinkedItems = (financialRecordId: number, refreshKey?: number) => {
+export function useLinkedItems(financialRecordId: number, refreshKey?: number) {
   const [linkedItems, setLinkedItems] = useState<LinkedItem[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);

@@ -6,6 +6,8 @@ on:
   pull_request:
     branches: [ main, develop ]
 
+# Este workflow foi substituído por .github/workflows/ci.yml
+# Mantido para compatibilidade, mas será removido em versões futuras
 jobs:
   test:
     runs-on: ubuntu-latest

@@ -1,17 +1,22 @@
-import { Progress } from "@/components/ui/progress";
-import { DashboardCard } from "./DashboardCard";
-import { ArrowUpRight, Clock, Target, Info } from "lucide-react";
-import { useTranslation } from "react-i18next";
-import { FinancialRecord, InvestmentPlan, MicroInvestmentPlan, MicroPlanCalculations } from "@/types/financial";
-import { useMemo } from "react";
-import { PlanProgressData, utils } from "@/lib/plan-progress-calculator";
+// 1. Imports externos
+import { useMemo } from 'react'
+import { useTranslation } from 'react-i18next'
+import { ArrowUpRight, Clock, Target, Info } from 'lucide-react'
+
+// 2. Imports internos (shared)
+import { Progress } from '@/components/ui/progress'
+import { DashboardCard } from './dashboard-card'
 import {
   HoverCard,
   HoverCardContent,
   HoverCardTrigger,
-} from "@/components/ui/hover-card";
-import { CurrencyCode, formatCurrency } from "@/utils/currency";
-import { createDateWithoutTimezone } from '@/utils/dateUtils';
+} from '@/components/ui/hover-card'
+import { PlanProgressData, utils } from '@/lib/plan-progress-calculator'
+import { CurrencyCode, formatCurrency } from '@/utils/currency'
+import { createDateWithoutTimezone } from '@/utils/dateUtils'
+
+// 3. Imports internos (feature)
+import { FinancialRecord, InvestmentPlan, MicroInvestmentPlan, MicroPlanCalculations } from '@/types/financial'
 
 interface SavingsGoalProps {
   allFinancialRecords: FinancialRecord[];
@@ -31,7 +36,8 @@ interface ProjectedAgeResult {
   monthsDifference: number;
 }
 
-export const SavingsGoal = ({ allFinancialRecords, investmentPlan, activeMicroPlan, microPlanCalculations, profile, planProgressData }: SavingsGoalProps) => {
+// 4. Component
+export function SavingsGoal({ allFinancialRecords, investmentPlan, activeMicroPlan, microPlanCalculations, profile, planProgressData }: SavingsGoalProps) {
   const { t } = useTranslation();
 
   const lastFinancialRecord = useMemo(() => {
@@ -232,5 +238,5 @@ export const SavingsGoal = ({ allFinancialRecords, investmentPlan, activeMicroPl
         </div>
       </div>
     </DashboardCard>
-  );
-};
+  )
+}

@@ -3,6 +3,7 @@ import cors from 'cors'
 import dotenv from 'dotenv'
 import { requestLogger, errorLogger } from './middleware/logger.js'
 import { loadApiRoutes } from './utils/load-api-routes.js'
+import { validateBackendEnv } from '@app/shared/config/env'
 import { fileURLToPath } from 'url'
 import { dirname, join } from 'path'
 
@@ -11,15 +12,18 @@ if (process.env.NODE_ENV !== 'production') {
   dotenv.config({ path: '../../.env' })
 }
 
+// Validar variáveis de ambiente no startup
+const env = validateBackendEnv()
+
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = dirname(__filename)
-const PORT = process.env.PORT || 8081
+const PORT = env.PORT
 
 const app = express()
 
 // Middlewares globais
 app.use(cors({
-  origin: process.env.FRONTEND_URL || '*',
+  origin: env.FRONTEND_URL,
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
   allowedHeaders: ['Content-Type', 'Authorization']
