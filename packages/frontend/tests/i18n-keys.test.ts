@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
-import { ptBR } from '../src/locales/pt-BR'
-import { enUS } from '../src/locales/en-US'
+import { ptBR } from '@/locales/pt-BR'
+import { enUS } from '@/locales/en-US'
 
 /**
  * Gets all nested keys from an object
@@ -104,4 +104,3 @@ describe('i18n Translation Keys', () => {
     expect(emptyKeys).toEqual([])
   })
 })
-
