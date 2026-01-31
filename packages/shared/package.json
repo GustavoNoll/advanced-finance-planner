@@ -28,7 +28,8 @@
     }
   },
   "scripts": {
-    "build": "tsc",
+    "build": "tsc --build",
+    "build:clean": "rm -rf dist tsconfig.tsbuildinfo && tsc --build",
     "type-check": "tsc --noEmit"
   },
   "dependencies": {

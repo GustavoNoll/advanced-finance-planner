@@ -77,14 +77,20 @@ jobs:
       run: npm ci
     
     - name: Build Shared (for type checking)
-      run: npm run build:shared
+      run: |
+        cd packages/shared
+        rm -rf dist tsconfig.tsbuildinfo
+        npm run build
     
     - name: Verify Shared Build (for type checking)
       run: |
         if [ ! -f "packages/shared/dist/config/env.d.ts" ]; then
           echo "❌ Shared build failed: env.d.ts not found"
+          echo "Contents of packages/shared/dist:"
+          find packages/shared/dist -type f 2>/dev/null || echo "No files found in dist"
           exit 1
         fi
+        echo "✅ Shared build verification passed"
     
     - name: Type Check Frontend
       run: npm run type-check --workspace=packages/frontend
@@ -160,12 +166,17 @@ jobs:
       run: npm ci
     
     - name: Build Shared
-      run: npm run build:shared
+      run: |
+        cd packages/shared
+        rm -rf dist tsconfig.tsbuildinfo
+        npm run build
     
     - name: Verify Shared Build
       run: |
         if [ ! -f "packages/shared/dist/config/env.d.ts" ]; then
           echo "❌ Shared build failed: env.d.ts not found"
+          echo "Contents of packages/shared/dist:"
+          find packages/shared/dist -type f 2>/dev/null || echo "No files found in dist"
           exit 1
         fi
         echo "✅ Shared build verification passed"
