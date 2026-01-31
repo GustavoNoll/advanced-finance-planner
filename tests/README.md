@@ -4,10 +4,11 @@ Este diretório contém os testes automatizados do projeto.
 
 ## Estrutura
 
+Os testes estão localizados em `packages/frontend/tests/`:
+
 ```
-tests/
+packages/frontend/tests/
 ├── i18n-keys.test.ts    # Testes de validação das chaves de tradução
-└── README.md            # Este arquivo
 ```
 
 ## Configuração
@@ -45,6 +46,13 @@ npm run test:ui
 ### Teste específico
 
 ```bash
+npm test -- tests/i18n-keys.test.ts
+```
+
+Ou a partir do workspace do frontend:
+
+```bash
+cd packages/frontend
 npm test -- tests/i18n-keys.test.ts
 ```
 
@@ -90,7 +98,7 @@ Veja o arquivo `.github/workflows/test.yml` para mais detalhes.
 
 ## Adicionando Novos Testes
 
-Para adicionar novos testes, crie arquivos com o padrão `*.test.ts` ou `*.test.tsx` neste diretório.
+Para adicionar novos testes, crie arquivos com o padrão `*.test.ts` ou `*.test.tsx` no diretório `packages/frontend/tests/`.
 
 Exemplo:
 

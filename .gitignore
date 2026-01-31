@@ -8,8 +8,11 @@ pnpm-debug.log*
 lerna-debug.log*
 
 node_modules
+packages/*/node_modules
 .vercel
+packages/*/.vercel
 dist
+packages/*/dist
 dist-ssr
 *.local
 
@@ -28,3 +31,7 @@ dist-ssr
 .env
 .env.local
 .env.*.local
+
+# Vercel Serverless Functions
+# Comentado para que as funções sejam commitadas e o Vercel as detecte
+# api/

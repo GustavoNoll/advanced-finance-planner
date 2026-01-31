@@ -1,0 +1,1353 @@
+// 1. Imports externos
+import { useState, useEffect, useCallback, useRef } from 'react'
+import { useNavigate } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
+import { Plus, LogOut, Share2, Trash2, Calculator, FileText, Users, Target, Shield, Eye, BarChart as BarChartIcon, Upload, LineChart as LineChartIcon, PieChart as PieChartIcon, Clock, AlertTriangle, TrendingUp } from 'lucide-react'
+import { 
+  AreaChart, Area, PieChart, Pie, Cell, Legend, ResponsiveContainer, 
+  XAxis, YAxis, CartesianGrid, Tooltip
+} from 'recharts'
+
+// 2. Imports internos (shared)
+import { Button } from '@/components/ui/button'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { useToast } from '@/components/ui/use-toast'
+import { Logo } from '@/components/ui/logo'
+import { Avatar } from '@/components/ui/avatar-initial'
+import { Spinner } from '@/components/ui/spinner'
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
+import { useAuth } from '@/components/auth/AuthProvider'
+import { supabase } from '@/lib/supabase'
+import { createDateWithoutTimezone } from '@/utils/dateUtils'
+import { tabTriggerActiveBlue } from '@/lib/gradient-classes'
+import { useAccessData } from '@/hooks/useAccessData'
+import { useBrokerStatementImports } from '@/hooks/useStatementImports'
+
+// 3. Imports internos (feature)
+import { SummaryMetrics } from '@/components/broker-dashboard/metrics/SummaryMetrics'
+import { PerformanceMetrics } from '@/components/broker-dashboard/metrics/PerformanceMetrics'
+import { AdvancedWealthChart } from '@/components/broker-dashboard/charts/AdvancedWealthChart'
+import { ContributionTrendChart } from '@/components/broker-dashboard/charts/ContributionTrendChart'
+import { SmartAlerts } from '@/components/broker-dashboard/alerts/SmartAlerts'
+import { ClientList } from '@/components/broker-dashboard/client-list/ClientList'
+import { ClientAccessAnalysis } from '@/components/shared/ClientAccessAnalysis'
+import { StatementImportsList } from '@/components/shared/StatementImportsList'
+import { InvestmentPolicyInsights } from '@/components/admin/InvestmentPolicyInsights'
+import { UserProfileInvestment, BrokerProfile, EnhancedDashboardMetrics, DashboardMetrics } from '@/types/broker-dashboard'
+
+// Modern color palette
+const MODERN_COLORS = {
+  primary: '#6366f1', // Indigo
+  secondary: '#8b5cf6', // Violet
+  success: '#10b981', // Emerald
+  warning: '#f59e0b', // Amber
+  danger: '#ef4444', // Red
+  info: '#06b6d4', // Cyan
+  purple: '#a855f7', // Purple
+  pink: '#ec4899', // Pink
+  blue: '#3b82f6', // Blue
+  green: '#22c55e', // Green
+  orange: '#f97316', // Orange
+  teal: '#14b8a6', // Teal
+};
+
+/**
+ * Main broker dashboard component that displays client metrics and management tools
+ */
+export function BrokerDashboard() {
+  const [searchQuery, setSearchQuery] = useState('');
+  const [searchResults, setSearchResults] = useState<UserProfileInvestment[]>([]);
+  const [isSearching, setIsSearching] = useState(false);
+  const [isBroker, setIsBroker] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const navigate = useNavigate();
+  const { toast } = useToast();
+  const { t } = useTranslation();
+  const { user } = useAuth();
+  const [currentBroker, setCurrentBroker] = useState<string | null>(null);
+  const [brokerProfile, setBrokerProfile] = useState<BrokerProfile | null>(null);
+  const [metrics, setMetrics] = useState<DashboardMetrics>({
+    totalClients: 0,
+    clientsWithPlan: 0,
+    clientsWithOutdatedRecords: 0,
+    totalBalance: 0,
+    clientsWithActiveRecords: 0,
+    wealthDistribution: [],
+    planning: {
+      averageAge: 0,
+      averageRetirementAge: 0,
+      averageDesiredIncome: 0,
+      planTypes: {
+        type1: 0,
+        type2: 0,
+        type3: 0
+      }
+    },
+    trends: {
+      newClientsThisMonth: 0,
+      totalGrowthThisMonth: 0,
+      averageMonthlyGrowth: 0,
+      inactiveClients: 0,
+      growthRate: 0,
+      clientRetentionRate: 0
+    },
+    actions: {
+      needsPlanReview: 0,
+      belowRequiredContribution: 0,
+      nearRetirement: 0,
+      lowReturns: 0,
+      urgentAttention: 0,
+      highPriority: 0
+    }
+  });
+
+  const [enhancedMetrics, setEnhancedMetrics] = useState<EnhancedDashboardMetrics>({
+    totalClients: 0,
+    clientsWithPlan: 0,
+    clientsWithOutdatedRecords: 0,
+    totalBalance: 0,
+    clientsWithActiveRecords: 0,
+    averageReturn: 0,
+    averageVolatility: 0,
+    averageSharpeRatio: 0,
+    totalGrowth: 0,
+    averageEngagementScore: 0,
+    urgentClients: 0,
+    highPriorityClients: 0,
+    inactiveClients: 0,
+    activityDistribution: {
+      active: 0,
+      stale: 0,
+      atRisk: 0,
+      inactive: 0,
+      noRecords: 0
+    },
+    averageAge: 0,
+    averageYearsToRetirement: 0,
+    nearRetirementClients: 0,
+    planMaturity: {
+      new: 0,
+      established: 0,
+      mature: 0
+    },
+    activityStatus: {
+      active: 0,
+      stale: 0,
+      atRisk: 0,
+      inactive: 0
+    },
+    wealthDistribution: [],
+    trends: {
+      newClientsThisMonth: 0,
+      totalGrowthThisMonth: 0,
+      averageMonthlyGrowth: 0,
+      inactiveClients: 0,
+      growthRate: 0,
+      clientRetentionRate: 0
+    },
+    actions: {
+      needsPlanReview: 0,
+      belowRequiredContribution: 0,
+      nearRetirement: 0,
+      lowReturns: 0,
+      urgentAttention: 0,
+      highPriority: 0
+    }
+  });
+
+  const [contributionTrendData, setContributionTrendData] = useState<Array<{
+    month: string;
+    totalClients: number;
+    adequateContributors: number;
+    percentage: number;
+  }>>([]);
+
+
+  // Ref for client list section
+  const clientListRef = useRef<HTMLDivElement>(null);
+
+  // Client access data using shared hook
+  const { clientAccessData, fetchClientAccessData, processClientData } = useAccessData({ 
+    type: 'client',
+    brokerId: currentBroker || undefined
+  });
+
+  // Statement imports data using hook
+  const {
+    statementImports,
+    statementImportsByDay,
+    statementImportsStats,
+    loading: statementImportsLoading,
+    error: statementImportsError,
+    refetch: refetchStatementImports
+  } = useBrokerStatementImports(currentBroker, 30);
+
+  // Scroll to client list
+  const scrollToClientList = useCallback(() => {
+    clientListRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }, []);
+
+
+
+  const calculateContributionTrends = useCallback(async (users: UserProfileInvestment[]) => {
+    const last6Months = [];
+    const today = new Date();
+    
+    // Generate last 6 months (excluding current month)
+    for (let i = 6; i >= 1; i--) {
+      const date = new Date(today.getFullYear(), today.getMonth() - i, 1);
+      last6Months.push({
+        year: date.getFullYear(),
+        month: date.getMonth() + 1,
+        monthName: date.toLocaleDateString('pt-BR', { month: 'short' }),
+        fullMonthName: date.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' })
+      });
+    }
+
+    const trendData = await Promise.all(
+      last6Months.map(async ({ year, month, monthName, fullMonthName }) => {
+        // Get users who had financial records in this month
+        const { data: monthlyRecords, error } = await supabase
+          .from('user_financial_records')
+          .select(`
+            user_id,
+            monthly_contribution,
+            created_at
+          `)
+          .eq('record_year', year)
+          .eq('record_month', month);
+
+        if (error) {
+          console.error('Error fetching monthly records:', error);
+          return {
+            month: monthName,
+            totalClients: 0,
+            adequateContributors: 0,
+            percentage: 0
+          };
+        }
+
+        // Get micro plans for these users
+        const userIds = monthlyRecords.map(record => record.user_id);
+        const { data: microPlans } = await supabase
+          .from('micro_investment_plans')
+          .select(`
+            life_investment_plan_id,
+            monthly_deposit,
+            effective_date
+          `)
+          .in('life_investment_plan_id', 
+            users.filter(u => userIds.includes(u.id) && u.investment_plan_id)
+                 .map(u => u.investment_plan_id)
+          );
+
+        // Calculate adequacy
+        let adequateContributors = 0;
+        const totalClients = userIds.length;
+
+        monthlyRecords.forEach(record => {
+          const user = users.find(u => u.id === record.user_id);
+          if (!user || !user.investment_plan_id) return;
+
+          const userMicroPlan = microPlans?.find(mp => 
+            mp.life_investment_plan_id === user.investment_plan_id &&
+            new Date(mp.effective_date) <= new Date(year, month - 1, 1)
+          );
+
+          if (userMicroPlan) {
+            const requiredContribution = userMicroPlan.monthly_deposit;
+            const actualContribution = record.monthly_contribution || 0;
+            
+            if (actualContribution >= requiredContribution) {
+              adequateContributors++;
+            }
+          }
+        });
+
+        const percentage = totalClients > 0 ? (adequateContributors / totalClients) * 100 : 0;
+
+        return {
+          month: monthName,
+          totalClients,
+          adequateContributors,
+          percentage
+        };
+      })
+    );
+
+    setContributionTrendData(trendData);
+  }, []);
+
+
+  const calculateMetrics = useCallback(async (users: UserProfileInvestment[]) => {
+    const totalClients = users.length;
+    const clientsWithPlan = users.filter(user => user.investment_plan_id).length;
+    const clientsWithOutdatedRecords = users.filter(user => user.activity_status === 'stale' || user.activity_status === 'at_risk' || user.activity_status === 'inactive').length;
+    const clientsWithActiveRecords = users.filter(user => user.activity_status === 'active').length;
+
+    const totalBalance = users.reduce((sum, user) => {
+      return sum + (user.ending_balance || 0);
+    }, 0);
+
+    // Calculate wealth distribution
+    const ranges = [
+      { min: 0, max: 500000, label: '0 - 500k' },
+      { min: 500000, max: 10000000, label: '500k - 10M' },
+      { min: 10000000, max: 50000000, label: '10M - 50M' },
+      { min: 50000000, max: Infinity, label: '50M+' }
+    ];
+
+    const wealthDistribution = ranges.map(range => {
+      const clients = users.filter(user => {
+        const balance = user.ending_balance || 0;
+        return balance >= range.min && balance < range.max;
+      });
+
+      return {
+        range: range.label,
+        count: clients.length,
+        total: clients.reduce((sum, user) => sum + (user.ending_balance || 0), 0),
+        percentage: totalClients > 0 ? (clients.length / totalClients) * 100 : 0
+      };
+    });
+
+    // Calculate planning metrics
+    const usersWithPlan = users.filter(user => user.investment_plan_id);
+    const averageAge = usersWithPlan.reduce((sum, user) => {
+      const birthDate = createDateWithoutTimezone(user.birth_date);
+      const today = createDateWithoutTimezone(new Date());
+      const age = today.getFullYear() - birthDate.getFullYear();
+      return sum + age;
+    }, 0) / usersWithPlan.length;
+
+    const planning = {
+      averageAge: averageAge || 0,
+      averageRetirementAge: 0,
+      averageDesiredIncome: 0,
+      planTypes: {
+        type1: 0,
+        type2: 0,
+        type3: 0
+      }
+    };
+
+    // Calculate trends
+    const today = createDateWithoutTimezone(new Date());
+    const firstDayOfMonth = createDateWithoutTimezone(new Date(today.getFullYear(), today.getMonth(), 1));
+
+    const newClientsThisMonth = users.filter(user => {
+      if (!user.financial_created_at) return false;
+      const createdAt = createDateWithoutTimezone(user.financial_created_at || '');
+      return createdAt >= firstDayOfMonth;
+    }).length;
+
+    const totalGrowthThisMonth = users.reduce((sum, user) => 
+      sum + (user.total_returns || 0), 0);
+
+    const averageMonthlyGrowth = totalGrowthThisMonth / (users.length || 1);
+    const inactiveClients = users.filter(user => user.is_inactive).length;
+
+    const trends = {
+      newClientsThisMonth,
+      totalGrowthThisMonth,
+      averageMonthlyGrowth,
+      inactiveClients,
+      growthRate: 0,
+      clientRetentionRate: 0
+    };
+
+    // Calculate actions
+    const needsPlanReview = users.filter(user => user.needs_plan_review).length;
+    const belowRequiredContribution = users.filter(user => user.below_required_contribution).length;
+    const nearRetirement = users.filter(user => user.near_retirement).length;
+    const lowReturns = users.filter(user => user.has_low_returns).length;
+
+    const actions = {
+      needsPlanReview,
+      belowRequiredContribution,
+      nearRetirement,
+      lowReturns,
+      urgentAttention: 0,
+      highPriority: 0
+    };
+
+    setMetrics({
+      totalClients,
+      clientsWithPlan,
+      clientsWithOutdatedRecords,
+      totalBalance,
+      clientsWithActiveRecords,
+      wealthDistribution,
+      planning,
+      trends,
+      actions
+    });
+
+    // Calculate enhanced metrics
+    await calculateEnhancedMetrics(users);
+    
+    // Calculate contribution trends
+    await calculateContributionTrends(users);
+    
+    // Process client access data
+    processClientData(users);
+  }, [calculateContributionTrends, processClientData]);
+
+  const fetchInitialUsers = useCallback(async () => {
+    if (!currentBroker) return;
+    
+    setIsSearching(true);
+    try {
+      const { data: users, error } = await supabase
+        .from('user_profiles_investment')
+        .select('*')
+        .eq('broker_id', currentBroker)
+        .order('profile_name');
+
+      if (error) throw error;
+
+      console.log(users);
+      
+      setSearchResults(users || []);
+      calculateMetrics(users || []);
+    } catch (error: unknown) {
+      toast({
+        title: "Error",
+        description: error instanceof Error ? error.message : String(error),
+        variant: "destructive",
+      });
+    } finally {
+      setIsSearching(false);
+    }
+  }, [currentBroker, toast, calculateMetrics]);
+
+  const handleSearch = useCallback(async () => {
+    if (!searchQuery.trim()) {
+      return fetchInitialUsers();
+    }
+    
+    setIsSearching(true);
+    try {
+      const { data: users, error } = await supabase
+        .from('user_profiles_investment')
+        .select('*')
+        .eq('broker_id', currentBroker)
+        .or(`email.ilike.%${searchQuery}%,profile_name.ilike.%${searchQuery}%`)
+        .order('profile_name');
+      
+      if (error) throw error;
+      setSearchResults(users || []);
+      calculateMetrics(users || []);
+    } catch (error: unknown) {
+      toast({
+        title: t('common.error'),
+        description: error instanceof Error ? error.message : String(error),
+        variant: "destructive",
+      });
+    } finally {
+      setIsSearching(false);
+    }
+  }, [searchQuery, currentBroker, fetchInitialUsers, toast, t, calculateMetrics]);
+
+  // Combined initialization effect
+  useEffect(() => {
+    const initializeDashboard = async () => {
+      setIsLoading(true);
+      if (!user) {
+        navigate('/login');
+        return;
+      }
+
+      try {
+        const { data: profile, error } = await supabase
+          .from('profiles')
+          .select('is_broker, id, name')
+          .eq('id', user.id)
+          .single();
+
+        if (error) throw error;
+
+        if (!profile?.is_broker) {
+          toast({
+            title: t('common.error'),
+            description: t('brokerDashboard.messages.error.unauthorized'),
+            variant: "destructive",
+          });
+          navigate('/');
+          return;
+        }
+
+        setIsBroker(true);
+        setCurrentBroker(profile.id);
+        setBrokerProfile(profile);
+        await fetchInitialUsers();
+      } catch (error) {
+        console.error('Error initializing dashboard:', error);
+        toast({
+          title: t('common.error'),
+          description: error instanceof Error ? error.message : String(error),
+          variant: "destructive",
+        });
+        navigate('/login');
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    initializeDashboard();
+  }, [user, navigate, toast, t, fetchInitialUsers]);
+
+  // Debounced search effect
+  useEffect(() => {
+    const debounceTimeout = setTimeout(() => {
+      if (currentBroker) {
+        handleSearch();
+      }
+    }, 300);
+
+    return () => clearTimeout(debounceTimeout);
+  }, [searchQuery, currentBroker, handleSearch]);
+
+
+
+  const calculateEnhancedMetrics = async (users: UserProfileInvestment[]) => {
+    const totalClients = users.length;
+    const clientsWithPlan = users.filter(user => user.investment_plan_id).length;
+    const clientsWithOutdatedRecords = users.filter(user => user.activity_status === 'stale' || user.activity_status === 'at_risk' || user.activity_status === 'inactive').length;
+    const clientsWithActiveRecords = users.filter(user => user.activity_status === 'active').length;
+
+    const totalBalance = users.reduce((sum, user) => sum + (user.ending_balance || 0), 0);
+    const totalGrowth = users.reduce((sum, user) => {
+      const endingBalance = user.ending_balance || 0;
+      const initialAmount = user.initial_amount || 0;
+      return sum + (endingBalance - initialAmount);
+    }, 0);
+
+    // Performance metrics - only consider users with non-null values
+    const usersWithReturnData = users.filter(user => user.average_monthly_return_rate !== null && user.average_monthly_return_rate !== undefined);
+    const usersWithVolatilityData = users.filter(user => user.return_volatility !== null && user.return_volatility !== undefined);
+    const usersWithSharpeData = users.filter(user => user.sharpe_ratio !== null && user.sharpe_ratio !== undefined);
+    const usersWithEngagementData = users.filter(user => user.engagement_score !== null && user.engagement_score !== undefined);
+    
+    const averageReturn = usersWithReturnData.length > 0 
+      ? usersWithReturnData.reduce((sum, user) => sum + user.average_monthly_return_rate! / 100, 0) / usersWithReturnData.length 
+      : 0;
+
+    const averageVolatility = usersWithVolatilityData.length > 0 
+      ? usersWithVolatilityData.reduce((sum, user) => sum + user.return_volatility!, 0) / usersWithVolatilityData.length 
+      : 0;
+    
+    const averageSharpeRatio = usersWithSharpeData.length > 0 
+      ? usersWithSharpeData.reduce((sum, user) => sum + user.sharpe_ratio!, 0) / usersWithSharpeData.length 
+      : 0;
+    
+    const averageEngagementScore = usersWithEngagementData.length > 0 
+      ? usersWithEngagementData.reduce((sum, user) => sum + user.engagement_score!, 0) / usersWithEngagementData.length 
+      : 0;
+
+    // Priority clients
+    const urgentClients = users.filter(user => user.priority_level === 'urgent').length;
+    const highPriorityClients = users.filter(user => user.priority_level === 'high').length;
+    const inactiveClients = users.filter(user => user.activity_status === 'inactive').length;
+
+    // Activity status distribution
+    const activityDistribution = {
+      active: users.filter(user => user.activity_status === 'active').length,
+      stale: users.filter(user => user.activity_status === 'stale').length,
+      atRisk: users.filter(user => user.activity_status === 'at_risk').length,
+      inactive: users.filter(user => user.activity_status === 'inactive').length,
+      noRecords: users.filter(user => !user.total_records || user.total_records === 0).length
+    };
+
+    // Age and retirement - only consider users with non-null values
+    const usersWithAgeData = users.filter(user => user.current_age !== null && user.current_age !== undefined);
+    const usersWithRetirementData = users.filter(user => user.years_to_retirement !== null && user.years_to_retirement !== undefined);
+    
+    const averageAge = usersWithAgeData.length > 0 
+      ? usersWithAgeData.reduce((sum, user) => sum + user.current_age!, 0) / usersWithAgeData.length 
+      : 0;
+    
+    const averageYearsToRetirement = usersWithRetirementData.length > 0 
+      ? usersWithRetirementData.reduce((sum, user) => sum + user.years_to_retirement!, 0) / usersWithRetirementData.length 
+      : 0;
+    const nearRetirementClients = users.filter(user => user.near_retirement).length;
+
+    // Plan maturity
+    const planMaturity = {
+      new: users.filter(user => user.plan_maturity === 'new').length,
+      established: users.filter(user => user.plan_maturity === 'established').length,
+      mature: users.filter(user => user.plan_maturity === 'mature').length
+    };
+
+    // Activity status
+    const activityStatus = {
+      active: users.filter(user => user.activity_status === 'active').length,
+      stale: users.filter(user => user.activity_status === 'stale').length,
+      atRisk: users.filter(user => user.activity_status === 'at_risk').length,
+      inactive: users.filter(user => user.activity_status === 'inactive').length
+    };
+
+    // Wealth distribution with percentages
+    const ranges = [
+      { min: 0, max: 500000, label: '0 - 500k' },
+      { min: 500000, max: 10000000, label: '500k - 10M' },
+      { min: 10000000, max: 50000000, label: '10M - 50M' },
+      { min: 50000000, max: Infinity, label: '50M+' }
+    ];
+
+    const wealthDistribution = ranges.map(range => {
+      const clients = users.filter(user => {
+        const balance = user.ending_balance || 0;
+        return balance >= range.min && balance < range.max;
+      });
+
+      return {
+        range: range.label,
+        count: clients.length,
+        total: clients.reduce((sum, user) => sum + (user.ending_balance || 0), 0),
+        percentage: totalClients > 0 ? (clients.length / totalClients) * 100 : 0
+      };
+    });
+
+    // Trends
+    const today = createDateWithoutTimezone(new Date());
+    const firstDayOfMonth = createDateWithoutTimezone(new Date(today.getFullYear(), today.getMonth(), 1));
+
+    const newClientsThisMonth = users.filter(user => {
+      if (!user.financial_created_at) return false;
+      const createdAt = createDateWithoutTimezone(user.financial_created_at || '');
+      return createdAt >= firstDayOfMonth;
+    }).length;
+
+    const totalGrowthThisMonth = users.reduce((sum, user) => 
+      sum + (user.total_returns || 0), 0);
+
+    const averageMonthlyGrowth = totalGrowthThisMonth / (users.length || 1);
+
+    const trends = {
+      newClientsThisMonth,
+      totalGrowthThisMonth,
+      averageMonthlyGrowth,
+      inactiveClients,
+      growthRate: totalBalance > 0 ? (totalGrowth / totalBalance) * 100 : 0,
+      clientRetentionRate: totalClients > 0 ? ((totalClients - inactiveClients) / totalClients) * 100 : 0
+    };
+
+    // Actions
+    const needsPlanReview = users.filter(user => user.needs_plan_review).length;
+    const belowRequiredContribution = users.filter(user => user.below_required_contribution).length;
+    const nearRetirement = users.filter(user => user.near_retirement).length;
+    const lowReturns = users.filter(user => user.has_low_returns).length;
+
+    const actions = {
+      needsPlanReview,
+      belowRequiredContribution,
+      nearRetirement,
+      lowReturns,
+      urgentAttention: urgentClients,
+      highPriority: highPriorityClients
+    };
+    setEnhancedMetrics({
+      totalClients,
+      clientsWithPlan,
+      clientsWithOutdatedRecords,
+      totalBalance,
+      clientsWithActiveRecords,
+      averageReturn: averageReturn || 0,
+      averageVolatility: averageVolatility || 0,
+      averageSharpeRatio: averageSharpeRatio || 0,
+      totalGrowth,
+      averageEngagementScore: averageEngagementScore || 0,
+      urgentClients,
+      highPriorityClients,
+      inactiveClients,
+      activityDistribution,
+      averageAge: averageAge || 0,
+      averageYearsToRetirement: averageYearsToRetirement || 0,
+      nearRetirementClients,
+      planMaturity,
+      activityStatus,
+      wealthDistribution,
+      trends,
+      actions
+    });
+  };
+
+
+  const handleUserSelect = (userId: string) => {
+    // Find the client in the search results
+    const client = searchResults.find(c => c.id === userId);
+    
+    // If client doesn't have an investment plan, navigate to simulation with client_id
+    if (client && !client.investment_plan_id) {
+      navigate(`/simulation?client_id=${userId}`);
+    } else {
+      // If client has a plan, navigate to client profile as usual
+      navigate(`/client/${userId}`);
+    }
+  };
+
+  const handleLogout = async () => {
+    try {
+      const { error } = await supabase.auth.signOut();
+      if (error) throw error;
+      navigate('/login');
+    } catch (error: unknown) {
+      toast({
+        title: t('common.error'),
+        description: error instanceof Error ? error.message : String(error),
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleDeleteClient = async (clientId: string) => {
+    try {
+      const { error } = await supabase.rpc('delete_client', {
+        p_client_id: clientId
+      });
+
+      if (error) throw error;
+
+      // Update the UI
+      setSearchResults(prev => prev.filter(client => client.id !== clientId));
+      calculateMetrics(searchResults.filter(client => client.id !== clientId));
+
+      toast({
+        title: t('common.success'),
+        description: t('brokerDashboard.clientDeleted'),
+      });
+    } catch (error: unknown) {
+      console.error('Error deleting client:', error);
+      toast({
+        title: t('common.error'),
+        description: error instanceof Error ? error.message : String(error),
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleSimulationClick = () => {
+    // Navigate to simulation page
+    navigate('/simulation');
+  };
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <Spinner />
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 dark:from-slate-900 dark:via-slate-800 dark:to-slate-900">
+      {/* Fixed Task Bar - Nubank Style */}
+      <div className="fixed top-0 left-0 right-0 z-50 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md border-b border-slate-200 dark:border-slate-700 shadow-sm">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex items-center justify-between h-16">
+            {/* Logo and Title */}
+            <div className="flex items-center gap-4">
+              <div className="relative">
+                <Logo variant="minimal" />
+              </div>
+              <div className="hidden sm:block">
+                <h1 className="text-lg font-semibold text-slate-900 dark:text-slate-100">
+                  {t('brokerDashboard.title')}
+                </h1>
+                <p className="text-xs text-slate-600 dark:text-slate-400">
+                  {brokerProfile?.name || 'Welcome back'}
+                </p>
+              </div>
+            </div>
+
+            {/* Action Buttons - Nubank Style */}
+            <div className="flex items-center gap-1">
+              {/* Meu Perfil */}
+              <div 
+                className="group flex items-center rounded-full bg-transparent hover:bg-blue-50/50 dark:hover:bg-blue-900/30 px-2 py-1 transition-all duration-300 ease-out cursor-pointer"
+                onClick={() => navigate(`/client-profile/${brokerProfile?.id}`)}
+              >
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-10 w-10 rounded-full hover:bg-transparent transition-all duration-200 pointer-events-none"
+                >
+                  <Avatar 
+                    initial={brokerProfile?.name?.[0] || ''} 
+                    color="bluePrimary"
+                    size="sm"
+                  />
+                </Button>
+                <span className="ml-2 whitespace-nowrap text-sm text-slate-700 dark:text-slate-300 font-medium opacity-0 group-hover:opacity-100 w-0 group-hover:w-auto overflow-hidden transition-all duration-300 ease-out transform translate-x-[-10px] group-hover:translate-x-0">
+                  {t('brokerDashboard.myProfile')}
+                </span>
+              </div>
+
+              {/* Novo Cliente */}
+              <div 
+                className="group flex items-center rounded-full bg-transparent hover:bg-blue-50/50 dark:hover:bg-blue-900/30 px-2 py-1 transition-all duration-300 ease-out cursor-pointer"
+                onClick={() => navigate('/create-client')}
+              >
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-10 w-10 rounded-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white transition-all duration-200 shadow-md hover:shadow-lg hover:scale-105 pointer-events-none"
+                >
+                  <Plus className="h-5 w-5" />
+                </Button>
+                <span className="ml-2 whitespace-nowrap text-sm text-slate-700 dark:text-slate-300 font-medium opacity-0 group-hover:opacity-100 w-0 group-hover:w-auto overflow-hidden transition-all duration-300 ease-out transform translate-x-[-10px] group-hover:translate-x-0">
+                  {t('brokerDashboard.buttons.newClient')}
+                </span>
+              </div>
+
+              {/* Simular Projeção */}
+              <div 
+                className="group flex items-center rounded-full bg-transparent hover:bg-green-50/50 dark:hover:bg-green-900/30 px-2 py-1 transition-all duration-300 ease-out cursor-pointer"
+                onClick={handleSimulationClick}
+              >
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-10 w-10 rounded-full hover:bg-transparent text-green-600 dark:text-green-400 transition-all duration-200 pointer-events-none"
+                >
+                  <Calculator className="h-5 w-5" />
+                </Button>
+                <span className="ml-2 whitespace-nowrap text-sm text-slate-700 dark:text-slate-300 font-medium opacity-0 group-hover:opacity-100 w-0 group-hover:w-auto overflow-hidden transition-all duration-300 ease-out transform translate-x-[-10px] group-hover:translate-x-0">
+                  {t('brokerDashboard.buttons.simulation')}
+                </span>
+              </div>
+
+              {/* Importar PDF em Massa */}
+              <div 
+                className="group flex items-center rounded-full bg-transparent hover:bg-purple-50/50 dark:hover:bg-purple-900/30 px-2 py-1 transition-all duration-300 ease-out cursor-pointer"
+                onClick={() => navigate('/bulk-pdf-import')}
+              >
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-10 w-10 rounded-full hover:bg-transparent text-purple-600 dark:text-purple-400 transition-all duration-200 pointer-events-none"
+                >
+                  <FileText className="h-5 w-5" />
+                </Button>
+                <span className="ml-2 whitespace-nowrap text-sm text-slate-700 dark:text-slate-300 font-medium opacity-0 group-hover:opacity-100 w-0 group-hover:w-auto overflow-hidden transition-all duration-300 ease-out transform translate-x-[-10px] group-hover:translate-x-0">
+                  {t('brokerDashboard.buttons.importPDF') || 'Importar PDF'}
+                </span>
+              </div>
+
+              {/* Ir para Lista de Clientes */}
+              <div 
+                className="group flex items-center rounded-full bg-transparent hover:bg-indigo-50/50 dark:hover:bg-indigo-900/30 px-2 py-1 transition-all duration-300 ease-out cursor-pointer"
+                onClick={scrollToClientList}
+              >
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-10 w-10 rounded-full hover:bg-transparent text-indigo-600 dark:text-indigo-400 transition-all duration-200 pointer-events-none"
+                >
+                  <Users className="h-5 w-5" />
+                </Button>
+                <span className="ml-2 whitespace-nowrap text-sm text-slate-700 dark:text-slate-300 font-medium opacity-0 group-hover:opacity-100 w-0 group-hover:w-auto overflow-hidden transition-all duration-300 ease-out transform translate-x-[-10px] group-hover:translate-x-0">
+                  {t('brokerDashboard.buttons.scrollToClients')}
+                </span>
+              </div>
+
+              {/* Market Data Audit */}
+              {brokerProfile?.id && (
+                <div 
+                  className="group flex items-center rounded-full bg-transparent hover:bg-green-50/50 dark:hover:bg-green-900/30 px-2 py-1 transition-all duration-300 ease-out cursor-pointer"
+                  onClick={() => navigate('/market-data-audit')}
+                >
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-10 w-10 rounded-full hover:bg-transparent text-green-600 dark:text-green-400 transition-all duration-200 pointer-events-none"
+                  >
+                    <BarChartIcon className="h-5 w-5" />
+                  </Button>
+                  <span className="ml-2 whitespace-nowrap text-sm text-slate-700 dark:text-slate-300 font-medium opacity-0 group-hover:opacity-100 w-0 group-hover:w-auto overflow-hidden transition-all duration-300 ease-out transform translate-x-[-10px] group-hover:translate-x-0">
+                    {t('brokerDashboard.buttons.marketDataAudit')}
+                  </span>
+                </div>
+              )}
+
+              {/* Sair */}
+              <div 
+                className="group flex items-center rounded-full bg-transparent hover:bg-red-50/50 dark:hover:bg-red-900/30 px-2 py-1 transition-all duration-300 ease-out cursor-pointer"
+                onClick={handleLogout}
+              >
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-10 w-10 rounded-full hover:bg-transparent text-red-600 dark:text-red-400 transition-all duration-200 pointer-events-none"
+                >
+                  <LogOut className="h-5 w-5" />
+                </Button>
+                <span className="ml-2 whitespace-nowrap text-sm text-slate-700 dark:text-slate-300 font-medium opacity-0 group-hover:opacity-100 w-0 group-hover:w-auto overflow-hidden transition-all duration-300 ease-out transform translate-x-[-10px] group-hover:translate-x-0">
+                  {t('common.logout')}
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Content with padding for fixed bar */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-24 pb-8">
+
+        {/* Summary Metrics - Always visible */}
+        <div className="mb-8 dark:bg-gray-900 rounded-2xl shadow-xl border border-gray-100 dark:border-gray-800 p-8 mb-8">
+          <SummaryMetrics metrics={metrics} />
+        </div>
+
+        {/* Performance Metrics - Always visible */}
+        <div className="mb-8 dark:bg-gray-900 rounded-2xl shadow-xl border border-gray-100 dark:border-gray-800 p-8 mb-8">
+          <PerformanceMetrics metrics={enhancedMetrics} />
+        </div>
+
+        {/* Tabs for different sections */}
+        <Tabs defaultValue="planning" className="mb-8">
+          <div className="bg-white/95 dark:bg-slate-900/95 backdrop-blur-md border border-slate-200 dark:border-slate-700 rounded-xl shadow-sm p-1">
+            <TabsList className="grid w-full grid-cols-4 bg-transparent gap-1 h-auto">
+              <TabsTrigger 
+                value="planning"
+                className={`rounded-lg ${tabTriggerActiveBlue} text-slate-600 dark:text-slate-400 data-[state=active]:text-white dark:data-[state=active]:text-white hover:text-slate-900 dark:hover:text-slate-100 transition-all duration-200 py-2.5 flex items-center justify-center gap-2`}
+              >
+                <Target className="h-4 w-4" />
+                {t('brokerDashboard.tabs.planning')}
+              </TabsTrigger>
+              <TabsTrigger 
+                value="policy"
+                className={`rounded-lg ${tabTriggerActiveBlue} text-slate-600 dark:text-slate-400 data-[state=active]:text-white dark:data-[state=active]:text-white hover:text-slate-900 dark:hover:text-slate-100 transition-all duration-200 py-2.5 flex items-center justify-center gap-2`}
+              >
+                <Shield className="h-4 w-4" />
+                {t('brokerDashboard.tabs.policy')}
+              </TabsTrigger>
+              <TabsTrigger 
+                value="imports"
+                className={`rounded-lg ${tabTriggerActiveBlue} text-slate-600 dark:text-slate-400 data-[state=active]:text-white dark:data-[state=active]:text-white hover:text-slate-900 dark:hover:text-slate-100 transition-all duration-200 py-2.5 flex items-center justify-center gap-2`}
+              >
+                <Upload className="h-4 w-4" />
+                {t('brokerDashboard.tabs.imports') || t('adminDashboard.tabs.imports')}
+              </TabsTrigger>
+              <TabsTrigger 
+                value="access"
+                className={`rounded-lg ${tabTriggerActiveBlue} text-slate-600 dark:text-slate-400 data-[state=active]:text-white dark:data-[state=active]:text-white hover:text-slate-900 dark:hover:text-slate-100 transition-all duration-200 py-2.5 flex items-center justify-center gap-2`}
+              >
+                <Eye className="h-4 w-4" />
+                {t('brokerDashboard.tabs.access')}
+              </TabsTrigger>
+            </TabsList>
+          </div>
+
+          <TabsContent value="planning" className="mt-6">
+            {/* Advanced Analytics Grid */}
+            <div className="grid grid-cols-1 xl:grid-cols-2 gap-8 mb-8">
+              {/* Wealth Distribution Chart */}
+              <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-xl border border-gray-100 dark:border-gray-800 overflow-hidden">
+                <AdvancedWealthChart data={enhancedMetrics.wealthDistribution} />
+              </div>
+
+              {/* Smart Alerts */}
+              <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-xl border border-gray-100 dark:border-gray-800 p-8">
+                <SmartAlerts 
+                  clients={searchResults} 
+                  onClientSelect={handleUserSelect}
+                />
+              </div>
+            </div>
+
+            {/* Contribution Trends Chart */}
+            <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-xl border border-gray-100 dark:border-gray-800 overflow-hidden mb-8">
+              <ContributionTrendChart data={contributionTrendData} />
+            </div>
+          </TabsContent>
+
+          <TabsContent value="policy" className="mt-6">
+            <InvestmentPolicyInsights activeBrokerIds={currentBroker ? [currentBroker] : undefined} />
+          </TabsContent>
+
+          <TabsContent value="imports" className="mt-6">
+            {/* Statement Imports Analysis */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+              {/* Statement Imports Overview */}
+              <Card className="hover:shadow-lg transition-all duration-300 border-0 bg-gradient-to-br from-white to-slate-50 dark:from-slate-900 dark:to-slate-800 shadow-xl">
+                <CardHeader className="pb-4">
+                  <CardTitle className="flex items-center gap-3 text-xl">
+                    <div className="p-2 rounded-lg bg-gradient-to-r from-blue-500 to-cyan-500">
+                      <LineChartIcon className="h-6 w-6 text-white" />
+                    </div>
+                    <div>
+                      <span className="text-slate-900 dark:text-slate-100">{t('adminDashboard.statementImports.title')}</span>
+                      <p className="text-sm font-normal text-slate-600 dark:text-slate-400 mt-1">
+                        {t('adminDashboard.statementImports.last14Days')}
+                      </p>
+                    </div>
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="h-[320px]">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <AreaChart data={statementImportsByDay}>
+                        <defs>
+                          <linearGradient id="brokerImportsTotalGradient" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="5%" stopColor={MODERN_COLORS.primary} stopOpacity={0.3}/>
+                            <stop offset="95%" stopColor={MODERN_COLORS.primary} stopOpacity={0.05}/>
+                          </linearGradient>
+                          <linearGradient id="brokerImportsSuccessGradient" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="5%" stopColor={MODERN_COLORS.success} stopOpacity={0.3}/>
+                            <stop offset="95%" stopColor={MODERN_COLORS.success} stopOpacity={0.05}/>
+                          </linearGradient>
+                          <linearGradient id="brokerImportsFailedGradient" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="5%" stopColor={MODERN_COLORS.danger} stopOpacity={0.3}/>
+                            <stop offset="95%" stopColor={MODERN_COLORS.danger} stopOpacity={0.05}/>
+                          </linearGradient>
+                        </defs>
+                        <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" opacity={0.3} />
+                        <XAxis 
+                          dataKey="date" 
+                          tick={{ fontSize: 12, fill: '#64748b' }}
+                          axisLine={false}
+                          tickLine={false}
+                        />
+                        <YAxis 
+                          tick={{ fontSize: 12, fill: '#64748b' }}
+                          axisLine={false}
+                          tickLine={false}
+                        />
+                        <Tooltip 
+                          content={({ active, payload, label }) => {
+                            if (!active || !payload || !payload.length) return null;
+                            const data = statementImportsByDay.find(d => d.date === label);
+                            return (
+                              <div className="bg-white dark:bg-slate-800 p-4 rounded-xl shadow-xl border border-slate-200 dark:border-slate-700">
+                                <p className="text-sm font-semibold text-slate-900 dark:text-slate-100 mb-3">{label}</p>
+                                <div className="space-y-2">
+                                  <div className="flex items-center gap-3">
+                                    <div className="w-3 h-3 rounded-full bg-gradient-to-r from-indigo-500 to-purple-500" />
+                                    <div>
+                                      <p className="text-sm text-slate-600 dark:text-slate-400">{t('adminDashboard.statementImports.total')}</p>
+                                      <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">
+                                        {data?.total || 0}
+                                      </p>
+                                    </div>
+                                  </div>
+                                  <div className="flex items-center gap-3">
+                                    <div className="w-3 h-3 rounded-full bg-gradient-to-r from-emerald-500 to-teal-500" />
+                                    <div>
+                                      <p className="text-sm text-slate-600 dark:text-slate-400">{t('adminDashboard.statementImports.success')}</p>
+                                      <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">
+                                        {data?.success || 0}
+                                      </p>
+                                    </div>
+                                  </div>
+                                  <div className="flex items-center gap-3">
+                                    <div className="w-3 h-3 rounded-full bg-gradient-to-r from-red-500 to-pink-500" />
+                                    <div>
+                                      <p className="text-sm text-slate-600 dark:text-slate-400">{t('adminDashboard.statementImports.failures')}</p>
+                                      <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">
+                                        {data?.failed || 0}
+                                      </p>
+                                    </div>
+                                  </div>
+                                  {data && (data.running > 0 || data.created > 0) && (
+                                    <>
+                                      {data.running > 0 && (
+                                        <div className="flex items-center gap-3">
+                                          <div className="w-3 h-3 rounded-full bg-gradient-to-r from-amber-500 to-orange-500" />
+                                          <div>
+                                            <p className="text-sm text-slate-600 dark:text-slate-400">{t('adminDashboard.statementImports.running')}</p>
+                                            <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">
+                                              {data.running}
+                                            </p>
+                                          </div>
+                                        </div>
+                                      )}
+                                      {data.created > 0 && (
+                                        <div className="flex items-center gap-3">
+                                          <div className="w-3 h-3 rounded-full bg-gradient-to-r from-blue-500 to-cyan-500" />
+                                          <div>
+                                            <p className="text-sm text-slate-600 dark:text-slate-400">{t('adminDashboard.statementImports.created')}</p>
+                                            <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">
+                                              {data.created}
+                                            </p>
+                                          </div>
+                                        </div>
+                                      )}
+                                    </>
+                                  )}
+                                </div>
+                              </div>
+                            );
+                          }}
+                        />
+                        <Area 
+                          type="monotone" 
+                          dataKey="total" 
+                          stroke={MODERN_COLORS.primary}
+                          strokeWidth={3}
+                          fill="url(#brokerImportsTotalGradient)"
+                          name={t('adminDashboard.statementImports.chartLabels.total')}
+                        />
+                        <Area 
+                          type="monotone" 
+                          dataKey="success" 
+                          stroke={MODERN_COLORS.success}
+                          strokeWidth={2}
+                          fill="url(#brokerImportsSuccessGradient)"
+                          name={t('adminDashboard.statementImports.chartLabels.success')}
+                        />
+                        <Area 
+                          type="monotone" 
+                          dataKey="failed" 
+                          stroke={MODERN_COLORS.danger}
+                          strokeWidth={2}
+                          fill="url(#brokerImportsFailedGradient)"
+                          name={t('adminDashboard.statementImports.chartLabels.failures')}
+                        />
+                      </AreaChart>
+                    </ResponsiveContainer>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Statement Imports Status Distribution */}
+              <Card className="hover:shadow-lg transition-all duration-300 border-0 bg-gradient-to-br from-white to-slate-50 dark:from-slate-900 dark:to-slate-800 shadow-xl">
+                <CardHeader className="pb-4">
+                  <CardTitle className="flex items-center gap-3 text-xl">
+                    <div className="p-2 rounded-lg bg-gradient-to-r from-violet-500 to-purple-500">
+                      <PieChartIcon className="h-6 w-6 text-white" />
+                    </div>
+                    <div>
+                      <span className="text-slate-900 dark:text-slate-100">{t('adminDashboard.statementImports.statusDistribution')}</span>
+                      <p className="text-sm font-normal text-slate-600 dark:text-slate-400 mt-1">
+                        {t('adminDashboard.statementImports.last30Days')}
+                      </p>
+                    </div>
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="h-[320px]">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <PieChart>
+                        <Pie
+                          data={[
+                            { name: t('adminDashboard.statementImports.chartLabels.success'), value: statementImportsStats.success, color: MODERN_COLORS.success },
+                            { name: t('adminDashboard.statementImports.chartLabels.failures'), value: statementImportsStats.failed, color: MODERN_COLORS.danger },
+                            { name: t('adminDashboard.statementImports.chartLabels.running'), value: statementImportsStats.running, color: MODERN_COLORS.warning },
+                            { name: t('adminDashboard.statementImports.chartLabels.created'), value: statementImportsStats.created, color: MODERN_COLORS.info }
+                          ].filter(item => item.value > 0)}
+                          cx="50%"
+                          cy="50%"
+                          innerRadius={60}
+                          outerRadius={120}
+                          paddingAngle={5}
+                          dataKey="value"
+                          nameKey="name"
+                        >
+                          {[
+                            { name: t('adminDashboard.statementImports.chartLabels.success'), value: statementImportsStats.success, color: MODERN_COLORS.success },
+                            { name: t('adminDashboard.statementImports.chartLabels.failures'), value: statementImportsStats.failed, color: MODERN_COLORS.danger },
+                            { name: t('adminDashboard.statementImports.chartLabels.running'), value: statementImportsStats.running, color: MODERN_COLORS.warning },
+                            { name: t('adminDashboard.statementImports.chartLabels.created'), value: statementImportsStats.created, color: MODERN_COLORS.info }
+                          ].filter(item => item.value > 0).map((entry, index) => (
+                            <Cell 
+                              key={`cell-${index}`} 
+                              fill={entry.color} 
+                            />
+                          ))}
+                        </Pie>
+                        <Tooltip 
+                          content={({ active, payload }) => {
+                            if (!active || !payload || !payload.length) return null;
+                            const data = payload[0]?.payload;
+                            const total = statementImportsStats.total;
+                            const percentage = total > 0 ? ((data?.value || 0) / total * 100).toFixed(1) : '0.0';
+                            return (
+                              <div className="bg-white dark:bg-slate-800 p-4 rounded-xl shadow-xl border border-slate-200 dark:border-slate-700">
+                                <p className="text-sm font-semibold text-slate-900 dark:text-slate-100 mb-2">{data?.name}</p>
+                                <div className="space-y-1">
+                                  <div className="flex justify-between items-center">
+                                    <span className="text-sm text-slate-600 dark:text-slate-400">{t('adminDashboard.statementImports.quantity')}:</span>
+                                    <span className="text-sm font-semibold text-slate-900 dark:text-slate-100">
+                                      {data?.value || 0}
+                                    </span>
+                                  </div>
+                                  <div className="flex justify-between items-center">
+                                    <span className="text-sm text-slate-600 dark:text-slate-400">{t('adminDashboard.statementImports.percentage')}:</span>
+                                    <span className="text-sm font-semibold text-slate-900 dark:text-slate-100">
+                                      {percentage}%
+                                    </span>
+                                  </div>
+                                </div>
+                              </div>
+                            );
+                          }}
+                        />
+                        <Legend 
+                          verticalAlign="bottom" 
+                          height={60}
+                          formatter={(value) => (
+                            <span className="text-sm text-slate-600 dark:text-slate-400">{value}</span>
+                          )}
+                        />
+                      </PieChart>
+                    </ResponsiveContainer>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Statement Imports Summary Cards */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+              <Card className="hover:shadow-lg transition-all duration-200 border-border">
+                <CardHeader className="pb-2">
+                  <div className="flex items-center justify-between">
+                    <CardTitle className="text-sm font-medium text-muted-foreground">
+                      {t('adminDashboard.statementImports.totalImports')}
+                    </CardTitle>
+                    <Avatar 
+                      icon={LineChartIcon} 
+                      size="md" 
+                      variant="square"
+                      iconClassName="h-5 w-5"
+                      color="blue"
+                    />
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  <div className="flex items-baseline gap-2">
+                    <p className="text-3xl font-bold text-foreground">
+                      {statementImportsStats.total}
+                    </p>
+                    <p className="text-sm text-muted-foreground">{t('adminDashboard.statementImports.last30Days')}</p>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card className="hover:shadow-lg transition-all duration-200 border-border">
+                <CardHeader className="pb-2">
+                  <div className="flex items-center justify-between">
+                    <CardTitle className="text-sm font-medium text-muted-foreground">
+                      {t('adminDashboard.statementImports.success')}
+                    </CardTitle>
+                    <Avatar 
+                      icon={TrendingUp} 
+                      size="md" 
+                      variant="square"
+                      iconClassName="h-5 w-5"
+                      color="green"
+                    />
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  <div className="flex items-baseline gap-2">
+                    <p className="text-3xl font-bold text-foreground">
+                      {statementImportsStats.success}
+                    </p>
+                    <p className="text-sm text-muted-foreground">
+                      {statementImportsStats.total > 0 
+                        ? `${((statementImportsStats.success / statementImportsStats.total) * 100).toFixed(1)}%`
+                        : '0%'}
+                    </p>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card className="hover:shadow-lg transition-all duration-200 border-border">
+                <CardHeader className="pb-2">
+                  <div className="flex items-center justify-between">
+                    <CardTitle className="text-sm font-medium text-muted-foreground">
+                      {t('adminDashboard.statementImports.failures')}
+                    </CardTitle>
+                    <Avatar 
+                      icon={AlertTriangle} 
+                      size="md" 
+                      variant="square"
+                      iconClassName="h-5 w-5"
+                      color="red"
+                    />
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  <div className="flex items-baseline gap-2">
+                    <p className="text-3xl font-bold text-foreground">
+                      {statementImportsStats.failed}
+                    </p>
+                    <p className="text-sm text-muted-foreground">
+                      {statementImportsStats.total > 0 
+                        ? `${((statementImportsStats.failed / statementImportsStats.total) * 100).toFixed(1)}%`
+                        : '0%'}
+                    </p>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card className="hover:shadow-lg transition-all duration-200 border-border">
+                <CardHeader className="pb-2">
+                  <div className="flex items-center justify-between">
+                    <CardTitle className="text-sm font-medium text-muted-foreground">
+                      {t('adminDashboard.statementImports.running')}
+                    </CardTitle>
+                    <Avatar 
+                      icon={Clock} 
+                      size="md" 
+                      variant="square"
+                      iconClassName="h-5 w-5"
+                      color="yellow"
+                    />
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  <div className="flex items-baseline gap-2">
+                    <p className="text-3xl font-bold text-foreground">
+                      {statementImportsStats.running + statementImportsStats.created}
+                    </p>
+                    <p className="text-sm text-muted-foreground">{t('adminDashboard.statementImports.pending')}</p>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Last 10 Imports List */}
+            <StatementImportsList
+              imports={statementImports}
+              loading={statementImportsLoading}
+              error={statementImportsError}
+              type="broker"
+              clients={searchResults}
+              t={t}
+            />
+          </TabsContent>
+
+          <TabsContent value="access" className="mt-6">
+            {/* Client Access Analysis */}
+            <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-xl border border-gray-100 dark:border-gray-800 overflow-hidden mb-8 p-8">
+              <ClientAccessAnalysis 
+                clientAccessData={clientAccessData} 
+                title={t('brokerDashboard.clientAccessAnalysis.title')}
+                showTitle={true}
+              />
+            </div>
+          </TabsContent>
+        </Tabs>
+
+        {/* Client List - Always visible */}
+        <div ref={clientListRef} className="bg-white dark:bg-gray-900 rounded-2xl shadow-xl border border-gray-100 dark:border-gray-800 overflow-hidden mt-8">
+          <ClientList
+            clients={searchResults}
+            onClientSelect={handleUserSelect}
+            searchQuery={searchQuery}
+            onSearchChange={setSearchQuery}
+            onClearSearch={() => setSearchQuery('')}
+            isSearching={isSearching}
+            onDeleteClient={handleDeleteClient}
+          />
+        </div>
+      </div>
+
+
+    </div>
+  )
+}
+
