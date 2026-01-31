@@ -1,38 +1,30 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node'
+import { withMiddleware } from './_middleware.js'
+import { validateMethod } from './_helpers.js'
+import { testGetController, testPostController } from '../src/controllers/test.controller.js'
 
-export default function handler(req: VercelRequest, res: VercelResponse) {
-  // CORS headers
-  const frontendUrl = process.env.FRONTEND_URL || '*'
-  res.setHeader('Access-Control-Allow-Credentials', 'true')
-  res.setHeader('Access-Control-Allow-Origin', frontendUrl)
-  res.setHeader('Access-Control-Allow-Methods', 'GET,POST,OPTIONS')
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type')
-
-  // Handle preflight
-  if (req.method === 'OPTIONS') {
-    return res.status(200).end()
+/**
+ * Test endpoint
+ * GET /api/test
+ * POST /api/test
+ * 
+ * Route → Controller → Response
+ */
+function handler(req: VercelRequest, res: VercelResponse) {
+  // Validar método
+  if (!validateMethod(req, res, ['GET', 'POST'])) {
+    return
   }
 
+  // Chamar controller apropriado
   if (req.method === 'GET') {
-    return res.json({ 
-      message: 'Backend API is working!',
-      version: '1.0.0',
-      environment: process.env.NODE_ENV || 'production',
-      method: 'GET'
-    })
+    return testGetController(req, res)
   }
 
   if (req.method === 'POST') {
-    return res.json({ 
-      message: 'POST request received',
-      body: req.body,
-      timestamp: new Date().toISOString(),
-      method: 'POST'
-    })
+    return testPostController(req, res)
   }
-
-  return res.status(405).json({ 
-    error: 'Method not allowed',
-    allowedMethods: ['GET', 'POST', 'OPTIONS']
-  })
 }
+
+// Exportar com middleware aplicado
+export default withMiddleware(handler)

@@ -1,81 +1,185 @@
-# Backend Package
+# Backend Package - Serverless Functions
 
-API Express.js do Advanced Finance Planner.
+API Serverless Functions para Vercel com middleware genérico e helpers.
 
-## Estrutura
+## 🏗️ Estrutura
 
-- `src/` - Código fonte do servidor Express (desenvolvimento local)
-- `api/` - Vercel Serverless Functions (produção) ✅
-
-## Desenvolvimento
-
-```bash
-# Na raiz do projeto
-npm run dev:backend
-
-# Ou dentro desta pasta
-npm run dev
+```
+packages/backend/
+├── api/                   # Serverless Functions (Rotas)
+│   ├── _middleware.ts    # Middleware genérico (CORS + Logging)
+│   ├── _logger.ts        # Logger compartilhado
+│   ├── _helpers.ts       # Helpers para respostas
+│   ├── _template.ts      # Template para novas APIs
+│   ├── health.ts         # GET /api/health → healthController
+│   ├── test.ts           # GET,POST /api/test → testControllers
+│   └── ...               # Adicione novas rotas aqui
+│
+├── src/
+│   └── controllers/      # Controllers (Lógica de negócio)
+│       ├── index.ts      # Exporta todos os controllers
+│       ├── health.controller.ts
+│       ├── test.controller.ts
+│       └── _template.controller.ts
+│
+└── package.json
 ```
 
-O servidor iniciará em `http://localhost:3001` (ou porta definida em `PORT`).
+## 🚀 Como Funciona
 
-## Endpoints Disponíveis
+### Middleware Automático
 
-### Desenvolvimento Local (Express)
+Todas as APIs usam `withMiddleware()` que automaticamente:
+- ✅ Aplica CORS headers
+- ✅ Loga requests e responses (usa logger compartilhado `_logger.ts`)
+- ✅ Trata erros
+- ✅ Calcula tempo de resposta
 
-Quando rodar `npm run dev:backend`:
+**O logger é compatível com `packages/backend/src/middleware/logger.ts`** - mesma estrutura de logs!
 
-- `GET http://localhost:8081/health` - Health check
-- `GET http://localhost:8081/api/test` - Test endpoint
-- `POST http://localhost:8081/api/test` - Test POST
+### Helpers Disponíveis
 
-### Produção (Serverless Functions)
+- `successResponse()` - Resposta de sucesso padronizada
+- `errorResponse()` - Resposta de erro padronizada
+- `validateMethod()` - Valida métodos HTTP permitidos
+- `notFoundResponse()` - 404 padronizado
+- `unauthorizedResponse()` - 401 padronizado
+- `badRequestResponse()` - 400 padronizado
 
-Após deploy na Vercel:
+## 🏗️ Arquitetura
 
-- `GET https://seudominio.com/api/health` - Health check
-- `GET https://seudominio.com/api/test` - Test endpoint
-- `POST https://seudominio.com/api/test` - Test POST
+**Separação de Responsabilidades:**
+- **Routes (`api/`)**: Define rotas e valida métodos HTTP
+- **Controllers (`src/controllers/`)**: Contém a lógica de negócio
+- **Helpers (`api/_helpers.ts`)**: Funções auxiliares para respostas
 
-**Nota:** As funções em `api/` são automaticamente deployadas como Serverless Functions na Vercel.
-
-## Variáveis de Ambiente
-
-Crie um arquivo `.env` na raiz do projeto com:
-
-```env
-PORT=3001
-NODE_ENV=development
-SUPABASE_URL=your_supabase_url
-SUPABASE_SERVICE_KEY=your_service_key
+**Fluxo:**
+```
+Request → Route (api/*.ts) → Controller (src/controllers/*.ts) → Response
 ```
 
-## Build
+## 📝 Criar Nova API
 
-```bash
-npm run build:backend
-```
+### Exemplo: API de Usuários
 
-## Produção
-
-O backend é deployado automaticamente como Serverless Functions na Vercel:
-
-- ✅ Funções em `api/*.ts` são detectadas automaticamente
-- ✅ Disponíveis em `https://seudominio.com/api/[nome-da-funcao]`
-- ✅ Configurado no `vercel.json` da raiz do projeto
-
-### Adicionar Novas Funções
-
-Crie novos arquivos em `api/`:
+**1. Criar Controller `packages/backend/src/controllers/users.controller.ts`:**
 
 ```typescript
-// packages/backend/api/nova-rota.ts
 import type { VercelRequest, VercelResponse } from '@vercel/node'
+import { successResponse, errorResponse, validateMethod } from '../../api/_helpers.js'
 
-export default function handler(req: VercelRequest, res: VercelResponse) {
-  res.setHeader('Access-Control-Allow-Origin', '*')
-  res.json({ message: 'Nova rota funcionando!' })
+export async function getUsersController(
+  req: VercelRequest,
+  res: VercelResponse
+): Promise<void> {
+  // Sua lógica aqui
+  const users = [
+    { id: 1, name: 'João' },
+    { id: 2, name: 'Maria' }
+  ]
+  
+  successResponse(res, users, 'Usuários listados com sucesso')
+}
+
+export async function createUserController(
+  req: VercelRequest,
+  res: VercelResponse
+): Promise<void> {
+  const { name } = req.body
+  
+  if (!name) {
+    return errorResponse(res, 'Nome é obrigatório', 400)
+  }
+
+  const newUser = { id: 3, name }
+  successResponse(res, newUser, 'Usuário criado', 201)
 }
 ```
 
-A rota estará disponível em: `https://seudominio.com/api/nova-rota`
+**2. Criar Route `packages/backend/api/users.ts`:**
+
+```typescript
+import type { VercelRequest, VercelResponse } from '@vercel/node'
+import { withMiddleware } from './_middleware.js'
+import { validateMethod } from './_helpers.js'
+import { getUsersController, createUserController } from '../src/controllers/users.controller.js'
+
+function handler(req: VercelRequest, res: VercelResponse) {
+  // Validar método
+  if (!validateMethod(req, res, ['GET', 'POST'])) {
+    return
+  }
+
+  // Chamar controller apropriado
+  if (req.method === 'GET') {
+    return getUsersController(req, res)
+  }
+
+  if (req.method === 'POST') {
+    return createUserController(req, res)
+  }
+}
+
+// Exportar com middleware aplicado
+export default withMiddleware(handler)
+```
+
+**2. A rota será automaticamente disponível:**
+- `GET https://seudominio.com/api/users`
+- `POST https://seudominio.com/api/users`
+
+**3. Logs automáticos:**
+```
+📥 Request: {
+  "method": "GET",
+  "path": "/api/users",
+  "timestamp": "2025-01-31T13:00:00.000Z"
+}
+
+📤 Response: {
+  "statusCode": 200,
+  "responseTime": 12,
+  "timestamp": "2025-01-31T13:00:00.012Z"
+}
+
+⏱️  Total time: 12ms
+```
+
+## 🎯 Vantagens
+
+1. ✅ **Simples:** Apenas escreva a lógica, middleware é automático
+2. ✅ **Logging automático:** Todas as requests/responses logadas
+3. ✅ **CORS automático:** Headers configurados automaticamente
+4. ✅ **Error handling:** Erros capturados e logados
+5. ✅ **Type-safe:** TypeScript em tudo
+6. ✅ **Padronizado:** Respostas consistentes
+
+## 📋 Template Rápido
+
+Use `_template.ts` como base para novas APIs:
+
+```bash
+cp api/_template.ts api/nova-api.ts
+```
+
+## ⚙️ Variáveis de Ambiente
+
+Configure no Vercel Dashboard:
+- `SUPABASE_URL`
+- `SUPABASE_SERVICE_KEY`
+- `FRONTEND_URL`
+- `NODE_ENV=production`
+
+---
+
+## 📚 Documentação
+
+Documentação adicional disponível em `docs/`:
+
+- **[ESTRUTURA_BACKEND.md](./docs/ESTRUTURA_BACKEND.md)** - Estrutura detalhada e exemplos
+- **[VERCEL_DEPLOY.md](./docs/VERCEL_DEPLOY.md)** - Guia de deploy na Vercel
+- **[FIX_404_API.md](./docs/FIX_404_API.md)** - Troubleshooting de problemas comuns
+
+---
+
+**Última atualização:** Janeiro 2025

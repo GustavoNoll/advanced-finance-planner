@@ -10,12 +10,14 @@
     "esModuleInterop": true,
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,
-    "resolveJsonModule": true,
-    "baseUrl": ".",
-    "paths": {
-      "@/*": ["./src/*"],
-      "@shared/*": ["../shared/src/*"]
-    }
+      "resolveJsonModule": true,
+      "baseUrl": ".",
+      "paths": {
+        "@/*": ["./src/*"],
+        "@shared/*": ["../shared/src/*"]
+      },
+      "module": "ESNext",
+      "moduleResolution": "node"
   },
   "include": ["src/**/*", "api/**/*"],
   "exclude": ["node_modules", "dist"],

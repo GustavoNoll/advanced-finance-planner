@@ -39,9 +39,14 @@ docs/
 
 ### Para Configuração Vercel
 1. **VERCEL_TUDO_SERVERLESS.md** - Frontend + Backend Serverless em 1 projeto Vercel ⭐ (Recomendado)
-2. **VERCEL_2_PROJETOS_SEPARADOS.md** - Guia para configurar 2 projetos separados
-3. **TROUBLESHOOTING_VERCEL.md** - Solução para erros comuns (ex: "No Output Directory") ⚠️
-4. **CONFIGURACAO_VERCEL.md** - Configuração geral e troubleshooting
+2. **TROUBLESHOOTING_VERCEL.md** - Solução para erros comuns (ex: "No Output Directory") ⚠️
+3. **CONFIGURACAO_VERCEL.md** - Configuração geral e troubleshooting
+
+### Documentação do Backend
+A documentação do backend foi movida para `packages/backend/docs/`:
+- Estrutura e arquitetura
+- Guias de deploy
+- Troubleshooting específico do backend
 
 ## 🔄 Atualizações
 
