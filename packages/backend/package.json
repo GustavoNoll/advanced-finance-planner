@@ -5,11 +5,11 @@
   "type": "module",
   "scripts": {
     "dev": "tsx watch src/index.ts",
-    "prebuild": "cd ../shared && npm run build",
+    "prebuild": "npm run build --workspace=@app/shared",
     "build": "tsc",
     "start": "node dist/index.js",
     "lint": "eslint .",
-    "pretype-check": "cd ../shared && npm run build",
+    "pretype-check": "npm run build --workspace=@app/shared",
     "type-check": "tsc --noEmit"
   },
   "dependencies": {
