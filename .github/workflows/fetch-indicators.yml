@@ -15,7 +15,7 @@ jobs:
         branch: [main, develop]
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v6
         with:
           ref: ${{ matrix.branch }}
 
