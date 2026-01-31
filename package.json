@@ -18,7 +18,8 @@
     "test": "npm run test --workspace=packages/frontend",
     "test:watch": "npm run test:watch --workspace=packages/frontend",
     "preview": "npm run preview --workspace=packages/frontend",
-    "vercel-build": "npm run build --workspace=packages/frontend"
+    "vercel-build": "npm run sync-api && npm run build --workspace=packages/frontend",
+    "sync-api": "bash scripts/sync-api-functions.sh"
   },
   "devDependencies": {
     "npm-run-all": "^4.1.5",

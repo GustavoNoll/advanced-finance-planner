@@ -5,8 +5,11 @@
  * Uses environment variable VITE_API_URL for backend URL.
  */
 
-// Backend API URL - configurado via variável de ambiente
-export const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8081'
+// Backend API URL
+// Em produção: usa o mesmo domínio (Serverless Functions na Vercel)
+// Em desenvolvimento: usa Express local ou deixa vazio para usar o mesmo domínio
+const isDevelopment = import.meta.env.DEV
+export const API_URL = import.meta.env.VITE_API_URL || (isDevelopment ? 'http://localhost:8081' : '')
 
 // Helper para fazer chamadas à API
 export const apiClient = {

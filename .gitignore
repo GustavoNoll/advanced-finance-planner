@@ -31,3 +31,6 @@ dist-ssr
 .env
 .env.local
 .env.*.local
+
+# Vercel Serverless Functions (gerado automaticamente durante build)
+api/

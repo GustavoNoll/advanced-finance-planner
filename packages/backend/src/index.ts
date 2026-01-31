@@ -2,14 +2,24 @@ import express from 'express'
 import cors from 'cors'
 import dotenv from 'dotenv'
 
-// Carregar variáveis de ambiente
-dotenv.config({ path: '../../.env' })
+// Carregar variáveis de ambiente (apenas em desenvolvimento local)
+// Em produção (Render/Railway), as variáveis são injetadas automaticamente
+if (process.env.NODE_ENV !== 'production') {
+  dotenv.config({ path: '../../.env' })
+}
 
 const app = express()
+// Render/Railway fornece PORT automaticamente (Render usa 10000, Railway usa variável)
+// Fallback para desenvolvimento local
 const PORT = process.env.PORT || 8081
 
 // Middlewares
-app.use(cors())
+app.use(cors({
+  origin: process.env.FRONTEND_URL || '*',
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization']
+}))
 app.use(express.json())
 
 // Rota de health check
