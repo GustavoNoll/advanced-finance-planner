@@ -79,6 +79,13 @@ jobs:
     - name: Build Shared (for type checking)
       run: npm run build:shared
     
+    - name: Verify Shared Build (for type checking)
+      run: |
+        if [ ! -f "packages/shared/dist/config/env.d.ts" ]; then
+          echo "❌ Shared build failed: env.d.ts not found"
+          exit 1
+        fi
+    
     - name: Type Check Frontend
       run: npm run type-check --workspace=packages/frontend
     
@@ -154,6 +161,14 @@ jobs:
     
     - name: Build Shared
       run: npm run build:shared
+    
+    - name: Verify Shared Build
+      run: |
+        if [ ! -f "packages/shared/dist/config/env.d.ts" ]; then
+          echo "❌ Shared build failed: env.d.ts not found"
+          exit 1
+        fi
+        echo "✅ Shared build verification passed"
     
     - name: Build Backend
       run: npm run build:backend
