@@ -32,5 +32,6 @@ dist-ssr
 .env.local
 .env.*.local
 
-# Vercel Serverless Functions (gerado automaticamente durante build)
-api/
+# Vercel Serverless Functions
+# Comentado para que as funções sejam commitadas e o Vercel as detecte
+# api/
