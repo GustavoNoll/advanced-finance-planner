@@ -5,6 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "tsx watch src/index.ts",
+    "prebuild": "cd ../shared && npm run build",
     "build": "tsc",
     "start": "node dist/index.js",
     "lint": "eslint .",
