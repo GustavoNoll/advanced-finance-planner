@@ -26,7 +26,7 @@
   ],
   "functions": {
     "packages/backend/api/**/*.ts": {
-      "runtime": "nodejs20.x"
+      "runtime": "@vercel/node"
     }
   }
 }
