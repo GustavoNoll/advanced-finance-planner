@@ -23,8 +23,12 @@
 
     "baseUrl": ".",
     "paths": {
-      "@/*": ["./src/*"]
+      "@/*": ["./src/*"],
+      "@shared/*": ["../shared/src/*"]
     }
   },
-  "include": ["src", "server/src/logger.ts"]
+  "include": ["src"],
+  "references": [
+    { "path": "../shared" }
+  ]
 }

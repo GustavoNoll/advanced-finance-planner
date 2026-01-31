@@ -1,6 +1,17 @@
 {
+  "version": 2,
+  "buildCommand": "npm run build:frontend",
+  "outputDirectory": "packages/frontend/dist",
+  "framework": "vite",
   "rewrites": [
-      {"source": "/(.*)", "destination": "/"}
+    {
+      "source": "/api/(.*)",
+      "destination": "/api/$1"
+    },
+    {
+      "source": "/(.*)",
+      "destination": "/"
+    }
   ],
   "headers": [
     {
@@ -12,5 +23,10 @@
         { "key": "Access-Control-Allow-Headers", "value": "X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version" }
       ]
     }
-  ]
+  ],
+  "functions": {
+    "packages/backend/api/**/*.ts": {
+      "runtime": "nodejs20.x"
+    }
+  }
 }

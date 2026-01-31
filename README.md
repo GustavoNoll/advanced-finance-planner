@@ -45,24 +45,31 @@ npm install
 bun install
 ```
 
-3. Start the development server:
+3. Start the development servers (frontend + backend):
 ```sh
 npm run dev
 ```
 
-4. Start the backend server (in a separate terminal):
+Isso iniciará ambos os servidores simultaneamente:
+- Frontend: http://localhost:8080
+- Backend: http://localhost:3001
+
+Para iniciar apenas um deles:
 ```sh
-npm run server
+npm run dev:frontend  # Apenas frontend
+npm run dev:backend   # Apenas backend
 ```
 
 ## Available Scripts
 
-- `npm run dev` - Start the development server
-- `npm run build` - Build for production
-- `npm run build:dev` - Build for development
-- `npm run lint` - Run ESLint
+- `npm run dev` - Start the frontend development server
+- `npm run dev:frontend` - Start the frontend development server
+- `npm run dev:backend` - Start the backend development server
+- `npm run build` - Build frontend for production
+- `npm run build:frontend` - Build frontend for production
+- `npm run build:backend` - Build backend
+- `npm run lint` - Run ESLint on frontend
 - `npm run preview` - Preview the production build
-- `npm run server` - Start the backend server
 - `npm run vercel-build` - Build for Vercel deployment
 - `npm test` - Run tests
 - `npm run test:watch` - Run tests in watch mode
@@ -70,10 +77,13 @@ npm run server
 
 ## Project Structure
 
-- `/src` - Frontend source code
-- `/server` - Backend Express.js server
-- `/public` - Static assets
-- `/dist` - Production build output
+Este projeto usa uma estrutura de **monorepo** com workspaces:
+
+- `/packages/frontend` - Frontend React + Vite
+- `/packages/backend` - Backend Express.js (Serverless Functions)
+- `/packages/shared` - Código compartilhado (types, utils)
+- `/public` - Static assets (movido para packages/frontend/public)
+- `/dist` - Production build output (gerado em packages/frontend/dist)
 
 ## Development
 
