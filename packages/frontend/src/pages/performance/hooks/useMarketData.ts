@@ -1,6 +1,6 @@
 import { useMemo } from 'react'
-import cdiData from '@/data/cdi-historical.json'
-import ipcaData from '@/data/ipca-historical.json'
+import cdiData from '@shared/data/cdi-historical.json'
+import ipcaData from '@shared/data/ipca-historical.json'
 
 interface CDIRecord {
   competencia: string

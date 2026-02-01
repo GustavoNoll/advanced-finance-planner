@@ -65,7 +65,7 @@ async function saveIndicator(
     const monthlyData = getFirstDayOfEachMonth(data);
     
     // Salvar arquivo raw antes de calcular variação
-    const rawFilePath = path.join(process.cwd(), 'src', 'data', `${indicator}-raw-historical.json`);
+    const rawFilePath = path.join(process.cwd(), 'packages', 'shared', 'src', 'data', `${indicator}-raw-historical.json`);
     await writeFile(rawFilePath, JSON.stringify(monthlyData, null, 2));
     
     // Calcula a variação mensal
@@ -74,7 +74,7 @@ async function saveIndicator(
     console.log(`   Valores raw salvos em ${rawFilePath}`);
   }
   
-  const filePath = path.join(process.cwd(), 'src', 'data', `${indicator}-historical.json`);
+  const filePath = path.join(process.cwd(), 'packages', 'shared', 'src', 'data', `${indicator}-historical.json`);
   await writeFile(filePath, JSON.stringify(dataToSave, null, 2));
   console.log(`✅ Dados de ${indicator} salvos em ${filePath}`);
   if (options?.calculateVariation && dataToSave.length > 0) {
@@ -192,7 +192,7 @@ async function saveDailyIndicator(indicator: 'irfm', baseUrl: string): Promise<v
   // Calcula a variação mensal (converte índices absolutos para taxas percentuais)
   const monthlyVariations = calculateMonthlyVariation(monthlyData);
 
-  const filePath = path.join(process.cwd(), 'src', 'data', `${indicator}-historical.json`);
+  const filePath = path.join(process.cwd(), 'packages', 'shared', 'src', 'data', `${indicator}-historical.json`);
   await writeFile(filePath, JSON.stringify(monthlyVariations, null, 2));
   
   console.log(`✅ Dados de ${indicator} (variação mensal em %) salvos em ${filePath}`);

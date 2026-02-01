@@ -11,22 +11,22 @@ import { useTranslation } from "react-i18next"
 import { CurrencyToggle } from "@/components/portfolio/currency-toggle"
 import { useCurrency } from "@/contexts/CurrencyContext"
 import { getIndicatorCurrencyConfig, IndicatorCurrency } from "@/lib/bcb-api"
-import ipcaData from '../../data/ipca-historical.json'
-import cdiData from '../../data/cdi-historical.json'
-import ibovData from '../../data/ibov-historical.json'
-import sp500Data from '../../data/sp500-historical.json'
-import tBondData from '../../data/t-bond-historical.json'
-import goldData from '../../data/gold-historical.json'
-import btcData from '../../data/btc-historical.json'
-import usCpiData from '../../data/us-cpi-historical.json'
-import euroCpiData from '../../data/euro-cpi-historical.json'
-import ptaxData from '../../data/ptax-historical.json'
-import ihfaData from '../../data/ihfa-historical.json'
-import irfmData from '../../data/irfm-historical.json'
-import imabData from '../../data/imab-historical.json'
-import agggData from '../../data/aggg-historical.json'
-import msciAcwiData from '../../data/msci-acwi-historical.json'
-import ifixData from '../../data/ifix-historical.json'
+import ipcaData from '@shared/data/ipca-historical.json'
+import cdiData from '@shared/data/cdi-historical.json'
+import ibovData from '@shared/data/ibov-historical.json'
+import sp500Data from '@shared/data/sp500-historical.json'
+import tBondData from '@shared/data/t-bond-historical.json'
+import goldData from '@shared/data/gold-historical.json'
+import btcData from '@shared/data/btc-historical.json'
+import usCpiData from '@shared/data/us-cpi-historical.json'
+import euroCpiData from '@shared/data/euro-cpi-historical.json'
+import ptaxData from '@shared/data/ptax-historical.json'
+import ihfaData from '@shared/data/ihfa-historical.json'
+import irfmData from '@shared/data/irfm-historical.json'
+import imabData from '@shared/data/imab-historical.json'
+import agggData from '@shared/data/aggg-historical.json'
+import msciAcwiData from '@shared/data/msci-acwi-historical.json'
+import ifixData from '@shared/data/ifix-historical.json'
 
 interface BCBResponse {
   data: string
@@ -173,91 +173,91 @@ export default function MarketDataAudit() {
       }
 
       try {
-        const ptaxRaw = await import('../../data/ptax-raw-historical.json')
+        const ptaxRaw = await import('@shared/data/ptax-raw-historical.json')
         raw.ptax = (ptaxRaw.default || ptaxRaw) as BCBResponse[]
       } catch {
         // Arquivo não existe ainda
       }
 
       try {
-        const ibovRaw = await import('../../data/ibov-raw-historical.json')
+        const ibovRaw = await import('@shared/data/ibov-raw-historical.json')
         raw.ibov = (ibovRaw.default || ibovRaw) as BCBResponse[]
       } catch {
         // Arquivo não existe ainda
       }
 
       try {
-        const sp500Raw = await import('../../data/sp500-raw-historical.json')
+        const sp500Raw = await import('@shared/data/sp500-raw-historical.json')
         raw.sp500 = (sp500Raw.default || sp500Raw) as BCBResponse[]
       } catch {
         // Arquivo não existe ainda
       }
 
       try {
-        const goldRaw = await import('../../data/gold-raw-historical.json')
+        const goldRaw = await import('@shared/data/gold-raw-historical.json')
         raw.gold = (goldRaw.default || goldRaw) as BCBResponse[]
       } catch {
         // Arquivo não existe ainda
       }
 
       try {
-        const btcRaw = await import('../../data/btc-raw-historical.json')
+        const btcRaw = await import('@shared/data/btc-raw-historical.json')
         raw.btc = (btcRaw.default || btcRaw) as BCBResponse[]
       } catch {
         // Arquivo não existe ainda
       }
 
       try {
-        const usCpiRaw = await import('../../data/us-cpi-raw-historical.json')
+        const usCpiRaw = await import('@shared/data/us-cpi-raw-historical.json')
         raw.usCpi = (usCpiRaw.default || usCpiRaw) as BCBResponse[]
       } catch {
         // Arquivo não existe ainda
       }
 
       try {
-        const euroCpiRaw = await import('../../data/euro-cpi-raw-historical.json')
+        const euroCpiRaw = await import('@shared/data/euro-cpi-raw-historical.json')
         raw.euroCpi = (euroCpiRaw.default || euroCpiRaw) as BCBResponse[]
       } catch {
         // Arquivo não existe ainda
       }
 
       try {
-        const ihfaRaw = await import('../../data/ihfa-raw-historical.json')
+        const ihfaRaw = await import('@shared/data/ihfa-raw-historical.json')
         raw.ihfa = (ihfaRaw.default || ihfaRaw) as BCBResponse[]
       } catch {
         // Arquivo não existe ainda
       }
 
       try {
-        const irfmRaw = await import('../../data/irfm-raw-historical.json')
+        const irfmRaw = await import('@shared/data/irfm-raw-historical.json')
         raw.irfm = (irfmRaw.default || irfmRaw) as BCBResponse[]
       } catch {
         // Arquivo não existe ainda
       }
 
       try {
-        const imabRaw = await import('../../data/imab-raw-historical.json')
+        const imabRaw = await import('@shared/data/imab-raw-historical.json')
         raw.imab = (imabRaw.default || imabRaw) as BCBResponse[]
       } catch {
         // Arquivo não existe ainda
       }
 
       try {
-        const agggRaw = await import('../../data/aggg-raw-historical.json')
+        const agggRaw = await import('@shared/data/aggg-raw-historical.json')
         raw.aggg = (agggRaw.default || agggRaw) as BCBResponse[]
       } catch {
         // Arquivo não existe ainda
       }
 
       try {
-        const msciAcwiRaw = await import('../../data/msci-acwi-raw-historical.json')
+        const msciAcwiRaw = await import('@shared/data/msci-acwi-raw-historical.json')
         raw.msciAcwi = (msciAcwiRaw.default || msciAcwiRaw) as BCBResponse[]
       } catch {
         // Arquivo não existe ainda
       }
 
       try {
-        const ifixRaw = await import('../../data/ifix-raw-historical.json')
+        const ifixRaw = await import('@shared/data/ifix-raw-historical.json')
         raw.ifix = (ifixRaw.default || ifixRaw) as BCBResponse[]
       } catch {
         // Arquivo não existe ainda

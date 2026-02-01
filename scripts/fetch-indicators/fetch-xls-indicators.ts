@@ -260,11 +260,11 @@ export async function fetchByDownload(
     }
     
     // Salvar arquivo raw
-    const rawFilePath = path.join(process.cwd(), 'src', 'data', `${fileName}-raw-historical.json`)
+    const rawFilePath = path.join(process.cwd(), 'packages', 'shared', 'src', 'data', `${fileName}-raw-historical.json`)
     await writeFile(rawFilePath, JSON.stringify(result, null, 2))
     
     // Salvar arquivo de variações
-    const variationFilePath = path.join(process.cwd(), 'src', 'data', `${fileName}-historical.json`)
+    const variationFilePath = path.join(process.cwd(), 'packages', 'shared', 'src', 'data', `${fileName}-historical.json`)
     await writeFile(variationFilePath, JSON.stringify(variations, null, 2))
     
     console.log(`✅ Dados de ${indicatorName} salvos:`)

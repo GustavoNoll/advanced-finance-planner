@@ -13,14 +13,14 @@ fi
 
 # Executa o script TypeScript
 echo "🔄 Buscando dados do BCB (IPCA, CDI, IBOV)..."
-npx tsx fetch-indicators.ts
+npx tsx scripts/fetch-indicators/fetch-indicators.ts
 echo "🔄 Buscando dados do FRED..."
-npx tsx fetch-us-indicators.ts
+npx tsx scripts/fetch-indicators/fetch-us-indicators.ts
 echo "🔄 Buscando dados do ECB..."
-npx tsx fetch-euro-indicators.ts
+npx tsx scripts/fetch-indicators/fetch-euro-indicators.ts
 echo "🔄 Buscando dados do Yahoo Finance (PTAX)..."
-npx tsx fetch-yahoo-finance.ts
+npx tsx scripts/fetch-indicators/fetch-yahoo-finance.ts
 echo "🔄 Baixando e processando indicadores de arquivos XLS..."
-npx tsx fetch-xls-indicators.ts
+npx tsx scripts/fetch-indicators/fetch-xls-indicators.ts
 
 echo "✅ Dados atualizados com sucesso!" 

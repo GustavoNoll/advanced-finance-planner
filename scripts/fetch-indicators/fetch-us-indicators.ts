@@ -170,13 +170,13 @@ async function fetchFredData(indicator: USIndicator): Promise<BCBResponse[]> {
 async function saveUSIndicator(indicator: USIndicator): Promise<void> {
   try {
     const variationData = await fetchFredData(indicator);
-    const variationFilePath = path.join(process.cwd(), 'src', 'data', `${indicator}-historical.json`);
+    const variationFilePath = path.join(process.cwd(), 'packages', 'shared', 'src', 'data', `${indicator}-historical.json`);
     await writeFile(variationFilePath, JSON.stringify(variationData, null, 2));
     
     // Para indicadores que calculam variação, salvar também raw
     if (indicator === 'us-cpi' || indicator === 'sp500') {
       const rawData = await fetchFredRawData(indicator);
-      const rawFilePath = path.join(process.cwd(), 'src', 'data', `${indicator}-raw-historical.json`);
+      const rawFilePath = path.join(process.cwd(), 'packages', 'shared', 'src', 'data', `${indicator}-raw-historical.json`);
       await writeFile(rawFilePath, JSON.stringify(rawData, null, 2));
       
       console.log(`✅ Dados de ${indicatorMap[indicator].name} salvos:`);

@@ -134,13 +134,13 @@ async function fetchEcbData(indicator: EuroIndicator): Promise<BCBResponse[]> {
  */
 async function saveEuroIndicator(indicator: EuroIndicator): Promise<void> {
   const variationData = await fetchEcbData(indicator);
-  const variationFilePath = path.join(process.cwd(), 'src', 'data', `${indicator}-historical.json`);
+  const variationFilePath = path.join(process.cwd(), 'packages', 'shared', 'src', 'data', `${indicator}-historical.json`);
   await writeFile(variationFilePath, JSON.stringify(variationData, null, 2));
   
   // Para CPI, salvar também raw
   if (indicator === 'euro-cpi') {
     const rawData = await fetchEcbRawData(indicator);
-    const rawFilePath = path.join(process.cwd(), 'src', 'data', `${indicator}-raw-historical.json`);
+    const rawFilePath = path.join(process.cwd(), 'packages', 'shared', 'src', 'data', `${indicator}-raw-historical.json`);
     await writeFile(rawFilePath, JSON.stringify(rawData, null, 2));
     
     console.log(`✅ Dados de ${indicatorUrls[indicator].name} salvos:`);

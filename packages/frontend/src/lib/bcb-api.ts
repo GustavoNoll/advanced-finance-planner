@@ -1,19 +1,19 @@
-import ipcaData from '../data/ipca-historical.json';
-import cdiData from '../data/cdi-historical.json';
-import usCpiData from '../data/us-cpi-historical.json';
-import euroCpiData from '../data/euro-cpi-historical.json';
-import sp500Data from '../data/sp500-historical.json';
-import tBondData from '../data/t-bond-historical.json';
-import ibovData from '../data/ibov-historical.json';
-import goldData from '../data/gold-historical.json';
-import btcData from '../data/btc-historical.json';
-import irfmRawData from '../data/irfm-raw-historical.json';
-import ptaxRawData from '../data/ptax-raw-historical.json';
-import ihfaRawData from '../data/ihfa-raw-historical.json';
-import imabRawData from '../data/imab-raw-historical.json';
-import agggRawData from '../data/aggg-raw-historical.json';
-import msciAcwiRawData from '../data/msci-acwi-raw-historical.json';
-import ifixRawData from '../data/ifix-raw-historical.json';
+import ipcaData from '@shared/data/ipca-historical.json';
+import cdiData from '@shared/data/cdi-historical.json';
+import usCpiData from '@shared/data/us-cpi-historical.json';
+import euroCpiData from '@shared/data/euro-cpi-historical.json';
+import sp500Data from '@shared/data/sp500-historical.json';
+import tBondData from '@shared/data/t-bond-historical.json';
+import ibovData from '@shared/data/ibov-historical.json';
+import goldData from '@shared/data/gold-historical.json';
+import btcData from '@shared/data/btc-historical.json';
+import irfmRawData from '@shared/data/irfm-raw-historical.json';
+import ptaxRawData from '@shared/data/ptax-raw-historical.json';
+import ihfaRawData from '@shared/data/ihfa-raw-historical.json';
+import imabRawData from '@shared/data/imab-raw-historical.json';
+import agggRawData from '@shared/data/aggg-raw-historical.json';
+import msciAcwiRawData from '@shared/data/msci-acwi-raw-historical.json';
+import ifixRawData from '@shared/data/ifix-raw-historical.json';
 
 interface RateData {
   data: string;
