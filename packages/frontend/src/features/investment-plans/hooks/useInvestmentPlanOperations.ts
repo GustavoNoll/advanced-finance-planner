@@ -1,11 +1,11 @@
 import { useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { useToast } from '@/components/ui/use-toast'
+import { useToast } from '@/shared/components/ui/use-toast'
 import { supabase } from '@/lib/supabase'
-import { useAuth } from '@/components/auth/AuthProvider'
+import { useAuth } from '@/features/auth/components/AuthProvider'
 import { useTranslation } from 'react-i18next'
 import { createDateWithoutTimezone } from '@/utils/dateUtils'
-import { MicroInvestmentPlanService, MicroInvestmentPlan } from '@/services/micro-investment-plan.service'
+import { MicroInvestmentPlanService, MicroInvestmentPlan } from '@/features/investment-plans/services/micro-investment-plan.service'
 type SimplifiedFormData = {
   initialAmount: string;
   plan_initial_date: string;

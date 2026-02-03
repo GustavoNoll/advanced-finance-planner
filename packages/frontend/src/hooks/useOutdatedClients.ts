@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from "react"
 import { supabase } from "@/lib/supabase"
-import { PortfolioPerformanceService } from "@/services/portfolio-performance.service"
+import { PortfolioPerformanceService } from "@/features/portfolio-performance/services/portfolio-performance.service"
 import type { ConsolidatedPerformance } from "@/types/financial"
 import type { UserProfileInvestment } from "@/types/broker-dashboard"
 

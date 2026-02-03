@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from "react"
 import { supabase } from "@/lib/supabase"
 import { detectLanguage, SupportedLocale } from "@/lib/locale-detection"
 import i18n from "@/lib/i18n"
-import { useAuth } from "@/components/auth/AuthProvider"
+import { useAuth } from "@/features/auth/components/AuthProvider"
 import { LanguageContext } from "./LanguageContext.types"
 
 function LanguageProvider({ children }: { children: React.ReactNode }) {

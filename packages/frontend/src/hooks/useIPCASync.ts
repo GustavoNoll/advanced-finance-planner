@@ -3,7 +3,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
 
 // 2. Imports internos (shared)
-import { toast } from '@/components/ui/use-toast'
+import { toast } from '@/shared/components/ui/use-toast'
 import { supabase } from '@/lib/supabase'
 import { fetchIPCARates, fetchUSCPIRates, fetchEuroCPIRates } from '@/lib/bcb-api'
 import { calculateCompoundedRates, yearlyReturnRateToMonthlyReturnRate } from '@/lib/financial-math'

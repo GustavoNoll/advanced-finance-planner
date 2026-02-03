@@ -1,5 +1,5 @@
 import { useMemo } from 'react'
-import { ProjectionService, ProjectionData } from '@/services/projection.service'
+import { ProjectionService, ProjectionData } from '@/features/investment-plans/services/projection.service'
 import { Profile, InvestmentPlan, MicroInvestmentPlan, ProjectedEvent, Goal } from '@/types/financial'
 import { FinancialRecord } from '@/types/financial'
 import { ChartOptions, generateProjectionData } from '@/lib/chart-projections'

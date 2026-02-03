@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react'
 import { MicroInvestmentPlan, CreateMicroInvestmentPlan, UpdateMicroInvestmentPlan, FinancialRecord } from '@/types/financial'
-import { MicroInvestmentPlanService } from '@/services'
+import { MicroInvestmentPlanService } from '@/features/investment-plans/services/micro-investment-plan.service'
 import { supabase } from '@/lib/supabase'
 
 interface UseMicroInvestmentPlansReturn {

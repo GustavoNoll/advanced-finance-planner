@@ -19,7 +19,7 @@ import {
   getPTAXByCompetencia,
 } from '@/lib/bcb-api'
 import { calculateCompoundedRates } from '@/lib/financial-math'
-import type { ValidAssetClass } from '@/pages/performance/utils/valid-asset-classes'
+import type { ValidAssetClass } from '@/features/portfolio-performance/pages/utils/valid-asset-classes'
 
 export type BenchmarkType = 'CDI' | 'IPCA' | 'US_CPI' | 'EUR_CPI' | 'IRF-M' | 'IFIX' | 'IBOV' | 'SP500' | 'T-Bond' | 'Gold' | 'BTC' | 'IMA-B' | 'IHFA' | 'AGGG' | 'MSCI_ACWI'
 

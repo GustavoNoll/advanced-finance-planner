@@ -29,6 +29,6 @@ jobs:
         run: |
           git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
-          git add src/data/*.json
+          git add packages/shared/src/data/*.json
           git commit -m "Updating economic indicators" || echo "No changes"
           git push "https://${{ github.actor }}:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git" ${{ matrix.branch }} 

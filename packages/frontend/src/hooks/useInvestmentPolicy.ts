@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { useToast } from '@/components/ui/use-toast'
-import { InvestmentPolicyService, InvestmentPolicyData, PolicySectionData } from '@/services/investment-policy.service'
+import { useToast } from '@/shared/components/ui/use-toast'
+import { InvestmentPolicyService, InvestmentPolicyData, PolicySectionData } from '@/features/investment-policy/services/investment-policy.service'
 import { useMemo, useState, useEffect, useCallback } from 'react'
 import { supabase } from '@/lib/supabase'
 

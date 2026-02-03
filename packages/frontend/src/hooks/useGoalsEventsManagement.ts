@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { useToast } from '@/components/ui/use-toast'
-import { GoalsEventsManagementService } from '@/services/goals-events-management.service'
+import { useToast } from '@/shared/components/ui/use-toast'
+import { GoalsEventsManagementService } from '@/features/goals-events/services/goals-events-management.service'
 import { Goal, ProjectedEvent, FinancialItemFormValues } from '@/types/financial'
 import { useMemo } from 'react'
 

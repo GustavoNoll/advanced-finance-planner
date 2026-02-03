@@ -3,7 +3,7 @@ import { useCallback } from 'react'
 
 // 2. Imports internos (shared)
 import { supabase } from '@/lib/supabase'
-import { useAuth } from '@/components/auth/AuthProvider'
+import { useAuth } from '@/features/auth/components/AuthProvider'
 
 // 3. Hook
 export function useLastActive() {

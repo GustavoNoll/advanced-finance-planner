@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { useToast } from '@/components/ui/use-toast'
-import { FinancialRecordsManagementService, CSVRecord, ImportResult, SyncResult } from '@/services/financial-records-management.service'
+import { useToast } from '@/shared/components/ui/use-toast'
+import { FinancialRecordsManagementService, CSVRecord, ImportResult, SyncResult } from '@/features/financial-records/services/financial-records-management.service'
 import { FinancialRecord, FinancialRecordLink, InvestmentPlan, MicroInvestmentPlan } from '@/types/financial'
 import { useMemo } from 'react'
 
