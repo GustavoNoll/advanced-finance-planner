@@ -203,7 +203,7 @@ describe('inflation-utils', () => {
       const result = createCPIRatesMapByCurrency(
         new Date('2024-01-01'),
         new Date('2024-01-31'),
-        'BRL' as any
+        'BRL'
       )
 
       expect(fetchIPCARates).toHaveBeenCalled()

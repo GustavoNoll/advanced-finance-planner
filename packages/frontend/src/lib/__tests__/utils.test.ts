@@ -19,7 +19,8 @@ describe('utils', () => {
     })
 
     it('should handle conditional classes', () => {
-      const result = cx('base', false && 'hidden', 'visible')
+      const shouldHide = false
+      const result = cx('base', shouldHide && 'hidden', 'visible')
       expect(result).not.toContain('hidden')
       expect(result).toContain('visible')
     })

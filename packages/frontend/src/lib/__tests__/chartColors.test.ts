@@ -100,7 +100,8 @@ describe('chartColors', () => {
       // If type is invalid, chartColors[color]?.[type] is undefined
       // Then it tries fallbackColor[type], which is also undefined for invalid type
       // So it returns undefined
-      const result = getColorClassName('blue', 'invalid' as any)
+      // @ts-expect-error - Testing invalid type for runtime behavior
+      const result = getColorClassName('blue', 'invalid')
       // The function doesn't handle invalid types, it returns undefined
       expect(result).toBeUndefined()
     })
