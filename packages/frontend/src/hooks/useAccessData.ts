@@ -3,7 +3,7 @@ import { useState, useCallback, useEffect } from 'react'
 
 // 2. Imports internos (shared)
 import { supabase } from '@/lib/supabase'
-import { ClientAccessData } from '@/components/shared/ClientAccessAnalysis'
+import { ClientAccessData } from '@/shared/components/ClientAccessAnalysis'
 
 export interface BrokerAccessData {
   id: string

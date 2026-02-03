@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query'
-import { FinancialRecordsService, ProcessedFinancialRecords } from '@/services/financial-records.service'
-import { GoalsEventsService } from '@/services/goals-events.service'
+import { FinancialRecordsService, ProcessedFinancialRecords } from '@/features/financial-records/services/financial-records.service'
+import { GoalsEventsService } from '@/features/goals-events/services/goals-events.service'
 import { useMemo } from 'react'
 import { InvestmentPlan, MicroInvestmentPlan, Goal, ProjectedEvent } from '@/types/financial'
 

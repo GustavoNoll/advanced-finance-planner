@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { useToast } from '@/components/ui/use-toast'
-import { ClientManagementService, CreateClientData, ClientProfile } from '@/services/client-management.service'
+import { useToast } from '@/shared/components/ui/use-toast'
+import { ClientManagementService, CreateClientData, ClientProfile } from '@/features/client-management/services/client-management.service'
 
 export function useCurrentUserProfile() {
   const { data: profile, isLoading, error } = useQuery({

@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { useToast } from '@/components/ui/use-toast'
-import { InvestmentPlanService, InvestmentPlanWithProfile, InvestmentPlanFilters } from '@/services/investment-plan.service'
+import { useToast } from '@/shared/components/ui/use-toast'
+import { InvestmentPlanService, InvestmentPlanWithProfile, InvestmentPlanFilters } from '@/features/investment-plans/services/investment-plan.service'
 import { InvestmentPlan } from '@/types/financial'
 import { useMemo } from 'react'
 

@@ -2,7 +2,7 @@ import { FinancialRecord, InvestmentPlan, MicroInvestmentPlan, Goal, ProjectedEv
 import { calculateCompoundedRates, nper, yearlyReturnRateToMonthlyReturnRate, pmt, vp } from "@/lib/financial-math";
 import { processItem, IGNORE_FINANCIAL_LINKS, CONSIDER_FINANCIAL_LINKS } from './financial-goals-processor';
 import { createDateWithoutTimezone, createDateFromYearMonth } from '@/utils/dateUtils';
-import { HistoricalDataInfo } from "@/services/projection.service";
+import { HistoricalDataInfo } from "@/features/investment-plans/services/projection.service";
 import { MonthlyProjectionData } from "./chart-projections";
 import { createCPIRatesMapByCurrency } from './inflation-utils';
 import { calculateMicroPlanFutureValues } from '@/utils/investmentPlanCalculations';

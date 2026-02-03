@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react'
-import { StatementImportsService } from '@/services/statement-imports.service'
+import { StatementImportsService } from '@/features/financial-records/services/statement-imports.service'
 import { supabase } from '@/lib/supabase'
 import type { StatementImport } from '@/types/financial/statement-imports'
 

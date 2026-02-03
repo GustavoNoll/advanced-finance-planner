@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { useToast } from '@/components/ui/use-toast'
-import { PlanCreationService, PlanCreationData, ProfileData } from '@/services/plan-creation.service'
+import { useToast } from '@/shared/components/ui/use-toast'
+import { PlanCreationService, PlanCreationData, ProfileData } from '@/features/investment-plans/services/plan-creation.service'
 import { InvestmentPlan } from '@/types/financial'
 import { FormData, Calculations } from '@/utils/investmentPlanCalculations'
 

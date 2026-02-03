@@ -1,5 +1,5 @@
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Button } from "@/shared/components/ui/button"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/shared/components/ui/card"
 import { 
   TrendingUp, 
   Users, 
@@ -20,22 +20,22 @@ import {
   Calculator as CalculatorIcon,
   Gauge
 } from "lucide-react"
-import { Logo } from "@/components/ui/logo"
+import { Logo } from "@/shared/components/ui/logo"
 import { PieChart as RechartsPieChart, Pie, Cell, Legend, Tooltip, ResponsiveContainer } from "recharts"
-import { Badge } from "@/components/ui/badge"
-import { Input } from "@/components/ui/input"
-import { Textarea } from "@/components/ui/textarea"
+import { Badge } from "@/shared/components/ui/badge"
+import { Input } from "@/shared/components/ui/input"
+import { Textarea } from "@/shared/components/ui/textarea"
 import { useState, useMemo } from "react"
-import { useToast } from "@/components/ui/use-toast"
+import { useToast } from "@/shared/components/ui/use-toast"
 import { useNavigate } from "react-router-dom"
-import { useAuth } from "@/components/auth/AuthProvider"
-import { SimulationChart } from "@/components/broker-dashboard/SimulationChart"
+import { useAuth } from "@/features/auth/components/AuthProvider"
+import { SimulationChart } from "@/features/broker-dashboard/components/SimulationChart"
 import { generateChartProjections } from "@/lib/chart-projections"
 import type { Profile, InvestmentPlan, FinancialRecord, Goal, ProjectedEvent } from "@/types/financial"
 import { useTranslation } from "react-i18next"
 import { formatCurrency } from "@/utils/currency"
 import { detectCurrency } from "@/lib/locale-detection"
-import { SEOHead, useStructuredData } from "@/components/seo/seo-head"
+import { SEOHead, useStructuredData } from "@/shared/components/seo/seo-head"
 import { generateStructuredData } from "@/lib/seo-utils"
 
 interface MetricCardProps {

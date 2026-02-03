@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
-import { PortfolioPerformanceService } from "@/services/portfolio-performance.service";
+import { PortfolioPerformanceService } from "@/features/portfolio-performance/services/portfolio-performance.service";
 import type { ConsolidatedPerformance, PerformanceData } from "@/types/financial";
 
 export function usePerformanceData(profileId: string | null) {

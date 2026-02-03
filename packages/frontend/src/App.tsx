@@ -1,41 +1,41 @@
-import { Toaster } from "@/components/ui/toaster";
-import { Toaster as Sonner } from "@/components/ui/sonner";
-import { TooltipProvider } from "@/components/ui/tooltip";
+import { Toaster } from "@/shared/components/ui/toaster";
+import { Toaster as Sonner } from "@/shared/components/ui/sonner";
+import { TooltipProvider } from "@/shared/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate, useLocation } from "react-router-dom";
-import { AuthProvider, useAuth } from "./components/auth/AuthProvider";
-import { ActivityTracker } from "./components/activity-tracker";
+import { AuthProvider, useAuth } from "@/features/auth/components/AuthProvider";
+import { ActivityTracker } from "@/shared/components/activity-tracker";
 import Index from "./pages/Index";
-import NotFound from "./pages/NotFound";
-import { LoginForm } from "./components/auth/LoginForm";
-import { ClientLoginForm } from "./components/auth/ClientLoginForm";
-import { EditPlan } from "./pages/EditPlan";
-import { CreateClient } from "./pages/CreateClient";
-import { InvestmentPlanShow } from "./pages/planning/InvestmentPlan";
-import { Simulation } from "./pages/Simulation";
-import PortfolioDataManagement from "@/pages/performance/PortfolioDataManagement";
-import StatementImportsHistory from "@/pages/performance/StatementImportsHistory";
-import MarketDataAudit from "@/pages/performance/MarketDataAudit";
-import BulkPDFImport from "@/pages/performance/BulkPDFImport";
-import { ManagePdfImportInstitutions } from "@/pages/ManagePdfImportInstitutions";
-import FinancialRecords from "@/pages/planning/FinancialRecords";
-import ClientProfile from "@/pages/ClientProfile";
-import FinancialGoals from "@/pages/planning/FinancialGoals";
-import Events from "@/pages/planning/Events";
-import { LoadingScreen } from "@/components/ui/loading-screen";
-import { PageTransition } from "@/components/ui/page-transition";
-import { ScrollToTop } from "@/components/ui/scroll-to-top";
-import { RouteProgress } from "@/components/ui/route-progress";
+import NotFound from "@/shared/components/NotFound";
+import { LoginForm } from "@/features/auth/components/LoginForm";
+import { ClientLoginForm } from "@/features/auth/components/ClientLoginForm";
+import { EditPlan } from "@/features/investment-plans/pages/EditPlan";
+import { CreateClient } from "@/features/client-management/pages/CreateClient";
+import { InvestmentPlanShow } from "@/features/investment-plans/pages/InvestmentPlan";
+import { Simulation } from "@/features/investment-plans/pages/Simulation";
+import PortfolioDataManagement from "@/features/portfolio-performance/pages/PortfolioDataManagement";
+import StatementImportsHistory from "@/features/portfolio-performance/pages/StatementImportsHistory";
+import MarketDataAudit from "@/features/portfolio-performance/pages/MarketDataAudit";
+import BulkPDFImport from "@/features/portfolio-performance/pages/BulkPDFImport";
+import { ManagePdfImportInstitutions } from "@/features/admin/pages/ManagePdfImportInstitutions";
+import FinancialRecords from "@/features/financial-records/pages/FinancialRecords";
+import ClientProfile from "@/features/client-management/pages/ClientProfile";
+import FinancialGoals from "@/features/goals-events/pages/FinancialGoals";
+import Events from "@/features/goals-events/pages/Events";
+import { LoadingScreen } from "@/shared/components/ui/loading-screen";
+import { PageTransition } from "@/shared/components/ui/page-transition";
+import { ScrollToTop } from "@/shared/components/ui/scroll-to-top";
+import { RouteProgress } from "@/shared/components/ui/route-progress";
 import { AnimatePresence } from "framer-motion";
 import { SpeedInsights } from "@vercel/speed-insights/react"
 import { Analytics } from "@vercel/analytics/react"
 import { Suspense, lazy } from 'react'
-import { ThemeToggle } from '@/components/ui/theme-toggle'
+import { ThemeToggle } from '@/shared/components/ui/theme-toggle'
 import { CurrencyProvider } from '@/contexts/CurrencyContext'
 import { LanguageProvider } from '@/contexts/LanguageContext'
-import { LanguageSwitcher } from '@/components/ui/language-switcher'
-const AdminDashboard = lazy(() => import('./pages/AdminDashboard').then(m => ({ default: m.AdminDashboard })))
-const BrokerDashboard = lazy(() => import('./pages/BrokerDashboard').then(m => ({ default: m.BrokerDashboard })))
+import { LanguageSwitcher } from '@/shared/components/ui/language-switcher'
+const AdminDashboard = lazy(() => import('@/features/admin/pages/AdminDashboard').then(m => ({ default: m.AdminDashboard })))
+const BrokerDashboard = lazy(() => import('@/features/broker-dashboard/pages/BrokerDashboard').then(m => ({ default: m.BrokerDashboard })))
 const LandingPage = lazy(() => import('./pages/LandingPage'))
 const queryClient = new QueryClient();
 
