@@ -225,6 +225,7 @@ export default function LandingPage() {
       payment_mode: 'none',
       name: t('landingPage.mocks.goals.europeTrip'),
       status: 'pending',
+      adjust_for_inflation: true,
       created_at: '2024-01-01'
     },
     {
@@ -240,6 +241,7 @@ export default function LandingPage() {
       installment_interval: 1,
       name: t('landingPage.mocks.goals.newCar'),
       status: 'pending',
+      adjust_for_inflation: true,
       created_at: '2024-01-01'
     },
     {
@@ -253,6 +255,7 @@ export default function LandingPage() {
       payment_mode: 'none',
       name: t('landingPage.mocks.goals.ownHome'),
       status: 'pending',
+      adjust_for_inflation: true,
       created_at: '2024-01-01'
     },
     {
@@ -268,6 +271,7 @@ export default function LandingPage() {
       installment_interval: 1,
       name: t('landingPage.mocks.goals.childrenEducation'),
       status: 'pending',
+      adjust_for_inflation: true,
       created_at: '2024-01-01'
     },
     {
@@ -281,6 +285,7 @@ export default function LandingPage() {
       payment_mode: 'none',
       name: t('landingPage.mocks.goals.hobbyEquipment'),
       status: 'pending',
+      adjust_for_inflation: true,
       created_at: '2024-01-01'
     },
     {
@@ -294,6 +299,7 @@ export default function LandingPage() {
       payment_mode: 'none',
       name: t('landingPage.mocks.goals.retirementAbroad'),
       status: 'pending',
+      adjust_for_inflation: true,
       created_at: '2024-01-01'
     }
   ], [t])
@@ -312,6 +318,7 @@ export default function LandingPage() {
       status: 'pending',
       month: 12,
       year: 2025,
+      adjust_for_inflation: true,
       created_at: '2024-01-01'
     },
     {
@@ -327,6 +334,7 @@ export default function LandingPage() {
       status: 'pending',
       month: 6,
       year: 2031,
+      adjust_for_inflation: true,
       created_at: '2024-01-01'
     },
     {
@@ -340,6 +348,7 @@ export default function LandingPage() {
       status: 'pending',
       month: 4,
       year: 2038,
+      adjust_for_inflation: true,
       created_at: '2024-01-01'
     },
     {
@@ -353,6 +362,7 @@ export default function LandingPage() {
       status: 'pending',
       month: 8,
       year: 2044,
+      adjust_for_inflation: true,
       created_at: '2024-01-01'
     },
     {
@@ -366,6 +376,7 @@ export default function LandingPage() {
       status: 'pending',
       month: 3,
       year: 2051,
+      adjust_for_inflation: true,
       created_at: '2024-01-01'
     }
   ], [t])

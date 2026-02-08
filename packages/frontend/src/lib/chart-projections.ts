@@ -1116,8 +1116,15 @@ export function handleMonthlyGoalsAndEvents(
   );
   if (currentGoals?.length) {
     const totalGoalWithdrawal = currentGoals.reduce((sum, goal) => {
-      // Only apply accumulated inflation adjustment when showRealValues is false
-      const adjustedAmount = showRealValues ? goal.amount : goal.amount * accumulatedInflation;
+      // adjust_for_inflation true (default): nominal = amount * inflation, real = amount
+      // adjust_for_inflation false: nominal = amount (fixed), real = amount / inflation
+      const adjustForInflation = goal.adjust_for_inflation !== false;
+      let adjustedAmount: number;
+      if (adjustForInflation) {
+        adjustedAmount = showRealValues ? goal.amount : goal.amount * accumulatedInflation;
+      } else {
+        adjustedAmount = showRealValues ? goal.amount / accumulatedInflation : goal.amount;
+      }
       return sum + adjustedAmount;
     }, 0);
     updatedBalance -= totalGoalWithdrawal;
@@ -1130,8 +1137,15 @@ export function handleMonthlyGoalsAndEvents(
 
   if (currentEvents?.length) {
     const totalEventImpact = currentEvents.reduce((sum, event) => {
-      // Only apply accumulated inflation adjustment when showRealValues is false
-      const adjustedAmount = showRealValues ? event.amount : event.amount * accumulatedInflation;
+      // adjust_for_inflation true (default): nominal = amount * inflation, real = amount
+      // adjust_for_inflation false: nominal = amount (fixed), real = amount / inflation
+      const adjustForInflation = event.adjust_for_inflation !== false;
+      let adjustedAmount: number;
+      if (adjustForInflation) {
+        adjustedAmount = showRealValues ? event.amount : event.amount * accumulatedInflation;
+      } else {
+        adjustedAmount = showRealValues ? event.amount / accumulatedInflation : event.amount;
+      }
       return sum + adjustedAmount;
     }, 0);
     updatedBalance += totalEventImpact;

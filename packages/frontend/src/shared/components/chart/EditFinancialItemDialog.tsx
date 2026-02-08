@@ -66,6 +66,7 @@ export function EditFinancialItemDialog({
           initialValues={initialValues}
           currency={currency}
           showTypeSelector={false}
+          isEditing={true}
           planInitialDate={planInitialDate || new Date().toISOString().split('T')[0]}
           limitAge={limitAge}
           birthDate={birthDate}

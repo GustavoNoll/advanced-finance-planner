@@ -776,6 +776,10 @@ export const ptBR = {
     minimize: 'Minimizar',
     maximize: 'Maximizar',
     save_changes: 'Salvar alterações',
+    adjustForInflation: "Ajustar pela inflação",
+    adjustForInflationDescription: "Aplicar ajuste de inflação neste valor ao longo do tempo",
+    inflationAdjusted: "Ajustado pela inflação",
+    noInflationAdjustment: "Sem ajuste de inflação",
     theme: {
       light: 'Claro',
       dark: 'Escuro',

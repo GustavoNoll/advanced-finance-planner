@@ -57,6 +57,7 @@ interface GoalFormValues {
   payment_mode: 'none' | 'installment' | 'repeat';
   installment_count?: string;
   installment_interval?: string;
+  adjust_for_inflation: boolean;
 }
 
 interface EventFormValues {
@@ -69,6 +70,7 @@ interface EventFormValues {
   payment_mode: 'none' | 'installment' | 'repeat';
   installment_count?: string;
   installment_interval?: string;
+  adjust_for_inflation: boolean;
 }
 
 /**
@@ -352,6 +354,7 @@ export function ExpenseChart({
         payment_mode: values.payment_mode,
         installment_count: values.payment_mode === 'installment' || values.payment_mode === 'repeat' ? parseInt(values.installment_count || '0') : null,
         installment_interval: values.payment_mode === 'installment' || values.payment_mode === 'repeat' ? parseInt(values.installment_interval || '1') : null,
+        adjust_for_inflation: values.adjust_for_inflation ?? true,
       })
       return created
     },
@@ -381,6 +384,7 @@ export function ExpenseChart({
         payment_mode: values.payment_mode,
         installment_count: values.payment_mode === 'installment' || values.payment_mode === 'repeat' ? parseInt(values.installment_count || '0') : null,
         installment_interval: values.payment_mode === 'installment' || values.payment_mode === 'repeat' ? parseInt(values.installment_interval || '1') : null,
+        adjust_for_inflation: values.adjust_for_inflation ?? true,
       })
       return created
     },
@@ -453,6 +457,7 @@ export function ExpenseChart({
           payment_mode: values.payment_mode,
           installment_count: values.payment_mode === 'installment' || values.payment_mode === 'repeat' ? parseInt(values.installment_count || "0") : null,
           installment_interval: values.payment_mode === 'installment' || values.payment_mode === 'repeat' ? parseInt(values.installment_interval || "1") : null,
+          adjust_for_inflation: values.adjust_for_inflation ?? true,
         })
         .eq('id', selectedItem?.id)
         .select();
@@ -490,6 +495,7 @@ export function ExpenseChart({
           payment_mode: values.payment_mode,
           installment_count: values.payment_mode === 'installment' || values.payment_mode === 'repeat' ? parseInt(values.installment_count || "0") : null,
           installment_interval: values.payment_mode === 'installment' || values.payment_mode === 'repeat' ? parseInt(values.installment_interval || "1") : null,
+          adjust_for_inflation: values.adjust_for_inflation ?? true,
         })
         .eq('id', selectedItem?.id)
         .select();

@@ -20,6 +20,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Input } from '@/shared/components/ui/input'
 import { Alert, AlertDescription } from '@/shared/components/ui/alert'
 import { RadioGroup, RadioGroupItem } from '@/shared/components/ui/radio-group'
+import { Switch } from '@/shared/components/ui/switch'
 import { CurrencyCode, formatCurrency } from '@/utils/currency'
 import { cn } from '@/lib/utils'
 import { goalIcons } from '@/constants/goals'
@@ -38,6 +39,7 @@ const createSchema = (type: 'goal' | 'event') => {
     payment_mode: z.enum(['none', 'installment', 'repeat']).default('none'),
     installment_count: z.string().optional(),
     installment_interval: z.string().optional(),
+    adjust_for_inflation: z.boolean().default(true),
   };
 
   if (type === 'goal') {
@@ -69,6 +71,7 @@ interface FinancialItemFormProps {
   onTypeChange?: (type: 'goal' | 'event') => void;
   showTypeSelector?: boolean;
   leftActions?: React.ReactNode;
+  isEditing?: boolean;
 }
 
 export function FinancialItemForm({
@@ -83,7 +86,8 @@ export function FinancialItemForm({
   birthDate,
   onTypeChange,
   showTypeSelector = true,
-  leftActions
+  leftActions,
+  isEditing = false
 }: FinancialItemFormProps) {
   const { t } = useTranslation();
   const form = useForm<FinancialItemFormValues>({
@@ -98,6 +102,7 @@ export function FinancialItemForm({
       payment_mode: initialValues?.payment_mode || 'none',
       installment_count: initialValues?.installment_count?.toString() || '',
       installment_interval: initialValues?.installment_interval?.toString() || '1',
+      adjust_for_inflation: initialValues?.adjust_for_inflation ?? true,
     },
   });
 
@@ -124,6 +129,7 @@ export function FinancialItemForm({
         payment_mode: initialValues?.payment_mode || 'none',
         installment_count: initialValues?.installment_count?.toString() || '',
         installment_interval: initialValues?.installment_interval?.toString() || '1',
+        adjust_for_inflation: initialValues?.adjust_for_inflation ?? true,
       });
     }
   }, [initialValues?.month, initialValues?.year, form, type]);
@@ -141,6 +147,7 @@ export function FinancialItemForm({
       payment_mode: 'none',
       installment_count: '',
       installment_interval: '1',
+      adjust_for_inflation: true,
     });
   };
 
@@ -365,6 +372,29 @@ export function FinancialItemForm({
           )}
         />
 
+        <FormField
+          control={form.control}
+          name="adjust_for_inflation"
+          render={({ field }) => (
+            <FormItem className="flex items-center justify-between rounded-lg border border-input p-3">
+              <div className="space-y-0.5">
+                <FormLabel className="text-sm font-medium text-foreground">
+                  {t('common.adjustForInflation')}
+                </FormLabel>
+                <p className="text-xs text-muted-foreground">
+                  {t('common.adjustForInflationDescription')}
+                </p>
+              </div>
+              <FormControl>
+                <Switch
+                  checked={field.value}
+                  onCheckedChange={field.onChange}
+                />
+              </FormControl>
+            </FormItem>
+          )}
+        />
+
         <div className="flex flex-col space-y-4">
           <FormField
             control={form.control}
@@ -490,7 +520,7 @@ export function FinancialItemForm({
                 hasErrors && "opacity-50 cursor-not-allowed"
               )}
             >
-              {isSubmitting ? t('common.saving') : t('common.create')}
+              {isSubmitting ? t('common.saving') : isEditing ? t('common.update') : t('common.create')}
             </Button>
           </div>
         </div>

@@ -29,6 +29,7 @@ export class GoalsEventsService {
       payment_mode?: 'none' | 'installment' | 'repeat'
       installment_count?: number | null
       installment_interval?: number | null
+      adjust_for_inflation?: boolean
     }
   ): Promise<Goal | ProjectedEvent> {
     const table = itemType === 'goal' ? 'financial_goals' : 'events'

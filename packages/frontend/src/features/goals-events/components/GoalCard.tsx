@@ -1,6 +1,6 @@
 // 1. Imports externos
 import { useTranslation } from 'react-i18next'
-import { Trash2, Pencil, Link as LinkIcon } from 'lucide-react'
+import { Trash2, Pencil, Link as LinkIcon, TrendingUp, TrendingDown } from 'lucide-react'
 
 // 2. Imports internos (shared)
 import { Card } from '@/shared/components/ui/card'
@@ -119,6 +119,16 @@ export function GoalCard({ goal, currency, isCompleted, onDelete, onEdit }: Goal
               {formatCurrency(Math.abs(goal.asset_value), currency)}
               {renderPaymentInfo()}
             </p>
+            <span className={`inline-flex items-center gap-1 text-xs mt-1 px-2 py-0.5 rounded-full ${
+              goal.adjust_for_inflation !== false
+                ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400'
+                : 'bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400'
+            }`}>
+              {goal.adjust_for_inflation !== false
+                ? <><TrendingUp className="h-3 w-3" /> {t('common.inflationAdjusted')}</>
+                : <><TrendingDown className="h-3 w-3" /> {t('common.noInflationAdjustment')}</>
+              }
+            </span>
             {renderFinancialLinks()}
           </div>
         </div>

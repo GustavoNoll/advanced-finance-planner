@@ -776,6 +776,10 @@ export const enUS = {
     minimize: 'Minimize',
     maximize: 'Maximize',
     save_changes: 'Save changes',
+    adjustForInflation: "Adjust for inflation",
+    adjustForInflationDescription: "Apply inflation adjustment to this value over time",
+    inflationAdjusted: "Inflation adjusted",
+    noInflationAdjustment: "No inflation adjustment",
     theme: {
       light: 'Light',
       dark: 'Dark',

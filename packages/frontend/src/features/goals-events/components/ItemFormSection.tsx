@@ -39,6 +39,7 @@ export function ItemFormSection({
     payment_mode: editingItem.payment_mode,
     installment_count: editingItem.installment_count?.toString() || '',
     installment_interval: editingItem.installment_interval?.toString() || '1',
+    adjust_for_inflation: editingItem.adjust_for_inflation ?? true,
   } : undefined
 
   return (
@@ -51,6 +52,7 @@ export function ItemFormSection({
         currency={currency}
         showTypeSelector={false}
         initialValues={initialValues}
+        isEditing={!!editingItem}
         planInitialDate={planInitialDate || new Date().toISOString().split('T')[0]}
         limitAge={limitAge}
         birthDate={birthDate}
