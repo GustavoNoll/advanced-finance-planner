@@ -214,7 +214,7 @@ export function SavingsGoal({ allFinancialRecords, investmentPlan, activeMicroPl
               <div className="flex justify-between items-center">
                 <span className="text-xs text-gray-500 dark:text-gray-400">{t('savingsGoal.goal.plannedFutureValue')}</span>
                 <p className="text-xs font-medium text-gray-600 dark:text-gray-300">
-                  {formatCurrency(planProgressData?.plannedFuturePresentValue ?? 0, investmentPlan?.currency as CurrencyCode)}
+                  {formatCurrency(planProgressData?.plannedGoalFutureValue ?? 0, investmentPlan?.currency as CurrencyCode)}
                 </p>
               </div>
             </div>
@@ -230,7 +230,7 @@ export function SavingsGoal({ allFinancialRecords, investmentPlan, activeMicroPl
               <div className="flex justify-between items-center">
                 <span className="text-xs text-gray-500 dark:text-gray-400">{t('savingsGoal.goal.projectedFutureValue')}</span>
                 <p className="text-xs font-medium text-gray-600 dark:text-gray-300">
-                  {formatCurrency(planProgressData?.projectedFuturePresentValue ?? 0, investmentPlan?.currency as CurrencyCode)}
+                  {formatCurrency(planProgressData?.projectedGoalFutureValue ?? 0, investmentPlan?.currency as CurrencyCode)}
                 </p>
               </div>
             </div>

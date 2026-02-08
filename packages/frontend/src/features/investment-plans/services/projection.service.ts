@@ -202,8 +202,8 @@ export class ProjectionService {
         projectedContribution: 0,
         projectedPresentValue: 0,
         plannedPresentValue: 0,
-        projectedFuturePresentValue: 0,
-        plannedFuturePresentValue: 0,
+        projectedGoalFutureValue: 0,
+        plannedGoalFutureValue: 0,
         projectedMonthlyIncome: 0,
         plannedMonthlyIncome: 0,
         projectedRetirementDate: undefined,
@@ -214,7 +214,9 @@ export class ProjectionService {
         projectedAgeYears: 0,
         projectedAgeMonths: 0,
         projectedAge: 0,
-        isAheadOfSchedule: false
+        isAheadOfSchedule: false,
+        actualDate: new Date(),
+        investmentPlanMonthsToRetirement: 0
       }
     }
     if (
@@ -233,8 +235,8 @@ export class ProjectionService {
         projectedContribution: 0,
         projectedPresentValue: 0,
         plannedPresentValue: 0,
-        projectedFuturePresentValue: 0,
-        plannedFuturePresentValue: 0,
+        projectedGoalFutureValue: 0,
+        plannedGoalFutureValue: 0,
         projectedMonthlyIncome: 0,
         plannedMonthlyIncome: 0,
         projectedRetirementDate: undefined,
@@ -245,7 +247,9 @@ export class ProjectionService {
         projectedAgeYears: 0,
         projectedAgeMonths: 0,
         projectedAge: 0,
-        isAheadOfSchedule: false
+        isAheadOfSchedule: false,
+        actualDate: new Date(),
+        investmentPlanMonthsToRetirement: 0
       }
     }
 
@@ -255,17 +259,14 @@ export class ProjectionService {
       const retirementYear = projectionData.find((year: YearlyProjectionData) => year.year === retirementDate.getFullYear())
       const retirementMonthIndex = retirementYear?.months?.findIndex((month: MonthlyProjectionData) => month.month === retirementDate.getMonth() + 1)
       
-      // Obtém informações sobre dados históricos
-      const lastHistoricalDataInfo = this.findLastHistoricalData(projectionData)
-      
-      let plannedFuturePresentValue = 0
-      let projectedFuturePresentValue = 0
+      let plannedGoalFutureValue = 0
+      let projectedGoalFutureValue = 0
 
       if (retirementYear && retirementMonthIndex !== undefined) {
         // Obtém o mês antes da aposentadoria
         const monthBeforeRetirement = retirementYear.months[retirementMonthIndex]
-        plannedFuturePresentValue = monthBeforeRetirement?.planned_balance || 0
-        projectedFuturePresentValue = monthBeforeRetirement?.balance || 0
+        plannedGoalFutureValue = monthBeforeRetirement?.planned_balance || 0
+        projectedGoalFutureValue = monthBeforeRetirement?.balance || 0
       }
 
       return processPlanProgressData(
@@ -278,9 +279,8 @@ export class ProjectionService {
         },
         goals,
         events,
-        plannedFuturePresentValue,
-        projectedFuturePresentValue,
-        lastHistoricalDataInfo
+        plannedGoalFutureValue,
+        projectedGoalFutureValue
       )
     } catch (error) {
       return {
@@ -291,8 +291,8 @@ export class ProjectionService {
         projectedContribution: 0,
         projectedPresentValue: 0,
         plannedPresentValue: 0,
-        projectedFuturePresentValue: 0,
-        plannedFuturePresentValue: 0,
+        projectedGoalFutureValue: 0,
+        plannedGoalFutureValue: 0,
         projectedMonthlyIncome: 0,
         plannedMonthlyIncome: 0,
         projectedRetirementDate: undefined,
@@ -303,7 +303,9 @@ export class ProjectionService {
         projectedAgeYears: 0,
         projectedAgeMonths: 0,
         projectedAge: 0,
-        isAheadOfSchedule: false
+        isAheadOfSchedule: false,
+        actualDate: new Date(),
+        investmentPlanMonthsToRetirement: 0
       }
     }
   }
