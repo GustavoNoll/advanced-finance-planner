@@ -91,6 +91,7 @@ const fundLiquidity = [
   { value: 'd_plus_2', label: 'D+2' },
   { value: 'd_plus_30', label: 'D+30' },
   { value: 'd_plus_90', label: 'D+90' },
+  { value: 'd_plus_180', label: 'D+180' },
 ];
 
 const realEstateFundModes = [

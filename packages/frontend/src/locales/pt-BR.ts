@@ -3017,7 +3017,8 @@ export const ptBR = {
         d_plus_1: 'D+1',
         d_plus_2: 'D+2',
         d_plus_30: 'D+30',
-        d_plus_90: 'D+90'
+        d_plus_90: 'D+90',
+        d_plus_180: 'D+180'
       },
       acceptableLoss: {
         no_loss: 'Sem perdas',
