@@ -233,9 +233,10 @@ describe('financial-goals-processor', () => {
     })
 
     it('should default adjust_for_inflation to true when undefined', () => {
-      const goal = createMockGoal({
-        adjust_for_inflation: undefined as any,
-      })
+      const goal = {
+        ...createMockGoal(),
+        adjust_for_inflation: undefined,
+      } as Goal
       const result = processItem(goal, 'goal', IGNORE_FINANCIAL_LINKS)
       
       expect(result[0].adjust_for_inflation).toBe(true)
