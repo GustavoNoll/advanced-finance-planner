@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Input } from "@/shared/components/ui/input";
 import { Button } from "@/shared/components/ui/button";
 import { Badge } from "@/shared/components/ui/badge";
@@ -45,11 +45,7 @@ const SelectExistingItems = ({ onSelect, selectedItems, userId, currency }: Sele
   const [events, setEvents] = useState<Event[]>([]);
   const [isLoading, setIsLoading] = useState(false);
 
-  useEffect(() => {
-    fetchItems();
-  }, [selectedItems]);
-
-  const fetchItems = async () => {
+  const fetchItems = useCallback(async () => {
     setIsLoading(true);
     try {
       // Buscar goals não selecionados
@@ -73,7 +69,11 @@ const SelectExistingItems = ({ onSelect, selectedItems, userId, currency }: Sele
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [userId]);
+
+  useEffect(() => {
+    fetchItems();
+  }, [fetchItems]);
 
   const availableItems = [
     ...goals.map(g => ({ ...g, type: 'goal' as const })),

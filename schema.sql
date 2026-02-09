@@ -67,6 +67,7 @@ CREATE TABLE public.events (
   installment_count integer,
   installment_interval integer DEFAULT 1 CHECK (installment_interval IS NULL OR installment_interval >= 1),
   payment_mode text NOT NULL DEFAULT 'none'::text CHECK (payment_mode = ANY (ARRAY['none'::text, 'installment'::text, 'repeat'::text])),
+  adjust_for_inflation boolean NOT NULL DEFAULT true,
   CONSTRAINT events_pkey PRIMARY KEY (id),
   CONSTRAINT events_profile_id_fkey FOREIGN KEY (profile_id) REFERENCES public.profiles(id)
 );
@@ -96,6 +97,7 @@ CREATE TABLE public.financial_goals (
   name character varying NOT NULL DEFAULT ''::character varying,
   installment_interval integer DEFAULT 1 CHECK (installment_interval IS NULL OR installment_interval >= 1),
   payment_mode text NOT NULL DEFAULT 'none'::text CHECK (payment_mode = ANY (ARRAY['none'::text, 'installment'::text, 'repeat'::text])),
+  adjust_for_inflation boolean NOT NULL DEFAULT true,
   CONSTRAINT financial_goals_pkey PRIMARY KEY (id),
   CONSTRAINT financial_goals_profile_id_fkey FOREIGN KEY (profile_id) REFERENCES public.profiles(id),
   CONSTRAINT goals_profile_id_fkey FOREIGN KEY (profile_id) REFERENCES public.profiles(id)

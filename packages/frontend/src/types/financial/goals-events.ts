@@ -19,6 +19,7 @@ export interface Goal {
   created_at?: string
   updated_at?: string
   description?: string
+  adjust_for_inflation: boolean
   financial_links?: FinancialRecordLink[]
 }
 
@@ -37,6 +38,7 @@ export interface ProjectedEvent {
   year: number
   created_at?: string
   updated_at?: string
+  adjust_for_inflation: boolean
   financial_links?: FinancialRecordLink[]
 }
 
@@ -55,6 +57,7 @@ export type BaseFormValues = {
   payment_mode: 'none' | 'installment' | 'repeat'
   installment_count?: string
   installment_interval?: string
+  adjust_for_inflation: boolean
 }
 
 export type GoalFormValues = BaseFormValues & {

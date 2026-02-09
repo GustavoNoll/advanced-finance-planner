@@ -70,6 +70,7 @@ export class GoalsEventsManagementService {
         payment_mode: values.payment_mode,
         installment_count: values.installment_count ? parseInt(values.installment_count) : null,
         installment_interval: values.installment_interval ? parseInt(values.installment_interval) : null,
+        adjust_for_inflation: values.adjust_for_inflation ?? true,
       },
     ])
 
@@ -101,6 +102,7 @@ export class GoalsEventsManagementService {
         payment_mode: values.payment_mode,
         installment_count: values.installment_count ? parseInt(values.installment_count) : null,
         installment_interval: values.installment_interval ? parseInt(values.installment_interval) : null,
+        adjust_for_inflation: values.adjust_for_inflation ?? true,
       },
     ])
 
@@ -131,6 +133,7 @@ export class GoalsEventsManagementService {
         payment_mode: values.payment_mode,
         installment_count: values.installment_count ? parseInt(values.installment_count) : null,
         installment_interval: values.installment_interval ? parseInt(values.installment_interval) : null,
+        adjust_for_inflation: values.adjust_for_inflation ?? true,
       })
       .eq('id', goalId)
       .select()
@@ -162,6 +165,7 @@ export class GoalsEventsManagementService {
         payment_mode: values.payment_mode,
         installment_count: values.installment_count ? parseInt(values.installment_count) : null,
         installment_interval: values.installment_interval ? parseInt(values.installment_interval) : null,
+        adjust_for_inflation: values.adjust_for_inflation ?? true,
       })
       .eq('id', eventId)
       .select()

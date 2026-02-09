@@ -91,6 +91,7 @@ const fundLiquidity = [
   { value: 'd_plus_2', label: 'D+2' },
   { value: 'd_plus_30', label: 'D+30' },
   { value: 'd_plus_90', label: 'D+90' },
+  { value: 'd_plus_180', label: 'D+180' },
 ];
 
 const realEstateFundModes = [
@@ -183,6 +184,25 @@ export function InvestmentPreferencesForm({
     risk_profile: initialData?.risk_profile as 'CONS' | 'MOD' | 'ARROJ' | 'AGRESSIVO',
   });
 
+  const form = useForm<InvestmentPreferencesFormValues>({
+    resolver: zodResolver(investmentPreferencesSchema),
+    defaultValues: {
+      target_return_review: initialData?.target_return_review || '',
+      max_bond_maturity: initialData?.max_bond_maturity || '',
+      fgc_event_feeling: initialData?.fgc_event_feeling || '',
+      max_fund_liquidity: initialData?.max_fund_liquidity || '',
+      max_acceptable_loss: initialData?.max_acceptable_loss || '',
+      target_return_ipca_plus: initialData?.target_return_ipca_plus || '',
+      stock_investment_mode: initialData?.stock_investment_mode || '',
+      real_estate_funds_mode: initialData?.real_estate_funds_mode || '',
+      platforms_used: initialData?.platforms_used || [],
+      asset_restrictions: initialData?.asset_restrictions || [],
+      areas_of_interest: initialData?.areas_of_interest || [],
+      risk_profile: initialData?.risk_profile as 'CONS' | 'MOD' | 'ARROJ' | 'AGRESSIVO',
+      asset_allocations: assetAllocations || {},
+    },
+  });
+
   const handleCancelEdit = () => {
     // Reset form to initial values
     form.reset(initialFormValues.current);
@@ -215,25 +235,6 @@ export function InvestmentPreferencesForm({
     { value: '20', label: t('investmentPreferences.options.acceptableLoss.twenty_percent') },
     { value: '25', label: t('investmentPreferences.options.acceptableLoss.twenty_five_percent') },
   ];
-
-  const form = useForm<InvestmentPreferencesFormValues>({
-    resolver: zodResolver(investmentPreferencesSchema),
-    defaultValues: {
-      target_return_review: initialData?.target_return_review || '',
-      max_bond_maturity: initialData?.max_bond_maturity || '',
-      fgc_event_feeling: initialData?.fgc_event_feeling || '',
-      max_fund_liquidity: initialData?.max_fund_liquidity || '',
-      max_acceptable_loss: initialData?.max_acceptable_loss || '',
-      target_return_ipca_plus: initialData?.target_return_ipca_plus || '',
-      stock_investment_mode: initialData?.stock_investment_mode || '',
-      real_estate_funds_mode: initialData?.real_estate_funds_mode || '',
-      platforms_used: initialData?.platforms_used || [],
-      asset_restrictions: initialData?.asset_restrictions || [],
-      areas_of_interest: initialData?.areas_of_interest || [],
-      risk_profile: initialData?.risk_profile as 'CONS' | 'MOD' | 'ARROJ' | 'AGRESSIVO',
-      asset_allocations: assetAllocations || {},
-    },
-  });
 
   // Reset form when initialData changes
   useEffect(() => {

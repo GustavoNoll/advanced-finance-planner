@@ -776,6 +776,10 @@ export const enUS = {
     minimize: 'Minimize',
     maximize: 'Maximize',
     save_changes: 'Save changes',
+    adjustForInflation: "Adjust for inflation",
+    adjustForInflationDescription: "Apply inflation adjustment to this value over time",
+    inflationAdjusted: "Inflation adjusted",
+    noInflationAdjustment: "No inflation adjustment",
     theme: {
       light: 'Light',
       dark: 'Dark',
@@ -3013,7 +3017,8 @@ export const enUS = {
         d_plus_1: 'D+1',
         d_plus_2: 'D+2',
         d_plus_30: 'D+30',
-        d_plus_90: 'D+90'
+        d_plus_90: 'D+90',
+        d_plus_180: 'D+180'
       },
       acceptableLoss: {
         no_loss: 'No losses',

@@ -16,6 +16,7 @@ export interface ProcessedGoalEvent {
   installment_interval?: number;
   description?: string;
   name?: string;
+  adjust_for_inflation: boolean;
 }
 
 /**
@@ -70,7 +71,8 @@ export function processItem<T extends Goal | ProjectedEvent>(
     month: item.month,
     description: item.icon,
     name: item.name,
-    status: item.status
+    status: item.status,
+    adjust_for_inflation: item.adjust_for_inflation !== false
   };
 
   if (item.payment_mode === 'none' || !item.installment_count) {
@@ -107,7 +109,8 @@ export function processItem<T extends Goal | ProjectedEvent>(
         month: month,
         amount: item.asset_value, // Valor completo para cada repetição
         description: `${item.icon} (${repetitionIndex + 1}/${item.installment_count})`,
-        status: item.status
+        status: item.status,
+        adjust_for_inflation: item.adjust_for_inflation !== false
       };
     });
   }
@@ -148,7 +151,8 @@ export function processItem<T extends Goal | ProjectedEvent>(
       month: month,
       amount: amount,
       description: `${item.icon} (${installmentIndex + 1}/${item.installment_count})`,
-      status: item.status
+      status: item.status,
+      adjust_for_inflation: item.adjust_for_inflation !== false
     };
   });
 }

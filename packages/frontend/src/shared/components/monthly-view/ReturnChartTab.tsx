@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo, useCallback } from "react";
 import { useTranslation } from "react-i18next";
 import { useQuery } from "@tanstack/react-query";
 import { Select, SelectItem, SelectTrigger, SelectContent, SelectValue } from "@/shared/components/ui/select";
@@ -196,7 +196,7 @@ export function ReturnChartTab({
     enabled: Boolean(allFinancialRecords?.length),
   });
 
-  const processRecordsForChart = (records: FinancialRecord[], investmentPlan: InvestmentPlan) => {
+  const processRecordsForChart = useCallback((records: FinancialRecord[], investmentPlan: InvestmentPlan) => {
     const sortedRecords = records.sort((a, b) => {
       if (a.record_year !== b.record_year) {
         return a.record_year - b.record_year;
@@ -265,9 +265,9 @@ export function ReturnChartTab({
         oldPortfolioRate: oldPortfolioRateWithIpca
       };
     });
-  };
+  }, [allCdiRates, allIpcaRates, allUsCpiRates, allEuroCpiRates, t, yearlyReturnRateToMonthlyReturnRate, calculateCompoundedRates]);
 
-  const calculateAccumulatedReturns = (data: ReturnType<typeof processRecordsForChart>) => {
+  const calculateAccumulatedReturns = useCallback((data: ReturnType<typeof processRecordsForChart>) => {
     if (data.length === 0) return [];
     const processedData = data.map((record, index, array) => {
       const relevantData = array.slice(0, index + 1);
@@ -337,16 +337,16 @@ export function ReturnChartTab({
     }
     
     return processedData;
-  };
+  }, []);
 
   const chartDataToUse = useMemo(() => 
     processRecordsForChart(chartRecords, investmentPlan),
-    [chartRecords, allCdiRates, allIpcaRates, allUsCpiRates, allEuroCpiRates]
+    [chartRecords, investmentPlan, processRecordsForChart]
   );
 
   const accumulatedReturns = useMemo(() => {
     return calculateAccumulatedReturns(chartDataToUse);
-  }, [chartDataToUse]);
+  }, [chartDataToUse, calculateAccumulatedReturns]);
 
   const filteredChartData = useMemo(() => 
     accumulatedReturns,

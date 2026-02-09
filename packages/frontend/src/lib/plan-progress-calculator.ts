@@ -348,6 +348,7 @@ interface ProcessedGoalEvent {
   year: number;
   description?: string;
   name?: string;
+  adjust_for_inflation: boolean;
 }
 
 /**
@@ -523,29 +524,30 @@ const financialCalculations = {
       // Calculate months from start date to target date
       const monthsFromStart = utils.calculateMonthsBetweenDates(startDate, targetDate);
       
-      // Calculate cumulative inflation factor up to target month using actual monthly rates
-      // Only apply inflation if the date is not in the future
-      if (!isFutureDate) {
-        while (currentMonthIndex <= monthsFromStart) {
-          if (currentMonthIndex < monthlyInflationRates.length) {
-            cumulativeInflationFactor *= (1 + monthlyInflationRates[currentMonthIndex]);
-          }
-          currentMonthIndex++;
+      // Always calculate cumulative inflation factor up to target month using actual monthly rates
+      // Needed for all dates: past dates use it for time adjustment, future dates use it for
+      // goals/events that don't adjust for inflation (their real value decreases over time)
+      while (currentMonthIndex <= monthsFromStart) {
+        if (currentMonthIndex < monthlyInflationRates.length) {
+          cumulativeInflationFactor *= (1 + monthlyInflationRates[currentMonthIndex]);
         }
+        currentMonthIndex++;
       }
 
       const monthlyGoals = goals
         .filter(goal => goal.year === targetYear && goal.month === targetMonth)
         .map(goal => ({
           amount: goal.amount,
-          description: goal.description
+          description: goal.description,
+          adjust_for_inflation: goal.adjust_for_inflation
         }));
 
       const monthlyEvents = events
         .filter(event => event.year === targetYear && event.month === targetMonth)
         .map(event => ({
           amount: event.amount,
-          name: event.name
+          name: event.name,
+          adjust_for_inflation: event.adjust_for_inflation
         }));
 
       if (monthlyGoals.length > 0 || monthlyEvents.length > 0) {
@@ -563,25 +565,46 @@ const financialCalculations = {
           timeAdjustmentFactor = 1 + calculateCompoundedRates(returnRatesForPeriod);
         }
         
-        // For future dates, don't apply inflation adjustment since values are already current
-        const inflationAdjustedGoals = monthlyGoals.map(goal => ({
-          amount: isFutureDate ? goal.amount : goal.amount / timeAdjustmentFactor,
-          description: goal.description
-        }));
+        // adjust_for_inflation true (default): value grows with inflation
+        //   - future: amount as-is (already in current terms)
+        //   - past: amount / timeAdjustmentFactor (discount by real returns)
+        // adjust_for_inflation false: value is fixed nominally, real value decreases
+        //   - future: amount / cumulativeInflationFactor (discount by future inflation)
+        //   - past: amount / (timeAdjustmentFactor * cumulativeInflationFactor)
+        const inflationAdjustedGoals = monthlyGoals.map(goal => {
+          const adjustForInflation = goal.adjust_for_inflation !== false;
+          let adjustedAmount: number;
+          if (adjustForInflation) {
+            adjustedAmount = isFutureDate ? goal.amount : goal.amount / timeAdjustmentFactor;
+          } else {
+            adjustedAmount = isFutureDate
+              ? goal.amount / cumulativeInflationFactor
+              : goal.amount / (timeAdjustmentFactor * cumulativeInflationFactor);
+          }
+          return { amount: adjustedAmount, description: goal.description };
+        });
         
-        const inflationAdjustedEvents = monthlyEvents.map(event => ({
-          amount: isFutureDate ? event.amount : event.amount / timeAdjustmentFactor,
-          name: event.name
-        }));
+        const inflationAdjustedEvents = monthlyEvents.map(event => {
+          const adjustForInflation = event.adjust_for_inflation !== false;
+          let adjustedAmount: number;
+          if (adjustForInflation) {
+            adjustedAmount = isFutureDate ? event.amount : event.amount / timeAdjustmentFactor;
+          } else {
+            adjustedAmount = isFutureDate
+              ? event.amount / cumulativeInflationFactor
+              : event.amount / (timeAdjustmentFactor * cumulativeInflationFactor);
+          }
+          return { amount: adjustedAmount, name: event.name };
+        });
 
         monthlyValuesHash[dateKey] = {
           month: targetMonth,
           year: targetYear,
           originalValues: {
-            goals: monthlyGoals,
-            events: monthlyEvents,
+            goals: monthlyGoals.map(g => ({ amount: g.amount, description: g.description })),
+            events: monthlyEvents.map(e => ({ amount: e.amount, name: e.name })),
           },
-          inflationFactor: isFutureDate ? 1 : cumulativeInflationFactor,
+          inflationFactor: cumulativeInflationFactor,
           adjustedValues: {
             goals: inflationAdjustedGoals,
             events: inflationAdjustedEvents,

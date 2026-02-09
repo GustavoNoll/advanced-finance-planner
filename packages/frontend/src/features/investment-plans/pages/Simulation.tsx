@@ -145,7 +145,7 @@ export const Simulation = () => {
     if (!formData.birthDate) return new Date(mockProfile.birth_date);
     
     return new Date(formData.birthDate);
-  }, [formData.birthDate]);
+  }, [formData.birthDate, mockProfile.birth_date]);
 
   // Get calculations
   const { calculations } = usePlanCalculations(calculationFormData, birthDate);
@@ -179,7 +179,7 @@ export const Simulation = () => {
     };
 
     setSimulationPlan(simulationInvestmentPlan);
-  }, [formData, birthDate]);
+  }, [formData, birthDate, mockProfile.id]);
 
   // Generate chart options
   const chartOptions: ChartOptions = useMemo(() => ({
@@ -240,7 +240,7 @@ export const Simulation = () => {
       rawChartData: chartData,
       projectionData: tableData
     };
-  }, [simulationPlan, birthDate, chartOptions, formData.monthlyDeposit, formData.desiredIncome, formData.expectedReturn, formData.inflation]);
+  }, [simulationPlan, birthDate, chartOptions, formData.monthlyDeposit, formData.desiredIncome, formData.expectedReturn, formData.inflation, mockProfile]);
 
   const handleFormChange = (field: keyof SimulationFormData, value: string | boolean) => {
     setFormData(prev => ({
