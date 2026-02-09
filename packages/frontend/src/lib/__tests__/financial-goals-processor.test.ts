@@ -39,13 +39,15 @@ describe('financial-goals-processor', () => {
     ...overrides,
   })
 
-  const createMockFinancialLink = (amount: number): FinancialRecordLink => ({
+  const createMockFinancialLink = (amount: number, itemId: string = 'item-1', itemType: 'goal' | 'event' = 'goal'): FinancialRecordLink => ({
     id: 'link-1',
     financial_record_id: 'record-1',
-    goal_id: null,
-    event_id: null,
+    item_id: itemId,
+    item_type: itemType,
     allocated_amount: amount,
+    is_completing: false,
     created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
   })
 
   describe('processItem', () => {

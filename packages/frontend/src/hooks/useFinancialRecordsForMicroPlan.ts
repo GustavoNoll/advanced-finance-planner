@@ -152,11 +152,15 @@ export function useFinancialRecordsForMicroPlan({
   }, [userId, activeMicroPlan?.id, fetchFinancialRecords])
 
   // Calculate micro plan values when dependencies change
+  const activeMicroPlanId = activeMicroPlan?.id
+  const planId = plan?.id
+  const birthDateTime = birthDate?.getTime()
+  
   useEffect(() => {
     if (activeMicroPlan && plan && birthDate) {
       calculateMicroPlanValues()
     }
-  }, [activeMicroPlan?.id, plan?.id, birthDate.getTime(), financialRecords.length, calculateMicroPlanValues])
+  }, [activeMicroPlan, activeMicroPlanId, plan, planId, birthDate, birthDateTime, financialRecords.length, calculateMicroPlanValues])
 
   return {
     financialRecords,

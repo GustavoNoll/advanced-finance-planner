@@ -1,5 +1,5 @@
 // 1. Imports externos
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 
 // 2. Imports internos (shared)
 import { supabase } from '@/lib/supabase'
@@ -21,7 +21,7 @@ export function useLinkedItems(financialRecordId: number, refreshKey?: number) {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const fetchLinkedItems = async () => {
+  const fetchLinkedItems = useCallback(async () => {
     setIsLoading(true);
     setError(null);
     
@@ -106,7 +106,7 @@ export function useLinkedItems(financialRecordId: number, refreshKey?: number) {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [financialRecordId]);
 
   const removeLink = async (linkId: string, itemType: 'goal' | 'event', itemId: string, isCompleting: boolean) => {
     try {
@@ -157,7 +157,7 @@ export function useLinkedItems(financialRecordId: number, refreshKey?: number) {
     if (financialRecordId) {
       fetchLinkedItems();
     }
-  }, [financialRecordId, refreshKey]);
+  }, [financialRecordId, refreshKey, fetchLinkedItems]);
 
 
 

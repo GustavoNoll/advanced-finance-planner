@@ -132,7 +132,20 @@ export function FinancialItemForm({
         adjust_for_inflation: initialValues?.adjust_for_inflation ?? true,
       });
     }
-  }, [initialValues?.month, initialValues?.year, form, type]);
+  }, [
+    initialValues?.month, 
+    initialValues?.year, 
+    initialValues?.name,
+    initialValues?.icon,
+    initialValues?.asset_value,
+    initialValues?.type,
+    initialValues?.payment_mode,
+    initialValues?.installment_count,
+    initialValues?.installment_interval,
+    initialValues?.adjust_for_inflation,
+    form, 
+    type
+  ]);
 
   // Reset form when type changes
   const handleTypeChange = (newType: 'goal' | 'event') => {

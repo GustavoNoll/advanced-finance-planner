@@ -27,7 +27,7 @@ export function useProjectionData(
       events,
       {}
     )
-  }, [investmentPlan, microPlans, clientProfile, allFinancialRecords, goals, events, chartOptions])
+  }, [investmentPlan, microPlans, clientProfile, allFinancialRecords, goals, events, activeMicroPlan])
 
   // Dados de projeção com opções avançadas
   const projectionDataWithOptions = useMemo(() => {
@@ -92,7 +92,7 @@ export function useProjectionData(
       projectionDataWithOptions,
       investmentPlan
     )
-  }, [originalProjectionData, investmentPlan])
+  }, [originalProjectionData, investmentPlan, projectionDataWithOptions])
 
   // Verifica se há opções de gráfico ativas
   const hasActiveChartOptions = useMemo(() => {

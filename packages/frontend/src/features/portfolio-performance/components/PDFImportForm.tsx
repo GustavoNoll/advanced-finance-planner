@@ -90,7 +90,7 @@ export function PDFImportForm({
     if (defaultPeriod && !formData.period) {
       setFormData(prev => ({ ...prev, period: defaultPeriod }))
     }
-  }, [defaultPeriod])
+  }, [defaultPeriod, formData.period])
 
   const handlePDFFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0]
