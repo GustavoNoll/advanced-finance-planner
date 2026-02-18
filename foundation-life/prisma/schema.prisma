@@ -1,0 +1,104 @@
+generator client {
+  provider = "prisma-client-js"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+/// Basic profile information for Foundation Life users.
+/// Auth itself is handled by Supabase; we reference the auth user id.
+model Profile {
+  id                 String        @id @default(uuid())
+  authUserId         String        @unique
+  createdAt          DateTime      @default(now())
+  updatedAt          DateTime      @updatedAt
+
+  // Dados básicos
+  birthDate          DateTime?
+  lifeExpectancyYears Int          @default(90)
+  baseCurrency       String        @default("BRL")
+  riskProfile        String?       // ex: conservador, moderado, agressivo
+
+  // Relacionamentos
+  scenarios          LifeScenario[]
+}
+
+model LifeScenario {
+  id          String        @id @default(uuid())
+  profileId   String
+  name        String
+  description String?
+  isDefault   Boolean       @default(false)
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  profile     Profile        @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  settings    LifeSettings?
+  events      LifeEvent[]
+  microPlans  LifeMicroPlan[]
+}
+
+model LifeMicroPlan {
+  id                   String   @id @default(uuid())
+  scenarioId           String
+  effectiveDate        DateTime
+  monthlyIncome        Float    @default(0)
+  monthlyExpenses      Float    @default(0)
+  monthlyContribution  Float    @default(0)
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+
+  scenario             LifeScenario @relation(fields: [scenarioId], references: [id], onDelete: Cascade)
+}
+
+model LifeSettings {
+  id                    String      @id @default(uuid())
+  scenarioId            String      @unique
+
+  baseNetWorth          Float       @default(0)   // patrimônio inicial
+  baseMonthlyIncome     Float       @default(0)   // renda líquida mensal
+  baseMonthlyExpenses   Float       @default(0)   // gastos totais mensais
+  monthlyContribution   Float       @default(0)   // quanto vai para investimentos
+
+  expectedReturnYearly  Float       @default(8)   // % ao ano
+  inflationYearly       Float       @default(4)   // % ao ano
+
+  inflateIncome         Boolean     @default(true)   // inflacionar renda ao longo do tempo
+  inflateExpenses       Boolean     @default(true)   // inflacionar gastos
+  retirementAge         Int         @default(65)     // idade de aposentadoria
+  retirementMonthlyIncome Float    @default(0)       // renda mensal após aposentadoria
+  inflateRetirementIncome Boolean   @default(true)  // inflacionar renda de aposentadoria
+
+  createdAt             DateTime    @default(now())
+  updatedAt             DateTime    @updatedAt
+
+  scenario              LifeScenario @relation(fields: [scenarioId], references: [id], onDelete: Cascade)
+}
+
+model LifeEvent {
+  id              String      @id @default(uuid())
+  scenarioId      String
+
+  type            String      // income_change, expense_change, job_change, purchase, child, etc.
+  title           String
+  description     String?
+
+  date            DateTime    // data principal do evento
+  endDate         DateTime?   // opcional para eventos com duração
+
+  amount          Float       // valor mensal ou total, conforme tipo
+  frequency       String      @default("once") // once, monthly, yearly
+  durationMonths  Int?        // para eventos recorrentes com fim definido
+
+  inflationIndexed Boolean    @default(true)
+
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+
+  scenario        LifeScenario @relation(fields: [scenarioId], references: [id], onDelete: Cascade)
+}
+
+

@@ -1,0 +1,95 @@
+{
+  "node": {
+    "40c3c71f87e5ea7d12c538759c67dc0c0d65be1af3": {
+      "workers": {
+        "app/dashboard/page": {
+          "moduleId": "[project]/foundation-life/.next-internal/server/app/dashboard/page/actions.js { ACTIONS_MODULE0 => \"[project]/foundation-life/src/app/actions/life.ts [app-rsc] (ecmascript)\" } [app-rsc] (server actions loader, ecmascript)",
+          "async": false,
+          "exportedName": "getLifeData",
+          "filename": "foundation-life/src/app/actions/life.ts"
+        }
+      },
+      "layer": {
+        "app/dashboard/page": "action-browser"
+      },
+      "exportedName": "getLifeData",
+      "filename": "foundation-life/src/app/actions/life.ts"
+    },
+    "600b891cdaa925d592b8f5aa6ab448824fa3e7f5ec": {
+      "workers": {
+        "app/dashboard/page": {
+          "moduleId": "[project]/foundation-life/.next-internal/server/app/dashboard/page/actions.js { ACTIONS_MODULE0 => \"[project]/foundation-life/src/app/actions/life.ts [app-rsc] (ecmascript)\" } [app-rsc] (server actions loader, ecmascript)",
+          "async": false,
+          "exportedName": "saveLifeData",
+          "filename": "foundation-life/src/app/actions/life.ts"
+        }
+      },
+      "layer": {
+        "app/dashboard/page": "action-browser"
+      },
+      "exportedName": "saveLifeData",
+      "filename": "foundation-life/src/app/actions/life.ts"
+    },
+    "70f2553d7ae95e30f81f8fe1cf502e7d66ab08a3eb": {
+      "workers": {
+        "app/dashboard/page": {
+          "moduleId": "[project]/foundation-life/.next-internal/server/app/dashboard/page/actions.js { ACTIONS_MODULE0 => \"[project]/foundation-life/src/app/actions/life.ts [app-rsc] (ecmascript)\" } [app-rsc] (server actions loader, ecmascript)",
+          "async": false,
+          "exportedName": "saveLifeEvent",
+          "filename": "foundation-life/src/app/actions/life.ts"
+        }
+      },
+      "layer": {
+        "app/dashboard/page": "action-browser"
+      },
+      "exportedName": "saveLifeEvent",
+      "filename": "foundation-life/src/app/actions/life.ts"
+    },
+    "60e8724e899a70540d02df124b7c7f048ff7c3dfc1": {
+      "workers": {
+        "app/dashboard/page": {
+          "moduleId": "[project]/foundation-life/.next-internal/server/app/dashboard/page/actions.js { ACTIONS_MODULE0 => \"[project]/foundation-life/src/app/actions/life.ts [app-rsc] (ecmascript)\" } [app-rsc] (server actions loader, ecmascript)",
+          "async": false,
+          "exportedName": "deleteLifeEvent",
+          "filename": "foundation-life/src/app/actions/life.ts"
+        }
+      },
+      "layer": {
+        "app/dashboard/page": "action-browser"
+      },
+      "exportedName": "deleteLifeEvent",
+      "filename": "foundation-life/src/app/actions/life.ts"
+    },
+    "70bc2341ebf592c74631753ee3e6ed36c6e9bd537b": {
+      "workers": {
+        "app/dashboard/page": {
+          "moduleId": "[project]/foundation-life/.next-internal/server/app/dashboard/page/actions.js { ACTIONS_MODULE0 => \"[project]/foundation-life/src/app/actions/life.ts [app-rsc] (ecmascript)\" } [app-rsc] (server actions loader, ecmascript)",
+          "async": false,
+          "exportedName": "saveLifeMicroPlan",
+          "filename": "foundation-life/src/app/actions/life.ts"
+        }
+      },
+      "layer": {
+        "app/dashboard/page": "action-browser"
+      },
+      "exportedName": "saveLifeMicroPlan",
+      "filename": "foundation-life/src/app/actions/life.ts"
+    },
+    "60930212137d8c346826a64f1c60690a51d72ad0dc": {
+      "workers": {
+        "app/dashboard/page": {
+          "moduleId": "[project]/foundation-life/.next-internal/server/app/dashboard/page/actions.js { ACTIONS_MODULE0 => \"[project]/foundation-life/src/app/actions/life.ts [app-rsc] (ecmascript)\" } [app-rsc] (server actions loader, ecmascript)",
+          "async": false,
+          "exportedName": "deleteLifeMicroPlan",
+          "filename": "foundation-life/src/app/actions/life.ts"
+        }
+      },
+      "layer": {
+        "app/dashboard/page": "action-browser"
+      },
+      "exportedName": "deleteLifeMicroPlan",
+      "filename": "foundation-life/src/app/actions/life.ts"
+    }
+  },
+  "edge": {}
+}
