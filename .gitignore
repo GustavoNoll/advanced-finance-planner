@@ -35,3 +35,7 @@ dist-ssr
 # Vercel Serverless Functions
 # Comentado para que as funções sejam commitadas e o Vercel as detecte
 # api/
+
+foundation-life/.env
+foundation-life/.next/*
+foundation-life/.env.local
