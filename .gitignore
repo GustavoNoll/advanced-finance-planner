@@ -39,3 +39,12 @@ dist-ssr
 foundation-life/.env
 foundation-life/.next/*
 foundation-life/.env.local
+foundation-life/node_modules/*
+foundation-life/package-lock.json
+foundation-life/yarn.lock
+foundation-life/pnpm-lock.yaml
+foundation-life/bun.lockb
+foundation-life/package-lock.json
+foundation-life/yarn.lock
+foundation-life/pnpm-lock.yaml
+foundation-life/bun.lockb
