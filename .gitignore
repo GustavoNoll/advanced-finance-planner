@@ -35,3 +35,16 @@ dist-ssr
 # Vercel Serverless Functions
 # Comentado para que as funções sejam commitadas e o Vercel as detecte
 # api/
+
+foundation-life/.env
+foundation-life/.next/*
+foundation-life/.env.local
+foundation-life/node_modules/*
+foundation-life/package-lock.json
+foundation-life/yarn.lock
+foundation-life/pnpm-lock.yaml
+foundation-life/bun.lockb
+foundation-life/package-lock.json
+foundation-life/yarn.lock
+foundation-life/pnpm-lock.yaml
+foundation-life/bun.lockb
