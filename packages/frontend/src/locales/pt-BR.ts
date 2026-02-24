@@ -3174,7 +3174,9 @@ export const ptBR = {
     chart: {
       title: 'Projeção Patrimonial em Tempo Real',
       description: 'Acompanhe a evolução do patrimônio dos seus clientes com precisão matemática',
-      growth: '+33.5% no período'
+      growth: '+33.5% no período',
+      metricsTitle: 'Dashboard de clientes com projeção em tempo real',
+      metricsDescription: 'Veja, em um único painel, os principais KPIs da sua base de clientes junto com o gráfico de projeção e acompanhamento do patrimônio.'
     },
     interface: {
       badge: 'Tecnologia de Ponta',
@@ -3316,6 +3318,12 @@ export const ptBR = {
         title: 'Alocação de Ativos Sugerida',
         description: 'Distribuição otimizada baseada no perfil de risco'
       }
+    },
+    consultantsSection: {
+      title: 'Corretores que usam a Foundation',
+      description: 'Veja quantos corretores utilizam a Foundation no dia a dia e qual patrimônio eles gerenciam na plataforma.',
+      activeAdvisors: 'Corretores ativos na Foundation',
+      assetsWithAdvisors: 'Patrimônio sob gestão na Foundation'
     },
     metricsSection: {
       title: 'Métricas que Importam',

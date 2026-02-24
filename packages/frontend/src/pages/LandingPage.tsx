@@ -25,7 +25,7 @@ import { PieChart as RechartsPieChart, Pie, Cell, Legend, Tooltip, ResponsiveCon
 import { Badge } from "@/shared/components/ui/badge"
 import { Input } from "@/shared/components/ui/input"
 import { Textarea } from "@/shared/components/ui/textarea"
-import { useState, useMemo } from "react"
+import { useEffect, useState, useMemo } from "react"
 import { useToast } from "@/shared/components/ui/use-toast"
 import { useNavigate } from "react-router-dom"
 import { useAuth } from "@/features/auth/components/AuthProvider"
@@ -37,6 +37,7 @@ import { formatCurrency } from "@/utils/currency"
 import { detectCurrency } from "@/lib/locale-detection"
 import { SEOHead, useStructuredData } from "@/shared/components/seo/seo-head"
 import { generateStructuredData } from "@/lib/seo-utils"
+import { supabase } from "@/lib/supabase"
 
 interface MetricCardProps {
   label: string
@@ -91,6 +92,10 @@ export default function LandingPage() {
   const [email, setEmail] = useState("")
   const [message, setMessage] = useState("")
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [activeAdvisorsCount, setActiveAdvisorsCount] = useState<number | null>(null)
+  const [advisorsAum, setAdvisorsAum] = useState<number | null>(null)
+  const [activeAdvisorsDisplay, setActiveAdvisorsDisplay] = useState(0)
+  const [advisorsAumDisplay, setAdvisorsAumDisplay] = useState(0)
   const { toast } = useToast()
   const navigate = useNavigate()
   const { user, isBroker, isAdmin, loading: authLoading } = useAuth()
@@ -397,6 +402,118 @@ export default function LandingPage() {
     { label: t('landingPage.metrics.satisfaction'), value: "94%", change: `+5% ${t('landingPage.stats.vsPreviousMonth')}`, icon: Shield },
   ], [t, currency, inflationIndex])
 
+  useEffect(() => {
+    const fetchAdvisorStats = async () => {
+      try {
+        // Buscar corretores ativos e não de teste
+        const { data: brokers, error: brokersError } = await supabase
+          .from('profiles')
+          .select('id, name, active, is_broker')
+          .eq('is_broker', true)
+          .eq('active', true)
+
+        if (brokersError) {
+          console.error('Error fetching brokers for landing page metrics:', brokersError)
+          return
+        }
+
+        const validBrokers = (brokers || []).filter((broker) => {
+          if (!broker?.name) return true
+          return !broker.name.toLowerCase().includes('teste')
+        })
+
+        const brokerIds = validBrokers.map((broker) => broker.id)
+
+        if (brokerIds.length === 0) {
+          setActiveAdvisorsCount(0)
+          setAdvisorsAum(0)
+          return
+        }
+
+        setActiveAdvisorsCount(brokerIds.length)
+
+        // Somar o ending_balance dos clientes desses corretores
+        const { data: clients, error: clientsError } = await supabase
+          .from('user_profiles_investment')
+          .select('ending_balance, broker_id')
+          .in('broker_id', brokerIds)
+
+        if (clientsError) {
+          console.error('Error fetching advisor AUM for landing page:', clientsError)
+          return
+        }
+
+        const totalAum = (clients || []).reduce((sum, client) => {
+          const balance = typeof client.ending_balance === 'number' ? client.ending_balance : 0
+          return sum + balance
+        }, 0)
+
+        setAdvisorsAum(totalAum)
+      } catch (error) {
+        console.error('Unexpected error fetching advisor stats for landing page:', error)
+      }
+    }
+
+    fetchAdvisorStats()
+  }, [])
+
+  useEffect(() => {
+    if (activeAdvisorsCount === null) return
+
+    const duration = 1000
+    const startValue = 0
+    const endValue = activeAdvisorsCount
+    const startTime = performance.now()
+
+    let frameId: number
+
+    const animate = (currentTime: number) => {
+      const elapsed = currentTime - startTime
+      const progress = Math.min(elapsed / duration, 1)
+      const value = Math.round(startValue + (endValue - startValue) * progress)
+      setActiveAdvisorsDisplay(value)
+
+      if (progress < 1) {
+        frameId = requestAnimationFrame(animate)
+      }
+    }
+
+    frameId = requestAnimationFrame(animate)
+
+    return () => {
+      cancelAnimationFrame(frameId)
+    }
+  }, [activeAdvisorsCount])
+
+  useEffect(() => {
+    if (advisorsAum === null) return
+
+    const duration = 1500
+    const startValue = 0
+    const endValue = advisorsAum
+    const startTime = performance.now()
+
+    let frameId: number
+
+    const animate = (currentTime: number) => {
+      const elapsed = currentTime - startTime
+      const progress = Math.min(elapsed / duration, 1)
+      const easedProgress = 1 - Math.pow(1 - progress, 3) // easeOutCubic
+      const value = Math.round(startValue + (endValue - startValue) * easedProgress)
+      setAdvisorsAumDisplay(value)
+
+      if (progress < 1) {
+        frameId = requestAnimationFrame(animate)
+      }
+    }
+
+    frameId = requestAnimationFrame(animate)
+
+    return () => {
+      cancelAnimationFrame(frameId)
+    }
+  }, [advisorsAum])
+
   const comparisonData = [
     { metric: 'Tempo até Aposentadoria', planned: 240, projected: 228, unit: 'meses', isCurrency: false },
     { metric: 'Contribuição Mensal', planned: 5000, projected: 4750, unit: '', isCurrency: true },
@@ -597,12 +714,52 @@ export default function LandingPage() {
             </div>
           </div>
 
-          {/* Metrics Showcase */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-16">
-            {metrics.map((metric, index) => (
-              <MetricCard key={index} {...metric} />
-            ))}
-          </div>
+          {/* Advisors Overview Section */}
+          <section className="py-10">
+            <div className="max-w-6xl mx-auto bg-gray-50 dark:bg-gray-950/70 rounded-2xl border border-gray-200 dark:border-gray-800 px-6 sm:px-10 py-10 mb-16">
+              <div className="max-w-3xl mx-auto text-center mb-8">
+                <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 dark:text-white mb-3">
+                  {t('landingPage.consultantsSection.title')}
+                </h2>
+                <p className="text-lg text-gray-600 dark:text-gray-400">
+                  {t('landingPage.consultantsSection.description')}
+                </p>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <Card className="border-2 hover:shadow-xl transition-all">
+                  <CardHeader>
+                    <div className="flex items-center justify-between">
+                      <CardTitle>{t('landingPage.consultantsSection.activeAdvisors')}</CardTitle>
+                      <Users className="h-8 w-8 text-blue-600" />
+                    </div>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-5xl font-bold text-blue-600 mb-2">
+                      {activeAdvisorsCount !== null ? activeAdvisorsDisplay : 32}
+                    </div>
+                  </CardContent>
+                </Card>
+
+                <Card className="border-2 hover:shadow-xl transition-all">
+                  <CardHeader>
+                    <div className="flex items-center justify-between">
+                      <CardTitle>{t('landingPage.consultantsSection.assetsWithAdvisors')}</CardTitle>
+                      <TrendingUp className="h-8 w-8 text-emerald-600" />
+                    </div>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-4xl sm:text-5xl font-bold text-emerald-600 mb-2">
+                      {formatCurrency(
+                        advisorsAum !== null ? advisorsAumDisplay : 125000000,
+                        currency
+                      )}
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+            </div>
+          </section>
 
           {/* Chart Preview - Usando SimulationChart Real */}
           <Card id="demo" className="border-2 border-blue-100 dark:border-blue-900 shadow-2xl mb-8">
@@ -659,6 +816,24 @@ export default function LandingPage() {
               />
             </CardContent>
           </Card>
+
+          {/* Metrics Showcase with chart context */}
+          <div className="mt-10 mb-4">
+            <div className="max-w-3xl mx-auto text-center mb-8">
+              <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white mb-3">
+                {t('landingPage.chart.metricsTitle')}
+              </h2>
+              <p className="text-lg text-gray-600 dark:text-gray-400">
+                {t('landingPage.chart.metricsDescription')}
+              </p>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+              {metrics.map((metric, index) => (
+                <MetricCard key={index} {...metric} />
+              ))}
+            </div>
+          </div>
         </div>
       </section>
 

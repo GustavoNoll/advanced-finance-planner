@@ -3174,7 +3174,9 @@ export const enUS = {
     chart: {
       title: 'Real-Time Wealth Projection',
       description: 'Track your clients\' wealth evolution with mathematical precision',
-      growth: '+33.5% in period'
+      growth: '+33.5% in period',
+      metricsTitle: 'Client dashboard with real-time projections',
+      metricsDescription: 'See your key client KPIs together with a live projection and tracking chart for their wealth journey.'
     },
     interface: {
       badge: 'Cutting-Edge Technology',
@@ -3316,6 +3318,12 @@ export const enUS = {
         title: 'Suggested Asset Allocation',
         description: 'Optimized distribution based on risk profile'
       }
+    },
+    consultantsSection: {
+      title: 'Advisors using Foundation',
+      description: 'See how many advisors use Foundation every day and the assets they manage on the platform.',
+      activeAdvisors: 'Active advisors on Foundation',
+      assetsWithAdvisors: 'Assets under management on Foundation'
     },
     metricsSection: {
       title: 'Metrics that Matter',
