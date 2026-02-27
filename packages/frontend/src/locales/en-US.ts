@@ -742,6 +742,10 @@ export const enUS = {
     last6Months: "Last 6 Months",
     last12Months: "Last 12 Months",
     last24Months: "Last 24 Months",
+    fullYear: "Year {{year}}",
+    fullYearLabel: "Full year",
+    searchYearOrPeriod: "Search year or period...",
+    noYearFound: "No year found.",
     error: "Error",
     errors: {
       tryAgain: "Please try again."

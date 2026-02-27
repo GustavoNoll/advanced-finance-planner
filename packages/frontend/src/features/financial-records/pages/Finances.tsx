@@ -21,13 +21,13 @@ import { DashboardMetrics } from "@/shared/components/dashboard/DashboardMetrics
 import { useFinancialRecords as useFinancialRecordsWithLinks } from "@/hooks/useFinancialRecordsManagement";
 import { useGoalsAndEvents } from "@/hooks/useFinancialData";
 import { useProjectionData } from "@/hooks/useProjectionData";
-import { PlanProgressData } from "@/lib/plan-progress-calculator";
-import { ChartOptions } from "@/lib/chart-projections";
-import { calculateMicroPlanFutureValues } from '@/utils/investmentPlanCalculations';
+import { PlanProgressData } from "@/lib/calculations/plan-progress-calculator";
+import { ChartOptions } from "@/lib/calculations/chart-projections";
+import { calculateMicroPlanFutureValues } from '@/lib/calculations/investmentPlanCalculations';
 import { createDateWithoutTimezone } from '@/utils/dateUtils';
 import { gradientCard } from '@/lib/gradient-classes';
 
-type TimePeriod = 'all' | '6m' | '12m' | '24m';
+import { TimePeriod } from '@/features/financial-records/services/financial-records.service'
 
 interface FinancesProps {
   clientId: string;

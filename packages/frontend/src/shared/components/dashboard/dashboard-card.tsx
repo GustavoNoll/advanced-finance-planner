@@ -20,13 +20,13 @@ export function DashboardCard({ title, children, className, icon: Icon, headerAc
   return (
     <Card className={cn("investment-card bg-card text-card-foreground border border-border", className)}>
       <CardHeader>
-        <div className="flex items-center justify-between">
-          <CardTitle className="text-lg font-semibold flex items-center gap-2 text-foreground">
-            {Icon && <Icon className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />}
+        <div className="flex items-center justify-between gap-3">
+          <CardTitle className="text-lg font-semibold flex items-center gap-2 text-foreground min-w-0 flex-1">
+            {Icon && <Icon className="w-5 h-5 text-emerald-600 dark:text-emerald-400 flex-shrink-0" />}
             {title}
           </CardTitle>
           {headerActions && (
-            <div className="flex items-center">
+            <div className="flex items-center flex-shrink-0">
               {headerActions}
             </div>
           )}

@@ -9,8 +9,10 @@ export interface ProcessedFinancialRecords {
   currentMonthRecord: FinancialRecord | null
 }
 
+export type TimePeriod = 'all' | '6m' | '12m' | '24m' | string
+
 export interface FinancialRecordsFilters {
-  period?: 'all' | '6m' | '12m' | '24m'
+  period?: TimePeriod
   includeInitialAmount?: boolean
 }
 
@@ -78,13 +80,21 @@ export class FinancialRecordsService {
   }
 
   /**
-   * Filtra registros por período
+   * Filtra registros por período (rolling ou ano completo).
+   * @param period - 'all' | '6m' | '12m' | '24m' | 'YYYY' (ano completo, ex: '2024')
    */
-  static filterRecordsByPeriod(records: FinancialRecord[], period: 'all' | '6m' | '12m' | '24m'): FinancialRecord[] {
+  static filterRecordsByPeriod(records: FinancialRecord[], period: TimePeriod): FinancialRecord[] {
     if (period === 'all') return records
 
+    // Year selection: period is a 4-digit year string (e.g. '2024')
+    const yearMatch = /^\d{4}$/.exec(String(period))
+    if (yearMatch) {
+      const year = parseInt(yearMatch[0], 10)
+      return records.filter(record => record.record_year === year)
+    }
+
     const currentDate = createDateWithoutTimezone(new Date())
-    const months = parseInt(period)
+    const months = parseInt(period, 10)
     const cutoffDate = createDateWithoutTimezone(new Date(
       currentDate.getFullYear(),
       currentDate.getMonth() - months,
@@ -100,7 +110,7 @@ export class FinancialRecordsService {
   /**
    * Calcula retornos totais para um período
    */
-  static calculateTotalReturns(records: FinancialRecord[], period: 'all' | '6m' | '12m' | '24m' = 'all') {
+  static calculateTotalReturns(records: FinancialRecord[], period: TimePeriod = 'all') {
     if (!records?.length) return { totalAmount: 0, percentageReturn: 0 }
 
     const filteredRecords = this.filterRecordsByPeriod(records, period)
@@ -126,7 +136,7 @@ export class FinancialRecordsService {
    */
   static calculateMonthlyContributions(
     records: FinancialRecord[], 
-    period: 'all' | '6m' | '12m' | '24m' = 'all',
+    period: TimePeriod = 'all',
     initialAmount: number = 0
   ): number {
     if (!records?.length) return 0
@@ -146,6 +156,15 @@ export class FinancialRecordsService {
       sum + (record.monthly_contribution || 0), 0)
     
     return totalContribution + (includesOldestRecord ? initialAmount : 0)
+  }
+
+  /**
+   * Retorna anos únicos disponíveis nos registros, ordenados do mais recente ao mais antigo
+   */
+  static getAvailableYears(records: FinancialRecord[]): number[] {
+    if (!records?.length) return []
+    const years = [...new Set(records.map(r => r.record_year))].filter(Boolean)
+    return years.sort((a, b) => b - a)
   }
 
   /**

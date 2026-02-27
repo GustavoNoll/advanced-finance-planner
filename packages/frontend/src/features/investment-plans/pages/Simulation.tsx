@@ -14,10 +14,10 @@ import { formatCurrency, CurrencyCode, getCurrencySymbol } from "@/utils/currenc
 import { RISK_PROFILES } from '@/constants/riskProfiles';
 import { CurrencyInput } from "@/shared/components/ui/currency-input";
 import { usePlanCalculations, usePlanCreation } from "@/hooks/usePlanCreation";
-import { FormData } from "@/utils/investmentPlanCalculations";
+import { FormData } from "@/lib/calculations/investmentPlanCalculations";
 import { Switch } from "@/shared/components/ui/switch";
 import { Checkbox } from "@/shared/components/ui/checkbox";
-import { generateChartProjections, generateProjectionData, ChartOptions } from '@/lib/chart-projections';
+import { generateChartProjections, generateProjectionData, ChartOptions } from '@/lib/calculations/chart-projections';
 import { useProfileData } from "@/hooks/usePlanCreation";
 import { useToast } from "@/shared/components/ui/use-toast";
 import { Spinner } from "@/shared/components/ui/spinner";

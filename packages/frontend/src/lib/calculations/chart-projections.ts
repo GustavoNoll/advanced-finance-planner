@@ -1,9 +1,10 @@
-import { yearlyReturnRateToMonthlyReturnRate, calculateCompoundedRates } from './financial-math';
+import { yearlyReturnRateToMonthlyReturnRate, calculateCompoundedRates } from '../financial-math';
 import { ChartDataPoint, FinancialRecord, Goal, InvestmentPlan, MicroInvestmentPlan, MonthNumber, ProjectedEvent } from '@/types/financial';
-import { createIPCARatesMap } from './inflation-utils';
-import { processGoalsForChart, processEventsForChart, ProcessedGoalEvent, IGNORE_FINANCIAL_LINKS, CONSIDER_FINANCIAL_LINKS } from '@/lib/financial-goals-processor';
-import { createDateWithoutTimezone, createDateFromYearMonth } from '@/utils/dateUtils';
+import { createIPCARatesMap } from '../inflation-utils';
+import { processGoalsForChart, processEventsForChart, ProcessedGoalEvent, FOR_PLANNED_SCENARIO, FOR_PROJECTED_SCENARIO } from './financial-goals-processor';
+import { createDateWithoutTimezone, createDateFromYearMonth, getLastDayOfYear } from '@/utils/dateUtils';
 import { getActiveMicroPlanForDate } from '@/utils/microPlanUtils';
+import { DEFAULT_INFLATION_PERCENT, DEFAULT_EXPECTED_RETURN_PERCENT } from './constants';
 
 // ============================================================================
 // TYPES AND INTERFACES
@@ -214,13 +215,13 @@ function createProjectionContext(
   const initialMicroPlan = getActiveMicroPlanForDate(microPlans, planStartDate);
   
   // Usar valores do micro plano ativo (sem fallback para investment plan)
-  const defaultMonthlyInflationRate = initialMicroPlan 
+  const defaultMonthlyInflationRate = initialMicroPlan
     ? yearlyReturnRateToMonthlyReturnRate(initialMicroPlan.inflation / 100)
-    : yearlyReturnRateToMonthlyReturnRate(6 / 100); // Default 6% se não houver micro plano
-  
+    : yearlyReturnRateToMonthlyReturnRate(DEFAULT_INFLATION_PERCENT / 100);
+
   const monthlyExpectedReturnRate = initialMicroPlan
     ? yearlyReturnRateToMonthlyReturnRate(initialMicroPlan.expected_return / 100)
-    : yearlyReturnRateToMonthlyReturnRate(8 / 100); // Default 8% se não houver micro plano
+    : yearlyReturnRateToMonthlyReturnRate(DEFAULT_EXPECTED_RETURN_PERCENT / 100);
   const monthlyOldPortfolioExpectedReturnRate = oldPortfolioProfitability 
     ? yearlyReturnRateToMonthlyReturnRate(oldPortfolioProfitability / 100) 
     : 0;
@@ -246,7 +247,13 @@ function createProjectionContext(
     ? createDateWithoutTimezone(chartOptions.changeMonthlyWithdraw.date) 
     : null;
 
-  const firstHistoricalRecordDate = initialRecords.sort((a, b) => a.record_year - b.record_year || a.record_month - b.record_month)[0] ? createDateFromYearMonth(initialRecords.sort((a, b) => a.record_year - b.record_year || a.record_month - b.record_month)[0].record_year, initialRecords.sort((a, b) => a.record_year - b.record_year || a.record_month - b.record_month)[0].record_month) : null;
+  const sortedByDateForFirst = [...initialRecords].sort(
+    (a, b) => (a.record_year - b.record_year) || (a.record_month - b.record_month)
+  );
+  const firstRecord = sortedByDateForFirst[0];
+  const firstHistoricalRecordDate = firstRecord
+    ? createDateFromYearMonth(firstRecord.record_year, firstRecord.record_month)
+    : null;
   return {
     investmentPlan,
     profile,
@@ -396,8 +403,8 @@ function createHistoricalMonthData(
     retirement: isRetirementAge,
     goalsEventsImpact,
     difference_from_planned_balance: adjustedEndingBalance - plannedBalance,
-    projected_lifetime_withdrawal: adjustedEndingBalance / (expectedReturn / 100),
-    planned_lifetime_withdrawal: plannedBalance / (expectedReturn / 100),
+    projected_lifetime_withdrawal: adjustedEndingBalance * (expectedReturn / 100 / 12),
+    planned_lifetime_withdrawal: plannedBalance * (expectedReturn / 100 / 12),
     effectiveRate: monthlyReturnRate,
     ipcaRate: monthlyInflationRate,
     accumulatedInflation,
@@ -441,8 +448,8 @@ function createPastMonthData(
     balance: 0,
     retirement: false,
     planned_balance: plannedBalance,
-    projected_lifetime_withdrawal: projectedBalance / (expectedReturn / 100),
-    planned_lifetime_withdrawal: plannedBalance / (expectedReturn / 100),
+    projected_lifetime_withdrawal: projectedBalance * (expectedReturn / 100 / 12),
+    planned_lifetime_withdrawal: plannedBalance * (expectedReturn / 100 / 12),
     goalsEventsImpact: 0,
     isHistorical: false,
     effectiveRate: monthlyReturnRate,
@@ -495,8 +502,8 @@ function createRetirementMonthData(
     withdrawal: monthlyWithdrawal,
     balance: projectedBalance,
     planned_balance: plannedBalance,
-    projected_lifetime_withdrawal: projectedBalance / (expectedReturn / 100),
-    planned_lifetime_withdrawal: plannedBalance / (expectedReturn / 100),
+    projected_lifetime_withdrawal: projectedBalance * (expectedReturn / 100 / 12),
+    planned_lifetime_withdrawal: plannedBalance * (expectedReturn / 100 / 12),
     returns: monthlyReturn,
     isHistorical: false,
     difference_from_planned_balance: projectedBalance - plannedBalance,
@@ -548,8 +555,8 @@ function createFutureMonthData(
     balance: projectedBalance,
     planned_balance: plannedBalance,
     isHistorical: false,
-    projected_lifetime_withdrawal: projectedBalance / (expectedReturn / 100),
-    planned_lifetime_withdrawal: plannedBalance / (expectedReturn / 100),
+    projected_lifetime_withdrawal: projectedBalance * (expectedReturn / 100 / 12),
+    planned_lifetime_withdrawal: plannedBalance * (expectedReturn / 100 / 12),
     difference_from_planned_balance: projectedBalance - plannedBalance,
     goalsEventsImpact,
     retirement: false,
@@ -602,14 +609,17 @@ export function generateProjectionData(
   
   
   // Para planned: ignora financial_links (cenário ideal)
-  const allGoalsForChart = processGoals(context.goals, IGNORE_FINANCIAL_LINKS);
-  const allEventsForChart = processEvents(context.events, IGNORE_FINANCIAL_LINKS);
+  const allGoalsForChart = processGoals(context.goals, FOR_PLANNED_SCENARIO);
+  const allEventsForChart = processEvents(context.events, FOR_PLANNED_SCENARIO);
   
   // Para projected: considera financial_links (realidade atual)
-  const pendingGoalsForChart = processGoals(context.goals?.filter(goal => goal.status === 'pending'), CONSIDER_FINANCIAL_LINKS);
-  const pendingEventsForChart = processEvents(context.events?.filter(event => event.status === 'pending'), CONSIDER_FINANCIAL_LINKS);
+  const pendingGoalsForChart = processGoals(context.goals?.filter(goal => goal.status === 'pending'), FOR_PROJECTED_SCENARIO);
+  const pendingEventsForChart = processEvents(context.events?.filter(event => event.status === 'pending'), FOR_PROJECTED_SCENARIO);
   let oldPortfolioBalance = context.oldPortfolioProfitability ? investmentPlan.initial_amount : null;
-  let projectedBalance = initialRecords[0]?.ending_balance || investmentPlan.initial_amount;
+  const sortedByDateRecords = [...initialRecords].sort(
+    (a, b) => b.record_year - a.record_year || b.record_month - a.record_month
+  );
+  let projectedBalance = sortedByDateRecords[0]?.ending_balance || investmentPlan.initial_amount;
   let plannedBalance = investmentPlan.initial_amount;
   
   // Obter o micro plano ativo na data inicial
@@ -676,17 +686,17 @@ export function generateProjectionData(
     }
 
     const isRetirementAge = year > context.endDate.getFullYear() ||
-      (year === context.endDate.getFullYear() && month >= context.endDate.getMonth() + 2);
+      (year === context.endDate.getFullYear() && month > context.endDate.getMonth() + 1);
 
     // Calculate rates using active micro plan values
     const activeMicroPlanForRates = getActiveMicroPlanForDate(context.microPlans, currentDate);
     const monthlyInflationRateForDate = activeMicroPlanForRates
       ? yearlyReturnRateToMonthlyReturnRate(activeMicroPlanForRates.inflation / 100)
-      : yearlyReturnRateToMonthlyReturnRate(6 / 100); // Default 6% se não houver micro plano
-    
+      : yearlyReturnRateToMonthlyReturnRate(DEFAULT_INFLATION_PERCENT / 100);
+
     const monthlyExpectedReturnRateForDate = activeMicroPlanForRates
       ? yearlyReturnRateToMonthlyReturnRate(activeMicroPlanForRates.expected_return / 100)
-      : yearlyReturnRateToMonthlyReturnRate(8 / 100); // Default 8% se não houver micro plano
+      : yearlyReturnRateToMonthlyReturnRate(DEFAULT_EXPECTED_RETURN_PERCENT / 100);
     
     const rates = 
       calculateMonthlyRates(
@@ -768,7 +778,7 @@ export function generateProjectionData(
         monthlyInflationRate,
         accumulatedInflation,
         contribution,
-        activeMicroPlanForRates?.expected_return || 8, // Default 8% se não houver micro plano
+        activeMicroPlanForRates?.expected_return ?? DEFAULT_EXPECTED_RETURN_PERCENT,
         context.birthYear,
         chartOptions?.showRealValues || false
       );
@@ -808,7 +818,7 @@ export function generateProjectionData(
         monthlyReturnRate,
         monthlyInflationRate,
         accumulatedInflation,
-        activeMicroPlanForRates?.expected_return || 8, // Default 8% se não houver micro plano
+        activeMicroPlanForRates?.expected_return ?? DEFAULT_EXPECTED_RETURN_PERCENT,
         contribution,
       );
     } else if (isRetirementAge) {
@@ -860,7 +870,7 @@ export function generateProjectionData(
         accumulatedInflation,
         withdrawal,
         goalsEventsImpact,
-        activeMicroPlanForRates?.expected_return || 8, // Default 8% se não houver micro plano
+        activeMicroPlanForRates?.expected_return ?? DEFAULT_EXPECTED_RETURN_PERCENT,
         context.birthYear
       );
     } else {
@@ -955,8 +965,8 @@ export function generateProjectionData(
         withdrawal: yearlyWithdrawal,
         balance: lastMonth.balance,
         planned_balance: lastMonth.planned_balance,
-        projected_lifetime_withdrawal: lastMonth.balance / ((getActiveMicroPlanForDate(context.microPlans, new Date(year, 11, 31))?.expected_return || 8) / 100), // Default 8% se não houver micro plano
-        planned_lifetime_withdrawal: lastMonth.planned_balance / ((getActiveMicroPlanForDate(context.microPlans, new Date(year, 11, 31))?.expected_return || 8) / 100), // Default 8% se não houver micro plano
+        projected_lifetime_withdrawal: lastMonth.balance * ((getActiveMicroPlanForDate(context.microPlans, getLastDayOfYear(year))?.expected_return ?? DEFAULT_EXPECTED_RETURN_PERCENT) / 100 / 12),
+        planned_lifetime_withdrawal: lastMonth.planned_balance * ((getActiveMicroPlanForDate(context.microPlans, getLastDayOfYear(year))?.expected_return ?? DEFAULT_EXPECTED_RETURN_PERCENT) / 100 / 12),
         months: monthlyData,
         isRetirementTransitionYear: monthlyData.some(month => month.retirement),
         hasHistoricalData: monthlyData.some(month => month.isHistorical),
@@ -1092,7 +1102,7 @@ export function generateDataPoints(
  * Handles monthly goals and events impact on balance
  * @param balance Current balance
  * @param year Current year
- * @param month Current month (0-based)
+ * @param month Current month (1-12)
  * @param accumulatedInflation Accumulated inflation factor
  * @param goals Optional processed goals
  * @param events Optional processed events

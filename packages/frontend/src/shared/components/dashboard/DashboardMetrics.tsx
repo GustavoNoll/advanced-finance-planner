@@ -1,18 +1,27 @@
 // 1. Imports externos
-import { Briefcase, LineChart, PiggyBank, Scale, Info } from 'lucide-react'
+import { useState } from 'react'
+import { Briefcase, ChevronsUpDown, LineChart, PiggyBank, Scale, Info } from 'lucide-react'
 
 // 2. Imports internos (shared)
 import { DashboardCard } from '@/shared/components/dashboard/dashboard-card'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/shared/components/ui/select'
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+  CommandSeparator
+} from '@/shared/components/ui/command'
+import { Popover, PopoverContent, PopoverTrigger } from '@/shared/components/ui/popover'
 import { HoverCard, HoverCardContent, HoverCardTrigger } from '@/shared/components/ui/hover-card'
 import { formatCurrency, CurrencyCode } from '@/utils/currency'
 import { useFinancialMetrics } from '@/hooks/useFinancialData'
+import { TimePeriod } from '@/features/financial-records/services/financial-records.service'
 
 // 3. Imports internos (feature)
 import { InvestmentPlan, MicroInvestmentPlan } from '@/types/financial'
 import { ProjectionData } from '@/features/investment-plans/services/projection.service'
-
-type TimePeriod = 'all' | '6m' | '12m' | '24m'
 
 interface DashboardMetricsProps {
   clientId: string
@@ -22,13 +31,90 @@ interface DashboardMetricsProps {
   contributionPeriod: TimePeriod
   onSelectedPeriodChange: (period: TimePeriod) => void
   onContributionPeriodChange: (period: TimePeriod) => void
-  t: (key: string) => string
+  t: (key: string, params?: Record<string, string | number>) => string
   retirementBalanceData?: {
     nominalDifference: number
     percentageDifference: number
     currentBalance: number
     oldPortfolioBalance: number
   }
+}
+
+function getPeriodLabel(period: TimePeriod, t: (key: string, params?: Record<string, string | number>) => string): string {
+  if (period === 'all') return t('common.allTime')
+  if (period === '6m') return t('common.last6Months')
+  if (period === '12m') return t('common.last12Months')
+  if (period === '24m') return t('common.last24Months')
+  if (/^\d{4}$/.test(String(period))) return t('common.fullYear', { year: period })
+  return t('common.selectPeriod')
+}
+
+function PeriodSelect({
+  value,
+  onValueChange,
+  availableYears,
+  t
+}: {
+  value: TimePeriod
+  onValueChange: (v: TimePeriod) => void
+  availableYears: number[]
+  t: (key: string, params?: Record<string, string | number>) => string
+}) {
+  const [open, setOpen] = useState(false)
+
+  return (
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger asChild>
+        <button
+          type="button"
+          role="combobox"
+          aria-expanded={open}
+          className="min-w-[140px] h-9 flex items-center justify-between gap-2 text-sm border border-gray-200 dark:border-gray-700 rounded-lg px-3 bg-white/90 dark:bg-gray-900/80 hover:bg-gray-50 dark:hover:bg-gray-800/80 focus:outline-none focus:ring-2 focus:ring-blue-500/20 transition-colors"
+        >
+          <span className="truncate">{getPeriodLabel(value, t)}</span>
+          <ChevronsUpDown className="h-4 w-4 shrink-0 opacity-50" />
+        </button>
+      </PopoverTrigger>
+      <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0" align="end">
+        <Command>
+          <CommandInput placeholder={t('common.searchYearOrPeriod')} />
+          <CommandList>
+            <CommandEmpty>{t('common.noYearFound')}</CommandEmpty>
+            <CommandGroup>
+              <CommandItem value="all" onSelect={() => { onValueChange('all'); setOpen(false) }}>
+                {t('common.allTime')}
+              </CommandItem>
+              <CommandItem value="6m" onSelect={() => { onValueChange('6m'); setOpen(false) }}>
+                {t('common.last6Months')}
+              </CommandItem>
+              <CommandItem value="12m" onSelect={() => { onValueChange('12m'); setOpen(false) }}>
+                {t('common.last12Months')}
+              </CommandItem>
+              <CommandItem value="24m" onSelect={() => { onValueChange('24m'); setOpen(false) }}>
+                {t('common.last24Months')}
+              </CommandItem>
+            </CommandGroup>
+            {availableYears.length > 0 && (
+              <>
+                <CommandSeparator />
+                <CommandGroup heading={t('common.fullYearLabel')}>
+                  {availableYears.map((year) => (
+                    <CommandItem
+                      key={year}
+                      value={String(year)}
+                      onSelect={() => { onValueChange(String(year)); setOpen(false) }}
+                    >
+                      {t('common.fullYear', { year })}
+                    </CommandItem>
+                  ))}
+                </CommandGroup>
+              </>
+            )}
+          </CommandList>
+        </Command>
+      </PopoverContent>
+    </Popover>
+  )
 }
 
 export function DashboardMetrics({
@@ -42,7 +128,7 @@ export function DashboardMetrics({
   t,
   retirementBalanceData
 }: DashboardMetricsProps) {
-  const { totalReturns, totalContribution, processedRecords } = useFinancialMetrics(
+  const { totalReturns, totalContribution, processedRecords, availableYears } = useFinancialMetrics(
     clientId,
     selectedPeriod,
     contributionPeriod,
@@ -106,35 +192,23 @@ export function DashboardMetrics({
       <DashboardCard 
         className="transform transition-all duration-300 hover:scale-[1.02] hover:shadow-2xl bg-gradient-to-br from-white/95 via-slate-50/90 to-blue-50/80 dark:from-gray-900/90 dark:via-gray-900/80 dark:to-slate-800/70 backdrop-blur-sm border border-gray-100/50 dark:border-gray-800 rounded-xl shadow-lg hover:border-blue-100/50 dark:hover:border-gray-700"
         title={
-          <div className="flex items-center justify-between w-full">
-            <div className="flex items-center gap-2 flex-1 min-w-0">
-              <span className="text-gray-900 dark:text-gray-100 font-medium truncate">
-                {t('dashboard.cards.contributions.title')}
-              </span>
-              <HoverCard>
-                <HoverCardTrigger>
-                  <Info className="h-4 w-4 text-gray-400 dark:text-gray-300 cursor-help hover:text-blue-600 dark:hover:text-blue-400 transition-colors flex-shrink-0" />
-                </HoverCardTrigger>
-                <HoverCardContent className="w-80 bg-white dark:bg-gray-900 shadow-lg rounded-lg">
-                  <p className="text-sm text-gray-600 dark:text-gray-300">
-                    {t('dashboard.cards.contributions.tooltip')}
-                  </p>
-                </HoverCardContent>
-              </HoverCard>
-            </div>
-            <Select value={contributionPeriod} onValueChange={(value) => onContributionPeriodChange(value as TimePeriod)}>
-              <SelectTrigger className="w-[120px] h-8 text-sm border border-gray-200 dark:border-gray-700 rounded-lg px-2 bg-white/90 dark:bg-gray-900/80 text-gray-700 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent shadow-sm hover:border-blue-200 dark:hover:border-gray-600 transition-colors ml-auto">
-                <SelectValue placeholder={t('common.selectPeriod')} />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">{t('common.allTime')}</SelectItem>
-                <SelectItem value="6m">{t('common.last6Months')}</SelectItem>
-                <SelectItem value="12m">{t('common.last12Months')}</SelectItem>
-                <SelectItem value="24m">{t('common.last24Months')}</SelectItem>
-              </SelectContent>
-            </Select>
+          <div className="flex items-center gap-2 min-w-0">
+            <span className="text-gray-900 dark:text-gray-100 font-medium truncate">
+              {t('dashboard.cards.contributions.title')}
+            </span>
+            <HoverCard>
+              <HoverCardTrigger>
+                <Info className="h-4 w-4 text-gray-400 dark:text-gray-300 cursor-help hover:text-blue-600 dark:hover:text-blue-400 transition-colors flex-shrink-0" />
+              </HoverCardTrigger>
+              <HoverCardContent className="w-80 bg-white dark:bg-gray-900 shadow-lg rounded-lg">
+                <p className="text-sm text-gray-600 dark:text-gray-300">
+                  {t('dashboard.cards.contributions.tooltip')}
+                </p>
+              </HoverCardContent>
+            </HoverCard>
           </div>
         }
+        headerActions={<PeriodSelect value={contributionPeriod} onValueChange={onContributionPeriodChange} availableYears={availableYears} t={t} />}
         icon={PiggyBank}
       >
         <div className="space-y-3">
@@ -156,35 +230,23 @@ export function DashboardMetrics({
       <DashboardCard 
         className="transform transition-all duration-300 hover:scale-[1.02] hover:shadow-2xl bg-gradient-to-br from-white/95 via-slate-50/90 to-blue-50/80 dark:from-gray-900/90 dark:via-gray-900/80 dark:to-slate-800/70 backdrop-blur-sm border border-gray-100/50 dark:border-gray-800 rounded-xl shadow-lg hover:border-blue-100/50 dark:hover:border-gray-700"
         title={
-          <div className="flex items-center justify-between w-full">
-            <div className="flex items-center gap-2 flex-1 min-w-0">
-              <span className="text-gray-900 dark:text-gray-100 font-medium truncate">
-                {t('dashboard.cards.totalReturns.title')}
-              </span>
-              <HoverCard>
-                <HoverCardTrigger>
-                  <Info className="h-4 w-4 text-gray-400 dark:text-gray-300 cursor-help hover:text-blue-600 dark:hover:text-blue-400 transition-colors flex-shrink-0" />
-                </HoverCardTrigger>
-                <HoverCardContent className="w-80 bg-white dark:bg-gray-900 shadow-lg rounded-lg">
-                  <p className="text-sm text-gray-600 dark:text-gray-300">
-                    {t('dashboard.cards.totalReturns.tooltip')}
-                  </p>
-                </HoverCardContent>
-              </HoverCard>
-            </div>
-            <Select value={selectedPeriod} onValueChange={(value) => onSelectedPeriodChange(value as TimePeriod)}>
-              <SelectTrigger className="w-[120px] h-8 text-sm border border-gray-200 dark:border-gray-700 rounded-lg px-2 bg-white/90 dark:bg-gray-900/80 text-gray-700 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent shadow-sm hover:border-blue-200 dark:hover:border-gray-600 transition-colors ml-auto">
-                <SelectValue placeholder={t('common.selectPeriod')} />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">{t('common.allTime')}</SelectItem>
-                <SelectItem value="6m">{t('common.last6Months')}</SelectItem>
-                <SelectItem value="12m">{t('common.last12Months')}</SelectItem>
-                <SelectItem value="24m">{t('common.last24Months')}</SelectItem>
-              </SelectContent>
-            </Select>
+          <div className="flex items-center gap-2 min-w-0">
+            <span className="text-gray-900 dark:text-gray-100 font-medium truncate">
+              {t('dashboard.cards.totalReturns.title')}
+            </span>
+            <HoverCard>
+              <HoverCardTrigger>
+                <Info className="h-4 w-4 text-gray-400 dark:text-gray-300 cursor-help hover:text-blue-600 dark:hover:text-blue-400 transition-colors flex-shrink-0" />
+              </HoverCardTrigger>
+              <HoverCardContent className="w-80 bg-white dark:bg-gray-900 shadow-lg rounded-lg">
+                <p className="text-sm text-gray-600 dark:text-gray-300">
+                  {t('dashboard.cards.totalReturns.tooltip')}
+                </p>
+              </HoverCardContent>
+            </HoverCard>
           </div>
         }
+        headerActions={<PeriodSelect value={selectedPeriod} onValueChange={onSelectedPeriodChange} availableYears={availableYears} t={t} />}
         icon={LineChart}
       >
         <div className="space-y-2">

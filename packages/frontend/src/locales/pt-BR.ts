@@ -742,6 +742,10 @@ export const ptBR = {
     last6Months: "Últimos 6 Meses",
     last12Months: "Últimos 12 Meses",
     last24Months: "Últimos 24 Meses",
+    fullYear: "Ano {{year}}",
+    fullYearLabel: "Ano completo",
+    searchYearOrPeriod: "Buscar ano ou período...",
+    noYearFound: "Nenhum ano encontrado.",
     error: "Erro",
     errors: {
       tryAgain: "Por favor, tente novamente."

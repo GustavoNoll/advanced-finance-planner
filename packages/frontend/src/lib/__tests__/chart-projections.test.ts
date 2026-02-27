@@ -5,9 +5,9 @@ import {
   processEvents,
   processGoals,
   generateDataPoints,
-} from '../chart-projections'
+} from '../calculations/chart-projections'
 import type { InvestmentPlan, Goal, ProjectedEvent } from '@/types/financial'
-import type { ProcessedGoalEvent } from '../financial-goals-processor'
+import type { ProcessedGoalEvent } from '../calculations/financial-goals-processor'
 
 // Mock dependencies
 vi.mock('../inflation-utils', () => ({

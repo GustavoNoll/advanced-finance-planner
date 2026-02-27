@@ -2,7 +2,7 @@
 import { useState, useMemo } from 'react'
 
 // 2. Imports internos (shared)
-import { generateProjectionData, ChartOptions } from '@/lib/chart-projections'
+import { generateProjectionData, ChartOptions } from '@/lib/calculations/chart-projections'
 import { InvestmentPlan, MicroInvestmentPlan, Profile, FinancialRecord, Goal, ProjectedEvent } from '@/types/financial'
 
 interface UseChartOptionsProps {

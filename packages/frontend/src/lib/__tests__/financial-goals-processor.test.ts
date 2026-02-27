@@ -5,7 +5,7 @@ import {
   processEventsForChart,
   IGNORE_FINANCIAL_LINKS,
   CONSIDER_FINANCIAL_LINKS,
-} from '../financial-goals-processor'
+} from '../calculations/financial-goals-processor'
 import type { Goal, ProjectedEvent, FinancialRecordLink } from '@/types/financial'
 
 describe('financial-goals-processor', () => {

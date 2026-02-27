@@ -1,6 +1,6 @@
 import { FutureProjectionTab } from "../monthly-view/FutureProjectionTab";
 import { InvestmentPlan, Profile, FinancialRecord } from '@/types/financial';
-import { YearlyProjectionData } from '@/lib/chart-projections';
+import { YearlyProjectionData } from '@/lib/calculations/chart-projections';
 
 interface SimulationProjectionTableProps {
   investmentPlan: InvestmentPlan;

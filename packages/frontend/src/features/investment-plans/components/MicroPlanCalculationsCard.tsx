@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/shared/components/ui
 import { formatCurrency, CurrencyCode } from '@/utils/currency'
 import { InvestmentPlanWithProfile } from '@/features/investment-plans/services/investment-plan.service'
 import { MicroInvestmentPlan } from '@/types/financial'
-import { Calculations } from '@/utils/investmentPlanCalculations'
+import { Calculations } from '@/lib/calculations/investmentPlanCalculations'
 import { 
   TrendingUp, 
   Target, 

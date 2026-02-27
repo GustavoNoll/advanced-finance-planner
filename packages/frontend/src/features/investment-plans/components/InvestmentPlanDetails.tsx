@@ -9,8 +9,8 @@ import { Button } from '@/shared/components/ui/button'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/shared/components/ui/tooltip'
 import { formatCurrency } from '@/utils/currency'
 import { createDateWithoutTimezone } from '@/utils/dateUtils'
-import { ChartOptions, YearlyProjectionData } from '@/lib/chart-projections'
-import { PlanProgressData } from '@/lib/plan-progress-calculator'
+import { ChartOptions, YearlyProjectionData } from '@/lib/calculations/chart-projections'
+import { PlanProgressData } from '@/lib/calculations/plan-progress-calculator'
 
 // 3. Imports internos (feature)
 import { InvestmentPlan, MicroInvestmentPlan, MicroPlanCalculations, FinancialRecord } from '@/types/financial'

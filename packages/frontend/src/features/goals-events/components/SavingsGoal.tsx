@@ -11,7 +11,7 @@ import {
   HoverCardContent,
   HoverCardTrigger,
 } from '@/shared/components/ui/hover-card'
-import { PlanProgressData, utils } from '@/lib/plan-progress-calculator'
+import { PlanProgressData, utils } from '@/lib/calculations/plan-progress-calculator'
 import { CurrencyCode, formatCurrency } from '@/utils/currency'
 import { createDateWithoutTimezone } from '@/utils/dateUtils'
 

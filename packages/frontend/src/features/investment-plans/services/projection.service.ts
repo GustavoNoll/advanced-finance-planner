@@ -1,9 +1,9 @@
-import { generateProjectionData, MonthlyProjectionData, YearlyProjectionData } from '@/lib/chart-projections'
-import { processPlanProgressData, PlanProgressData } from '@/lib/plan-progress-calculator'
+import { generateProjectionData, MonthlyProjectionData, YearlyProjectionData } from '@/lib/calculations/chart-projections'
+import { processPlanProgressData, PlanProgressData } from '@/lib/calculations/plan-progress-calculator'
 import { FinancialRecord, ProjectedEvent, Goal, MicroInvestmentPlan } from '@/types/financial'
 import { Profile, InvestmentPlan } from '@/types/financial'
 import { createDateWithoutTimezone } from '@/utils/dateUtils'
-import { ChartOptions } from '@/lib/chart-projections'
+import { ChartOptions } from '@/lib/calculations/chart-projections'
 // Interface local para dados mensais de projeção
 
 

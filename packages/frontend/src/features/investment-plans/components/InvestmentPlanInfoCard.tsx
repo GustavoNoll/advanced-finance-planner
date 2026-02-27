@@ -5,7 +5,7 @@ import { formatCurrency, CurrencyCode } from '@/utils/currency'
 import { RISK_PROFILES } from '@/constants/riskProfiles'
 import { InvestmentPlanWithProfile } from '@/features/investment-plans/services/investment-plan.service'
 import { MicroInvestmentPlan } from '@/types/financial'
-import { Calculations } from '@/utils/investmentPlanCalculations'
+import { Calculations } from '@/lib/calculations/investmentPlanCalculations'
 import { User, Calendar, DollarSign, Target, TrendingUp, Building2 } from 'lucide-react'
 
 interface InvestmentPlanInfoCardProps {

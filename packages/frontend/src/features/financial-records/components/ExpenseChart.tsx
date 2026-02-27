@@ -4,7 +4,7 @@ import { InvestmentPlan, MicroInvestmentPlan } from '@/types/financial/investmen
 import { FinancialItemFormValues, Goal } from '@/types/financial/goals-events'
 import { ProjectedEvent } from '@/types/financial/goals-events'
 import { ChartDataPoint, FinancialRecord }  from '@/types/financial/financial-records'
-import { generateChartProjections, YearlyProjectionData } from '@/lib/chart-projections'
+import { generateChartProjections, YearlyProjectionData } from '@/lib/calculations/chart-projections'
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { supabase } from "@/lib/supabase"
 import { GoalsEventsService } from "@/features/goals-events/services/goals-events.service"

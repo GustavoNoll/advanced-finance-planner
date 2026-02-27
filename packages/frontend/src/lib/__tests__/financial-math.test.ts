@@ -5,6 +5,7 @@ import {
   monthlyReturnRateToYearlyReturnRate,
   calculateEffectiveAnnualRate,
   calculateFutureValue,
+  fv,
   nper,
   pmt,
   vp,
@@ -147,6 +148,23 @@ describe('financial-math', () => {
     it('should calculate periods with future value', () => {
       const result = nper(0.01, -1000, 10000, 5000)
       expect(result).toBeGreaterThan(0)
+    })
+  })
+
+  describe('fv', () => {
+    it('should calculate future value of present value', () => {
+      const result = fv(0.01, 12, 0, 10000)
+      expect(result).toBeCloseTo(11268.25, 1)
+    })
+
+    it('should handle zero rate', () => {
+      const result = fv(0, 12, 100, 10000)
+      expect(result).toBe(11200)
+    })
+
+    it('should calculate FV with payments', () => {
+      const result = fv(0.01, 12, 100, 0)
+      expect(result).toBeGreaterThan(1200)
     })
   })
 
