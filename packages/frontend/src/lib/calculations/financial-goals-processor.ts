@@ -27,29 +27,36 @@ export interface ProcessedGoalEvent {
 
 /**
  * Calcula o valor restante considerando os financial_links
+ *
+ * Convenções:
+ * - Goals: asset_value > 0, links positivos (armazenados assim no DB). totalPaid = soma das magnitudes.
+ * - Events receita: asset_value > 0, links positivos. totalPaid = magnitudes.
+ * - Events despesa: asset_value < 0, links >= 0 no DB quando AddRecordForm grava "item.allocatedAmount"
+ *   (SelectedItemCard permite negativo para events; AddRecordForm grava sem Math.abs para events).
+ *   totalPaid = magnitudes (quanto já foi pago).
+ * - Num mesmo evento só há um sinal: ou receita ou despesa.
  */
 function calculateRemainingAmount(
   item: Goal | ProjectedEvent,
   financialLinks?: FinancialRecordLink[]
 ): number {
   if (!financialLinks || financialLinks.length === 0) {
-    return item.asset_value;
+    // Para despesas (asset_value < 0), retornamos a magnitude como valor restante a pagar
+    return item.asset_value >= 0 ? item.asset_value : Math.abs(item.asset_value);
   }
 
-  // Para goals, os links são negativos (representam gastos já realizados)
-  // Para events, os links podem ser positivos ou negativos
-  const totalPaid = financialLinks.reduce((sum, link) => {
-    if (item.type === 'goal') {
-      // Goals: links negativos representam gastos já realizados
-      return sum + Math.abs(link.allocated_amount);
-    } else {
-      // Events: links refletem o valor real (positivo ou negativo)
-      return sum + Math.abs(link.allocated_amount);
-    }
-  }, 0);
+  const totalPaid = financialLinks.reduce(
+    (sum, link) => sum + Math.abs(link.allocated_amount),
+    0
+  );
 
-  // Retorna o valor restante (não pode ser negativo)
-  return Math.max(0, item.asset_value - totalPaid);
+  if (item.asset_value >= 0) {
+    // Goals e events de receita: valor restante = total - o que já foi alocado
+    return Math.max(0, item.asset_value - totalPaid);
+  }
+
+  // Events de despesa: valor restante a pagar = |asset_value| - totalPaid
+  return Math.max(0, Math.abs(item.asset_value) - totalPaid);
 }
 
 /**
@@ -85,12 +92,14 @@ export function processItem<T extends Goal | ProjectedEvent>(
     return [baseItem];
   }
 
+  const assetMagnitude = Math.abs(item.asset_value);
+
   // Para modo repeat, cada repetição tem o valor completo
   if (item.payment_mode === 'repeat') {
     const totalPaid = ignoreFinancialLinks 
       ? 0 
       : item.financial_links?.reduce((sum, link) => sum + Math.abs(link.allocated_amount), 0) || 0;
-    const paidRepetitions = Math.floor(totalPaid / item.asset_value);
+    const paidRepetitions = Math.floor(totalPaid / assetMagnitude);
     const remainingRepetitions = item.installment_count - paidRepetitions;
 
     // Se todas as repetições foram pagas, não retorna nada
@@ -113,7 +122,7 @@ export function processItem<T extends Goal | ProjectedEvent>(
         installment_count: item.installment_count,
         installment_interval: item.installment_interval,
         month: month,
-        amount: item.asset_value, // Valor completo para cada repetição
+        amount: item.asset_value, // Valor completo para cada repetição (preserva sinal)
         description: `${item.icon} (${repetitionIndex + 1}/${item.installment_count})`,
         status: item.status,
         adjust_for_inflation: item.adjust_for_inflation !== false
@@ -125,7 +134,7 @@ export function processItem<T extends Goal | ProjectedEvent>(
   const totalPaid = ignoreFinancialLinks 
     ? 0 
     : item.financial_links?.reduce((sum, link) => sum + Math.abs(link.allocated_amount), 0) || 0;
-  const installmentValue = item.asset_value / item.installment_count;
+  const installmentValue = assetMagnitude / item.installment_count;
   const paidInstallments = Math.floor(totalPaid / installmentValue);
   const remainingInstallments = item.installment_count - paidInstallments;
 
@@ -136,6 +145,7 @@ export function processItem<T extends Goal | ProjectedEvent>(
 
   // Calcula o valor da primeira parcela restante (pode ser parcial)
   const firstRemainingInstallmentValue = remainingAmount - (remainingInstallments - 1) * installmentValue;
+  const amountPerInstallment = item.asset_value >= 0 ? installmentValue : -installmentValue;
 
   return Array.from({ length: remainingInstallments }, (_, index) => {
     const interval = item.installment_interval || 1;
@@ -145,7 +155,7 @@ export function processItem<T extends Goal | ProjectedEvent>(
     const month = ((totalMonths - 1) % 12) + 1;
     
     // Primeira parcela restante pode ter valor parcial
-    const amount = index === 0 ? firstRemainingInstallmentValue : installmentValue;
+    const amount = index === 0 ? (item.asset_value >= 0 ? firstRemainingInstallmentValue : -firstRemainingInstallmentValue) : amountPerInstallment;
     
     return {
       id: item.id,

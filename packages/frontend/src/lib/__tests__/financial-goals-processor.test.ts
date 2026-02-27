@@ -604,6 +604,28 @@ describe('financial-goals-processor', () => {
       expect(result[0].amount).toBe(20000) // 50000 - 20000 - 10000
     })
 
+    it('should handle expense events (asset_value < 0) with financial links', () => {
+      const event = createMockEvent({
+        asset_value: -50000, // despesa de 50k
+        financial_links: [createMockFinancialLink(-30000)], // já pagou 30k
+      })
+      const result = processEventsForChart([event], CONSIDER_FINANCIAL_LINKS)
+
+      // Restante a pagar = 50000 - 30000 = 20000
+      expect(result).toHaveLength(1)
+      expect(result[0].amount).toBe(20000)
+    })
+
+    it('should return empty for fully paid expense event', () => {
+      const event = createMockEvent({
+        asset_value: -20000,
+        financial_links: [createMockFinancialLink(-20000)],
+      })
+      const result = processEventsForChart([event], CONSIDER_FINANCIAL_LINKS)
+
+      expect(result).toHaveLength(0)
+    })
+
     it('should handle events with installments', () => {
       const events = [
         createMockEvent({
