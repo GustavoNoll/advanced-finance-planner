@@ -4,7 +4,7 @@ import { useTranslation } from 'react-i18next'
 
 // 2. Imports internos (shared)
 import PatrimonialProjectionChart from '@/shared/components/chart/PatrimonialProjectionChart'
-import { ChartOptions, generateChartProjections } from '@/lib/chart-projections'
+import { ChartOptions, generateChartProjections } from '@/lib/calculations/chart-projections'
 import { createDateWithoutTimezone, createDateFromYearMonth } from '@/utils/dateUtils'
 
 // 3. Imports internos (feature)

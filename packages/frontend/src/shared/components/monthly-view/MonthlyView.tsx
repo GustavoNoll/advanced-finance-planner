@@ -5,7 +5,7 @@ import { BarChart } from 'lucide-react'
 // 2. Imports internos (shared)
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/shared/components/ui/tabs'
 import { DashboardCard } from '@/shared/components/dashboard/dashboard-card'
-import { YearlyProjectionData } from '@/lib/chart-projections'
+import { YearlyProjectionData } from '@/lib/calculations/chart-projections'
 import { tabTriggerActiveGreen } from '@/lib/gradient-classes'
 
 // 3. Imports internos (feature)

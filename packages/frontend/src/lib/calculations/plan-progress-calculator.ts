@@ -1,10 +1,11 @@
 import { FinancialRecord, InvestmentPlan, MicroInvestmentPlan, Goal, ProjectedEvent } from "@/types/financial";
 import { calculateCompoundedRates, nper, yearlyReturnRateToMonthlyReturnRate, pmt, vp } from "@/lib/financial-math";
-import { processItem, IGNORE_FINANCIAL_LINKS, CONSIDER_FINANCIAL_LINKS } from './financial-goals-processor';
+import { processItem, FOR_PLANNED_SCENARIO, FOR_PROJECTED_SCENARIO } from './financial-goals-processor';
 import { createDateWithoutTimezone, createDateFromYearMonth } from '@/utils/dateUtils';
-import { createCPIRatesMapByCurrency } from './inflation-utils';
-import { calculateMicroPlanFutureValues, Calculations } from '@/utils/investmentPlanCalculations';
+import { createCPIRatesMapByCurrency } from '../inflation-utils';
+import { calculateMicroPlanFutureValues, Calculations } from './investmentPlanCalculations';
 import { getActiveMicroPlanForDate } from '@/utils/microPlanUtils';
+import { DEFAULT_LIMIT_AGE } from './constants';
 
 // ============================================================================
 // UTILITY FUNCTIONS
@@ -60,21 +61,23 @@ export const utils = {
   /**
    * Computes weighted-average monthly contribution between reference date and plan end date.
    * Handles multiple micro plan segments and currency-aware real CPI where available.
-   * 
+   *
    * This function:
    * - Splits the period into segments based on micro plan changes
-   * - Applies inflation adjustments if requested
+   * - When adjustForInflation is true: converts each segment's deposit to value at reference date
+   *   (purchasing power at referenceDate), then computes the weighted average
+   * - When adjustForInflation is false: uses nominal deposits as-is
    * - Calculates a weighted average contribution across all segments
-   * 
+   *
    * @param params - Parameters object
-   * @param params.referenceDate - Reference date for calculations
+   * @param params.referenceDate - Reference date for calculations (conversion target when adjustForInflation)
    * @param params.planEndDate - End date of the investment plan
    * @param params.microPlans - Array of micro investment plans
    * @param params.activeMicroPlan - Currently active micro plan
-   * @param params.adjustForInflation - Whether to adjust contributions for inflation
+   * @param params.adjustForInflation - Whether to convert contributions to value at reference date
    * @param params.planCurrency - Currency of the plan (BRL, USD, or EUR)
    * @param params.cpiRatesMap - Optional pre-computed CPI rates map
-   * @returns Weighted average monthly contribution
+   * @returns Weighted average monthly contribution (in nominal terms or at reference date if adjusted)
    */
   computeAverageMonthlyContribution: (
     params: {
@@ -174,6 +177,7 @@ export const utils = {
       let effectiveDepositAmount = segment.deposit || 0;
       
       if (adjustForInflation) {
+        // Convert segment deposit to value at reference date (discount by inflation from reference to segment start)
         const monthsFromReferenceToSegment = Math.max(0, utils.calculateMonthsBetweenDates(referenceDate, segment.start) + 1 || 0);
         let cumulativeInflationFactor = 1;
         
@@ -787,8 +791,8 @@ const financialCalculations = {
     const { startDate, endDate, allGoals, allEvents, monthsToRetirement, currency, microPlans, actualDate } = params;
 
     // Filter pending goals/events (those without financial links)
-    const pendingGoals = allGoals.filter(goal => goal.financial_links.length === 0);
-    const pendingEvents = allEvents.filter(event => event.financial_links.length === 0);
+    const pendingGoals = allGoals.filter(goal => (goal.financial_links?.length ?? 0) === 0);
+    const pendingEvents = allEvents.filter(event => (event.financial_links?.length ?? 0) === 0);
 
     // Generate hash for planned calculations (all goals/events, ignoring financial_links)
     const { 
@@ -802,7 +806,7 @@ const financialCalculations = {
       monthsToRetirement,
       currency,
       microPlans,
-      ignoreFinancialLinks: IGNORE_FINANCIAL_LINKS,
+      ignoreFinancialLinks: FOR_PLANNED_SCENARIO,
       actualDate
     });
 
@@ -818,7 +822,7 @@ const financialCalculations = {
       monthsToRetirement,
       currency,
       microPlans,
-      ignoreFinancialLinks: CONSIDER_FINANCIAL_LINKS,
+      ignoreFinancialLinks: FOR_PROJECTED_SCENARIO,
       actualDate
     });
 
@@ -873,7 +877,11 @@ const financialCalculations = {
     legacyAmount: number,
     realReturnRate: number
   ): number => {
-    const adjustedPresentValue = presentValueAtRetirement * 
+    // presentValueAtRetirement is in real terms (today's purchasing power).
+    // When adjust_income_for_inflation = false: convert to nominal by multiplying by inflationFactorAtRetirement,
+    // so the PMT calculation yields constant nominal withdrawals (purchasing power declines over time).
+    // When adjust_income_for_inflation = true: keep real terms (×1), so withdrawals maintain purchasing power.
+    const adjustedPresentValue = presentValueAtRetirement *
       (shouldAdjustIncomeForInflation ? 1 : inflationFactorAtRetirement);
 
     switch (planType) {
@@ -962,7 +970,7 @@ const financialCalculations = {
     // ========================================================================
     console.group('📊 [Plan Progress] Step 1: Determining Current State');
     
-    const sortedFinancialRecords = allFinancialRecords.sort(
+    const sortedFinancialRecords = [...allFinancialRecords].sort(
       (a, b) => b.record_year - a.record_year || b.record_month - a.record_month
     );
     const lastFinancialRecord = sortedFinancialRecords[0];
@@ -1223,7 +1231,7 @@ const financialCalculations = {
     // ========================================================================
     console.group('💸 [Plan Progress] Step 8: Calculating Monthly Income');
     
-    const maximumAgeDate = utils.createDateAtAge(birthDate, investmentPlan.limit_age || 100);
+    const maximumAgeDate = utils.createDateAtAge(birthDate, investmentPlan.limit_age || DEFAULT_LIMIT_AGE);
     const monthsInRetirement = utils.calculateMonthsBetweenDates(planEndDate, maximumAgeDate);
     
     const projectedMonthlyIncome = financialCalculations.calculateProjectedMonthlyIncome(

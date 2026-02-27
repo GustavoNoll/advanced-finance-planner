@@ -9,7 +9,7 @@ import { Button } from '@/shared/components/ui/button'
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/shared/components/ui/dialog'
 import { useToast } from '@/shared/components/ui/use-toast'
 import { DashboardCard } from '@/shared/components/dashboard/dashboard-card'
-import { PlanProgressData } from '@/lib/plan-progress-calculator'
+import { PlanProgressData } from '@/lib/calculations/plan-progress-calculator'
 import { formatCurrency, CurrencyCode } from '@/utils/currency'
 import { createDateWithoutTimezone } from '@/utils/dateUtils'
 

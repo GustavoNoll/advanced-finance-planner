@@ -1,8 +1,14 @@
 import { Goal, ProjectedEvent, FinancialRecordLink } from '@/types/financial';
 
-// Constantes para controle de processamento de financial_links
-export const IGNORE_FINANCIAL_LINKS = true;  // Para cálculos planejados (cenário ideal)
-export const CONSIDER_FINANCIAL_LINKS = false; // Para cálculos projetados (realidade atual)
+// Valores para o parâmetro ignoreFinancialLinks de processItem/processGoalsForChart/processEventsForChart
+export const FOR_PLANNED_SCENARIO = true;   // Cenário planejado (ideal): ignora financial_links
+export const FOR_PROJECTED_SCENARIO = false; // Cenário projetado (real): considera financial_links
+
+/** @deprecated Use FOR_PLANNED_SCENARIO */
+export const IGNORE_FINANCIAL_LINKS = FOR_PLANNED_SCENARIO;
+
+/** @deprecated Use FOR_PROJECTED_SCENARIO */
+export const CONSIDER_FINANCIAL_LINKS = FOR_PROJECTED_SCENARIO;
 
 export interface ProcessedGoalEvent {
   id: string;

@@ -1,13 +1,13 @@
 /**
  * Compounds multiple rates together
- * Formula: total = (1 + rate1/100) × (1 + rate2/100) × ... × (1 + rateN/100) - 1
- * 
- * @param rates - Array of rates as percentages (e.g., 5 for 5%)
+ * Formula: total = (1 + rate1) × (1 + rate2) × ... × (1 + rateN) - 1
+ *
+ * @param rates - Array of rates as decimals (e.g., 0.05 for 5%)
  * @returns The combined rate as a decimal (e.g., 0.1025 for 10.25%)
- * 
+ *
  * @example
  * // Returns 0.1025 (10.25%) for rates of 5% and 5%
- * calculateCompoundedRates([5, 5])
+ * calculateCompoundedRates([0.05, 0.05])
  */
 export function calculateCompoundedRates(rates: number[]): number {
   const finalRate = rates.reduce((acc, rate) => acc * (1 + rate), 1);
@@ -154,6 +154,34 @@ export function nper(
   }
   
   return parseFloat((Math.log(numerador / denominador) / Math.log(1 + taxa)).toFixed(10));
+}
+
+/**
+ * Calculates the future value of an investment (Excel FV)
+ * Formula: FV = PV * (1 + r)^n + PMT * ((1 + r)^n - 1) / r
+ *
+ * @param rate - Interest rate per period as decimal
+ * @param nper - Number of periods
+ * @param pmt - Payment per period (0 if none)
+ * @param pv - Present value (default: 0)
+ * @returns Future value
+ *
+ * @example
+ * // Future value of R$10000 at 1% for 12 months: fv(0.01, 12, 0, 10000)
+ */
+export function fv(
+  rate: number,
+  nper: number,
+  pmt: number = 0,
+  pv: number = 0
+): number {
+  if (rate === 0) return pv + pmt * nper;
+  return parseFloat(
+    (
+      pv * Math.pow(1 + rate, nper) +
+      pmt * ((Math.pow(1 + rate, nper) - 1) / rate)
+    ).toFixed(10)
+  );
 }
 
 /**

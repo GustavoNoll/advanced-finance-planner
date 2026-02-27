@@ -54,6 +54,15 @@ export function createDateFromYearMonth(year: number, month: number): Date {
 }
 
 /**
+ * Returns the last day of the given year (December 31)
+ * @param year - The year
+ * @returns Date object for December 31 of the year
+ */
+export function getLastDayOfYear(year: number): Date {
+  return new Date(year, 11, 31);
+}
+
+/**
  * Rounds up a date to the next month if not on the first day
  * @param date - The date to round up
  * @returns The rounded up date

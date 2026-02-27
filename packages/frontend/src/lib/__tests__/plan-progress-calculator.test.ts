@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { utils, processPlanProgressData } from '../plan-progress-calculator'
+import { utils, processPlanProgressData } from '../calculations/plan-progress-calculator'
 import type { InvestmentPlan, MicroInvestmentPlan, FinancialRecord, Goal, ProjectedEvent } from '@/types/financial'
 
 // Mock dependencies
@@ -41,7 +41,7 @@ vi.mock('@/utils/microPlanUtils', () => ({
   }),
 }))
 
-vi.mock('@/utils/investmentPlanCalculations', () => ({
+vi.mock('@/lib/calculations/investmentPlanCalculations', () => ({
   calculateMicroPlanFutureValues: vi.fn(() => ({
     futureValue: 1000000,
     presentFutureValue: 500000,

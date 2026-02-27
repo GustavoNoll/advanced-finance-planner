@@ -167,7 +167,7 @@ export function ActivityTracker({ children }: ActivityTrackerProps) {
 ```typescript
 // useChartOptions.ts
 import { useState, useMemo } from 'react';
-import { generateProjectionData } from '@/lib/chart-projections';
+import { generateProjectionData } from '@/lib/calculations/chart-projections';
 
 export const useChartOptions = (props) => {
   // ...
@@ -181,7 +181,7 @@ export const useChartOptions = (props) => {
 import { useState, useMemo } from 'react'
 
 // 2. Imports internos (shared)
-import { generateProjectionData, ChartOptions } from '@/lib/chart-projections'
+import { generateProjectionData, ChartOptions } from '@/lib/calculations/chart-projections'
 import type { InvestmentPlan } from '@/types/financial'
 
 // 3. Types

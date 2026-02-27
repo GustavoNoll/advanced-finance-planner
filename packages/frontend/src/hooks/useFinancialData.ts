@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query'
-import { FinancialRecordsService, ProcessedFinancialRecords } from '@/features/financial-records/services/financial-records.service'
+import { FinancialRecordsService, ProcessedFinancialRecords, TimePeriod } from '@/features/financial-records/services/financial-records.service'
 import { GoalsEventsService } from '@/features/goals-events/services/goals-events.service'
 import { useMemo } from 'react'
 import { InvestmentPlan, MicroInvestmentPlan, Goal, ProjectedEvent } from '@/types/financial'
@@ -132,8 +132,8 @@ export function useGoalsAndEvents(clientId: string) {
 
 export function useFinancialMetrics(
   clientId: string,
-  selectedPeriod: 'all' | '6m' | '12m' | '24m' = 'all',
-  contributionPeriod: 'all' | '6m' | '12m' | '24m' = 'all',
+  selectedPeriod: TimePeriod = 'all',
+  contributionPeriod: TimePeriod = 'all',
   investmentPlan?: InvestmentPlan
 ) {
   const { allFinancialRecords, processedRecords } = useFinancialRecords(clientId)
@@ -154,11 +154,16 @@ export function useFinancialMetrics(
     return FinancialRecordsService.getOldestRecord(allFinancialRecords)
   }, [allFinancialRecords])
 
+  const availableYears = useMemo(() => {
+    return FinancialRecordsService.getAvailableYears(allFinancialRecords)
+  }, [allFinancialRecords])
+
   return {
     totalReturns,
     totalContribution,
     oldestRecord,
-    processedRecords
+    processedRecords,
+    availableYears
   }
 }
 

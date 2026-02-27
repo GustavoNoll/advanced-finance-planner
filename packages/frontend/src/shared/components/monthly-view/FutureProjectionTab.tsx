@@ -2,7 +2,7 @@ import React, { useState, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { Button } from "@/shared/components/ui/button";
 import { Download, ChevronDown, ChevronRight } from "lucide-react";
-import { generateProjectionData, YearlyProjectionData, ChartOptions } from '@/lib/chart-projections';
+import { generateProjectionData, YearlyProjectionData, ChartOptions } from '@/lib/calculations/chart-projections';
 import { FinancialRecord, InvestmentPlan, MicroInvestmentPlan, Goal, ProjectedEvent, Profile, ChartDataPoint } from '@/types/financial';
 import { formatCurrency, CurrencyCode } from "@/utils/currency";
 import { toast } from "@/shared/components/ui/use-toast";

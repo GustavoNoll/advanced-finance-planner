@@ -1,6 +1,6 @@
 import { supabase } from '@/lib/supabase'
 import { InvestmentPlan, MicroInvestmentPlan } from '@/types/financial'
-import { calculateFutureValues, isCalculationReady, type FormData, type Calculations } from '@/utils/investmentPlanCalculations'
+import { calculateFutureValues, isCalculationReady, type FormData, type Calculations } from '@/lib/calculations/investmentPlanCalculations'
 import { createDateWithoutTimezone } from '@/utils/dateUtils'
 
 export interface PlanCreationData {

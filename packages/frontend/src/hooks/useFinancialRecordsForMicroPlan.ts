@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useMemo } from 'react'
 import { supabase } from '@/lib/supabase'
 import { FinancialRecord, InvestmentPlan, MicroInvestmentPlan } from '@/types/financial'
-import { calculateFutureValues, FormData, Calculations } from '@/utils/investmentPlanCalculations'
+import { calculateFutureValues, FormData, Calculations } from '@/lib/calculations/investmentPlanCalculations'
 
 interface UseFinancialRecordsForMicroPlanProps {
   planId: string

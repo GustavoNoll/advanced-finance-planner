@@ -12,7 +12,7 @@ import {
   isCalculationReady, 
   type FormData,
   type Calculations as InvestmentCalculations
-} from '@/utils/investmentPlanCalculations';
+} from '@/lib/calculations/investmentPlanCalculations';
 import { useTranslation } from "react-i18next";
 import { CurrencyInput } from "@/shared/components/ui/currency-input";
 import { CurrencyCode } from "@/utils/currency";
