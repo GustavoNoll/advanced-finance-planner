@@ -453,7 +453,7 @@ function createPastMonthData(
     goalsEventsImpact: 0,
     isHistorical: false,
     effectiveRate: monthlyReturnRate,
-    difference_from_planned_balance: plannedBalance - projectedBalance,
+    difference_from_planned_balance: projectedBalance - plannedBalance,
     ipcaRate: monthlyInflationRate,
     accumulatedInflation,
     old_portfolio_balance: oldPortfolioBalance

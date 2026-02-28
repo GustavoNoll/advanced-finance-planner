@@ -763,7 +763,8 @@ const financialCalculations = {
    * Calculates planned and projected retirement goals totals.
    * 
    * Planned considers all goals/events (ignoring financial links).
-   * Projected only considers pending ones (goals/events without financial links).
+   * Projected considers only pending goals/events (status === 'pending'), with financial_links
+   * applied so partially-paid items contribute their remaining amount.
    * 
    * @param params - Parameters object
    * @param params.startDate - Start date for calculations
@@ -790,9 +791,9 @@ const financialCalculations = {
   ): RetirementGoalsTotals => {
     const { startDate, endDate, allGoals, allEvents, monthsToRetirement, currency, microPlans, actualDate } = params;
 
-    // Filter pending goals/events (those without financial links)
-    const pendingGoals = allGoals.filter(goal => (goal.financial_links?.length ?? 0) === 0);
-    const pendingEvents = allEvents.filter(event => (event.financial_links?.length ?? 0) === 0);
+    // Filter pending goals/events (status === 'pending'); processItem with financial_links will reduce amounts for partially-paid
+    const pendingGoals = allGoals.filter(goal => goal.status === 'pending');
+    const pendingEvents = allEvents.filter(event => event.status === 'pending');
 
     // Generate hash for planned calculations (all goals/events, ignoring financial_links)
     const { 

@@ -1,6 +1,6 @@
 // 1. Imports externos
 import { Link } from 'react-router-dom'
-import { History, TrendingUp, Target, Calendar } from 'lucide-react'
+import { History, TrendingUp, Target, Calendar, FileText } from 'lucide-react'
 
 // 2. Imports internos (shared)
 import { Button } from '@/shared/components/ui/button'
@@ -37,7 +37,7 @@ export function DashboardNavigation({
 
   return (
     <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-6">
-      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-4">
         <Link 
           to={`/financial-records${clientId ? `/${clientId}` : ''}`} 
           state={{ records: [] }} // Será preenchido pelo componente pai
@@ -125,6 +125,23 @@ export function DashboardNavigation({
                   </span>
                 </div>
               )}
+            </div>
+          </Button>
+        </Link>
+
+        <Link 
+          to={`/meeting-notes${clientId ? `/${clientId}` : ''}`}
+        >
+          <Button 
+            variant="outline"
+            size="lg"
+            className="w-full h-14 flex flex-col items-center justify-center gap-1 bg-gradient-to-br from-white/95 via-slate-50/90 to-blue-50/80 dark:from-gray-900/90 dark:via-gray-900/80 dark:to-slate-800/70 backdrop-blur-sm hover:from-blue-50/95 dark:hover:from-gray-800 hover:via-blue-100/90 dark:hover:via-gray-800 hover:to-blue-200/80 dark:hover:to-slate-700 shadow-md hover:shadow-xl transition-all duration-200 border border-gray-100/50 dark:border-gray-800 rounded-xl"
+          >
+            <div className="flex items-center gap-2">
+              <FileText className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
+              <span className="text-sm font-medium text-gray-700 dark:text-gray-200 whitespace-nowrap">
+                {t('dashboard.buttons.meetingNotes')}
+              </span>
             </div>
           </Button>
         </Link>
