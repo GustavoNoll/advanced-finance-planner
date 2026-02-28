@@ -10,6 +10,14 @@ export interface MeetingNotesFilters {
   fromDate?: string
   toDate?: string
   search?: string
+  clientId?: string
+  page?: number
+  pageSize?: number
+}
+
+export interface MeetingNotesPaginatedResult {
+  notes: MeetingNote[]
+  total: number
 }
 
 export class MeetingNotesService {
@@ -46,6 +54,53 @@ export class MeetingNotesService {
     }
 
     return (data || []).map(normalizeActionItems)
+  }
+
+  /**
+   * Fetches meeting notes for the current broker's clients with pagination.
+   * RLS restricts results to profiles where broker_id = auth.uid().
+   */
+  static async fetchNotesForBroker(
+    filters?: MeetingNotesFilters
+  ): Promise<MeetingNotesPaginatedResult> {
+    const page = Math.max(1, filters?.page ?? 1)
+    const pageSize = Math.min(50, Math.max(1, filters?.pageSize ?? 12))
+    const from = (page - 1) * pageSize
+    const to = from + pageSize - 1
+
+    let query = supabase
+      .from('meeting_notes')
+      .select('*', { count: 'exact' })
+      .order('meeting_date', { ascending: false })
+      .order('created_at', { ascending: false })
+      .range(from, to)
+
+    if (filters?.clientId) {
+      query = query.eq('profile_id', filters.clientId)
+    }
+    if (filters?.fromDate) {
+      query = query.gte('meeting_date', filters.fromDate)
+    }
+    if (filters?.toDate) {
+      query = query.lte('meeting_date', filters.toDate)
+    }
+    if (filters?.search?.trim()) {
+      const sanitized = filters.search.trim().replace(/%/g, '\\%')
+      const term = `%${sanitized}%`
+      query = query.or(`title.ilike.${term},content.ilike.${term}`)
+    }
+
+    const { data, error, count } = await query
+
+    if (error) {
+      console.error('Error fetching broker meeting notes:', error)
+      throw new Error('Failed to fetch meeting notes')
+    }
+
+    return {
+      notes: (data || []).map(normalizeActionItems),
+      total: count ?? 0,
+    }
   }
 
   static async fetchNoteById(noteId: string): Promise<MeetingNote | null> {

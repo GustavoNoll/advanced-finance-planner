@@ -33,6 +33,7 @@ import { ClientList } from '@/features/broker-dashboard/components/client-list/C
 import { ClientAccessAnalysis } from '@/shared/components/ClientAccessAnalysis'
 import { StatementImportsList } from '@/shared/components/StatementImportsList'
 import { InvestmentPolicyInsights } from '@/features/admin/components/InvestmentPolicyInsights'
+import { BrokerMeetingNotesAggregate } from '@/features/meeting-notes/components'
 import { UserProfileInvestment, BrokerProfile, EnhancedDashboardMetrics, DashboardMetrics } from '@/types/broker-dashboard'
 
 // Modern color palette
@@ -908,7 +909,7 @@ export function BrokerDashboard() {
         {/* Tabs for different sections */}
         <Tabs defaultValue="planning" className="mb-8">
           <div className="bg-white/95 dark:bg-slate-900/95 backdrop-blur-md border border-slate-200 dark:border-slate-700 rounded-xl shadow-sm p-1">
-            <TabsList className="grid w-full grid-cols-4 bg-transparent gap-1 h-auto">
+            <TabsList className="grid w-full grid-cols-2 sm:grid-cols-5 bg-transparent gap-1 h-auto">
               <TabsTrigger 
                 value="planning"
                 className={`rounded-lg ${tabTriggerActiveBlue} text-slate-600 dark:text-slate-400 data-[state=active]:text-white dark:data-[state=active]:text-white hover:text-slate-900 dark:hover:text-slate-100 transition-all duration-200 py-2.5 flex items-center justify-center gap-2`}
@@ -936,6 +937,13 @@ export function BrokerDashboard() {
               >
                 <Eye className="h-4 w-4" />
                 {t('brokerDashboard.tabs.access')}
+              </TabsTrigger>
+              <TabsTrigger 
+                value="meeting-notes"
+                className={`rounded-lg ${tabTriggerActiveBlue} text-slate-600 dark:text-slate-400 data-[state=active]:text-white dark:data-[state=active]:text-white hover:text-slate-900 dark:hover:text-slate-100 transition-all duration-200 py-2.5 flex items-center justify-center gap-2`}
+              >
+                <FileText className="h-4 w-4" />
+                {t('brokerDashboard.tabs.meetingNotes')}
               </TabsTrigger>
             </TabsList>
           </div>
@@ -1323,10 +1331,20 @@ export function BrokerDashboard() {
           <TabsContent value="access" className="mt-6">
             {/* Client Access Analysis */}
             <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-xl border border-gray-100 dark:border-gray-800 overflow-hidden mb-8 p-8">
-              <ClientAccessAnalysis 
-                clientAccessData={clientAccessData} 
+              <ClientAccessAnalysis
+                clientAccessData={clientAccessData}
                 title={t('brokerDashboard.clientAccessAnalysis.title')}
                 showTitle={true}
+              />
+            </div>
+          </TabsContent>
+
+          <TabsContent value="meeting-notes" className="mt-6">
+            <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-xl border border-gray-100 dark:border-gray-800 overflow-hidden p-8">
+              <BrokerMeetingNotesAggregate
+                clients={searchResults}
+                onOpenClientNotes={(id) => navigate(`/meeting-notes/${id}`)}
+                onScrollToClients={scrollToClientList}
               />
             </div>
           </TabsContent>

@@ -6,9 +6,19 @@ interface MeetingNoteCardProps {
   note: MeetingNote
   onClick: () => void
   t: (key: string) => string
+  /** Optional client name badge for broker aggregate view */
+  clientName?: string
+  /** Called when client name is clicked (e.g. navigate to client notes) */
+  onClientNameClick?: (e: React.MouseEvent) => void
 }
 
-export function MeetingNoteCard({ note, onClick, t }: MeetingNoteCardProps) {
+export function MeetingNoteCard({
+  note,
+  onClick,
+  t,
+  clientName,
+  onClientNameClick,
+}: MeetingNoteCardProps) {
   const actionItemsCount = note.action_items.length
   const completedCount = note.action_items.filter((a) => a.completed).length
   const allComplete = actionItemsCount > 0 && completedCount === actionItemsCount
@@ -36,6 +46,22 @@ export function MeetingNoteCard({ note, onClick, t }: MeetingNoteCardProps) {
       onClick={onClick}
     >
       <div className="flex flex-col gap-2">
+        {clientName && (
+          <div
+            role={onClientNameClick ? 'button' : undefined}
+            onClick={(e) => {
+              if (onClientNameClick) {
+                e.stopPropagation()
+                onClientNameClick(e)
+              }
+            }}
+            className={`text-xs font-medium text-primary shrink-0 ${
+              onClientNameClick ? 'cursor-pointer w-fit hover:underline' : ''
+            }`}
+          >
+            {clientName}
+          </div>
+        )}
         <div className="flex items-start justify-between gap-2">
           <div className="flex items-center gap-2 text-muted-foreground text-sm">
             <FileText className="h-4 w-4 shrink-0" />

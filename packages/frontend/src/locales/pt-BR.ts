@@ -385,7 +385,26 @@ export const ptBR = {
       planning: "Informações de Planejamento",
       policy: "Política de Investimento",
       imports: "Importações",
-      access: "Acessos"
+      access: "Acessos",
+      meetingNotes: "Notas de Reunião"
+    },
+    meetingNotes: {
+      searchPlaceholder: "Buscar em título ou conteúdo",
+      allTime: "Todo período",
+      allClients: "Todos os clientes",
+      empty: {
+        title: "Nenhuma nota de reunião",
+        description: "Crie notas ao se reunir com clientes",
+      },
+      viewClient: "Ver cliente",
+      viewClients: "Ver clientes",
+      meetingNotesTooltip: "Notas de reunião",
+      pagination: {
+        showing: "Exibindo {{from}} a {{to}} de {{total}}",
+        previous: "Anterior",
+        next: "Próxima",
+        pageOf: "Página {{page}} de {{totalPages}}",
+      },
     },
     statementImports: {
       recentImports: "Últimas Importações",

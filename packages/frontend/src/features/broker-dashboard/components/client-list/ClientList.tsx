@@ -1,7 +1,8 @@
 // 1. Imports externos
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { TrendingUp, User, Calendar, Clock, Search, X, Share2, ChevronRight, Trash2, Calculator } from 'lucide-react'
+import { useNavigate } from 'react-router-dom'
+import { TrendingUp, User, Calendar, Clock, Search, X, Share2, ChevronRight, Trash2, Calculator, FileText } from 'lucide-react'
 
 // 2. Imports internos (shared)
 import { Card, CardContent, CardHeader, CardTitle } from '@/shared/components/ui/card'
@@ -59,6 +60,7 @@ export function ClientList({
 }: ClientListProps) {
   const { toast } = useToast();
   const { t } = useTranslation();
+  const navigate = useNavigate();
   const [clientToDelete, setClientToDelete] = useState<string | null>(null);
 
   const handleShareClient = (clientId: string) => {
@@ -272,6 +274,26 @@ export function ClientList({
                           <TooltipContent side="left" className="flex flex-col gap-1 bg-white dark:bg-gray-900">
                             <p className="font-medium">{t('brokerDashboard.client.shareTooltip')}</p>
                             <p className="text-xs text-gray-500 dark:text-gray-400">Clique para copiar o link</p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                navigate(`/meeting-notes/${client.id}`);
+                              }}
+                              className="h-8 w-8 border border-gray-200 dark:border-gray-700 hover:border-indigo-300 dark:hover:border-indigo-700 hover:text-indigo-600 dark:hover:text-indigo-400"
+                            >
+                              <FileText className="h-4 w-4" />
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent side="left" className="flex flex-col gap-1 bg-white dark:bg-gray-900">
+                            <p className="font-medium">{t('brokerDashboard.meetingNotes.meetingNotesTooltip')}</p>
                           </TooltipContent>
                         </Tooltip>
                       </TooltipProvider>

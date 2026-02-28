@@ -385,7 +385,26 @@ export const enUS = {
       planning: "Planning Information",
       policy: "Investment Policy",
       imports: "Imports",
-      access: "Access"
+      access: "Access",
+      meetingNotes: "Meeting Notes"
+    },
+    meetingNotes: {
+      searchPlaceholder: "Search in title or content",
+      allTime: "All time",
+      allClients: "All clients",
+      empty: {
+        title: "No meeting notes",
+        description: "Create notes when meeting with clients",
+      },
+      viewClient: "View client",
+      viewClients: "View clients",
+      meetingNotesTooltip: "Meeting notes",
+      pagination: {
+        showing: "Showing {{from}} to {{to}} of {{total}}",
+        previous: "Previous",
+        next: "Next",
+        pageOf: "Page {{page}} of {{totalPages}}",
+      },
     },
     statementImports: {
       recentImports: "Recent Imports",
