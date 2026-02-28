@@ -566,6 +566,9 @@ export const enUS = {
         description: "This is a simulation based on the provided parameters. No data will be saved to the database. Use this tool to demonstrate different scenarios to the client."
       },
       planInitialDateDisabled: "Fixed date for simulations. Edit when creating a real plan.",
+      exportPdf: "Export PDF",
+      exportingPdf: "Exporting...",
+      pdfExported: "PDF exported successfully",
       errors: {
         missingClientData: "Client data not found"
       }

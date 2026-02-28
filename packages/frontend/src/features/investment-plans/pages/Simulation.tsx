@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/shared/components/ui/card";
@@ -6,7 +6,7 @@ import { Button } from "@/shared/components/ui/button";
 import { Input } from "@/shared/components/ui/input";
 import { Label } from "@/shared/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/shared/components/ui/select";
-import { TrendingUp, ArrowLeft, Settings, Calculator, Plus } from "lucide-react";
+import { TrendingUp, ArrowLeft, Settings, Calculator, Plus, FileDown } from "lucide-react";
 import { SimulationChart } from "@/features/broker-dashboard/components/SimulationChart";
 import { FutureProjectionTab } from "@/shared/components/monthly-view";
 import { InvestmentPlan, MicroInvestmentPlan } from "@/types/financial";
@@ -21,6 +21,7 @@ import { generateChartProjections, generateProjectionData, ChartOptions } from '
 import { useProfileData } from "@/hooks/usePlanCreation";
 import { useToast } from "@/shared/components/ui/use-toast";
 import { Spinner } from "@/shared/components/ui/spinner";
+import { exportSimulationToPdf } from "@/utils/export-simulation-pdf";
 
 interface SimulationFormData {
   initialAmount: string;
@@ -81,6 +82,8 @@ export const Simulation = () => {
   const [simulationPlan, setSimulationPlan] = useState<InvestmentPlan | null>(null);
   const [expandedRow, setExpandedRow] = useState<string | null>(null);
   const [isCreatingPlan, setIsCreatingPlan] = useState(false);
+  const [isExportingPdf, setIsExportingPdf] = useState(false);
+  const exportPdfRef = useRef<HTMLDivElement>(null);
 
   // Hooks para dados do cliente e criação de plano
   const { profileData } = useProfileData(clientId || '');
@@ -318,6 +321,26 @@ export const Simulation = () => {
     }
   };
 
+  const handleExportPdf = async () => {
+    if (!exportPdfRef.current) return;
+    setIsExportingPdf(true);
+    try {
+      await exportSimulationToPdf(exportPdfRef.current);
+      toast({
+        title: t('common.success'),
+        description: t('brokerDashboard.simulation.pdfExported'),
+      });
+    } catch (err) {
+      toast({
+        title: t('common.error'),
+        description: t('common.errors.tryAgain'),
+        variant: 'destructive',
+      });
+    } finally {
+      setIsExportingPdf(false);
+    }
+  };
+
   const prefix = getCurrencySymbol(formData.currency as CurrencyCode);
 
   return (
@@ -345,8 +368,26 @@ export const Simulation = () => {
             </div>
           </div>
           
-          {clientId && (
-            <div className="flex gap-2">
+          <div className="flex gap-2">
+            <Button
+              variant="outline"
+              onClick={handleExportPdf}
+              disabled={!simulationPlan || isExportingPdf}
+              className="flex items-center gap-2"
+            >
+              {isExportingPdf ? (
+                <>
+                  <Spinner size="sm" />
+                  {t('brokerDashboard.simulation.exportingPdf')}
+                </>
+              ) : (
+                <>
+                  <FileDown className="h-4 w-4" />
+                  {t('brokerDashboard.simulation.exportPdf')}
+                </>
+              )}
+            </Button>
+            {clientId && (
               <Button
                 onClick={handleCreatePlanFromSimulation}
                 disabled={isCreatingPlan || !simulationPlan}
@@ -364,13 +405,15 @@ export const Simulation = () => {
                   </>
                 )}
               </Button>
-            </div>
-          )}
+            )}
+          </div>
           
 
         </div>
 
         <div className="space-y-8">
+          {/* Exportable content: Parâmetros, Cálculos, Gráfico e Tabela */}
+          <div ref={exportPdfRef} className="space-y-8">
           {/* Form and Calculations Section */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
             {/* Left Column - Form */}
@@ -678,8 +721,9 @@ export const Simulation = () => {
             </div>
           </div>
 
-          {/* Opções Avançadas de Visualização */}
+          {/* Opções Avançadas de Visualização - fora do PDF */}
           {simulationPlan && (
+            <div className="space-y-8">
             <Card>
               <CardHeader>
                 <CardTitle className="text-lg flex items-center gap-2">
@@ -737,10 +781,8 @@ export const Simulation = () => {
                 </div>
               </CardContent>
             </Card>
-          )}
 
-          {/* Chart Section - Full Width Below */}
-          {simulationPlan && (
+          {/* Chart and Table Section */}
             <Card>
               <CardHeader>
                 <CardTitle className="text-lg flex items-center gap-2">
@@ -761,10 +803,8 @@ export const Simulation = () => {
                 />
               </CardContent>
             </Card>
-          )}
 
-          {/* Projection Table Section */}
-          {simulationPlan && (
+            {/* Projection Table Section */}
             <Card>
               <CardHeader>
                 <CardTitle className="text-lg flex items-center gap-2">
@@ -798,7 +838,9 @@ export const Simulation = () => {
                 />
               </CardContent>
             </Card>
+            </div>
           )}
+          </div>
         </div>
       </div>
     </div>

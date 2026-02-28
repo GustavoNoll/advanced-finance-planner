@@ -566,6 +566,9 @@ export const ptBR = {
         description: "Esta é uma simulação baseada nos parâmetros informados. Nenhum dado será salvo no banco de dados. Use esta ferramenta para demonstrar diferentes cenários ao cliente."
       },
       planInitialDateDisabled: "Data fixada para simulações. Edite quando criar um plano real.",
+      exportPdf: "Exportar PDF",
+      exportingPdf: "Exportando...",
+      pdfExported: "PDF exportado com sucesso",
       errors: {
         missingClientData: "Dados do cliente não encontrados"
       }
