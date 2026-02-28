@@ -22,6 +22,7 @@ import FinancialRecords from "@/features/financial-records/pages/FinancialRecord
 import ClientProfile from "@/features/client-management/pages/ClientProfile";
 import FinancialGoals from "@/features/goals-events/pages/FinancialGoals";
 import Events from "@/features/goals-events/pages/Events";
+import { MeetingNotes } from "@/features/meeting-notes/pages/MeetingNotes";
 import { LoadingScreen } from "@/shared/components/ui/loading-screen";
 import { PageTransition } from "@/shared/components/ui/page-transition";
 import { ScrollToTop } from "@/shared/components/ui/scroll-to-top";
@@ -275,6 +276,16 @@ function AppRoutes() {
             <ProtectedRoute>
               <PageTransition>
                 <Events />
+              </PageTransition>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/meeting-notes/:id?"
+          element={
+            <ProtectedRoute>
+              <PageTransition>
+                <MeetingNotes />
               </PageTransition>
             </ProtectedRoute>
           }
