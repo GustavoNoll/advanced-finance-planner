@@ -122,7 +122,7 @@ export function InvestmentPolicyComparisonTable({
   const getLifeStage = (policy: InvestmentPolicyData | null): string => {
     const stage = policy?.life_information?.life_stage
     if (!stage) return '-'
-    return t(`investmentPreferences.values.lifeStage.${stage}`, {
+    return t(`investmentPolicy.lifeStage.options.${stage}`, {
       defaultValue: stage,
     })
   }

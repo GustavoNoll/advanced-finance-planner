@@ -747,6 +747,7 @@ export const ptBR = {
       targetReturn: "Meta retorno",
       showingFirst: "Exibindo os primeiros {{count}} de {{total}} anos",
       projectedLegend: "Dado projetado (sem registro financeiro para o período)",
+      realDataLegend: "Dado real",
       month: "Mês",
       expandYear: "Ver meses",
       collapseYear: "Ocultar meses"

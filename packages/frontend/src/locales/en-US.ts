@@ -747,6 +747,7 @@ export const enUS = {
       targetReturn: "Target return",
       showingFirst: "Showing first {{count}} of {{total}} years",
       projectedLegend: "Projected data (no financial records for this period)",
+      realDataLegend: "Real data",
       month: "Month",
       expandYear: "Show months",
       collapseYear: "Hide months"

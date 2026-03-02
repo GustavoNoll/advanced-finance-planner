@@ -7,9 +7,22 @@ import type {
   UpdateMeetingNoteInput,
 } from '../types/meeting-notes'
 
+function getMeetingNotesFiltersKey(filters?: MeetingNotesFilters) {
+  return [
+    filters?.page ?? 1,
+    filters?.pageSize ?? 12,
+    filters?.search?.trim() ?? '',
+    filters?.clientId ?? '',
+    filters?.fromDate ?? '',
+    filters?.toDate ?? '',
+  ] as const
+}
+
 export function useMeetingNotes(profileId: string, filters?: MeetingNotesFilters) {
+  const filtersKey = getMeetingNotesFiltersKey(filters)
+
   const { data: notes, isLoading, error } = useQuery({
-    queryKey: ['meetingNotes', profileId, filters],
+    queryKey: ['meetingNotes', profileId, ...filtersKey],
     queryFn: () => MeetingNotesService.fetchNotes(profileId, filters),
     enabled: !!profileId,
   })
@@ -22,8 +35,10 @@ export function useMeetingNotes(profileId: string, filters?: MeetingNotesFilters
 }
 
 export function useBrokerMeetingNotes(filters?: MeetingNotesFilters) {
+  const filtersKey = getMeetingNotesFiltersKey(filters)
+
   const { data, isLoading, error } = useQuery({
-    queryKey: ['meetingNotes', 'broker', filters],
+    queryKey: ['meetingNotes', 'broker', ...filtersKey],
     queryFn: () => MeetingNotesService.fetchNotesForBroker(filters),
   })
 

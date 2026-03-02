@@ -13,12 +13,28 @@ export async function exportSimulationToPdf(
   elementRef: HTMLElement,
   filename = `simulation-${new Date().toISOString().split('T')[0]}.pdf`
 ): Promise<void> {
-  const canvas = await html2canvas(elementRef, {
-    scale: 2,
-    useCORS: true,
-    logging: false,
-    backgroundColor: '#ffffff',
+  const excludedElements = Array.from(
+    elementRef.querySelectorAll<HTMLElement>('[data-pdf-exclude="true"]')
+  )
+  const previousDisplays = excludedElements.map((element) => element.style.display)
+
+  excludedElements.forEach((element) => {
+    element.style.display = 'none'
   })
+
+  let canvas: HTMLCanvasElement
+  try {
+    canvas = await html2canvas(elementRef, {
+      scale: 2,
+      useCORS: true,
+      logging: false,
+      backgroundColor: '#ffffff',
+    })
+  } finally {
+    excludedElements.forEach((element, index) => {
+      element.style.display = previousDisplays[index]
+    })
+  }
 
   const imgData = canvas.toDataURL('image/png', 1.0)
   const pdf = new jsPDF('p', 'mm', 'a4')

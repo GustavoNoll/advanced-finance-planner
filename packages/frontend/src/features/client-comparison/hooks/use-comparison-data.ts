@@ -88,79 +88,85 @@ export function useComparisonData(
 
       try {
         const plans = await InvestmentPlanService.fetchPlansByBrokerId(brokerId)
-        const results: ComparisonClientData[] = []
+        const results = await Promise.all(
+          selectedClientIds.map(async (clientId) => {
+            const plan = plans.find((p) => p.user_id === clientId)
+            if (!plan || !plan.profiles) return null
 
-        for (const clientId of selectedClientIds) {
-          const plan = plans.find((p) => p.user_id === clientId)
-          if (!plan || !plan.profiles) continue
+            const profileData = plan.profiles as { name: string; birth_date: string }
+            const birthDate = profileData.birth_date || ''
+            if (!birthDate) return null
 
-          const profileData = plan.profiles as { name: string; birth_date: string }
-          const birthDate = profileData.birth_date || ''
-          if (!birthDate) continue
+            const [microPlansRes, recordsRes, goalsEventsRes, investmentPolicyRes] =
+              await Promise.all([
+                MicroInvestmentPlanService.fetchMicroPlansByLifePlanId(plan.id),
+                supabase
+                  .from('user_financial_records')
+                  .select('*')
+                  .eq('user_id', clientId)
+                  .order('record_year', { ascending: true })
+                  .order('record_month', { ascending: true }),
+                GoalsEventsService.fetchGoalsAndEvents(clientId),
+                InvestmentPolicyService.fetchPolicyByClientId(clientId),
+              ])
 
-          const [microPlansRes, recordsRes, goalsEventsRes, investmentPolicyRes] =
-            await Promise.all([
-              MicroInvestmentPlanService.fetchMicroPlansByLifePlanId(plan.id),
-              supabase
-                .from('user_financial_records')
-                .select('*')
-                .eq('user_id', clientId)
-                .order('record_year', { ascending: true })
-                .order('record_month', { ascending: true }),
-              GoalsEventsService.fetchGoalsAndEvents(clientId),
-              InvestmentPolicyService.fetchPolicyByClientId(clientId),
-            ])
+            if (recordsRes.error) {
+              throw new Error(
+                `Failed to load financial records for client ${profileData.name}: ${recordsRes.error.message}`
+              )
+            }
 
-          const microPlans: MicroInvestmentPlan[] = microPlansRes || []
-          const records: FinancialRecord[] = (recordsRes.data || []) as FinancialRecord[]
-          const goals = goalsEventsRes?.goals ?? []
-          const events = goalsEventsRes?.events ?? []
-          const activeMicroPlan = microPlans[microPlans.length - 1] ?? microPlans[0]
-          const birthDateObj = new Date(birthDate)
-          const calculations = activeMicroPlan
-            ? calculateMicroPlanFutureValues(plan, activeMicroPlan, records, birthDateObj)
-            : null
+            const microPlans: MicroInvestmentPlan[] = microPlansRes || []
+            const records: FinancialRecord[] = (recordsRes.data || []) as FinancialRecord[]
+            const goals = goalsEventsRes?.goals ?? []
+            const events = goalsEventsRes?.events ?? []
+            const activeMicroPlan = microPlans[microPlans.length - 1] ?? microPlans[0]
+            const birthDateObj = new Date(birthDate)
+            const calculations = activeMicroPlan
+              ? calculateMicroPlanFutureValues(plan, activeMicroPlan, records, birthDateObj)
+              : null
 
-          const projectionData: YearlyProjectionData[] = generateProjectionData(
-            plan,
-            { birth_date: birthDate },
-            records,
-            microPlans,
-            goals,
-            events,
-            DEFAULT_CHART_OPTIONS
-          )
+            const projectionData: YearlyProjectionData[] = generateProjectionData(
+              plan,
+              { birth_date: birthDate },
+              records,
+              microPlans,
+              goals,
+              events,
+              DEFAULT_CHART_OPTIONS
+            )
 
-          const chartData = generateChartProjections(
-            { birth_date: birthDate },
-            plan,
-            records,
-            goals,
-            events,
-            DEFAULT_CHART_OPTIONS,
-            microPlans
-          )
+            const chartData = generateChartProjections(
+              { birth_date: birthDate },
+              plan,
+              records,
+              goals,
+              events,
+              DEFAULT_CHART_OPTIONS,
+              microPlans
+            )
 
-          results.push({
-            clientId,
-            profile: {
-              id: clientId,
-              name: profileData.name,
-              birth_date: birthDate,
-            },
-            plan,
-            microPlans,
-            records,
-            goals,
-            events,
-            calculations,
-            projectionData,
-            chartData,
-            investmentPolicy: investmentPolicyRes ?? null,
+            return {
+              clientId,
+              profile: {
+                id: clientId,
+                name: profileData.name,
+                birth_date: birthDate,
+              },
+              plan,
+              microPlans,
+              records,
+              goals,
+              events,
+              calculations,
+              projectionData,
+              chartData,
+              investmentPolicy: investmentPolicyRes ?? null,
+            } as ComparisonClientData
           })
-        }
+        )
 
-        setClientData(results)
+        setClientData(results.filter((result): result is ComparisonClientData => result !== null))
       } catch (err) {
         console.error('Error loading comparison data:', err)
         setError(err instanceof Error ? err.message : 'Failed to load data')

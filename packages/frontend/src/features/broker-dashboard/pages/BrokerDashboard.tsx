@@ -57,6 +57,7 @@ const MODERN_COLORS = {
  */
 export function BrokerDashboard() {
   const [searchQuery, setSearchQuery] = useState('');
+  const [allClients, setAllClients] = useState<UserProfileInvestment[]>([]);
   const [searchResults, setSearchResults] = useState<UserProfileInvestment[]>([]);
   const [isSearching, setIsSearching] = useState(false);
   const [isBroker, setIsBroker] = useState(false);
@@ -408,9 +409,11 @@ export function BrokerDashboard() {
       if (error) throw error;
 
       console.log(users);
-      
-      setSearchResults(users || []);
-      calculateMetrics(users || []);
+
+      const loadedUsers = users || [];
+      setAllClients(loadedUsers);
+      setSearchResults(loadedUsers);
+      calculateMetrics(loadedUsers);
     } catch (error: unknown) {
       toast({
         title: "Error",
@@ -676,8 +679,8 @@ export function BrokerDashboard() {
 
 
   const handleUserSelect = (userId: string) => {
-    // Find the client in the search results
-    const client = searchResults.find(c => c.id === userId);
+    // Find the client in full list to avoid search filter side effects
+    const client = allClients.find(c => c.id === userId);
     
     // If client doesn't have an investment plan, navigate to simulation with client_id
     if (client && !client.investment_plan_id) {
@@ -710,9 +713,10 @@ export function BrokerDashboard() {
 
       if (error) throw error;
 
-      // Update the UI
+      const updatedAllClients = allClients.filter(client => client.id !== clientId);
+      setAllClients(updatedAllClients);
       setSearchResults(prev => prev.filter(client => client.id !== clientId));
-      calculateMetrics(searchResults.filter(client => client.id !== clientId));
+      calculateMetrics(updatedAllClients);
 
       toast({
         title: t('common.success'),
@@ -1359,7 +1363,7 @@ export function BrokerDashboard() {
           <TabsContent value="meeting-notes" className="mt-6">
             <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-xl border border-gray-100 dark:border-gray-800 overflow-hidden p-8">
               <BrokerMeetingNotesAggregate
-                clients={searchResults}
+                clients={allClients}
                 onOpenClientNotes={(id) => navigate(`/meeting-notes/${id}`)}
                 onScrollToClients={scrollToClientList}
               />
@@ -1385,4 +1389,3 @@ export function BrokerDashboard() {
     </div>
   )
 }
-

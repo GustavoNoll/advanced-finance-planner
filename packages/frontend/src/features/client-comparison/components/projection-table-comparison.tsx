@@ -36,8 +36,20 @@ export function ProjectionTableComparison({ clientData }: ProjectionTableCompari
     })
   }, [])
 
-  const { rows, clientNames } = useMemo(() => {
-    if (clientData.length === 0) return { rows: [], clientNames: [] as string[] }
+  const clientById = useMemo(
+    () => new Map(clientData.map((client) => [client.clientId, client])),
+    [clientData]
+  )
+
+  const { rows, clientColumns } = useMemo(() => {
+    if (clientData.length === 0) {
+      return { rows: [], clientColumns: [] as Array<{ id: string; name: string }> }
+    }
+
+    const clientColumns = clientData.map((client) => ({
+      id: client.clientId,
+      name: client.profile.name,
+    }))
 
     const yearToData = new Map<
       number,
@@ -53,7 +65,7 @@ export function ProjectionTableComparison({ clientData }: ProjectionTableCompari
         }
         const row = yearToData.get(yearRow.year)!
         const effectiveRate = yearRow.effectiveRate ?? null
-        row[client.profile.name] = {
+        row[client.clientId] = {
           balance: yearRow.planned_balance ?? 0,
           effectiveRate: Number.isFinite(effectiveRate as number) ? effectiveRate : null,
           isProjected: !yearRow.hasHistoricalData,
@@ -62,22 +74,21 @@ export function ProjectionTableComparison({ clientData }: ProjectionTableCompari
     }
 
     allYears.sort((a, b) => a - b)
-    const clientNames = clientData.map((c) => c.profile.name)
 
     const rows = allYears.map((year) => {
       const row = yearToData.get(year)!
       return {
         year,
-        ...Object.fromEntries(
-          clientNames.map((n) => [
-            n,
-            row[n] ?? { balance: null, effectiveRate: null, isProjected: true },
+        byClientId: Object.fromEntries(
+          clientColumns.map((clientColumn) => [
+            clientColumn.id,
+            row[clientColumn.id] ?? { balance: null, effectiveRate: null, isProjected: true },
           ])
-        ),
+        ) as Record<string, { balance: number | null; effectiveRate: number | null; isProjected: boolean }>,
       }
     })
 
-    return { rows, clientNames }
+    return { rows, clientColumns }
   }, [clientData])
 
   if (clientData.length === 0) return null
@@ -90,21 +101,21 @@ export function ProjectionTableComparison({ clientData }: ProjectionTableCompari
         <TableHeader>
           <TableRow className="bg-slate-50 dark:bg-slate-800/50">
             <TableHead className="font-semibold">{t('clientComparison.table.year')}</TableHead>
-            {clientNames.map((name, i) => (
+            {clientColumns.map((clientColumn, i) => (
               <TableHead
-                key={name}
+                key={clientColumn.id}
                 colSpan={2}
                 className="text-right font-semibold"
                 style={{ color: COMPARISON_COLORS[i % COMPARISON_COLORS.length] }}
               >
-                {name}
+                {clientColumn.name}
               </TableHead>
             ))}
           </TableRow>
           <TableRow className="bg-slate-100/50 dark:bg-slate-800/30">
             <TableHead className="font-medium text-xs" />
-            {clientNames.map((name) => (
-              <React.Fragment key={name}>
+            {clientColumns.map((clientColumn) => (
+              <React.Fragment key={clientColumn.id}>
                 <TableHead className="text-right text-xs font-medium w-28">
                   {t('clientComparison.table.balance')}
                 </TableHead>
@@ -151,25 +162,28 @@ export function ProjectionTableComparison({ clientData }: ProjectionTableCompari
                       {row.year}
                     </span>
                   </TableCell>
-                  {clientNames.map((name) => {
-                    const cell = row[name] as {
+                  {clientColumns.map((clientColumn) => {
+                    const cell = row.byClientId[clientColumn.id]
+                    if (!cell) return null
+                    const cellKey = clientColumn.id
+                    const typedCell = cell as {
                       balance: number | null
                       effectiveRate: number | null
                       isProjected: boolean
                     }
-                    const valueToneClass = cell?.isProjected
+                    const valueToneClass = typedCell.isProjected
                       ? 'text-slate-500 dark:text-slate-400'
                       : 'text-slate-900 dark:text-slate-100 font-semibold'
                     return (
-                      <React.Fragment key={name}>
+                      <React.Fragment key={cellKey}>
                         <TableCell className={`text-right font-mono ${valueToneClass}`}>
-                          {cell?.balance != null
-                            ? formatCurrency(cell.balance, currency)
+                          {typedCell.balance != null
+                            ? formatCurrency(typedCell.balance, currency)
                             : '-'}
                         </TableCell>
                         <TableCell className={`text-right font-mono text-sm ${valueToneClass}`}>
-                          {cell?.balance != null && cell?.effectiveRate != null
-                            ? `${(cell.effectiveRate * 100).toFixed(2)}%`
+                          {typedCell.balance != null && typedCell.effectiveRate != null
+                            ? `${(typedCell.effectiveRate * 100).toFixed(2)}%`
                             : '-'}
                         </TableCell>
                       </React.Fragment>
@@ -187,8 +201,8 @@ export function ProjectionTableComparison({ clientData }: ProjectionTableCompari
                         <TableCell className="pl-10 font-medium text-slate-600 dark:text-slate-400">
                           {monthNames[monthNum - 1]}
                         </TableCell>
-                        {clientNames.map((name) => {
-                          const client = clientData.find((c) => c.profile.name === name)
+                        {clientColumns.map((clientColumn) => {
+                          const client = clientById.get(clientColumn.id)
                           const yearData = client?.projectionData?.find((y) => y.year === row.year)
                           const monthData = yearData?.months?.find(
                             (m) => m.month === monthNum
@@ -200,7 +214,7 @@ export function ProjectionTableComparison({ clientData }: ProjectionTableCompari
                             ? 'text-slate-500 dark:text-slate-400'
                             : 'text-slate-900 dark:text-slate-100 font-semibold'
                           return (
-                            <React.Fragment key={name}>
+                            <React.Fragment key={clientColumn.id}>
                               <TableCell className={`text-right font-mono text-xs ${valueToneClass}`}>
                                 {balance != null
                                   ? formatCurrency(balance, currency)
@@ -228,11 +242,11 @@ export function ProjectionTableComparison({ clientData }: ProjectionTableCompari
         )}
         <p className="text-xs">
           <span className="font-semibold text-slate-900 dark:text-slate-100">
-            {t('clientComparison.table.realDataLegend', { defaultValue: 'Dados reais' })}
+            {t('clientComparison.table.realDataLegend')}
           </span>
           {' · '}
           <span className="text-slate-500 dark:text-slate-400">
-            {t('clientComparison.table.projectedLegend', { defaultValue: 'Dados projetados' })}
+            {t('clientComparison.table.projectedLegend')}
           </span>
         </p>
       </div>
