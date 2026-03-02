@@ -8,6 +8,7 @@ import {
   CommandGroup,
   CommandInput,
   CommandItem,
+  CommandList,
 } from "@/shared/components/ui/command"
 import {
   Popover,
@@ -37,12 +38,13 @@ export function MultiSelect({
   placeholder = "Select options...",
 }: MultiSelectProps) {
   const [open, setOpen] = React.useState(false)
+  const safeOptions = options ?? []
 
   const selectedLabels = React.useMemo(() => {
     return value
-      .map((v) => options.find((opt) => opt.value === v)?.label)
+      .map((v) => safeOptions.find((opt) => opt.value === v)?.label)
       .filter((label): label is string => label !== undefined)
-  }, [value, options])
+  }, [value, safeOptions])
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
@@ -69,30 +71,33 @@ export function MultiSelect({
         </Button>
       </PopoverTrigger>
       <PopoverContent className="w-full p-0">
-        <Command shouldFilter={false}>
+        <Command>
           <CommandInput placeholder="Search options..." />
-          <CommandEmpty>No option found.</CommandEmpty>
-          <CommandGroup>
-            {options.map((option) => (
-              <CommandItem
-                key={option.value}
-                onSelect={() => {
-                  const newValue = value.includes(option.value)
-                    ? value.filter((v) => v !== option.value)
-                    : [...value, option.value]
-                  onChange(newValue)
-                }}
-              >
-                <Check
-                  className={cn(
-                    "mr-2 h-4 w-4",
-                    value.includes(option.value) ? "opacity-100" : "opacity-0"
-                  )}
-                />
-                {option.label}
-              </CommandItem>
-            ))}
-          </CommandGroup>
+          <CommandList>
+            <CommandEmpty>No option found.</CommandEmpty>
+            <CommandGroup>
+              {safeOptions.map((option) => (
+                <CommandItem
+                  key={option.value}
+                  value={option.label}
+                  onSelect={() => {
+                    const newValue = value.includes(option.value)
+                      ? value.filter((v) => v !== option.value)
+                      : [...value, option.value]
+                    onChange(newValue)
+                  }}
+                >
+                  <Check
+                    className={cn(
+                      "mr-2 h-4 w-4",
+                      value.includes(option.value) ? "opacity-100" : "opacity-0"
+                    )}
+                  />
+                  {option.label}
+                </CommandItem>
+              ))}
+            </CommandGroup>
+          </CommandList>
         </Command>
       </PopoverContent>
     </Popover>

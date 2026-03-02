@@ -385,7 +385,7 @@ function adjustReturnWithFX(
   
   // USD → BRL: Adicionar efeito cambial
   if (config.variationCurrency === 'USD' && displayCurrency === 'BRL') {
-    return (1 + returnPercent) * (1 + fxVariation) - 1
+    return calculateCompoundedRates([returnPercent, fxVariation])
   }
   
   // BRL → USD: Remover efeito cambial

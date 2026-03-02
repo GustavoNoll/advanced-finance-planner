@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, useCallback, useMemo, useRef } from 'react'
 import { getPTAXByCompetencia } from '@/lib/bcb-api'
+import { calculateCompoundedRates } from '@/lib/financial-math'
 import { CurrencyCode } from '@/utils/currency'
 
 type Currency = 'BRL' | 'USD'
@@ -98,7 +99,7 @@ export const CurrencyProvider: React.FC<{ children: React.ReactNode }> = ({ chil
 
     // USD → BRL: Adicionar efeito cambial
     if (originalCurrency === 'USD' && currency === 'BRL') {
-      return (1 + returnPercent) * (1 + fxVariation) - 1
+      return calculateCompoundedRates([returnPercent, fxVariation])
     }
 
     // BRL → USD: Remover efeito cambial

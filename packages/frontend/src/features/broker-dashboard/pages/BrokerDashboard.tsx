@@ -2,7 +2,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
-import { Plus, LogOut, Share2, Trash2, Calculator, FileText, Users, Target, Shield, Eye, BarChart as BarChartIcon, Upload, LineChart as LineChartIcon, PieChart as PieChartIcon, Clock, AlertTriangle, TrendingUp } from 'lucide-react'
+import { Plus, LogOut, Share2, Trash2, Calculator, FileText, Users, Target, Shield, Eye, BarChart as BarChartIcon, Upload, LineChart as LineChartIcon, PieChart as PieChartIcon, Clock, AlertTriangle, TrendingUp, GitCompare } from 'lucide-react'
 import { 
   AreaChart, Area, PieChart, Pie, Cell, Legend, ResponsiveContainer, 
   XAxis, YAxis, CartesianGrid, Tooltip
@@ -33,6 +33,7 @@ import { ClientList } from '@/features/broker-dashboard/components/client-list/C
 import { ClientAccessAnalysis } from '@/shared/components/ClientAccessAnalysis'
 import { StatementImportsList } from '@/shared/components/StatementImportsList'
 import { InvestmentPolicyInsights } from '@/features/admin/components/InvestmentPolicyInsights'
+import { BrokerMeetingNotesAggregate } from '@/features/meeting-notes/components'
 import { UserProfileInvestment, BrokerProfile, EnhancedDashboardMetrics, DashboardMetrics } from '@/types/broker-dashboard'
 
 // Modern color palette
@@ -56,6 +57,7 @@ const MODERN_COLORS = {
  */
 export function BrokerDashboard() {
   const [searchQuery, setSearchQuery] = useState('');
+  const [allClients, setAllClients] = useState<UserProfileInvestment[]>([]);
   const [searchResults, setSearchResults] = useState<UserProfileInvestment[]>([]);
   const [isSearching, setIsSearching] = useState(false);
   const [isBroker, setIsBroker] = useState(false);
@@ -407,9 +409,11 @@ export function BrokerDashboard() {
       if (error) throw error;
 
       console.log(users);
-      
-      setSearchResults(users || []);
-      calculateMetrics(users || []);
+
+      const loadedUsers = users || [];
+      setAllClients(loadedUsers);
+      setSearchResults(loadedUsers);
+      calculateMetrics(loadedUsers);
     } catch (error: unknown) {
       toast({
         title: "Error",
@@ -675,8 +679,8 @@ export function BrokerDashboard() {
 
 
   const handleUserSelect = (userId: string) => {
-    // Find the client in the search results
-    const client = searchResults.find(c => c.id === userId);
+    // Find the client in full list to avoid search filter side effects
+    const client = allClients.find(c => c.id === userId);
     
     // If client doesn't have an investment plan, navigate to simulation with client_id
     if (client && !client.investment_plan_id) {
@@ -709,9 +713,10 @@ export function BrokerDashboard() {
 
       if (error) throw error;
 
-      // Update the UI
+      const updatedAllClients = allClients.filter(client => client.id !== clientId);
+      setAllClients(updatedAllClients);
       setSearchResults(prev => prev.filter(client => client.id !== clientId));
-      calculateMetrics(searchResults.filter(client => client.id !== clientId));
+      calculateMetrics(updatedAllClients);
 
       toast({
         title: t('common.success'),
@@ -852,6 +857,23 @@ export function BrokerDashboard() {
                 </span>
               </div>
 
+              {/* Comparison */}
+              <div 
+                className="group flex items-center rounded-full bg-transparent hover:bg-amber-50/50 dark:hover:bg-amber-900/30 px-2 py-1 transition-all duration-300 ease-out cursor-pointer"
+                onClick={() => navigate('/comparison')}
+              >
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-10 w-10 rounded-full hover:bg-transparent text-amber-600 dark:text-amber-400 transition-all duration-200 pointer-events-none"
+                >
+                  <GitCompare className="h-5 w-5" />
+                </Button>
+                <span className="ml-2 whitespace-nowrap text-sm text-slate-700 dark:text-slate-300 font-medium opacity-0 group-hover:opacity-100 w-0 group-hover:w-auto overflow-hidden transition-all duration-300 ease-out transform translate-x-[-10px] group-hover:translate-x-0">
+                  {t('brokerDashboard.buttons.comparison')}
+                </span>
+              </div>
+
               {/* Market Data Audit */}
               {brokerProfile?.id && (
                 <div 
@@ -908,7 +930,7 @@ export function BrokerDashboard() {
         {/* Tabs for different sections */}
         <Tabs defaultValue="planning" className="mb-8">
           <div className="bg-white/95 dark:bg-slate-900/95 backdrop-blur-md border border-slate-200 dark:border-slate-700 rounded-xl shadow-sm p-1">
-            <TabsList className="grid w-full grid-cols-4 bg-transparent gap-1 h-auto">
+            <TabsList className="grid w-full grid-cols-2 sm:grid-cols-5 bg-transparent gap-1 h-auto">
               <TabsTrigger 
                 value="planning"
                 className={`rounded-lg ${tabTriggerActiveBlue} text-slate-600 dark:text-slate-400 data-[state=active]:text-white dark:data-[state=active]:text-white hover:text-slate-900 dark:hover:text-slate-100 transition-all duration-200 py-2.5 flex items-center justify-center gap-2`}
@@ -936,6 +958,13 @@ export function BrokerDashboard() {
               >
                 <Eye className="h-4 w-4" />
                 {t('brokerDashboard.tabs.access')}
+              </TabsTrigger>
+              <TabsTrigger 
+                value="meeting-notes"
+                className={`rounded-lg ${tabTriggerActiveBlue} text-slate-600 dark:text-slate-400 data-[state=active]:text-white dark:data-[state=active]:text-white hover:text-slate-900 dark:hover:text-slate-100 transition-all duration-200 py-2.5 flex items-center justify-center gap-2`}
+              >
+                <FileText className="h-4 w-4" />
+                {t('brokerDashboard.tabs.meetingNotes')}
               </TabsTrigger>
             </TabsList>
           </div>
@@ -1323,10 +1352,20 @@ export function BrokerDashboard() {
           <TabsContent value="access" className="mt-6">
             {/* Client Access Analysis */}
             <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-xl border border-gray-100 dark:border-gray-800 overflow-hidden mb-8 p-8">
-              <ClientAccessAnalysis 
-                clientAccessData={clientAccessData} 
+              <ClientAccessAnalysis
+                clientAccessData={clientAccessData}
                 title={t('brokerDashboard.clientAccessAnalysis.title')}
                 showTitle={true}
+              />
+            </div>
+          </TabsContent>
+
+          <TabsContent value="meeting-notes" className="mt-6">
+            <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-xl border border-gray-100 dark:border-gray-800 overflow-hidden p-8">
+              <BrokerMeetingNotesAggregate
+                clients={allClients}
+                onOpenClientNotes={(id) => navigate(`/meeting-notes/${id}`)}
+                onScrollToClients={scrollToClientList}
               />
             </div>
           </TabsContent>
@@ -1350,4 +1389,3 @@ export function BrokerDashboard() {
     </div>
   )
 }
-

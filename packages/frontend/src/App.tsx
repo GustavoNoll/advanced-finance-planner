@@ -23,6 +23,7 @@ import ClientProfile from "@/features/client-management/pages/ClientProfile";
 import FinancialGoals from "@/features/goals-events/pages/FinancialGoals";
 import Events from "@/features/goals-events/pages/Events";
 import { MeetingNotes } from "@/features/meeting-notes/pages/MeetingNotes";
+import { ComparisonPage } from "@/features/client-comparison";
 import { LoadingScreen } from "@/shared/components/ui/loading-screen";
 import { PageTransition } from "@/shared/components/ui/page-transition";
 import { ScrollToTop } from "@/shared/components/ui/scroll-to-top";
@@ -116,6 +117,16 @@ function AppRoutes() {
             <ProtectedRoute>
               <PageTransition>
                 <Simulation />
+              </PageTransition>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/comparison"
+          element={
+            <ProtectedRoute>
+              <PageTransition>
+                <ComparisonPage />
               </PageTransition>
             </ProtectedRoute>
           }

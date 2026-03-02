@@ -379,13 +379,33 @@ export const enUS = {
       search: "Search",
       importPDF: "Import PDF",
       scrollToClients: "Go to Client List",
+      comparison: "Comparison",
       marketDataAudit: "Market Data Audit"
     },
     tabs: {
       planning: "Planning Information",
       policy: "Investment Policy",
       imports: "Imports",
-      access: "Access"
+      access: "Access",
+      meetingNotes: "Meeting Notes"
+    },
+    meetingNotes: {
+      searchPlaceholder: "Search in title or content",
+      allTime: "All time",
+      allClients: "All clients",
+      empty: {
+        title: "No meeting notes",
+        description: "Create notes when meeting with clients",
+      },
+      viewClient: "View client",
+      viewClients: "View clients",
+      meetingNotesTooltip: "Meeting notes",
+      pagination: {
+        showing: "Showing {{from}} to {{to}} of {{total}}",
+        previous: "Previous",
+        next: "Next",
+        pageOf: "Page {{page}} of {{totalPages}}",
+      },
     },
     statementImports: {
       recentImports: "Recent Imports",
@@ -547,6 +567,9 @@ export const enUS = {
         description: "This is a simulation based on the provided parameters. No data will be saved to the database. Use this tool to demonstrate different scenarios to the client."
       },
       planInitialDateDisabled: "Fixed date for simulations. Edit when creating a real plan.",
+      exportPdf: "Export PDF",
+      exportingPdf: "Exporting...",
+      pdfExported: "PDF exported successfully",
       errors: {
         missingClientData: "Client data not found"
       }
@@ -694,6 +717,68 @@ export const enUS = {
     shareWithClient: "Share with Client",
     linkCopied: "Link copied successfully!",
     loading: "Verifying permissions..."
+  },
+  clientComparison: {
+    title: "Client Comparison",
+    selectTitle: "Select clients to compare",
+    selectClients: "Clients to compare",
+    selectPlaceholder: "Select clients...",
+    maxClients: "Select up to {{max}} clients",
+    basicTitle: "Basic data comparison",
+    chartTitle: "Projection chart comparison",
+    tableTitle: "Projection table comparison",
+    basic: {
+      metric: "Metric",
+      name: "Name",
+      age: "Age",
+      planType: "Plan type",
+      initialAmount: "Initial amount",
+      finalAge: "Final age",
+      microPlansCount: "Micro plans",
+      monthlyDeposit: "Monthly deposit",
+      expectedReturn: "Expected return",
+      inflation: "Inflation",
+      goalsCount: "Goals",
+      eventsCount: "Objectives (events)"
+    },
+    table: {
+      year: "Year",
+      balance: "Balance",
+      targetReturn: "Target return",
+      showingFirst: "Showing first {{count}} of {{total}} years",
+      projectedLegend: "Projected data (no financial records for this period)",
+      realDataLegend: "Real data",
+      month: "Month",
+      expandYear: "Show months",
+      collapseYear: "Hide months"
+    },
+    emptyState: "Select clients to compare their projections",
+    noData: "No projection data available for selected clients",
+    nav: {
+      basic: "Basic data",
+      chart: "Chart",
+      table: "Table",
+      policy: "Investment policy"
+    },
+    calculations: {
+      title: "Calculations (micro / investment plan)",
+      presentFutureValue: "Present future value",
+      futureValue: "Future value",
+      inflationAdjustedIncome: "Inflation-adjusted income",
+      requiredMonthlyDeposit: "Required monthly deposit",
+      realReturn: "Real return (monthly)",
+      inflationReturn: "Inflation return (monthly)",
+      totalMonthlyReturn: "Total monthly return"
+    },
+    policy: {
+      title: "Investment policy",
+      riskProfile: "Risk profile",
+      targetReturn: "Target return (IPCA+)",
+      maxAcceptableLoss: "Max. acceptable loss",
+      lifeStage: "Life stage",
+      assetAllocation: "Asset allocation",
+      noData: "No investment policy data for selected clients"
+    }
   },
   common: {
     language: {

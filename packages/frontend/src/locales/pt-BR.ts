@@ -379,13 +379,33 @@ export const ptBR = {
       search: "Buscar",
       importPDF: "Importar PDF",
       scrollToClients: "Ir para Lista de Clientes",
+      comparison: "Comparação",
       marketDataAudit: "Auditoria de Dados de Mercado"
     },
     tabs: {
       planning: "Informações de Planejamento",
       policy: "Política de Investimento",
       imports: "Importações",
-      access: "Acessos"
+      access: "Acessos",
+      meetingNotes: "Notas de Reunião"
+    },
+    meetingNotes: {
+      searchPlaceholder: "Buscar em título ou conteúdo",
+      allTime: "Todo período",
+      allClients: "Todos os clientes",
+      empty: {
+        title: "Nenhuma nota de reunião",
+        description: "Crie notas ao se reunir com clientes",
+      },
+      viewClient: "Ver cliente",
+      viewClients: "Ver clientes",
+      meetingNotesTooltip: "Notas de reunião",
+      pagination: {
+        showing: "Exibindo {{from}} a {{to}} de {{total}}",
+        previous: "Anterior",
+        next: "Próxima",
+        pageOf: "Página {{page}} de {{totalPages}}",
+      },
     },
     statementImports: {
       recentImports: "Últimas Importações",
@@ -547,6 +567,9 @@ export const ptBR = {
         description: "Esta é uma simulação baseada nos parâmetros informados. Nenhum dado será salvo no banco de dados. Use esta ferramenta para demonstrar diferentes cenários ao cliente."
       },
       planInitialDateDisabled: "Data fixada para simulações. Edite quando criar um plano real.",
+      exportPdf: "Exportar PDF",
+      exportingPdf: "Exportando...",
+      pdfExported: "PDF exportado com sucesso",
       errors: {
         missingClientData: "Dados do cliente não encontrados"
       }
@@ -694,6 +717,68 @@ export const ptBR = {
     shareWithClient: "Compartilhar com Cliente",
     linkCopied: "Link copiado com sucesso!",
     loading: "Verificando permissões..."
+  },
+  clientComparison: {
+    title: "Comparação de Clientes",
+    selectTitle: "Selecione os clientes para comparar",
+    selectClients: "Clientes para comparar",
+    selectPlaceholder: "Selecione os clientes...",
+    maxClients: "Selecione até {{max}} clientes",
+    basicTitle: "Comparação de dados básicos",
+    chartTitle: "Comparação de gráficos de projeção",
+    tableTitle: "Comparação de tabelas de projeção",
+    basic: {
+      metric: "Métrica",
+      name: "Nome",
+      age: "Idade",
+      planType: "Tipo de plano",
+      initialAmount: "Valor inicial",
+      finalAge: "Idade final",
+      microPlansCount: "Micro planos",
+      monthlyDeposit: "Aporte mensal",
+      expectedReturn: "Retorno esperado",
+      inflation: "Inflação",
+      goalsCount: "Metas",
+      eventsCount: "Objetivos (eventos)"
+    },
+    table: {
+      year: "Ano",
+      balance: "Saldo",
+      targetReturn: "Meta retorno",
+      showingFirst: "Exibindo os primeiros {{count}} de {{total}} anos",
+      projectedLegend: "Dado projetado (sem registro financeiro para o período)",
+      realDataLegend: "Dado real",
+      month: "Mês",
+      expandYear: "Ver meses",
+      collapseYear: "Ocultar meses"
+    },
+    emptyState: "Selecione clientes para comparar suas projeções",
+    noData: "Nenhum dado de projeção disponível para os clientes selecionados",
+    nav: {
+      basic: "Dados básicos",
+      chart: "Gráfico",
+      table: "Tabela",
+      policy: "Política de investimentos"
+    },
+    calculations: {
+      title: "Cálculos (micro plano / plano de investimento)",
+      presentFutureValue: "Valor presente futuro",
+      futureValue: "Valor futuro",
+      inflationAdjustedIncome: "Renda ajustada pela inflação",
+      requiredMonthlyDeposit: "Aporte mensal necessário",
+      realReturn: "Retorno real (mensal)",
+      inflationReturn: "Retorno inflação (mensal)",
+      totalMonthlyReturn: "Retorno total mensal"
+    },
+    policy: {
+      title: "Política de investimentos",
+      riskProfile: "Perfil de risco",
+      targetReturn: "Meta retorno (IPCA+)",
+      maxAcceptableLoss: "Perda máxima aceitável",
+      lifeStage: "Etapa da vida",
+      assetAllocation: "Alocação de ativos",
+      noData: "Nenhum dado de política de investimento para os clientes selecionados"
+    }
   },
   common: {
     language: {

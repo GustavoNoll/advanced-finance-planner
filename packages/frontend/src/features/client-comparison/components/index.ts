@@ -1,0 +1,5 @@
+export { ClientComparisonSelector } from './client-comparison-selector'
+export { BasicDataComparisonTable } from './basic-data-comparison-table'
+export { ProjectionChartComparison } from './projection-chart-comparison'
+export { ProjectionTableComparison } from './projection-table-comparison'
+export { InvestmentPolicyComparisonTable } from './investment-policy-comparison-table'
