@@ -379,6 +379,7 @@ export const enUS = {
       search: "Search",
       importPDF: "Import PDF",
       scrollToClients: "Go to Client List",
+      comparison: "Comparison",
       marketDataAudit: "Market Data Audit"
     },
     tabs: {
@@ -716,6 +717,67 @@ export const enUS = {
     shareWithClient: "Share with Client",
     linkCopied: "Link copied successfully!",
     loading: "Verifying permissions..."
+  },
+  clientComparison: {
+    title: "Client Comparison",
+    selectTitle: "Select clients to compare",
+    selectClients: "Clients to compare",
+    selectPlaceholder: "Select clients...",
+    maxClients: "Select up to {{max}} clients",
+    basicTitle: "Basic data comparison",
+    chartTitle: "Projection chart comparison",
+    tableTitle: "Projection table comparison",
+    basic: {
+      metric: "Metric",
+      name: "Name",
+      age: "Age",
+      planType: "Plan type",
+      initialAmount: "Initial amount",
+      finalAge: "Final age",
+      microPlansCount: "Micro plans",
+      monthlyDeposit: "Monthly deposit",
+      expectedReturn: "Expected return",
+      inflation: "Inflation",
+      goalsCount: "Goals",
+      eventsCount: "Objectives (events)"
+    },
+    table: {
+      year: "Year",
+      balance: "Balance",
+      targetReturn: "Target return",
+      showingFirst: "Showing first {{count}} of {{total}} years",
+      projectedLegend: "Projected data (no financial records for this period)",
+      month: "Month",
+      expandYear: "Show months",
+      collapseYear: "Hide months"
+    },
+    emptyState: "Select clients to compare their projections",
+    noData: "No projection data available for selected clients",
+    nav: {
+      basic: "Basic data",
+      chart: "Chart",
+      table: "Table",
+      policy: "Investment policy"
+    },
+    calculations: {
+      title: "Calculations (micro / investment plan)",
+      presentFutureValue: "Present future value",
+      futureValue: "Future value",
+      inflationAdjustedIncome: "Inflation-adjusted income",
+      requiredMonthlyDeposit: "Required monthly deposit",
+      realReturn: "Real return (monthly)",
+      inflationReturn: "Inflation return (monthly)",
+      totalMonthlyReturn: "Total monthly return"
+    },
+    policy: {
+      title: "Investment policy",
+      riskProfile: "Risk profile",
+      targetReturn: "Target return (IPCA+)",
+      maxAcceptableLoss: "Max. acceptable loss",
+      lifeStage: "Life stage",
+      assetAllocation: "Asset allocation",
+      noData: "No investment policy data for selected clients"
+    }
   },
   common: {
     language: {

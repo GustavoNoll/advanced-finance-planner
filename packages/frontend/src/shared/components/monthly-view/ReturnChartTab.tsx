@@ -271,35 +271,17 @@ export function ReturnChartTab({
     if (data.length === 0) return [];
     const processedData = data.map((record, index, array) => {
       const relevantData = array.slice(0, index + 1);
-      
-      const accumulatedReturn = relevantData.reduce((acc, curr) => {
-        return acc * (1 + curr.percentage / 100);
-      }, 1);
-      
-      const accumulatedTargetReturn = relevantData.reduce((acc, curr) => {
-        return acc * (1 + curr.targetRentability / 100);
-      }, 1);
+      const toDecimal = (n: number) => n / 100;
 
-      const accumulatedCDIReturn = relevantData.reduce((acc, curr) => {
-        return acc * (1 + curr.cdiRate / 100);
-      }, 1);
-
-      const accumulatedIPCAReturn = relevantData.reduce((acc, curr) => {
-        return acc * (1 + curr.ipcaRate / 100);
-      }, 1);
-
-      const accumulatedUSCPIReturn = relevantData.reduce((acc, curr) => {
-        return acc * (1 + curr.usCpiRate / 100);
-      }, 1);
-
-      const accumulatedEuroCPIReturn = relevantData.reduce((acc, curr) => {
-        return acc * (1 + curr.euroCpiRate / 100);
-      }, 1);
+      const accumulatedReturn = 1 + calculateCompoundedRates(relevantData.map((curr) => toDecimal(curr.percentage)));
+      const accumulatedTargetReturn = 1 + calculateCompoundedRates(relevantData.map((curr) => toDecimal(curr.targetRentability)));
+      const accumulatedCDIReturn = 1 + calculateCompoundedRates(relevantData.map((curr) => toDecimal(curr.cdiRate)));
+      const accumulatedIPCAReturn = 1 + calculateCompoundedRates(relevantData.map((curr) => toDecimal(curr.ipcaRate)));
+      const accumulatedUSCPIReturn = 1 + calculateCompoundedRates(relevantData.map((curr) => toDecimal(curr.usCpiRate)));
+      const accumulatedEuroCPIReturn = 1 + calculateCompoundedRates(relevantData.map((curr) => toDecimal(curr.euroCpiRate)));
 
       // Calculate accumulated old portfolio return if available
-      const accumulatedOldPortfolioReturn = relevantData.reduce((acc, curr) => {
-        return acc * (1 + curr.oldPortfolioRate / 100);
-      }, 1);
+      const accumulatedOldPortfolioReturn = 1 + calculateCompoundedRates(relevantData.map((curr) => toDecimal(curr.oldPortfolioRate ?? 0)));
 
       return {
         ...record,

@@ -2,7 +2,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
-import { Plus, LogOut, Share2, Trash2, Calculator, FileText, Users, Target, Shield, Eye, BarChart as BarChartIcon, Upload, LineChart as LineChartIcon, PieChart as PieChartIcon, Clock, AlertTriangle, TrendingUp } from 'lucide-react'
+import { Plus, LogOut, Share2, Trash2, Calculator, FileText, Users, Target, Shield, Eye, BarChart as BarChartIcon, Upload, LineChart as LineChartIcon, PieChart as PieChartIcon, Clock, AlertTriangle, TrendingUp, GitCompare } from 'lucide-react'
 import { 
   AreaChart, Area, PieChart, Pie, Cell, Legend, ResponsiveContainer, 
   XAxis, YAxis, CartesianGrid, Tooltip
@@ -850,6 +850,23 @@ export function BrokerDashboard() {
                 </Button>
                 <span className="ml-2 whitespace-nowrap text-sm text-slate-700 dark:text-slate-300 font-medium opacity-0 group-hover:opacity-100 w-0 group-hover:w-auto overflow-hidden transition-all duration-300 ease-out transform translate-x-[-10px] group-hover:translate-x-0">
                   {t('brokerDashboard.buttons.scrollToClients')}
+                </span>
+              </div>
+
+              {/* Comparison */}
+              <div 
+                className="group flex items-center rounded-full bg-transparent hover:bg-amber-50/50 dark:hover:bg-amber-900/30 px-2 py-1 transition-all duration-300 ease-out cursor-pointer"
+                onClick={() => navigate('/comparison')}
+              >
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-10 w-10 rounded-full hover:bg-transparent text-amber-600 dark:text-amber-400 transition-all duration-200 pointer-events-none"
+                >
+                  <GitCompare className="h-5 w-5" />
+                </Button>
+                <span className="ml-2 whitespace-nowrap text-sm text-slate-700 dark:text-slate-300 font-medium opacity-0 group-hover:opacity-100 w-0 group-hover:w-auto overflow-hidden transition-all duration-300 ease-out transform translate-x-[-10px] group-hover:translate-x-0">
+                  {t('brokerDashboard.buttons.comparison')}
                 </span>
               </div>
 

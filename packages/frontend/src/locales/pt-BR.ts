@@ -379,6 +379,7 @@ export const ptBR = {
       search: "Buscar",
       importPDF: "Importar PDF",
       scrollToClients: "Ir para Lista de Clientes",
+      comparison: "Comparação",
       marketDataAudit: "Auditoria de Dados de Mercado"
     },
     tabs: {
@@ -716,6 +717,67 @@ export const ptBR = {
     shareWithClient: "Compartilhar com Cliente",
     linkCopied: "Link copiado com sucesso!",
     loading: "Verificando permissões..."
+  },
+  clientComparison: {
+    title: "Comparação de Clientes",
+    selectTitle: "Selecione os clientes para comparar",
+    selectClients: "Clientes para comparar",
+    selectPlaceholder: "Selecione os clientes...",
+    maxClients: "Selecione até {{max}} clientes",
+    basicTitle: "Comparação de dados básicos",
+    chartTitle: "Comparação de gráficos de projeção",
+    tableTitle: "Comparação de tabelas de projeção",
+    basic: {
+      metric: "Métrica",
+      name: "Nome",
+      age: "Idade",
+      planType: "Tipo de plano",
+      initialAmount: "Valor inicial",
+      finalAge: "Idade final",
+      microPlansCount: "Micro planos",
+      monthlyDeposit: "Aporte mensal",
+      expectedReturn: "Retorno esperado",
+      inflation: "Inflação",
+      goalsCount: "Metas",
+      eventsCount: "Objetivos (eventos)"
+    },
+    table: {
+      year: "Ano",
+      balance: "Saldo",
+      targetReturn: "Meta retorno",
+      showingFirst: "Exibindo os primeiros {{count}} de {{total}} anos",
+      projectedLegend: "Dado projetado (sem registro financeiro para o período)",
+      month: "Mês",
+      expandYear: "Ver meses",
+      collapseYear: "Ocultar meses"
+    },
+    emptyState: "Selecione clientes para comparar suas projeções",
+    noData: "Nenhum dado de projeção disponível para os clientes selecionados",
+    nav: {
+      basic: "Dados básicos",
+      chart: "Gráfico",
+      table: "Tabela",
+      policy: "Política de investimentos"
+    },
+    calculations: {
+      title: "Cálculos (micro plano / plano de investimento)",
+      presentFutureValue: "Valor presente futuro",
+      futureValue: "Valor futuro",
+      inflationAdjustedIncome: "Renda ajustada pela inflação",
+      requiredMonthlyDeposit: "Aporte mensal necessário",
+      realReturn: "Retorno real (mensal)",
+      inflationReturn: "Retorno inflação (mensal)",
+      totalMonthlyReturn: "Retorno total mensal"
+    },
+    policy: {
+      title: "Política de investimentos",
+      riskProfile: "Perfil de risco",
+      targetReturn: "Meta retorno (IPCA+)",
+      maxAcceptableLoss: "Perda máxima aceitável",
+      lifeStage: "Etapa da vida",
+      assetAllocation: "Alocação de ativos",
+      noData: "Nenhum dado de política de investimento para os clientes selecionados"
+    }
   },
   common: {
     language: {
