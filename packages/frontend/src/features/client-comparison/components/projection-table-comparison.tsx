@@ -228,11 +228,11 @@ export function ProjectionTableComparison({ clientData }: ProjectionTableCompari
         )}
         <p className="text-xs">
           <span className="font-semibold text-slate-900 dark:text-slate-100">
-            {t('clientComparison.table.realDataLegend', { defaultValue: 'Dados reais' })}
+            {t('clientComparison.table.realDataLegend')}
           </span>
           {' · '}
           <span className="text-slate-500 dark:text-slate-400">
-            {t('clientComparison.table.projectedLegend', { defaultValue: 'Dados projetados' })}
+            {t('clientComparison.table.projectedLegend')}
           </span>
         </p>
       </div>
