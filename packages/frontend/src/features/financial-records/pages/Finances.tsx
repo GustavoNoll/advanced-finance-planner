@@ -169,6 +169,7 @@ const Finances = ({
         clientId={clientId}
         investmentPlanId={investmentPlan.id}
         currency={investmentPlan.currency}
+        isBroker={Boolean(brokerProfile)}
         goalsByStatus={goalsByStatus}
         eventsByStatus={eventsByStatus}
         t={t}
