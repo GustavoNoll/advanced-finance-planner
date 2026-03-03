@@ -31,6 +31,9 @@ export const frontendEnvSchema = z.object({
 
   // Optional: N8N Integration
   VITE_N8N_PDF_IMPORT_URL: z.string().url().optional(),
+
+  // Optional: Himetrica Analytics (Frontend)
+  VITE_HIMETRICA_API_KEY: z.string().min(1).optional(),
 })
 
 /**
