@@ -698,6 +698,32 @@ export const Simulation = () => {
                 </CardContent>
               </Card>
 
+              {/* Plan 1: perpetuity target (never run out) */}
+              {formData.planType === "1" && calculations?.necessaryFutureValue != null && calculations?.necessaryDepositToNecessaryFutureValue != null && (
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-base">
+                      {t('investmentPlan.create.calculations.perpetuityBlock.title')}
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <p className="text-sm text-muted-foreground mb-4">
+                      {t('investmentPlan.create.calculations.perpetuityBlock.description')}
+                    </p>
+                    <div className="space-y-3">
+                      <div className="flex justify-between p-3 bg-card rounded-lg border border-border">
+                        <span className="text-sm text-muted-foreground">{t('investmentPlan.create.calculations.perpetuityBlock.necessaryFutureValue')}:</span>
+                        <span className="font-medium">{formatCurrency(calculations.necessaryFutureValue, formData.currency as CurrencyCode)}</span>
+                      </div>
+                      <div className="flex justify-between p-3 bg-card rounded-lg border border-border">
+                        <span className="text-sm text-muted-foreground">{t('investmentPlan.create.calculations.perpetuityBlock.necessaryDeposit')}:</span>
+                        <span className="font-medium">{formatCurrency(calculations.necessaryDepositToNecessaryFutureValue, formData.currency as CurrencyCode)}</span>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+
               {/* Simulation Notice */}
               { !clientId  && (
                 <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">

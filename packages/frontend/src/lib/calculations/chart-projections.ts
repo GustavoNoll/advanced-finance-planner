@@ -4,7 +4,7 @@ import { createIPCARatesMap } from '../inflation-utils';
 import { processGoalsForChart, processEventsForChart, ProcessedGoalEvent, FOR_PLANNED_SCENARIO, FOR_PROJECTED_SCENARIO } from './financial-goals-processor';
 import { createDateWithoutTimezone, createDateFromYearMonth, getLastDayOfYear } from '@/utils/dateUtils';
 import { getActiveMicroPlanForDate } from '@/utils/microPlanUtils';
-import { DEFAULT_INFLATION_PERCENT, DEFAULT_EXPECTED_RETURN_PERCENT } from './constants';
+import { DEFAULT_INFLATION_PERCENT, DEFAULT_EXPECTED_RETURN_PERCENT, DEFAULT_LIMIT_AGE } from './constants';
 
 // ============================================================================
 // TYPES AND INTERFACES
@@ -183,10 +183,6 @@ function createProjectionContext(
     return null;
   }
 
-  if (!profile.birth_date) {
-    return null;
-  }
-  
   const birthDate = createDateWithoutTimezone(profile.birth_date);
   const birthYear = birthDate.getFullYear();
   if (!investmentPlan.plan_initial_date) {
@@ -288,14 +284,14 @@ function createProjectionContext(
 // ============================================================================
 
 /**
- * Calculates monthly rates for inflation, returns, and old portfolio returns
+ * Calculates monthly rates for inflation, returns, and old portfolio returns.
+ * Uses historical IPCA when available, otherwise default rates.
  * @param year Current year
  * @param month Current month
  * @param ipcaRatesMap Map of historical IPCA rates
  * @param defaultMonthlyInflationRate Default inflation rate
  * @param monthlyExpectedReturnRate Expected return rate
  * @param monthlyOldPortfolioExpectedReturnRate Old portfolio return rate
- * @param showRealValues Whether to show real values (no inflation adjustment)
  * @returns Object with calculated monthly rates
  */
 function calculateMonthlyRates(
@@ -307,7 +303,6 @@ function calculateMonthlyRates(
   monthlyOldPortfolioExpectedReturnRate: number,
 ): { monthlyInflationRate: number; monthlyReturnRate: number; monthlyOldPortfolioReturnRate: number } {
   const ipcaKey = `${year}-${month}`;
-  // temporary showRealValues
   if (ipcaRatesMap.has(ipcaKey)) {
     const monthlyInflationRate = ipcaRatesMap.get(ipcaKey)!;
     const monthlyReturnRate = calculateCompoundedRates([
@@ -424,7 +419,6 @@ function createHistoricalMonthData(
  * @param accumulatedInflation Accumulated inflation factor
  * @param expectedReturn Expected return rate
  * @param planned_contribution Planned contribution amount
- * @param birthYear Birth year
  * @returns MonthlyProjectionData for past month
  */
 function createPastMonthData(
@@ -445,7 +439,7 @@ function createPastMonthData(
     contribution: 0,
     planned_contribution,
     withdrawal: 0,
-    balance: 0,
+    balance: projectedBalance,
     retirement: false,
     planned_balance: plannedBalance,
     projected_lifetime_withdrawal: projectedBalance * (expectedReturn / 100 / 12),
@@ -616,10 +610,7 @@ export function generateProjectionData(
   const pendingGoalsForChart = processGoals(context.goals?.filter(goal => goal.status === 'pending'), FOR_PROJECTED_SCENARIO);
   const pendingEventsForChart = processEvents(context.events?.filter(event => event.status === 'pending'), FOR_PROJECTED_SCENARIO);
   let oldPortfolioBalance = context.oldPortfolioProfitability ? investmentPlan.initial_amount : null;
-  const sortedByDateRecords = [...initialRecords].sort(
-    (a, b) => b.record_year - a.record_year || b.record_month - a.record_month
-  );
-  let projectedBalance = sortedByDateRecords[0]?.ending_balance || investmentPlan.initial_amount;
+  let projectedBalance = investmentPlan.initial_amount;
   let plannedBalance = investmentPlan.initial_amount;
   
   // Obter o micro plano ativo na data inicial
@@ -632,7 +623,9 @@ export function generateProjectionData(
 
   // Inicializar data atual como a data de início do plano
   const startDate = new Date(context.planStartDate);
-  const endDate = context.limitAgeDate || (context.birthDate ? createDateWithoutTimezone(context.birthDate) : null);
+  const endDate = context.limitAgeDate
+    ? new Date(context.limitAgeDate.getTime())
+    : (context.birthDate ? new Date(context.birthDate.getTime()) : null);
   if (!endDate) {
     return [];
   }
@@ -713,8 +706,10 @@ export function generateProjectionData(
 
     accumulatedInflation *= (1 + monthlyInflationRate);
 
-    // Adjust for inflation
-    if (investmentPlan.adjust_contribution_for_inflation  && !isRetirementAge) {
+    // Plan-level: grow deposit/withdrawal with inflation each month (constant real).
+    // Matches investmentPlanCalculations when adjustContributionForInflation / adjustIncomeForInflation are true.
+    // Micro-plan-level flags (adjust_*_for_accumulated_inflation) are applied only when switching micro plan above.
+    if (investmentPlan.adjust_contribution_for_inflation && !isRetirementAge) {
       currentNominalMonthlyDeposit *= (1 + monthlyInflationRate);
     }
     if (investmentPlan.adjust_income_for_inflation) {
@@ -924,7 +919,7 @@ export function generateProjectionData(
         accumulatedInflation,
         goalsEventsImpact,
         contribution,
-        activeMicroPlanForRates?.expected_return || 6, // Default 6% se não houver micro plano
+        activeMicroPlanForRates?.expected_return ?? DEFAULT_EXPECTED_RETURN_PERCENT,
         context.birthYear
       );
     }
@@ -1031,15 +1026,16 @@ export function generateChartProjections(
 }
 
 /**
- * Gets the end age for an investment plan
+ * Gets the end age (limit_age) for an investment plan.
+ * Aligns with investmentPlanCalculations and constants.
  * @param investmentPlan The investment plan
- * @returns End age (default 100 if not specified)
+ * @returns End age (default DEFAULT_LIMIT_AGE if not specified)
  */
 export function getEndAge(investmentPlan: InvestmentPlan): number {
   if (investmentPlan.limit_age) {
     return investmentPlan.limit_age;
   }
-  return 100;
+  return DEFAULT_LIMIT_AGE;
 }
 
 /**

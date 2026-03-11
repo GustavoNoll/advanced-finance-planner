@@ -7,6 +7,11 @@ import { calculateMicroPlanFutureValues, Calculations } from './investmentPlanCa
 import { getActiveMicroPlanForDate } from '@/utils/microPlanUtils';
 import { DEFAULT_LIMIT_AGE } from './constants';
 
+const isDev = true; //typeof import.meta !== 'undefined' && import.meta.env?.DEV;
+const devLog = (...args: unknown[]) => { if (isDev) console.log(...args); };
+const devGroup = (label: string) => { if (isDev) console.group(label); };
+const devGroupEnd = () => { if (isDev) console.groupEnd(); };
+
 // ============================================================================
 // UTILITY FUNCTIONS
 // ============================================================================
@@ -47,14 +52,16 @@ export const utils = {
   },
 
   /**
-   * Adds months to a date
+   * Adds months to a date (calendar months; setMonth handles year rollover).
+   * When baseDate is the first of the month, the result is the first of the target month.
+   * Note: setMonth can change the day when the target month has fewer days (e.g. Jan 31 + 1 month).
    * @param baseDate - Base date to add months to
    * @param monthsToAdd - Number of months to add
    * @returns New date with months added
    */
   addMonthsToDate: (baseDate: Date, monthsToAdd: number): Date => {
     const newDate = createDateWithoutTimezone(baseDate);
-    newDate.setMonth(baseDate.getMonth() + monthsToAdd + 1);
+    newDate.setMonth(baseDate.getMonth() + monthsToAdd);
     return newDate;
   },
 
@@ -91,7 +98,9 @@ export const utils = {
     }
   ): number => {
     const { referenceDate, planEndDate, microPlans, activeMicroPlan, adjustForInflation, planCurrency, cpiRatesMap } = params;
-    const totalMonths = utils.calculateMonthsBetweenDates(referenceDate, planEndDate) + 1 || 0;
+    const monthsBetween = utils.calculateMonthsBetweenDates(referenceDate, planEndDate) ?? 0;
+    if (monthsBetween < 0) return 0;
+    const totalMonths = monthsBetween === 0 ? 0 : monthsBetween + 1;
     if (totalMonths <= 0) return 0;
 
     // CPI map per currency for [referenceDate - 1 month, planEndDate]
@@ -398,7 +407,8 @@ interface ProjectionResult {
   plannedContribution: number;
   plannedMonthlyIncome: number;
   monthsDifference: number;
-  plannedMonths: number;
+  /** Total plan duration in months (start to end); distinct from plannedMonthsToRetirement. */
+  totalPlannedMonths: number;
   referenceDate: Date;
   projectedRetirementDate: Date;
   plannedRetirementDate: Date;
@@ -407,14 +417,17 @@ interface ProjectionResult {
 }
 
 /**
- * Complete plan progress data for display in UI
+ * Complete plan progress data for display in UI.
+ * plannedMonths and projectedMonths are months until retirement (from reference date to goal), not total plan duration.
  */
 export interface PlanProgressData {
   projectedPresentValue: number;
   plannedPresentValue: number;
   projectedGoalFutureValue: number;
   plannedGoalFutureValue: number;
+  /** Months until retirement on the planned path (from initial/planned conditions). */
   plannedMonths: number;
+  /** Months until retirement on the projected path (from current balance and contributions). */
   projectedMonths: number;
   monthsDifference: number;
   plannedContribution: number;
@@ -967,9 +980,9 @@ const financialCalculations = {
     } = params;
 
     // ========================================================================
-    // STEP 1: Determine current state
+    // STEP 1: Determine current state (sort here so we never assume input order)
     // ========================================================================
-    console.group('📊 [Plan Progress] Step 1: Determining Current State');
+    devGroup('📊 [Plan Progress] Step 1: Determining Current State');
     
     const sortedFinancialRecords = [...allFinancialRecords].sort(
       (a, b) => b.record_year - a.record_year || b.record_month - a.record_month
@@ -990,20 +1003,22 @@ const financialCalculations = {
     
     const totalPlannedMonths = utils.calculateMonthsBetweenDates(planStartDate, planEndDate) + 1;
     const totalMonthsToRetirement = Math.max(0, utils.calculateMonthsBetweenDates(initialDate, planEndDate) || 0);
-    const monthsElapsed = Math.max(0, utils.calculateMonthsBetweenDates(planStartDate, actualDate) + 1 || 1);
+    /** Months from plan start to actual date (incl.). When no records (actualDate = plan start), use 0 so planned and projected match. */
+    const rawMonthsBetween = utils.calculateMonthsBetweenDates(planStartDate, actualDate) ?? 0;
+    const monthsElapsed = Math.max(0, rawMonthsBetween === 0 ? 0 : rawMonthsBetween + 1);
     
-    console.log('Plan Start Date:', planStartDate.toISOString());
-    console.log('Plan End Date:', planEndDate.toISOString());
-    console.log('Actual Date:', actualDate.toISOString());
-    console.log('Total Planned Months:', totalPlannedMonths);
-    console.log('Months Elapsed:', monthsElapsed);
-    console.log('Total Months to Retirement:', totalMonthsToRetirement);
-    console.groupEnd();
+    devLog('Plan Start Date:', planStartDate.toISOString());
+    devLog('Plan End Date:', planEndDate.toISOString());
+    devLog('Actual Date:', actualDate.toISOString());
+    devLog('Total Planned Months:', totalPlannedMonths);
+    devLog('Months Elapsed:', monthsElapsed);
+    devLog('Total Months to Retirement:', totalMonthsToRetirement);
+    devGroupEnd();
 
     // ========================================================================
     // STEP 2: Calculate inflation and return rates
     // ========================================================================
-    console.group('📈 [Plan Progress] Step 2: Calculating Rates');
+    devGroup('📈 [Plan Progress] Step 2: Calculating Rates');
     
     const inflationFactorAtRetirement = utils.computeInflationFactor({
       startDate: initialDate,
@@ -1024,17 +1039,17 @@ const financialCalculations = {
       ? monthlyExpectedReturnRate
       : calculateCompoundedRates([monthlyExpectedReturnRate, monthlyInflationRate]);
     
-    console.log('Inflation Factor at Retirement:', inflationFactorAtRetirement.toFixed(6));
-    console.log('Monthly Inflation Rate:', (monthlyInflationRate * 100).toFixed(4) + '%');
-    console.log('Monthly Expected Return Rate:', (monthlyExpectedReturnRate * 100).toFixed(4) + '%');
-    console.log('Effective Monthly Rate:', (effectiveMonthlyRate * 100).toFixed(4) + '%');
-    console.log('Adjust Contribution for Inflation:', shouldAdjustContributionForInflation);
-    console.groupEnd();
+    devLog('Inflation Factor at Retirement:', inflationFactorAtRetirement.toFixed(6));
+    devLog('Monthly Inflation Rate:', (monthlyInflationRate * 100).toFixed(4) + '%');
+    devLog('Monthly Expected Return Rate:', (monthlyExpectedReturnRate * 100).toFixed(4) + '%');
+    devLog('Effective Monthly Rate:', (effectiveMonthlyRate * 100).toFixed(4) + '%');
+    devLog('Adjust Contribution for Inflation:', shouldAdjustContributionForInflation);
+    devGroupEnd();
 
     // ========================================================================
     // STEP 3: Calculate retirement goals totals
     // ========================================================================
-    console.group('🎯 [Plan Progress] Step 3: Calculating Retirement Goals Totals');
+    devGroup('🎯 [Plan Progress] Step 3: Calculating Retirement Goals Totals');
     
     const retirementGoalsTotals = financialCalculations.calculateRetirementGoalsTotals({
       startDate: initialDate,
@@ -1054,16 +1069,16 @@ const financialCalculations = {
       projectedPostRetirementGoalsTotal
     } = retirementGoalsTotals;
     
-    console.log('Planned Pre-Retirement Goals Total:', plannedPreRetirementGoalsTotal.toFixed(2));
-    console.log('Planned Post-Retirement Goals Total:', plannedPostRetirementGoalsTotal.toFixed(2));
-    console.log('Projected Pre-Retirement Goals Total:', projectedPreRetirementGoalsTotal.toFixed(2));
-    console.log('Projected Post-Retirement Goals Total:', projectedPostRetirementGoalsTotal.toFixed(2));
-    console.groupEnd();
+    devLog('Planned Pre-Retirement Goals Total:', plannedPreRetirementGoalsTotal.toFixed(2));
+    devLog('Planned Post-Retirement Goals Total:', plannedPostRetirementGoalsTotal.toFixed(2));
+    devLog('Projected Pre-Retirement Goals Total:', projectedPreRetirementGoalsTotal.toFixed(2));
+    devLog('Projected Post-Retirement Goals Total:', projectedPostRetirementGoalsTotal.toFixed(2));
+    devGroupEnd();
 
     // ========================================================================
     // STEP 4: Calculate average monthly contribution
     // ========================================================================
-    console.group('💰 [Plan Progress] Step 4: Calculating Monthly Contribution');
+    devGroup('💰 [Plan Progress] Step 4: Calculating Monthly Contribution');
     
     const averageMonthlyContribution = utils.computeAverageMonthlyContribution({
       referenceDate: initialDate,
@@ -1074,13 +1089,13 @@ const financialCalculations = {
       planCurrency: investmentPlan.currency
     });
     
-    console.log('Average Monthly Contribution:', averageMonthlyContribution.toFixed(2));
-    console.groupEnd();
+    devLog('Average Monthly Contribution:', averageMonthlyContribution.toFixed(2));
+    devGroupEnd();
 
     // ========================================================================
     // STEP 5: Calculate present and future values
     // ========================================================================
-    console.group('💵 [Plan Progress] Step 5: Calculating Present and Future Values');
+    devGroup('💵 [Plan Progress] Step 5: Calculating Present and Future Values');
     
     const currentBalance = (lastFinancialRecord?.ending_balance || investmentPlan.initial_amount) || 0;
     const initialAmountWithPlannedGoals = investmentPlan.initial_amount + plannedPreRetirementGoalsTotal;
@@ -1097,17 +1112,17 @@ const financialCalculations = {
     const adjustedGoalPlannedFutureValue = investmentGoalPresentValue - 
       (plannedPostRetirementGoalsTotal * (shouldAdjustContributionForInflation ? 1 : inflationFactorAtRetirement));
     
-    console.log('Current Balance:', currentBalance.toFixed(2));
-    console.log('Initial Amount with Planned Goals:', initialAmountWithPlannedGoals.toFixed(2));
-    console.log('Investment Goal Present Value:', investmentGoalPresentValue.toFixed(2));
-    console.log('Adjusted Goal Projected Future Value:', adjustedGoalProjectedFutureValue.toFixed(2));
-    console.log('Adjusted Goal Planned Future Value:', adjustedGoalPlannedFutureValue.toFixed(2));
-    console.groupEnd();
+    devLog('Current Balance:', currentBalance.toFixed(2));
+    devLog('Initial Amount with Planned Goals:', initialAmountWithPlannedGoals.toFixed(2));
+    devLog('Investment Goal Present Value:', investmentGoalPresentValue.toFixed(2));
+    devLog('Adjusted Goal Projected Future Value:', adjustedGoalProjectedFutureValue.toFixed(2));
+    devLog('Adjusted Goal Planned Future Value:', adjustedGoalPlannedFutureValue.toFixed(2));
+    devGroupEnd();
 
     // ========================================================================
     // STEP 6: Calculate projected values (based on current performance)
     // ========================================================================
-    console.group('📉 [Plan Progress] Step 6: Calculating Projected Values');
+    devGroup('📉 [Plan Progress] Step 6: Calculating Projected Values');
     
     // Calculate contribution and rates until reference date
     const monthlyContributionUntilReference = utils.computeAverageMonthlyContribution({
@@ -1119,14 +1134,20 @@ const financialCalculations = {
       planCurrency: investmentPlan.currency
     });
     
-    const inflationFactorUntilReference = utils.computeInflationFactor({
+    let inflationFactorUntilReferenceVal = utils.computeInflationFactor({
       startDate: planStartDate,
       endDate: actualDate,
       currency: investmentPlan.currency,
       microPlans
     });
-    
-    const monthlyInflationRateUntilReference = Math.pow(inflationFactorUntilReference, 1 / monthsElapsed) - 1;
+    let monthlyContributionUntilReferenceVal = monthlyContributionUntilReference;
+    if (monthsElapsed === 0) {
+      inflationFactorUntilReferenceVal = 1;
+      monthlyContributionUntilReferenceVal = 0;
+    }
+    const monthlyInflationRateUntilReference = monthsElapsed === 0
+      ? 0
+      : Math.pow(inflationFactorUntilReferenceVal, 1 / monthsElapsed) - 1;
     const monthlyReturnRateUntilReference = utils.computeEffectiveMonthlyReturnRate({
       startDate: planStartDate,
       endDate: actualDate,
@@ -1137,29 +1158,31 @@ const financialCalculations = {
       ? monthlyReturnRateUntilReference
       : calculateCompoundedRates([monthlyReturnRateUntilReference, monthlyInflationRateUntilReference]);
     
-    console.log('Monthly Contribution Until Reference:', monthlyContributionUntilReference.toFixed(2));
-    console.log('Inflation Factor Until Reference:', inflationFactorUntilReference.toFixed(6));
-    console.log('Monthly Inflation Rate Until Reference:', (monthlyInflationRateUntilReference * 100).toFixed(4) + '%');
-    console.log('Monthly Return Rate Until Reference:', (monthlyReturnRateUntilReference * 100).toFixed(4) + '%');
-    console.log('Monthly Expected Return Rate Until Reference:', (monthlyExpectedReturnRateUntilReference * 100).toFixed(4) + '%');
+    devLog('Monthly Contribution Until Reference:', monthlyContributionUntilReferenceVal.toFixed(2));
+    devLog('Inflation Factor Until Reference:', inflationFactorUntilReferenceVal.toFixed(6));
+    devLog('Monthly Inflation Rate Until Reference:', (monthlyInflationRateUntilReference * 100).toFixed(4) + '%');
+    devLog('Monthly Return Rate Until Reference:', (monthlyReturnRateUntilReference * 100).toFixed(4) + '%');
+    devLog('Monthly Expected Return Rate Until Reference:', (monthlyExpectedReturnRateUntilReference * 100).toFixed(4) + '%');
     
-    // Adjust current balance for inflation
-    const currentBalanceAdjustedByInflation = currentBalance / inflationFactorUntilReference;
+    // Adjust current balance for inflation (when monthsElapsed === 0, factor is 1 so balance unchanged)
+    const currentBalanceAdjustedByInflation = currentBalance / inflationFactorUntilReferenceVal;
     const currentBalanceWithProjectedGoals = currentBalanceAdjustedByInflation + projectedPreRetirementGoalsTotal;
     
-    console.log('Current Balance Adjusted by Inflation:', currentBalanceAdjustedByInflation.toFixed(2));
-    console.log('Current Balance with Projected Goals:', currentBalanceWithProjectedGoals.toFixed(2));
+    devLog('Current Balance Adjusted by Inflation:', currentBalanceAdjustedByInflation.toFixed(2));
+    devLog('Current Balance with Projected Goals:', currentBalanceWithProjectedGoals.toFixed(2));
     
-    // Calculate present value adjusted
-    const balancePresentValueAdjusted = -vp(
-      monthlyExpectedReturnRateUntilReference,
-      monthsElapsed,
-      -monthlyContributionUntilReference,
-      -currentBalanceWithProjectedGoals
-    );
+    // Present value at plan start of "current balance + contributions so far". When monthsElapsed === 0, that equals currentBalanceWithProjectedGoals.
+    const balancePresentValueAdjusted = monthsElapsed === 0
+      ? currentBalanceWithProjectedGoals
+      : -vp(
+          monthlyExpectedReturnRateUntilReference,
+          monthsElapsed,
+          -monthlyContributionUntilReferenceVal,
+          -currentBalanceWithProjectedGoals
+        );
     
-    console.log('Balance Present Value Adjusted:', balancePresentValueAdjusted.toFixed(2));
-    console.log('VP Calculation:', {
+    devLog('Balance Present Value Adjusted:', balancePresentValueAdjusted.toFixed(2));
+    devLog('VP Calculation:', {
       rate: monthlyExpectedReturnRateUntilReference,
       nper: monthsElapsed,
       pmt: -monthlyContributionUntilReference,
@@ -1176,13 +1199,13 @@ const financialCalculations = {
       ) - monthsElapsed
     ));
     
-    console.log('NPER Calculation for Projected Months:', {
+    devLog('NPER Calculation for Projected Months:', {
       rate: effectiveMonthlyRate,
       pmt: -averageMonthlyContribution,
       pv: -balancePresentValueAdjusted,
       fv: adjustedGoalProjectedFutureValue
     });
-    console.log('Projected Months to Retirement:', projectedMonthsToRetirement);
+    devLog('Projected Months to Retirement:', projectedMonthsToRetirement);
     
     // Calculate projected contribution
     const projectedContribution = -pmt(
@@ -1192,13 +1215,13 @@ const financialCalculations = {
       adjustedGoalProjectedFutureValue
     );
     
-    console.log('Projected Contribution:', projectedContribution.toFixed(2));
-    console.groupEnd();
+    devLog('Projected Contribution:', projectedContribution.toFixed(2));
+    devGroupEnd();
 
     // ========================================================================
     // STEP 7: Calculate planned values (based on original plan)
     // ========================================================================
-    console.group('📊 [Plan Progress] Step 7: Calculating Planned Values');
+    devGroup('📊 [Plan Progress] Step 7: Calculating Planned Values');
     
     const plannedMonthsToRetirement = Math.max(0, Math.ceil(
       nper(
@@ -1209,28 +1232,29 @@ const financialCalculations = {
       ) - monthsElapsed
     ));
     
-    console.log('NPER Calculation for Planned Months:', {
+    devLog('NPER Calculation for Planned Months:', {
       rate: effectiveMonthlyRate,
       pmt: -averageMonthlyContribution,
       pv: -initialAmountWithPlannedGoals,
       fv: adjustedGoalPlannedFutureValue
     });
-    console.log('Planned Months to Retirement:', plannedMonthsToRetirement);
+    devLog('Planned Months to Retirement:', plannedMonthsToRetirement);
     
+    // Use same horizon as projected (totalMonthsToRetirement) so planned and projected match when monthsElapsed is 0
     const plannedContribution = -pmt(
       effectiveMonthlyRate,
-      totalPlannedMonths,
+      totalMonthsToRetirement,
       -initialAmountWithPlannedGoals,
       adjustedGoalPlannedFutureValue
     );
     
-    console.log('Planned Contribution:', plannedContribution.toFixed(2));
-    console.groupEnd();
+    devLog('Planned Contribution:', plannedContribution.toFixed(2));
+    devGroupEnd();
 
     // ========================================================================
     // STEP 8: Calculate monthly income
     // ========================================================================
-    console.group('💸 [Plan Progress] Step 8: Calculating Monthly Income');
+    devGroup('💸 [Plan Progress] Step 8: Calculating Monthly Income');
     
     const maximumAgeDate = utils.createDateAtAge(birthDate, investmentPlan.limit_age || DEFAULT_LIMIT_AGE);
     const monthsInRetirement = utils.calculateMonthsBetweenDates(planEndDate, maximumAgeDate);
@@ -1259,24 +1283,24 @@ const financialCalculations = {
       monthlyExpectedReturnRate
     );
     
-    console.log('Months in Retirement:', monthsInRetirement);
-    console.log('Projected Monthly Income:', projectedMonthlyIncome.toFixed(2));
-    console.log('Planned Monthly Income:', plannedMonthlyIncome.toFixed(2));
-    console.groupEnd();
+    devLog('Months in Retirement:', monthsInRetirement);
+    devLog('Projected Monthly Income:', projectedMonthlyIncome.toFixed(2));
+    devLog('Planned Monthly Income:', plannedMonthlyIncome.toFixed(2));
+    devGroupEnd();
 
     // ========================================================================
     // STEP 9: Calculate dates and differences
     // ========================================================================
-    console.group('📅 [Plan Progress] Step 9: Calculating Dates and Differences');
+    devGroup('📅 [Plan Progress] Step 9: Calculating Dates and Differences');
     
     const projectedRetirementDate = utils.addMonthsToDate(actualDate, projectedMonthsToRetirement);
     const plannedRetirementDate = utils.addMonthsToDate(actualDate, plannedMonthsToRetirement);
     const monthsDifference = utils.calculateMonthsBetweenDates(projectedRetirementDate, plannedRetirementDate);
     
-    console.log('Projected Retirement Date:', projectedRetirementDate.toISOString());
-    console.log('Planned Retirement Date:', plannedRetirementDate.toISOString());
-    console.log('Months Difference:', monthsDifference);
-    console.groupEnd();
+    devLog('Projected Retirement Date:', projectedRetirementDate.toISOString());
+    devLog('Planned Retirement Date:', plannedRetirementDate.toISOString());
+    devLog('Months Difference:', monthsDifference);
+    devGroupEnd();
 
     return {
       projectedPresentValue,
@@ -1290,7 +1314,7 @@ const financialCalculations = {
       plannedContribution,
       plannedMonthlyIncome,
       monthsDifference,
-      plannedMonths: totalPlannedMonths,
+      totalPlannedMonths,
       referenceDate: initialDate,
       projectedRetirementDate,
       plannedRetirementDate,
@@ -1314,7 +1338,7 @@ const financialCalculations = {
  * 4. Computes age information
  * 5. Returns formatted data for UI display
  * 
- * @param allFinancialRecords - List of all financial records (sorted by date, most recent first)
+ * @param allFinancialRecords - List of all financial records (order does not matter; the most recent by year/month is used for current balance)
  * @param investmentPlan - Investment plan details
  * @param microPlans - Array of micro investment plans
  * @param activeMicroPlan - Currently active micro plan
@@ -1342,14 +1366,18 @@ export function processPlanProgressData(
     return null;
   }
 
-  console.group('🚀 [Plan Progress] Starting Data Processing');
-  
+  devGroup('🚀 [Plan Progress] Starting Data Processing');
+
   const birthDate = createDateWithoutTimezone(profile.birth_date);
-  const lastFinancialRecord = allFinancialRecords[0];
+  // Sort by date desc so we never assume input order; most recent record used for currentBalance
+  const sortedByDateDesc = [...allFinancialRecords].sort(
+    (a, b) => b.record_year - a.record_year || b.record_month - a.record_month
+  );
+  const lastFinancialRecord = sortedByDateDesc[0];
   const currentBalance = lastFinancialRecord?.ending_balance || investmentPlan.initial_amount;
   
   // Calculate micro plan future values
-  console.log('Calculating micro plan future values...');
+  devLog('Calculating micro plan future values...');
   const microPlanCalculations = calculateMicroPlanFutureValues(
     investmentPlan, 
     activeMicroPlan, 
@@ -1360,12 +1388,12 @@ export function processPlanProgressData(
   const investmentGoal = microPlanCalculations.futureValue || 0;
   const currentProgress = (currentBalance / investmentGoal) * 100;
   
-  console.log('Current Balance:', currentBalance);
-  console.log('Investment Goal:', investmentGoal);
-  console.log('Current Progress:', currentProgress.toFixed(2) + '%');
+  devLog('Current Balance:', currentBalance);
+  devLog('Investment Goal:', investmentGoal);
+  devLog('Current Progress:', currentProgress.toFixed(2) + '%');
   
   // Calculate projections
-  console.log('Calculating financial projections...');
+  devLog('Calculating financial projections...');
   const projections = financialCalculations.calculateProjections({
     allFinancialRecords,
     investmentPlan,
@@ -1398,7 +1426,7 @@ export function processPlanProgressData(
     plannedAgeMonths += 12;
   }
 
-  // Calculate investment plan months to retirement
+  // Months from (next month after actual date) to plan end = "months to retirement" at plan level
   const planEndDate = createDateWithoutTimezone(investmentPlan.plan_end_accumulation_date);
   const nextMonthFromActualDate = createDateWithoutTimezone(projections.actualDate);
   nextMonthFromActualDate.setMonth(nextMonthFromActualDate.getMonth() + 1);
@@ -1407,8 +1435,8 @@ export function processPlanProgressData(
     utils.calculateMonthsBetweenDates(nextMonthFromActualDate, planEndDate) || 0
   );
 
-  console.log('Processing complete!');
-  console.groupEnd();
+  devLog('Processing complete!');
+  devGroupEnd();
 
   return {
     investmentPlanMonthsToRetirement,

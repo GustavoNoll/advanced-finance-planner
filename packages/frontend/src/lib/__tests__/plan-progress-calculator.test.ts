@@ -188,33 +188,34 @@ describe('plan-progress-calculator', () => {
       const baseDate = new Date(2024, 0, 1) // January 2024
       const result = utils.addMonthsToDate(baseDate, 3)
 
-      // The function adds monthsToAdd + 1 months
       expect(result.getFullYear()).toBe(2024)
-      expect(result.getMonth()).toBe(4) // May (0 + 3 + 1 = 4)
+      expect(result.getMonth()).toBe(3) // April (January + 3 months)
     })
 
     it('should handle year transitions', () => {
       const baseDate = new Date(2024, 10, 1) // November 2024
       const result = utils.addMonthsToDate(baseDate, 3)
 
-      // November + 3 + 1 = March 2025
+      // November (10) + 3 = February 2025 (month 1)
       expect(result.getFullYear()).toBe(2025)
+      expect(result.getMonth()).toBe(1)
     })
 
     it('should handle adding zero months', () => {
       const baseDate = new Date(2024, 5, 1) // June 2024
       const result = utils.addMonthsToDate(baseDate, 0)
 
-      // 5 + 0 + 1 = 6 -> July
-      expect(result.getMonth()).toBe(6) // July
+      expect(result.getMonth()).toBe(5) // June unchanged
+      expect(result.getFullYear()).toBe(2024)
     })
 
     it('should handle adding large number of months', () => {
       const baseDate = new Date(2024, 0, 1)
       const result = utils.addMonthsToDate(baseDate, 24) // 2 years
 
-      // 0 + 24 + 1 = 25 months from January = February 2026
+      // January 2024 + 24 months = January 2026
       expect(result.getFullYear()).toBe(2026)
+      expect(result.getMonth()).toBe(0)
     })
   })
 
@@ -552,6 +553,52 @@ describe('plan-progress-calculator', () => {
       expect(result).not.toBeNull()
       if (result) {
         expect(typeof result.isAheadOfSchedule).toBe('boolean')
+      }
+    })
+
+    it('should use most recent record for currentBalance when records are in ascending order', () => {
+      const plan = createMockInvestmentPlan({ initial_amount: 100000 })
+      const microPlan = createMockMicroPlan()
+      const financialRecordsAsc: FinancialRecord[] = [
+        {
+          id: 'r1',
+          user_id: 'u1',
+          record_year: 2024,
+          record_month: 1,
+          starting_balance: 100000,
+          monthly_contribution: 1000,
+          monthly_return: 500,
+          monthly_return_rate: 1,
+          ending_balance: 5000,
+        },
+        {
+          id: 'r2',
+          user_id: 'u1',
+          record_year: 2024,
+          record_month: 6,
+          starting_balance: 5000,
+          monthly_contribution: 1000,
+          monthly_return: 500,
+          monthly_return_rate: 1,
+          ending_balance: 200000,
+        },
+      ]
+
+      const result = processPlanProgressData(
+        financialRecordsAsc,
+        plan,
+        [microPlan],
+        microPlan,
+        { birth_date: '1990-01-01' },
+        [],
+        [],
+        1000000,
+        1000000
+      )
+
+      expect(result).not.toBeNull()
+      if (result) {
+        expect(result.currentProgress).toBeCloseTo(20, 0)
       }
     })
   })
