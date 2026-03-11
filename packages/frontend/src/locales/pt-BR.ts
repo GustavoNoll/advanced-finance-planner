@@ -127,8 +127,8 @@ export const ptBR = {
         expectedReturn: "Retorno Esperado",
         inflation: "Inflação",
         returnRate: "Taxa de Retorno Real",
-        realReturn: "Retorno Real Mensal",
-        inflationReturn: "Retorno da Inflação Mensal",
+        realReturn: "Valor mensal do retorno (nominal)",
+        inflationReturn: "Valor mensal da inflação",
         totalMonthlyReturn: "Retorno Total Mensal"
       }
     },
@@ -192,13 +192,19 @@ export const ptBR = {
         presentFutureValue: "Valor Presente Futuro",
         inflationAdjustedIncome: "Renda Ajustada pela Inflação",
         requiredFutureValue: "Valor Futuro",
-        monthlyRealReturn: "Retorno Mensal Real",
-        monthlyInflationReturn: "Retorno Mensal da Inflação",
+        monthlyRealReturn: "Valor mensal do retorno (nominal)",
+        monthlyInflationReturn: "Valor mensal da inflação",
         totalMonthlyReturn: "Retorno Mensal Total",
         requiredMonthlyDeposit: "Depósito Mensal Necessário para o Valor Futuro",
         necessaryFutureValue: "Necessário para renda desejada",
         fillRequired: "Preencha todos os campos obrigatórios para ver os cálculos",
-        necessaryMonthlyDeposit: "Necessário para renda desejada"
+        necessaryMonthlyDeposit: "Necessário para renda desejada",
+        perpetuityBlock: {
+          title: "Para nunca acabar o dinheiro (perpetuidade)",
+          description: "O depósito requerido acima cobre a anuidade até a idade limite. Os valores abaixo mostram o que seria necessário para viver só dos juros (perpetuidade).",
+          necessaryFutureValue: "Capital necessário para perpetuidade",
+          necessaryDeposit: "Depósito mensal para perpetuidade"
+        }
       },
     },
   },
@@ -766,8 +772,8 @@ export const ptBR = {
       futureValue: "Valor futuro",
       inflationAdjustedIncome: "Renda ajustada pela inflação",
       requiredMonthlyDeposit: "Aporte mensal necessário",
-      realReturn: "Retorno real (mensal)",
-      inflationReturn: "Retorno inflação (mensal)",
+      realReturn: "Valor mensal do retorno (nominal)",
+      inflationReturn: "Valor mensal da inflação",
       totalMonthlyReturn: "Retorno total mensal"
     },
     policy: {

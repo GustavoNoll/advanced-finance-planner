@@ -5,8 +5,10 @@ import {
   processEvents,
   processGoals,
   generateDataPoints,
+  generateProjectionData,
 } from '../calculations/chart-projections'
-import type { InvestmentPlan, Goal, ProjectedEvent } from '@/types/financial'
+import { DEFAULT_LIMIT_AGE } from '../calculations/constants'
+import type { InvestmentPlan, Goal, ProjectedEvent, FinancialRecord, MicroInvestmentPlan } from '@/types/financial'
 import type { ProcessedGoalEvent } from '../calculations/financial-goals-processor'
 
 // Mock dependencies
@@ -32,6 +34,7 @@ vi.mock('@/utils/dateUtils', () => ({
     return new Date()
   },
   createDateFromYearMonth: (year: number, month: number) => new Date(year, month - 1, 1),
+  getLastDayOfYear: (year: number) => new Date(year, 11, 31),
 }))
 
 vi.mock('@/utils/microPlanUtils', () => ({
@@ -124,9 +127,9 @@ describe('chart-projections', () => {
       expect(getEndAge(plan)).toBe(90)
     })
 
-    it('should return 100 as default when limit_age is not set', () => {
+    it('should return DEFAULT_LIMIT_AGE when limit_age is not set (falsy)', () => {
       const plan = createMockInvestmentPlan({ limit_age: 0 })
-      expect(getEndAge(plan)).toBe(100)
+      expect(getEndAge(plan)).toBe(DEFAULT_LIMIT_AGE)
     })
 
     it('should return limit_age for young retirement age', () => {
@@ -450,6 +453,56 @@ describe('chart-projections', () => {
       const result = generateDataPoints(plan, 2, 1990)
 
       expect(result.length).toBe(36)
+    })
+  })
+
+  // ============================================================================
+  // generateProjectionData – projectedBalance and context mutation
+  // ============================================================================
+
+  describe('generateProjectionData', () => {
+    it('should use initial_amount as projected balance for months before first historical record', () => {
+      const profile = { birth_date: '1960-01-01' }
+      const plan = createMockInvestmentPlan({
+        plan_initial_date: '2024-01-01',
+        plan_end_accumulation_date: '2029-01-01',
+        initial_amount: 10000,
+      })
+      const microPlans = [
+        {
+          id: 'micro-1',
+          life_investment_plan_id: 'plan-1',
+          effective_date: '2024-01-01',
+          monthly_deposit: 1000,
+          desired_income: 5000,
+          expected_return: 10,
+          inflation: 5,
+          adjust_contribution_for_accumulated_inflation: false,
+          adjust_income_for_accumulated_inflation: false,
+        },
+      ] as MicroInvestmentPlan[]
+      const initialRecords: FinancialRecord[] = [
+        {
+          id: 'r1',
+          user_id: 'user-1',
+          record_year: 2024,
+          record_month: 3,
+          starting_balance: 11000,
+          monthly_contribution: 1000,
+          monthly_return: 100,
+          monthly_return_rate: 0.01,
+          ending_balance: 12100,
+        },
+      ]
+      const result = generateProjectionData(plan, profile, initialRecords, microPlans)
+
+      expect(result.length).toBeGreaterThan(0)
+      const year2024 = result.find((y) => y.year === 2024)
+      expect(year2024).toBeDefined()
+      expect(year2024!.months).toBeDefined()
+      const january = year2024!.months!.find((m) => m.month === 1)
+      expect(january).toBeDefined()
+      expect(january!.balance).toBe(10000)
     })
   })
 })

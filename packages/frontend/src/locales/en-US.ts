@@ -127,8 +127,8 @@ export const enUS = {
         expectedReturn: "Expected Return",
         inflation: "Inflation",
         returnRate: "Real Return Rate",
-        realReturn: "Monthly Real Return",
-        inflationReturn: "Monthly Inflation Return",
+        realReturn: "Monthly return amount (nominal)",
+        inflationReturn: "Monthly inflation amount",
         totalMonthlyReturn: "Total Monthly Return"
       }
     },
@@ -192,13 +192,19 @@ export const enUS = {
         presentFutureValue: "Present Future Value",
         inflationAdjustedIncome: "Inflation-Adjusted Income",
         requiredFutureValue: "Future Value",
-        monthlyRealReturn: "Monthly Real Return",
-        monthlyInflationReturn: "Monthly Inflation Return",
+        monthlyRealReturn: "Monthly return amount (nominal)",
+        monthlyInflationReturn: "Monthly inflation amount",
         totalMonthlyReturn: "Total Monthly Return",
         requiredMonthlyDeposit: "Required Monthly Deposit for Future Value",
         necessaryFutureValue: "Necessary for desired income",
         fillRequired: "Fill in all required fields to see calculations",
-        necessaryMonthlyDeposit: "Necessary for desired income"
+        necessaryMonthlyDeposit: "Necessary for desired income",
+        perpetuityBlock: {
+          title: "To never run out of money (perpetuity)",
+          description: "The required deposit above funds the annuity until the age limit. The values below show what would be needed to live off returns only (perpetuity).",
+          necessaryFutureValue: "Capital needed for perpetuity",
+          necessaryDeposit: "Monthly deposit for perpetuity"
+        }
       },
     },
   },
@@ -766,8 +772,8 @@ export const enUS = {
       futureValue: "Future value",
       inflationAdjustedIncome: "Inflation-adjusted income",
       requiredMonthlyDeposit: "Required monthly deposit",
-      realReturn: "Real return (monthly)",
-      inflationReturn: "Inflation return (monthly)",
+      realReturn: "Monthly return amount (nominal)",
+      inflationReturn: "Monthly inflation amount",
       totalMonthlyReturn: "Total monthly return"
     },
     policy: {

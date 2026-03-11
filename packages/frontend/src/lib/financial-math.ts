@@ -259,3 +259,73 @@ export function vp(
 
   return parseFloat(pv.toFixed(10));
 }
+
+/**
+ * Present value of a growing annuity (payments at end of each period).
+ * Payment at period t = firstPayment * (1 + growthRate)^(t-1).
+ * Formula: PV = firstPayment * [ 1 - ((1+g)/(1+r))^n ] / (r - g)  when r !== g
+ *
+ * @param rate - Discount rate per period (decimal)
+ * @param nper - Number of periods
+ * @param firstPayment - Payment at end of first period
+ * @param growthRate - Growth rate of payments per period (decimal)
+ * @returns Present value of the growing annuity
+ */
+export function vpGrowingAnnuity(
+  rate: number,
+  nper: number,
+  firstPayment: number,
+  growthRate: number
+): number {
+  if (nper <= 0) return 0;
+  if (rate === growthRate) {
+    return parseFloat((nper * firstPayment / (1 + rate)).toFixed(10));
+  }
+  const factor = Math.pow((1 + growthRate) / (1 + rate), nper);
+  const pv = firstPayment * (1 - factor) / (rate - growthRate);
+  return parseFloat(pv.toFixed(10));
+}
+
+/**
+ * Present value of a growing perpetuity (first payment at end of period 1, then growing forever).
+ * PV = firstPayment / (r - g) when r > g.
+ *
+ * @param rate - Discount rate per period (decimal)
+ * @param firstPayment - Payment at end of first period
+ * @param growthRate - Growth rate of payments per period (decimal)
+ * @returns Present value, or Infinity if rate <= growthRate
+ */
+export function pvGrowingPerpetuity(rate: number, firstPayment: number, growthRate: number): number {
+  if (rate <= growthRate) return Infinity;
+  return parseFloat((firstPayment / (rate - growthRate)).toFixed(10));
+}
+
+/**
+ * First (real) deposit D such that FV of initial pv plus growing deposits equals fv.
+ * Deposit at period t = D * (1 + growthRate)^(t-1). Rate is the monthly return.
+ * FV = pv*(1+rate)^n + D * [ (1+rate)^n - (1+growthRate)^n ] / (rate - growthRate) when rate !== growthRate.
+ *
+ * @param rate - Monthly return rate (decimal)
+ * @param growthRate - Monthly growth rate of deposits (decimal, e.g. inflation)
+ * @param nper - Number of periods
+ * @param pv - Initial present value (positive, as investment)
+ * @param fv - Target future value
+ * @returns First month deposit (real / in today's money)
+ */
+export function pmtGrowingToFv(
+  rate: number,
+  growthRate: number,
+  nper: number,
+  pv: number,
+  fv: number
+): number {
+  const pvFv = pv * Math.pow(1 + rate, nper);
+  const diff = fv - pvFv;
+  if (diff <= 0) return 0;
+  if (rate === growthRate) {
+    const denom = nper * Math.pow(1 + rate, nper - 1);
+    return parseFloat((diff / denom).toFixed(10));
+  }
+  const denom = (Math.pow(1 + rate, nper) - Math.pow(1 + growthRate, nper)) / (rate - growthRate);
+  return parseFloat((diff / denom).toFixed(10));
+}
